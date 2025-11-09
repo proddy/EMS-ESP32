@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #include "command.h"
 #include "emsdevice.h"
 #include "emsesp.h"
+#include <algorithm> // for std::remove_if
 
 namespace emsesp {
 
@@ -30,7 +31,7 @@ std::vector<Command::CmdFunction> Command::cmdfunctions_;
 // the path is leading so if duplicate keys are in the input JSON it will be ignored
 // the entry point will be either via the Web API (api/) or MQTT (<base>/)
 // returns a return code and json output
-uint8_t Command::process(const char * path, const bool is_admin, const JsonObject input, JsonObject output) {
+uint8_t Command::process(const char * path, const bool is_admin, const JsonObjectConst input, JsonObject output) {
     // check for MQTT, if so strip the "<base>" from the path
     if (!strncmp(path, Mqtt::base().c_str(), Mqtt::base().length())) {
         path += Mqtt::base().length();
@@ -135,7 +136,7 @@ uint8_t Command::process(const char * path, const bool is_admin, const JsonObjec
     }
 
     // the value must always come from the input JSON. It's allowed to be empty.
-    JsonVariant data;
+    JsonVariantConst data;
     if (input["data"].is<JsonVariantConst>()) {
         data = input["data"];
     } else if (input["value"].is<JsonVariantConst>()) {
@@ -237,11 +238,16 @@ const char * Command::parse_command_string(const char * command, int8_t & id) {
     const char * cmd_org = command;
     int8_t       id_org  = id;
 
-    // convert cmd to lowercase and compare
-    char * lowerCmd = strdup(command);
-    for (char * p = lowerCmd; *p; p++) {
-        *p = tolower(*p);
+    // Optimized: Use stack-based lowercase buffer instead of heap allocation
+    char lowerCmd[COMMAND_MAX_LENGTH];
+    size_t cmd_len = strlen(command);
+    if (cmd_len >= COMMAND_MAX_LENGTH) {
+        cmd_len = COMMAND_MAX_LENGTH - 1;
     }
+    for (size_t i = 0; i < cmd_len; i++) {
+        lowerCmd[i] = tolower(command[i]);
+    }
+    lowerCmd[cmd_len] = '\0';
 
     // check prefix and valid number range, also check 'id'
     if (!strncmp(lowerCmd, "hc", 2) && command[2] >= '1' && command[2] <= '8') {
@@ -278,8 +284,6 @@ const char * Command::parse_command_string(const char * command, int8_t & id) {
         id = DeviceValueTAG::TAG_DHW1;
         command += 3;
     }
-
-    free(lowerCmd);
 
     // return original if no seperator
     if (command[0] != '/' && command[0] != '.') {
@@ -357,8 +361,9 @@ uint8_t Command::call(const uint8_t device_type, const char * command, const cha
     if (command == nullptr) {
         return CommandRet::NOT_FOUND;
     }
-    char cmd[COMMAND_MAX_LENGTH];
-    strlcpy(cmd, Helpers::toLower(command).c_str(), sizeof(cmd));
+    // Optimized: Store lowercase once as string and reuse, avoiding redundant conversions
+    std::string cmd_str = Helpers::toLower(command);
+    const char * cmd = cmd_str.c_str();
 
     auto dname = EMSdevice::device_type_2_device_name(device_type); // device name, not translated
 
@@ -519,8 +524,11 @@ Command::CmdFunction * Command::find_command(const uint8_t device_type, const ui
         return nullptr;
     }
 
+    // Convert cmd to lowercase once before the loop to avoid repeated conversions
+    std::string cmd_lower = Helpers::toLower(cmd);
+
     for (auto & cf : cmdfunctions_) {
-        if (Helpers::toLower(cmd) == Helpers::toLower(cf.cmd_) && (cf.device_type_ == device_type) && (!device_id || cf.device_id_ == device_id)
+        if (cmd_lower == Helpers::toLower(cf.cmd_) && (cf.device_type_ == device_type) && (!device_id || cf.device_id_ == device_id)
             && (cf.device_type_ < EMSdevice::DeviceType::BOILER || flag == CommandFlag::CMD_FLAG_DEFAULT || (flag & 0x3F) == (cf.flags_ & 0x3F))) {
             return &cf;
         }
@@ -533,22 +541,23 @@ void Command::erase_device_commands(const uint8_t device_type) {
     if (cmdfunctions_.empty()) {
         return;
     }
-    auto it = cmdfunctions_.end();
-    do {
-        int i = it - cmdfunctions_.begin();
-        if (cmdfunctions_[i].device_type_ == device_type) {
-            cmdfunctions_.erase(it);
-        }
-    } while (it-- > cmdfunctions_.begin());
+    // Optimized: Use erase-remove idiom for efficient removal
+    cmdfunctions_.erase(
+        std::remove_if(cmdfunctions_.begin(), cmdfunctions_.end(),
+            [device_type](const CmdFunction& cf) { return cf.device_type_ == device_type; }),
+        cmdfunctions_.end()
+    );
 }
 
 void Command::erase_command(const uint8_t device_type, const char * cmd, uint8_t flag) {
     if ((cmd == nullptr) || (strlen(cmd) == 0) || (cmdfunctions_.empty())) {
         return;
     }
+    // Optimized: Convert cmd to lowercase once
+    std::string cmd_lower = Helpers::toLower(cmd);
     auto it = cmdfunctions_.begin();
     for (auto const & cf : cmdfunctions_) {
-        if (Helpers::toLower(cmd) == Helpers::toLower(cf.cmd_) && (cf.device_type_ == device_type) && ((flag & 0x3F) == (cf.flags_ & 0x3F))) {
+        if (cmd_lower == Helpers::toLower(cf.cmd_) && (cf.device_type_ == device_type) && ((flag & 0x3F) == (cf.flags_ & 0x3F))) {
             cmdfunctions_.erase(it);
             return;
         }
@@ -788,7 +797,7 @@ void Command::show_all(uuid::console::Shell & shell) {
 
 // creates a single json document with an error message
 // object is optional
-uint8_t Command::json_message(uint8_t error_code, const char * message, const JsonObject output, const char * object) {
+uint8_t Command::json_message(uint8_t error_code, const char * message, JsonObject output, const char * object) {
     output.clear();
     if (object) {
         output["message"] = std::string(message) + " " + object;

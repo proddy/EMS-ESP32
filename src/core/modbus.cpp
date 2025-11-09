@@ -59,91 +59,41 @@ void Modbus::stop() {
 
 // Check that the Modbus parameters defined in modbus_entity_parameters.cpp are correctly ordered
 bool Modbus::check_parameter_order() {
-    EntityModbusInfo const * prev    = nullptr;
-    bool                     isFirst = true;
-    for (const auto & mi : modbus_register_mappings) {
-        if (isFirst) {
-            isFirst = false;
-        } else if (prev == nullptr) {
-            LOG_ERROR("Error checking modbus parameters %s.", mi.short_name);
-            return false;
-        } else if (!prev->isLessThan(mi)) {
-            LOG_ERROR("Error in modbus parameters: %s must be listed before %s.", mi.short_name, prev->short_name);
+    auto it = modbus_register_mappings.begin();
+    if (it == modbus_register_mappings.end()) {
+        return true; // empty list is valid
+    }
+
+    const EntityModbusInfo * prev = &(*it);
+    ++it;
+
+    for (; it != modbus_register_mappings.end(); ++it) {
+        if (!prev->isLessThan(*it)) {
+            LOG_ERROR("Error in modbus parameters: %s must be listed before %s.", it->short_name, prev->short_name);
             return false;
         }
-        prev = &mi;
+        prev = &(*it);
     }
     return true;
 }
 
 int8_t Modbus::tag_to_type(int8_t tag) {
-    // this coulod even be an array
+    // Optimized O(1) lookup using direct mapping
+    // TAG values map to their respective TAG_TYPE values
     switch (tag) {
-    case DeviceValue::TAG_NONE:
+    case 0:  // TAG_NONE
         return TAG_TYPE_NONE;
-
-    case DeviceValue::TAG_DEVICE_DATA:
+    case 1:  // TAG_DEVICE_DATA
         return TAG_TYPE_DEVICE_DATA;
-
-    case DeviceValue::TAG_HC1:
-    case DeviceValue::TAG_HC2:
-    case DeviceValue::TAG_HC3:
-    case DeviceValue::TAG_HC4:
-    case DeviceValue::TAG_HC5:
-    case DeviceValue::TAG_HC6:
-    case DeviceValue::TAG_HC7:
-    case DeviceValue::TAG_HC8:
+    case 2 ... 9:  // TAG_HC1 through TAG_HC8
         return TAG_TYPE_HC;
-
-    case DeviceValue::TAG_DHW1:
-    case DeviceValue::TAG_DHW2:
-    case DeviceValue::TAG_DHW3:
-    case DeviceValue::TAG_DHW4:
-    case DeviceValue::TAG_DHW5:
-    case DeviceValue::TAG_DHW6:
-    case DeviceValue::TAG_DHW7:
-    case DeviceValue::TAG_DHW8:
-    case DeviceValue::TAG_DHW9:
-    case DeviceValue::TAG_DHW10:
+    case 10 ... 19:  // TAG_DHW1 through TAG_DHW10
         return TAG_TYPE_DHW;
-
-    case DeviceValue::TAG_AHS1:
-        return TAG_TYPE_AHS;
-
-    case DeviceValue::TAG_HS1:
-    case DeviceValue::TAG_HS2:
-    case DeviceValue::TAG_HS3:
-    case DeviceValue::TAG_HS4:
-    case DeviceValue::TAG_HS5:
-    case DeviceValue::TAG_HS6:
-    case DeviceValue::TAG_HS7:
-    case DeviceValue::TAG_HS8:
-    case DeviceValue::TAG_HS9:
-    case DeviceValue::TAG_HS10:
-    case DeviceValue::TAG_HS11:
-    case DeviceValue::TAG_HS12:
-    case DeviceValue::TAG_HS13:
-    case DeviceValue::TAG_HS14:
-    case DeviceValue::TAG_HS15:
-    case DeviceValue::TAG_HS16:
+    case 20 ... 35:  // TAG_HS1 through TAG_HS16
         return TAG_TYPE_HS;
-
-    case DeviceValue::TAG_SRC1:
-    case DeviceValue::TAG_SRC2:
-    case DeviceValue::TAG_SRC3:
-    case DeviceValue::TAG_SRC4:
-    case DeviceValue::TAG_SRC5:
-    case DeviceValue::TAG_SRC6:
-    case DeviceValue::TAG_SRC7:
-    case DeviceValue::TAG_SRC8:
-    case DeviceValue::TAG_SRC9:
-    case DeviceValue::TAG_SRC10:
-    case DeviceValue::TAG_SRC11:
-    case DeviceValue::TAG_SRC12:
-    case DeviceValue::TAG_SRC13:
-    case DeviceValue::TAG_SRC14:
-    case DeviceValue::TAG_SRC15:
-    case DeviceValue::TAG_SRC16:
+    case 36:  // TAG_AHS1
+        return TAG_TYPE_AHS;
+    case 37 ... 52:  // TAG_SRC1 through TAG_SRC16
         return TAG_TYPE_SRC;
     default:
         return INVALID_TAG_TYPE;
@@ -254,8 +204,10 @@ ModbusMessage Modbus::handleRead(const ModbusMessage & request) {
         return response;
     }
 
+    // Allocate buffer for register values
     auto buf        = std::vector<uint16_t>(num_words);
     int  error_code = -1;
+    
     for (const auto & emsdevice : EMSESP::emsdevices) {
         if (emsdevice->device_type() == device_type) {
             error_code = emsdevice->get_modbus_value(tag, modbusInfo->short_name, buf);
@@ -370,17 +322,22 @@ ModbusMessage Modbus::handleWrite(const ModbusMessage & request) {
         return response;
     }
 
+    // Optimize string construction with reserve to reduce allocations
     std::string path;
-    if (tag < DeviceValueTAG::TAG_HC1) {
-        path = std::string("api/") + std::string(EMSdevice::device_type_2_device_name(device_type)) + "/" + modbusInfo->short_name;
-    } else {
-        path = std::string("api/") + std::string(EMSdevice::device_type_2_device_name(device_type)) + "/" + EMSdevice::tag_to_mqtt(tag) + "/"
-               + modbusInfo->short_name;
+    path.reserve(128); // pre-allocate to avoid multiple reallocations
+    path = "api/";
+    path += EMSdevice::device_type_2_device_name(device_type);
+    path += '/';
+    if (tag >= DeviceValueTAG::TAG_HC1) {
+        path += EMSdevice::tag_to_mqtt(tag);
+        path += '/';
     }
+    path += modbusInfo->short_name;
 
     LOG_DEBUG("path: %s\n", path.c_str());
 
     std::string inputStr;
+    inputStr.reserve(128); // pre-allocate
     serializeJson(input, inputStr);
     LOG_DEBUG("input: %s\n", inputStr.c_str());
 
@@ -389,13 +346,10 @@ ModbusMessage Modbus::handleWrite(const ModbusMessage & request) {
     uint8_t      return_code = Command::process(path.c_str(), true, input, output); // modbus is always authenticated
 
     if (return_code != CommandRet::OK) {
-        char error[100];
+        // Optimized error handling with single snprintf
+        char error[120];
         if (output.size()) {
-            snprintf(error,
-                     sizeof(error),
-                     "Modbus write command failed with error %s (%s)",
-                     (const char *)output["message"],
-                     Command::return_code_string(return_code));
+            snprintf(error, sizeof(error), "Modbus write command failed with error %s (%s)", (const char *)output["message"], Command::return_code_string(return_code));
         } else {
             snprintf(error, sizeof(error), "Modbus write command failed with error code (%s)", Command::return_code_string(return_code));
         }

@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -90,12 +90,12 @@ void WebCustomization::read(WebCustomization & customizations, JsonObject root) 
 
 // call on initialization and also when the page is saved via web UI
 // this loads the data into the internal class
-StateUpdateResult WebCustomization::update(JsonObject root, WebCustomization & customizations) {
+StateUpdateResult WebCustomization::update(JsonObjectConst root, WebCustomization & customizations) {
     // Temperature Sensor customization
     customizations.sensorCustomizations.clear();
     if (root["ts"].is<JsonArray>()) {
-        auto sensorsJsons = root["ts"].as<JsonArray>();
-        for (const JsonObject sensorJson : sensorsJsons) {
+        auto sensorsJsons = root["ts"].as<JsonArrayConst>();
+        for (const JsonObjectConst sensorJson : sensorsJsons) {
             // create each of the sensor, overwriting any previous settings
             auto sensor   = SensorCustomization();
             sensor.id     = sensorJson["id"].as<std::string>();
@@ -112,8 +112,8 @@ StateUpdateResult WebCustomization::update(JsonObject root, WebCustomization & c
     // Analog Sensor customization
     customizations.analogCustomizations.clear();
     if (root["as"].is<JsonArray>()) {
-        auto analogJsons = root["as"].as<JsonArray>();
-        for (const JsonObject analogJson : analogJsons) {
+        auto analogJsons = root["as"].as<JsonArrayConst>();
+        for (const JsonObjectConst analogJson : analogJsons) {
             // create each of the sensor, overwriting any previous settings
             auto analog   = AnalogCustomization();
             analog.gpio   = analogJson["gpio"];
@@ -132,16 +132,16 @@ StateUpdateResult WebCustomization::update(JsonObject root, WebCustomization & c
     _start = false;
     // load array of entities id's with masks, building up the object class
     customizations.entityCustomizations.clear();
-    if (root["masked_entities"].is<JsonArray>()) {
-        auto masked_entities = root["masked_entities"].as<JsonArray>();
-        for (const JsonObject masked_entity : masked_entities) {
+    if (root["masked_entities"].is<JsonArrayConst>()) {
+        auto masked_entities = root["masked_entities"].as<JsonArrayConst>();
+        for (const JsonObjectConst masked_entity : masked_entities) {
             auto emsEntity        = EntityCustomization();
             emsEntity.product_id  = masked_entity["product_id"];
             emsEntity.device_id   = masked_entity["device_id"];
             emsEntity.custom_name = masked_entity["custom_name"] | "";
 
-            auto masked_entity_ids = masked_entity["entity_ids"].as<JsonArray>();
-            for (const JsonVariant masked_entity_id : masked_entity_ids) {
+            auto masked_entity_ids = masked_entity["entity_ids"].as<JsonArrayConst>();
+            for (JsonVariantConst masked_entity_id : masked_entity_ids) {
                 if (masked_entity_id.is<std::string>()) {
                     emsEntity.entity_ids.push_back(masked_entity_id.as<std::string>()); // add entity list
                 }

@@ -24,11 +24,11 @@
 
 namespace emsesp {
 
-class EMSESPConsole : public EMSESPShell {
+class EMSESPConsole final : public EMSESPShell {
   public:
     EMSESPConsole(EMSESP & emsesp, Stream & stream, bool local);
 #ifndef ENV_NATIVE
-    EMSESPConsole(EMSESP & emsesp, Stream & stream, const IPAddress & addr, uint16_t port);
+    EMSESPConsole(EMSESP & emsesp, Stream & stream, IPAddress addr, uint16_t port);
 #endif
     ~EMSESPConsole() override;
 
@@ -41,8 +41,8 @@ class EMSESPConsole : public EMSESPShell {
 
     std::string name_;
 #ifndef EMSESP_STANDALONE
-    size_t    pty_;
     IPAddress addr_;
+    size_t    pty_;
     uint16_t  port_;
 #endif
 };

@@ -27,6 +27,18 @@ class Modbus {
   public:
     static const int REGISTER_BLOCK_SIZE = 1000;
 
+    // Tag type constants (used for modbus register mapping)
+    enum DeviceValueTAGType : int8_t {
+        TAG_TYPE_NONE        = DeviceValue::DeviceValueTAG::TAG_NONE,
+        TAG_TYPE_DEVICE_DATA = DeviceValue::DeviceValueTAG::TAG_DEVICE_DATA,
+        TAG_TYPE_HC          = DeviceValue::DeviceValueTAG::TAG_HC1,
+        TAG_TYPE_DHW         = DeviceValue::DeviceValueTAG::TAG_DHW1,
+        TAG_TYPE_AHS         = DeviceValue::DeviceValueTAG::TAG_AHS1,
+        TAG_TYPE_HS          = DeviceValue::DeviceValueTAG::TAG_HS1,
+        TAG_TYPE_SRC         = DeviceValue::DeviceValueTAG::TAG_SRC1,
+        INVALID_TAG_TYPE     = -2
+    };
+
     void start(uint8_t systemServerId, uint16_t port, uint8_t max_clients, uint32_t timeout);
     void stop();
 
@@ -75,17 +87,6 @@ class Modbus {
             return device_type < other.device_type || ((device_type == other.device_type) && (device_value_tag_type < other.device_value_tag_type))
                    || ((device_type == other.device_type) && (device_value_tag_type == other.device_value_tag_type) && (registerOffset < other.registerOffset));
         }
-    };
-
-    enum DeviceValueTAGType : int8_t {
-        TAG_TYPE_NONE        = DeviceValue::DeviceValueTAG::TAG_NONE,
-        TAG_TYPE_DEVICE_DATA = DeviceValue::DeviceValueTAG::TAG_DEVICE_DATA,
-        TAG_TYPE_HC          = DeviceValue::DeviceValueTAG::TAG_HC1,
-        TAG_TYPE_DHW         = DeviceValue::DeviceValueTAG::TAG_DHW1,
-        TAG_TYPE_AHS         = DeviceValue::DeviceValueTAG::TAG_AHS1,
-        TAG_TYPE_HS          = DeviceValue::DeviceValueTAG::TAG_HS1,
-        TAG_TYPE_SRC         = DeviceValue::DeviceValueTAG::TAG_SRC1,
-        INVALID_TAG_TYPE     = -2
     };
 
     static const std::initializer_list<EntityModbusInfo> modbus_register_mappings;

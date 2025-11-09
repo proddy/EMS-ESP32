@@ -61,17 +61,19 @@ void NTPSettingsService::configureNTP() {
 
 void NTPSettingsService::configureTime(AsyncWebServerRequest * request, JsonVariant json) {
     if (json.is<JsonObject>()) {
-        struct tm tm        = {};
-        String    timeLocal = json["local_time"];
-        char *    s         = strptime(timeLocal.c_str(), "%Y-%m-%dT%H:%M:%S", &tm);
-        if (s != nullptr) {
-            tm.tm_isdst         = -1; // not set by strptime, tells mktime to determine daylightsaving
-            time_t         time = mktime(&tm);
-            struct timeval now  = {.tv_sec = time, .tv_usec = {}};
-            settimeofday(&now, nullptr);
-            AsyncWebServerResponse * response = request->beginResponse(200);
-            request->send(response);
-            return;
+        struct tm    tm             = {};
+        const char * timeLocal_cstr = json["local_time"];
+        if (timeLocal_cstr) {
+            char * s = strptime(timeLocal_cstr, "%Y-%m-%dT%H:%M:%S", &tm);
+            if (s != nullptr) {
+                tm.tm_isdst         = -1; // not set by strptime, tells mktime to determine daylightsaving
+                time_t         time = mktime(&tm);
+                struct timeval now  = {.tv_sec = time, .tv_usec = {}};
+                settimeofday(&now, nullptr);
+                AsyncWebServerResponse * response = request->beginResponse(200);
+                request->send(response);
+                return;
+            }
         }
     }
 
@@ -85,14 +87,14 @@ void NTPSettingsService::ntp_received(struct timeval * tv) {
     emsesp::EMSESP::system_.ntp_connected(true);
 }
 
-void NTPSettings::read(NTPSettings & settings, JsonObject root) {
+void NTPSettings::read(const NTPSettings & settings, JsonObject root) {
     root["enabled"]   = settings.enabled;
-    root["server"]    = settings.server;
-    root["tz_label"]  = settings.tzLabel;
-    root["tz_format"] = settings.tzFormat;
+    root["server"]    = settings.server.c_str();
+    root["tz_label"]  = settings.tzLabel.c_str();
+    root["tz_format"] = settings.tzFormat.c_str();
 }
 
-StateUpdateResult NTPSettings::update(JsonObject root, NTPSettings & settings) {
+StateUpdateResult NTPSettings::update(JsonObjectConst root, NTPSettings & settings) {
     settings.enabled  = root["enabled"] | FACTORY_NTP_ENABLED;
     settings.server   = root["server"] | FACTORY_NTP_SERVER;
     settings.tzLabel  = root["tz_label"] | FACTORY_NTP_TIME_ZONE_LABEL;

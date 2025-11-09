@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -91,11 +91,55 @@ bool     System::test_set_all_active_ = false;
 uint32_t System::max_alloc_mem_;
 uint32_t System::heap_mem_;
 
+// Constants for LED flash sequence
+static constexpr uint8_t LED_FLASH_RESET_STEP       = 8;
+static constexpr uint8_t LED_FLASH_STEP_FIRST       = 3;
+static constexpr uint8_t LED_FLASH_STEP_SECOND      = 5;
+static constexpr uint8_t LED_FLASH_STEP_THIRD       = 7;
+static constexpr uint32_t NTP_TIMEOUT_SECONDS       = 7201; // 2 hours + 1 sec
+
+// Constants for upgrade version checking
+static constexpr uint8_t VERSION_MAJOR_3            = 3;
+static constexpr uint8_t VERSION_MINOR_6            = 6;
+
+// Constants for system
+static constexpr uint8_t WIFI_POWER_LEGACY          = 20;
+static constexpr uint8_t WEBLOG_BUFFER_SIZE_DEFAULT = 25;
+
+// Helper function to control LED state - reduces code duplication
+static void set_led_state(uint8_t gpio, bool led_type, uint8_t red, uint8_t green, uint8_t blue) {
+#ifndef EMSESP_STANDALONE
+    if (!gpio) return;
+    if (led_type) {
+#if ESP_ARDUINO_VERSION_MAJOR < 3
+        neopixelWrite(gpio, red, green, blue);
+#else
+        rgbLedWrite(gpio, red, green, blue);
+#endif
+    } else {
+        // LED_ON macro or constant not defined, fallback: assume active HIGH
+        digitalWrite(gpio, (green || red || blue) ? HIGH : LOW);
+    }
+#endif
+}
+
+static bool has_healthcheck_flag(uint8_t healthcheck, uint8_t flag) {
+    return (healthcheck & flag) == flag;
+}
+
+#ifndef EMSESP_STANDALONE
+// Helper to check if IPv6 address is valid and not empty
+inline bool is_valid_ipv6(const String & ipv6_str) {
+    return (ipv6_str != "0000:0000:0000:0000:0000:0000:0000:0000" && ipv6_str != "::");
+}
+#endif
+
 // find the index of the language
 // 0 = EN, 1 = DE, etc...
-uint8_t System::language_index() {
-    for (uint8_t i = 0; i < NUM_LANGUAGES; i++) {
-        if (languages[i] == locale()) {
+uint8_t System::language_index() const {
+    const auto & loc = locale();
+    for (uint8_t i = 0; i < NUM_LANGUAGES; ++i) {
+        if (languages[i] == loc) {
             return i;
         }
     }
@@ -111,7 +155,7 @@ bool System::command_send(const char * value, const int8_t id) {
 bool System::command_response(const char * value, const int8_t id, JsonObject output) {
     JsonDocument doc;
     if (DeserializationError::Ok == deserializeJson(doc, Mqtt::get_response())) {
-        for (JsonPair p : doc.as<JsonObject>()) {
+        for (JsonPairConst p : doc.as<JsonObjectConst>()) {
             output[p.key()] = p.value();
         }
     } else {
@@ -120,21 +164,32 @@ bool System::command_response(const char * value, const int8_t id, JsonObject ou
     return true;
 }
 
-// fetch device values
+// fetch device values - optimized with lookup table
 bool System::command_fetch(const char * value, const int8_t id) {
     std::string value_s;
     if (Helpers::value2string(value, value_s)) {
         if (value_s == "all") {
             LOG_INFO("Requesting data from EMS devices");
             EMSESP::fetch_device_values();
-        } else if (value_s == F_(boiler)) {
-            EMSESP::fetch_device_values_type(EMSdevice::DeviceType::BOILER);
-        } else if (value_s == F_(thermostat)) {
-            EMSESP::fetch_device_values_type(EMSdevice::DeviceType::THERMOSTAT);
-        } else if (value_s == F_(solar)) {
-            EMSESP::fetch_device_values_type(EMSdevice::DeviceType::SOLAR);
-        } else if (value_s == F_(mixer)) {
-            EMSESP::fetch_device_values_type(EMSdevice::DeviceType::MIXER);
+            return true;
+        }
+        
+        // Lookup table for device types - constexpr for compile-time optimization
+        static constexpr struct {
+            const char * const       name;
+            EMSdevice::DeviceType    type;
+        } device_types[] = {
+            {F_(boiler), EMSdevice::DeviceType::BOILER},
+            {F_(thermostat), EMSdevice::DeviceType::THERMOSTAT},
+            {F_(solar), EMSdevice::DeviceType::SOLAR},
+            {F_(mixer), EMSdevice::DeviceType::MIXER}
+        };
+
+        for (const auto & dt : device_types) {
+            if (value_s == dt.name) {
+                EMSESP::fetch_device_values_type(dt.type);
+                return true;
+            }
         }
     } else {
         EMSESP::fetch_device_values(); // default if no name or id is given
@@ -143,7 +198,7 @@ bool System::command_fetch(const char * value, const int8_t id) {
     return true; // always true
 }
 
-// mqtt publish
+// mqtt publish - optimized with lookup table
 bool System::command_publish(const char * value, const int8_t id) {
     std::string value_s;
     if (Helpers::value2string(value, value_s)) {
@@ -151,27 +206,35 @@ bool System::command_publish(const char * value, const int8_t id) {
             EMSESP::publish_all(true); // includes HA
             LOG_INFO("Publishing all data to MQTT, including HA configs");
             return true;
-        } else if (value_s == (F_(boiler))) {
-            EMSESP::publish_device_values(EMSdevice::DeviceType::BOILER);
-            return true;
-        } else if (value_s == (F_(thermostat))) {
-            EMSESP::publish_device_values(EMSdevice::DeviceType::THERMOSTAT);
-            return true;
-        } else if (value_s == (F_(solar))) {
-            EMSESP::publish_device_values(EMSdevice::DeviceType::SOLAR);
-            return true;
-        } else if (value_s == (F_(mixer))) {
-            EMSESP::publish_device_values(EMSdevice::DeviceType::MIXER);
-            return true;
-        } else if (value_s == (F_(water))) {
-            EMSESP::publish_device_values(EMSdevice::DeviceType::WATER);
-            return true;
-        } else if (value_s == "other") {
+        }
+        
+        if (value_s == "other") {
             EMSESP::publish_other_values(); // switch and heat pump
             return true;
-        } else if ((value_s == (F_(temperaturesensor))) || (value_s == (F_(analogsensor)))) {
+        }
+        
+        if (value_s == F_(temperaturesensor) || value_s == F_(analogsensor)) {
             EMSESP::publish_sensor_values(true);
             return true;
+        }
+        
+        // Lookup table for device types - constexpr for compile-time optimization
+        static constexpr struct {
+            const char * const       name;
+            EMSdevice::DeviceType    type;
+        } device_types[] = {
+            {F_(boiler), EMSdevice::DeviceType::BOILER},
+            {F_(thermostat), EMSdevice::DeviceType::THERMOSTAT},
+            {F_(solar), EMSdevice::DeviceType::SOLAR},
+            {F_(mixer), EMSdevice::DeviceType::MIXER},
+            {F_(water), EMSdevice::DeviceType::WATER}
+        };
+
+        for (const auto & dt : device_types) {
+            if (value_s == dt.name) {
+                EMSESP::publish_device_values(dt.type);
+                return true;
+            }
         }
     }
 
@@ -397,7 +460,7 @@ void System::reload_settings() {
         hide_led_       = settings.hide_led;
         led_type_       = settings.led_type;
         led_gpio_       = settings.led_gpio;
-        board_profile_  = settings.board_profile;
+        board_profile_  = settings.board_profile.c_str();
         telnet_enabled_ = settings.telnet_enabled;
 
         modbus_enabled_     = settings.modbus_enabled;
@@ -567,11 +630,7 @@ void System::led_init(bool refresh) {
     if (refresh) {
         // disabled old led port before setting new one
         if ((led_gpio_ != 0) && is_valid_gpio(led_gpio_)) {
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-            led_type_ ? neopixelWrite(led_gpio_, 0, 0, 0) : digitalWrite(led_gpio_, !LED_ON);
-#else
-            led_type_ ? rgbLedWrite(led_gpio_, 0, 0, 0) : digitalWrite(led_gpio_, !LED_ON);
-#endif
+            set_led_state(led_gpio_, led_type_, 0, 0, 0);
             pinMode(led_gpio_, INPUT);
         }
         reload_settings();
@@ -580,11 +639,7 @@ void System::led_init(bool refresh) {
     if ((led_gpio_ != 0) && is_valid_gpio(led_gpio_)) { // 0 means disabled
         if (led_type_) {
             // rgb LED WS2812B, use Neopixel
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-            neopixelWrite(led_gpio_, 0, 0, 0);
-#else
-            rgbLedWrite(led_gpio_, 0, 0, 0);
-#endif
+            set_led_state(led_gpio_, led_type_, 0, 0, 0);
         } else {
             pinMode(led_gpio_, OUTPUT);
             digitalWrite(led_gpio_, !LED_ON); // start with LED off
@@ -661,14 +716,13 @@ void System::send_info_mqtt() {
         doc["IPv4 nameserver"] = uuid::printable_to_string(WiFi.dnsIP());
 
 #if ESP_IDF_VERSION_MAJOR < 5
-        if (WiFi.localIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && WiFi.localIPv6().toString() != "::") {
+        if (is_valid_ipv6(WiFi.localIPv6().toString())) {
             doc["IPv6 address"] = uuid::printable_to_string(WiFi.localIPv6());
         }
 #else
-        if (WiFi.linkLocalIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && WiFi.linkLocalIPv6().toString() != "::") {
+        if (is_valid_ipv6(WiFi.linkLocalIPv6().toString())) {
             doc["IPv6 address"] = uuid::printable_to_string(WiFi.linkLocalIPv6());
         }
-
 #endif
     }
 #endif
@@ -838,22 +892,10 @@ void System::system_check() {
             // see if we're better now
             if (healthcheck_ == 0) {
                 // everything is healthy, show LED permanently on or off depending on setting
-                if (led_gpio_) {
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-                    led_type_ ? neopixelWrite(led_gpio_, 0, hide_led_ ? 0 : RGB_LED_BRIGHTNESS, 0) : digitalWrite(led_gpio_, hide_led_ ? !LED_ON : LED_ON);
-#else
-                    led_type_ ? rgbLedWrite(led_gpio_, 0, hide_led_ ? 0 : RGB_LED_BRIGHTNESS, 0) : digitalWrite(led_gpio_, hide_led_ ? !LED_ON : LED_ON);
-#endif
-                }
+                set_led_state(led_gpio_, led_type_, 0, hide_led_ ? 0 : RGB_LED_BRIGHTNESS, 0);
             } else {
                 // turn off LED so we're ready to the flashes
-                if (led_gpio_) {
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-                    led_type_ ? neopixelWrite(led_gpio_, 0, 0, 0) : digitalWrite(led_gpio_, !LED_ON);
-#else
-                    led_type_ ? rgbLedWrite(led_gpio_, 0, 0, 0) : digitalWrite(led_gpio_, !LED_ON);
-#endif
-                }
+                set_led_state(led_gpio_, led_type_, 0, 0, 0);
             }
         }
     }
@@ -908,80 +950,46 @@ void System::led_monitor() {
         led_short_timer_    = current_time;
         static bool led_on_ = false;
 
-        if (++led_flash_step_ == 8) {
+        if (++led_flash_step_ == LED_FLASH_RESET_STEP) {
             // reset the whole sequence
             led_long_timer_ = uuid::get_uptime();
             led_flash_step_ = 0;
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-            led_type_ ? neopixelWrite(led_gpio_, 0, 0, 0) : digitalWrite(led_gpio_, !LED_ON); // LED off
-#else
-            led_type_ ? rgbLedWrite(led_gpio_, 0, 0, 0) : digitalWrite(led_gpio_, !LED_ON); // LED off
-#endif
+            set_led_state(led_gpio_, led_type_, 0, 0, 0); // LED off
         } else if (led_flash_step_ % 2) {
             // handle the step events (on odd numbers 3,5,7,etc). see if we need to turn on a LED
             //  1 flash is the EMS bus is not connected
             //  2 flashes if the network (wifi or ethernet) is not connected
             //  3 flashes is both the bus and the network are not connected. Then you know you're truly f*cked.
+            const bool no_network = has_healthcheck_flag(healthcheck_, HEALTHCHECK_NO_NETWORK);
+            const bool no_bus     = has_healthcheck_flag(healthcheck_, HEALTHCHECK_NO_BUS);
+            
             if (led_type_) {
-                if (led_flash_step_ == 3) {
-                    if ((healthcheck_ & HEALTHCHECK_NO_NETWORK) == HEALTHCHECK_NO_NETWORK) {
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-                        neopixelWrite(led_gpio_, RGB_LED_BRIGHTNESS, 0, 0); // red
-#else
-                        rgbLedWrite(led_gpio_, RGB_LED_BRIGHTNESS, 0, 0); // red
-#endif
-                    } else if ((healthcheck_ & HEALTHCHECK_NO_BUS) == HEALTHCHECK_NO_BUS) {
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-                        neopixelWrite(led_gpio_, 0, 0, RGB_LED_BRIGHTNESS); // blue
-#else
-                        rgbLedWrite(led_gpio_, 0, 0, RGB_LED_BRIGHTNESS); // blue
-#endif
+                // RGB LED handling
+                if (led_flash_step_ == LED_FLASH_STEP_FIRST) {
+                    const uint8_t red  = no_network ? RGB_LED_BRIGHTNESS : 0;
+                    const uint8_t blue = (!no_network && no_bus) ? RGB_LED_BRIGHTNESS : 0;
+                    if (red || blue) {
+                        set_led_state(led_gpio_, led_type_, red, 0, blue);
                     }
-                }
-                if (led_flash_step_ == 5 && (healthcheck_ & HEALTHCHECK_NO_NETWORK) == HEALTHCHECK_NO_NETWORK) {
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-                    neopixelWrite(led_gpio_, RGB_LED_BRIGHTNESS, 0, 0); // red
-#else
-                    rgbLedWrite(led_gpio_, RGB_LED_BRIGHTNESS, 0, 0); // red
-#endif
-                }
-                if ((led_flash_step_ == 7) && ((healthcheck_ & HEALTHCHECK_NO_NETWORK) == HEALTHCHECK_NO_NETWORK)
-                    && ((healthcheck_ & HEALTHCHECK_NO_BUS) == HEALTHCHECK_NO_BUS)) {
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-                    neopixelWrite(led_gpio_, 0, 0, RGB_LED_BRIGHTNESS); // blue
-#else
-                    rgbLedWrite(led_gpio_, 0, 0, RGB_LED_BRIGHTNESS); // blue
-#endif
+                } else if (led_flash_step_ == LED_FLASH_STEP_SECOND && no_network) {
+                    set_led_state(led_gpio_, led_type_, RGB_LED_BRIGHTNESS, 0, 0); // red
+                } else if (led_flash_step_ == LED_FLASH_STEP_THIRD && no_network && no_bus) {
+                    set_led_state(led_gpio_, led_type_, 0, 0, RGB_LED_BRIGHTNESS); // blue
                 }
             } else {
-                if ((led_flash_step_ == 3)
-                    && (((healthcheck_ & HEALTHCHECK_NO_NETWORK) == HEALTHCHECK_NO_NETWORK) || ((healthcheck_ & HEALTHCHECK_NO_BUS) == HEALTHCHECK_NO_BUS))) {
+                // Simple LED handling
+                const bool should_flash = (led_flash_step_ == LED_FLASH_STEP_FIRST && (no_network || no_bus)) ||
+                                          (led_flash_step_ == LED_FLASH_STEP_SECOND && no_network) ||
+                                          (led_flash_step_ == LED_FLASH_STEP_THIRD && no_network && no_bus);
+                if (should_flash) {
                     led_on_ = true;
-                }
-
-                if ((led_flash_step_ == 5) && ((healthcheck_ & HEALTHCHECK_NO_NETWORK) == HEALTHCHECK_NO_NETWORK)) {
-                    led_on_ = true;
-                }
-
-                if ((led_flash_step_ == 7) && ((healthcheck_ & HEALTHCHECK_NO_NETWORK) == HEALTHCHECK_NO_NETWORK)
-                    && ((healthcheck_ & HEALTHCHECK_NO_BUS) == HEALTHCHECK_NO_BUS)) {
-                    led_on_ = true;
-                }
-
-                if (led_on_) {
-                    digitalWrite(led_gpio_, LED_ON); // LED off
+                    digitalWrite(led_gpio_, LED_ON);
                 }
             }
-        } else {
+        } else if (led_on_) {
             // turn the led off after the flash, on even number count
-            if (led_on_) {
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-                led_type_ ? neopixelWrite(led_gpio_, 0, 0, 0) : digitalWrite(led_gpio_, !LED_ON);
-#else
-                led_type_ ? rgbLedWrite(led_gpio_, 0, 0, 0) : digitalWrite(led_gpio_, !LED_ON);
-#endif
-                led_on_ = false;
-            }
+            set_led_state(led_gpio_, led_type_, 0, 0, 0);
+            led_on_ = false;
         }
     }
 }
@@ -1084,11 +1092,11 @@ void System::show_system(uuid::console::Shell & shell) {
         shell.printfln(" IPv4 gateway: %s", uuid::printable_to_string(WiFi.gatewayIP()).c_str());
         shell.printfln(" IPv4 nameserver: %s", uuid::printable_to_string(WiFi.dnsIP()).c_str());
 #if ESP_IDF_VERSION_MAJOR < 5
-        if (WiFi.localIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && WiFi.localIPv6().toString() != "::") {
+        if (is_valid_ipv6(WiFi.localIPv6().toString())) {
             shell.printfln(" IPv6 address: %s", uuid::printable_to_string(WiFi.localIPv6()).c_str());
         }
 #else
-        if (WiFi.linkLocalIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && WiFi.linkLocalIPv6().toString() != "::") {
+        if (is_valid_ipv6(WiFi.linkLocalIPv6().toString())) {
             shell.printfln(" IPv6 address: %s", uuid::printable_to_string(WiFi.linkLocalIPv6()).c_str());
         }
 #endif
@@ -1124,11 +1132,11 @@ void System::show_system(uuid::console::Shell & shell) {
         shell.printfln(" IPv4 gateway: %s", uuid::printable_to_string(ETH.gatewayIP()).c_str());
         shell.printfln(" IPv4 nameserver: %s", uuid::printable_to_string(ETH.dnsIP()).c_str());
 #if ESP_IDF_VERSION_MAJOR < 5
-        if (ETH.localIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && ETH.localIPv6().toString() != "::") {
+        if (is_valid_ipv6(ETH.localIPv6().toString())) {
             shell.printfln(" IPv6 address: %s", uuid::printable_to_string(ETH.localIPv6()).c_str());
         }
 #else
-        if (ETH.linkLocalIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && ETH.linkLocalIPv6().toString() != "::") {
+        if (is_valid_ipv6(ETH.linkLocalIPv6().toString())) {
             shell.printfln(" IPv6 address: %s", uuid::printable_to_string(ETH.linkLocalIPv6()).c_str());
         }
 #endif
@@ -1141,7 +1149,7 @@ void System::show_system(uuid::console::Shell & shell) {
     } else {
         shell.printfln(" Syslog: %s", syslog_.started() ? "started" : "stopped");
         shell.print(" ");
-        shell.printfln(F_(host_fmt), !syslog_host_.isEmpty() ? syslog_host_.c_str() : F_(unset));
+        shell.printfln(F_(host_fmt), !syslog_host_.empty() ? syslog_host_.c_str() : F_(unset));
         shell.printfln(" IP: %s", uuid::printable_to_string(syslog_.ip()).c_str());
         shell.print(" ");
         shell.printfln(F_(port_fmt), syslog_port_);
@@ -1164,50 +1172,63 @@ bool System::check_restore() {
 
 #ifndef EMSESP_STANDALONE
     File new_file = LittleFS.open(TEMP_FILENAME_PATH);
-    if (new_file) {
-        JsonDocument         jsonDocument;
-        DeserializationError error = deserializeJson(jsonDocument, new_file);
-        if (error == DeserializationError::Ok && jsonDocument.is<JsonObject>()) {
-            JsonObject input = jsonDocument.as<JsonObject>();
-            // see what type of file it is, either settings or customization. anything else is ignored
-            std::string settings_type = input["type"];
-            if (settings_type == "settings") {
-                // It's a settings file. Parse each section separately. If it's system related it will require a reboot
-                reboot_required = saveSettings(NETWORK_SETTINGS_FILE, "Network", input);
-                reboot_required |= saveSettings(AP_SETTINGS_FILE, "AP", input);
-                reboot_required |= saveSettings(MQTT_SETTINGS_FILE, "MQTT", input);
-                reboot_required |= saveSettings(NTP_SETTINGS_FILE, "NTP", input);
-                reboot_required |= saveSettings(SECURITY_SETTINGS_FILE, "Security", input);
-                reboot_required |= saveSettings(EMSESP_SETTINGS_FILE, "Settings", input);
-            } else if (settings_type == "customizations") {
-                // it's a customization file, just replace it and there's no need to reboot
-                saveSettings(EMSESP_CUSTOMIZATION_FILE, "Customizations", input);
-            } else if (settings_type == "schedule") {
-                // it's a schedule file, just replace it and there's no need to reboot
-                saveSettings(EMSESP_SCHEDULER_FILE, "Schedule", input);
-            } else if (settings_type == "entities") {
-                // it's a entity file, just replace it and there's no need to reboot
-                saveSettings(EMSESP_CUSTOMENTITY_FILE, "Entities", input);
-            } else if (settings_type == "customSupport") {
-                // it's a custom support file - save it to /config
-                new_file.close();
-                if (LittleFS.rename(TEMP_FILENAME_PATH, EMSESP_CUSTOMSUPPORT_FILE)) {
-                    LOG_INFO("Custom support file stored");
-                    return false; // no need to reboot
-                } else {
-                    LOG_ERROR("Failed to save custom support file");
-                }
-            } else {
-                LOG_ERROR("Unrecognized file uploaded");
-            }
-        } else {
-            LOG_ERROR("Unrecognized file uploaded, not json.");
-        }
+    if (!new_file) {
+        return false;
+    }
 
-        // close (just in case) and remove the temp file
+    JsonDocument         jsonDocument;
+    DeserializationError error = deserializeJson(jsonDocument, new_file);
+    
+    if (error != DeserializationError::Ok || !jsonDocument.is<JsonObject>()) {
+        LOG_ERROR("Unrecognized file uploaded, not json.");
         new_file.close();
         LittleFS.remove(TEMP_FILENAME_PATH);
+        return false;
     }
+
+    JsonObject  input         = jsonDocument.as<JsonObject>();
+    std::string settings_type = input["type"];
+    
+    if (settings_type == "settings") {
+        // It's a settings file. Parse each section separately. If it's system related it will require a reboot
+        // Optimized with lookup table - constexpr for compile-time optimization
+        static constexpr struct {
+            const char * const file;
+            const char * const section;
+        } settings_sections[] = {
+            {NETWORK_SETTINGS_FILE, "Network"},
+            {AP_SETTINGS_FILE, "AP"},
+            {MQTT_SETTINGS_FILE, "MQTT"},
+            {NTP_SETTINGS_FILE, "NTP"},
+            {SECURITY_SETTINGS_FILE, "Security"},
+            {EMSESP_SETTINGS_FILE, "Settings"}
+        };
+        
+        for (const auto & section : settings_sections) {
+            reboot_required |= saveSettings(section.file, section.section, input);
+        }
+    } else if (settings_type == "customizations") {
+        saveSettings(EMSESP_CUSTOMIZATION_FILE, "Customizations", input);
+    } else if (settings_type == "schedule") {
+        saveSettings(EMSESP_SCHEDULER_FILE, "Schedule", input);
+    } else if (settings_type == "entities") {
+        saveSettings(EMSESP_CUSTOMENTITY_FILE, "Entities", input);
+    } else if (settings_type == "customSupport") {
+        // it's a custom support file - save it to /config
+        new_file.close();
+        if (LittleFS.rename(TEMP_FILENAME_PATH, EMSESP_CUSTOMSUPPORT_FILE)) {
+            LOG_INFO("Custom support file stored");
+            return false;
+        }
+        LOG_ERROR("Failed to save custom support file");
+        return false;
+    } else {
+        LOG_ERROR("Unrecognized file uploaded");
+    }
+
+    // close (just in case) and remove the temp file
+    new_file.close();
+    LittleFS.remove(TEMP_FILENAME_PATH);
 #endif
 
     return reboot_required;
@@ -1276,7 +1297,7 @@ bool System::check_upgrade(bool factory_settings) {
                 mqttSettings.entity_format = Mqtt::entityFormat::SINGLE_LONG; // use old Entity ID format from v3.4
                 return StateUpdateResult::CHANGED;
             });
-        } else if (settings_version.major() == 3 && settings_version.minor() <= 6) {
+        } else if (settings_version.major() == VERSION_MAJOR_3 && settings_version.minor() <= VERSION_MINOR_6) {
             EMSESP::esp32React.getMqttSettingsService()->update([&](MqttSettings & mqttSettings) {
                 if (mqttSettings.entity_format == 1) {
                     mqttSettings.entity_format = Mqtt::entityFormat::SINGLE_OLD; // use old Entity ID format from v3.6
@@ -1294,7 +1315,7 @@ bool System::check_upgrade(bool factory_settings) {
         // changes to Network
         EMSESP::esp32React.getNetworkSettingsService()->update([&](NetworkSettings & networkSettings) {
             // Network Settings Wifi tx_power is now using the value * 4.
-            if (networkSettings.tx_power == 20) {
+            if (networkSettings.tx_power == WIFI_POWER_LEGACY) {
                 networkSettings.tx_power = WIFI_POWER_19_5dBm; // use 19.5 as we don't have 20 anymore
                 LOG_INFO("Upgrade: Setting WiFi TX Power to Auto");
             }
@@ -1310,7 +1331,7 @@ bool System::check_upgrade(bool factory_settings) {
         EMSESP::webSettingsService.update([&](WebSettings & settings) {
             // force web buffer to 25 for those boards without psram
             if (EMSESP::system_.PSram() == 0) {
-                settings.weblog_buffer = 25;
+                settings.weblog_buffer = WEBLOG_BUFFER_SIZE_DEFAULT;
                 return StateUpdateResult::CHANGED;
             }
             return StateUpdateResult::UNCHANGED;
@@ -1346,9 +1367,9 @@ void System::extractSettings(const char * filename, const char * section, JsonOb
         JsonDocument         jsonDocument;
         DeserializationError error = deserializeJson(jsonDocument, settingsFile);
         if (error == DeserializationError::Ok && jsonDocument.is<JsonObject>()) {
-            JsonObject jsonObject = jsonDocument.as<JsonObject>();
+            JsonObjectConst jsonObject = jsonDocument.as<JsonObjectConst>();
             JsonObject node       = output[section].to<JsonObject>();
-            for (JsonPair kvp : jsonObject) {
+            for (JsonPairConst kvp : jsonObject) {
                 node[kvp.key()] = kvp.value();
             }
         }
@@ -1376,7 +1397,6 @@ bool System::saveSettings(const char * filename, const char * section, JsonObjec
 
 // set a entity of services 'network', 'settings', 'mqtt', etc.
 bool System::command_service(const char * cmd, const char * value) {
-    bool ok = false;
     bool b;
     if (Helpers::value2bool(value, b)) {
         if (!strcmp(cmd, "settings/showertimer")) {
@@ -1385,78 +1405,107 @@ bool System::command_service(const char * cmd, const char * value) {
                 return StateUpdateResult::CHANGED;
             });
             EMSESP::shower_.shower_timer(b);
-            ok = true;
-        } else if (!strcmp(cmd, "settings/showeralert")) {
+            LOG_INFO("System command '%s' with value '%s'", cmd, value);
+            return true;
+        }
+        
+        if (!strcmp(cmd, "settings/showeralert")) {
             EMSESP::webSettingsService.update([&](WebSettings & settings) {
                 settings.shower_alert = b;
                 return StateUpdateResult::CHANGED;
             });
             EMSESP::shower_.shower_alert(b);
-            ok = true;
-        } else if (!strcmp(cmd, "settings/hideled")) {
+            LOG_INFO("System command '%s' with value '%s'", cmd, value);
+            return true;
+        }
+        
+        if (!strcmp(cmd, "settings/hideled")) {
             EMSESP::webSettingsService.update([&](WebSettings & settings) {
                 settings.hide_led = b;
                 return StateUpdateResult::CHANGED;
             });
             EMSESP::system_.hide_led(b);
-            ok = true;
-        } else if (!strcmp(cmd, "settings/analogenabled")) {
+            LOG_INFO("System command '%s' with value '%s'", cmd, value);
+            return true;
+        }
+        
+        if (!strcmp(cmd, "settings/analogenabled")) {
             EMSESP::webSettingsService.update([&](WebSettings & settings) {
                 settings.analog_enabled = b;
                 return StateUpdateResult::CHANGED;
             });
             EMSESP::system_.analog_enabled(b);
-            ok = true;
-        } else if (!strcmp(cmd, "mqtt/enabled")) {
+            LOG_INFO("System command '%s' with value '%s'", cmd, value);
+            return true;
+        }
+        
+        if (!strcmp(cmd, "mqtt/enabled")) {
             EMSESP::esp32React.getMqttSettingsService()->update([&](MqttSettings & Settings) {
                 Settings.enabled = b;
                 return StateUpdateResult::CHANGED;
             });
-            ok = true;
-        } else if (!strcmp(cmd, "ap/enabled")) {
+            LOG_INFO("System command '%s' with value '%s'", cmd, value);
+            return true;
+        }
+        
+        if (!strcmp(cmd, "ap/enabled")) {
             EMSESP::esp32React.getAPSettingsService()->update([&](APSettings & Settings) {
                 Settings.provisionMode = b ? 0 : 2;
                 return StateUpdateResult::CHANGED;
             });
-            ok = true;
-        } else if (!strcmp(cmd, "ntp/enabled")) {
+            LOG_INFO("System command '%s' with value '%s'", cmd, value);
+            return true;
+        }
+        
+        if (!strcmp(cmd, "ntp/enabled")) {
             EMSESP::esp32React.getNTPSettingsService()->update([&](NTPSettings & Settings) {
                 Settings.enabled = b;
                 return StateUpdateResult::CHANGED;
             });
-            ok = true;
-        } else if (!strcmp(cmd, "syslog/enabled")) {
+            LOG_INFO("System command '%s' with value '%s'", cmd, value);
+            return true;
+        }
+        
+        if (!strcmp(cmd, "syslog/enabled")) {
             EMSESP::webSettingsService.update([&](WebSettings & settings) {
                 settings.syslog_enabled = b;
                 return StateUpdateResult::CHANGED;
             });
             EMSESP::system_.syslog_enabled_ = b;
             EMSESP::system_.syslog_init();
-            ok = true;
+            LOG_INFO("System command '%s' with value '%s'", cmd, value);
+            return true;
         }
     }
     int n;
-    if (!ok && Helpers::value2number(value, n)) {
+    if (Helpers::value2number(value, n)) {
 #ifndef EMSESP_STANDALONE
         if (!strcmp(cmd, "fuse/mfg")) {
-            ok = esp_efuse_write_reg(EFUSE_BLK3, 0, (uint32_t)n) == ESP_OK;
-            ok ? LOG_INFO("fuse programed with value '%X': successful", n) : LOG_ERROR("fuse programed with value '%X': failed", n);
+            bool success = esp_efuse_write_reg(EFUSE_BLK3, 0, (uint32_t)n) == ESP_OK;
+            if (success) {
+                LOG_INFO("fuse programed with value '%X': successful", n);
+            } else {
+                LOG_ERROR("fuse programed with value '%X': failed", n);
+            }
+            return success;
         }
         if (!strcmp(cmd, "fuse/mfgadd")) {
             uint8_t reg = 0;
-            while (esp_efuse_read_reg(EFUSE_BLK3, reg) != 0 && reg < 7)
+            while (esp_efuse_read_reg(EFUSE_BLK3, reg) != 0 && reg < 7) {
                 reg++;
-            ok = esp_efuse_write_reg(EFUSE_BLK3, reg, (uint32_t)n) == ESP_OK;
-            ok ? LOG_INFO("fuse %d programed with value '%X': successful", reg, n) : LOG_ERROR("fuse %d programed with value '%X': failed", reg, n);
-            return true;
+            }
+            bool success = esp_efuse_write_reg(EFUSE_BLK3, reg, (uint32_t)n) == ESP_OK;
+            if (success) {
+                LOG_INFO("fuse %d programed with value '%X': successful", reg, n);
+            } else {
+                LOG_ERROR("fuse %d programed with value '%X': failed", reg, n);
+            }
+            return success;
         }
 #endif
     }
 
-    if (ok) {
-        LOG_INFO("System command '%s' with value '%s'", cmd, value);
-    }
-    return ok;
+    return false;
 }
 
 // return back a system value
@@ -1480,7 +1529,7 @@ bool System::get_value_info(JsonObject output, const char * cmd) {
     if (!strcmp(cmd, F_(entities))) {
         for (JsonPair p : root) {
             if (p.value().is<JsonObject>()) {
-                for (JsonPair p1 : p.value().as<JsonObject>()) {
+                for (JsonPairConst p1 : p.value().as<JsonObjectConst>()) {
                     JsonObject entity = output[std::string(p.key().c_str()) + "." + p1.key().c_str()].to<JsonObject>();
                     get_value_json(entity, p.key().c_str(), p1.key().c_str(), p1.value());
                 }
@@ -1504,7 +1553,7 @@ bool System::get_value_info(JsonObject output, const char * cmd) {
     if (!slash || !strcmp(slash, F_(info)) || !strcmp(slash, F_(values))) {
         for (JsonPair p : root) {
             if (Helpers::toLower(p.key().c_str()) == cmd && p.value().is<JsonObject>()) {
-                for (JsonPair p1 : p.value().as<JsonObject>()) {
+                for (JsonPairConst p1 : p.value().as<JsonObjectConst>()) {
                     output[p1.key().c_str()] = p1.value().as<std::string>();
                 }
                 return true;
@@ -1518,7 +1567,7 @@ bool System::get_value_info(JsonObject output, const char * cmd) {
     if (slash) { // search the top level first
         for (JsonPair p : root) {
             if (p.value().is<JsonObject>() && Helpers::toLower(p.key().c_str()) == cmd) {
-                for (JsonPair p1 : p.value().as<JsonObject>()) {
+                for (JsonPairConst p1 : p.value().as<JsonObjectConst>()) {
                     if (Helpers::toLower(p1.key().c_str()) == slash && !p1.value().is<JsonObject>()) {
                         if (val) {
                             output["api_data"] = p1.value().as<std::string>();
@@ -1534,7 +1583,7 @@ bool System::get_value_info(JsonObject output, const char * cmd) {
     return false;
 }
 
-void System::get_value_json(JsonObject output, const std::string & circuit, const std::string & name, JsonVariant val) {
+void System::get_value_json(JsonObject output, const std::string & circuit, const std::string & name, JsonVariantConst val) {
     output["name"] = name;
     if (circuit.length()) {
         output["circuit"] = circuit;
@@ -1629,7 +1678,7 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
     node["RSSI"]     = -23;
 #endif
     EMSESP::esp32React.getNetworkSettingsService()->read([&](NetworkSettings & settings) {
-        if (WiFi.status() == WL_CONNECTED && !settings.bssid.isEmpty()) {
+        if (WiFi.status() == WL_CONNECTED && !settings.bssid.empty()) {
             node["BSSID"] = "set"; // we don't disclose the name
         }
         node["TxPowerSetting"] = settings.tx_power;
@@ -1901,38 +1950,40 @@ bool System::command_test(const char * value, const int8_t id) {
 //  2 = RMII clock output from GPIO16
 //  3 = RMII clock output from GPIO17, for 50hz inverted clock
 bool System::load_board_profile(std::vector<int8_t> & data, const std::string & board_profile) {
-    if (board_profile == "S32") {
-        data = {2, 18, 23, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // BBQKees Gateway S32
-    } else if (board_profile == "E32") {
-        data = {2, 4, 5, 17, 33, PHY_type::PHY_TYPE_LAN8720, 16, 1, 0, 0}; // BBQKees Gateway E32
-    } else if (board_profile == "E32V2") {
-        data = {2, 14, 4, 5, 34, PHY_type::PHY_TYPE_LAN8720, 15, 0, 1, 0}; // BBQKees Gateway E32 V2
-    } else if (board_profile == "E32V2_2") {
-        data = {32, 14, 4, 5, 34, PHY_type::PHY_TYPE_LAN8720, 15, 0, 1, 1}; // BBQKees Gateway E32 V2.2, rgb led
-    } else if (board_profile == "MH-ET") {
-        data = {2, 18, 23, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // MH-ET Live D1 Mini
-    } else if (board_profile == "NODEMCU") {
-        data = {2, 18, 23, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // NodeMCU 32S
-    } else if (board_profile == "LOLIN") {
-        data = {2, 18, 17, 16, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // Lolin D32
-    } else if (board_profile == "OLIMEX") {
-        data = {0, 0, 36, 4, 34, PHY_type::PHY_TYPE_LAN8720, -1, 0, 0, 0}; // Olimex ESP32-EVB (uses U1TXD/U1RXD/BUTTON, no LED or Temperature sensor)
-    } else if (board_profile == "OLIMEXPOE") {
-        data = {0, 0, 36, 4, 34, PHY_type::PHY_TYPE_LAN8720, 12, 0, 3, 0}; // Olimex ESP32-POE
-    } else if (board_profile == "C3MINI") {
+    // Lookup table for board profiles - static const for memory efficiency
+    static const struct ProfileConfig {
+        const char * const      name;
+        const std::vector<int8_t> config;
+    } profiles[] = {
+        {"S32", {2, 18, 23, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}},
+        {"E32", {2, 4, 5, 17, 33, PHY_type::PHY_TYPE_LAN8720, 16, 1, 0, 0}},
+        {"E32V2", {2, 14, 4, 5, 34, PHY_type::PHY_TYPE_LAN8720, 15, 0, 1, 0}},
+        {"E32V2_2", {32, 14, 4, 5, 34, PHY_type::PHY_TYPE_LAN8720, 15, 0, 1, 1}},
+        {"MH-ET", {2, 18, 23, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}},
+        {"NODEMCU", {2, 18, 23, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}},
+        {"LOLIN", {2, 18, 17, 16, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}},
+        {"OLIMEX", {0, 0, 36, 4, 34, PHY_type::PHY_TYPE_LAN8720, -1, 0, 0, 0}},
+        {"OLIMEXPOE", {0, 0, 36, 4, 34, PHY_type::PHY_TYPE_LAN8720, 12, 0, 3, 0}},
 #if defined(BOARD_C3_MINI_V1)
-        data = {7, 1, 4, 5, 9, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // Lolin C3 Mini V1
+        {"C3MINI", {7, 1, 4, 5, 9, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}},
 #else
-        data = {7, 1, 4, 5, 9, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 1}; // Lolin C3 Mini with RGB Led
+        {"C3MINI", {7, 1, 4, 5, 9, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 1}},
 #endif
-    } else if (board_profile == "S2MINI") {
-        data = {15, 7, 11, 12, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // Lolin S2 Mini
-    } else if (board_profile == "S3MINI") {
-        data = {17, 18, 8, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // Liligo S3
-    } else if (board_profile == "S32S3") {
-        data = {2, 18, 5, 17, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // BBQKees Gateway S3
-    } else if (board_profile == "CUSTOM") {
-        // send back current values
+        {"S2MINI", {15, 7, 11, 12, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}},
+        {"S3MINI", {17, 18, 8, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}},
+        {"S32S3", {2, 18, 5, 17, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}}
+    };
+
+    // Check lookup table
+    for (const auto & profile : profiles) {
+        if (board_profile == profile.name) {
+            data = profile.config;
+            return true;
+        }
+    }
+
+    // Handle CUSTOM profile separately
+    if (board_profile == "CUSTOM") {
         data = {(int8_t)EMSESP::system_.led_gpio_,
                 (int8_t)EMSESP::system_.dallas_gpio_,
                 (int8_t)EMSESP::system_.rx_gpio_,
@@ -1943,13 +1994,11 @@ bool System::load_board_profile(std::vector<int8_t> & data, const std::string & 
                 (int8_t)EMSESP::system_.eth_phy_addr_,
                 (int8_t)EMSESP::system_.eth_clock_mode_,
                 (int8_t)EMSESP::system_.led_type_};
-    } else {
-        LOG_DEBUG("Couldn't identify board profile %s", board_profile.c_str());
-        return false; // unknown, return false
+        return true;
     }
 
-    // LOG_DEBUG("Found data for board profile %s", board_profile.c_str());
-    return true;
+    LOG_DEBUG("Couldn't identify board profile %s", board_profile.c_str());
+    return false;
 }
 
 // format command - factory reset, removing all config files
@@ -1960,9 +2009,8 @@ bool System::command_format(const char * value, const int8_t id) {
     File root = LittleFS.open(EMSESP_FS_CONFIG_DIRECTORY);
     File file;
     while ((file = root.openNextFile())) {
-        String path = file.path();
         file.close();
-        LittleFS.remove(path);
+        LittleFS.remove(file.path());
     }
 #endif
 
@@ -2049,7 +2097,7 @@ void System::ntp_connected(bool b) {
 // get NTP status
 bool System::ntp_connected() {
     // timeout 2 hours, ntp sync is normally every hour.
-    if ((uuid::get_uptime_sec() - ntp_last_check_ > 7201) && ntp_connected_) {
+    if ((uuid::get_uptime_sec() - ntp_last_check_ > NTP_TIMEOUT_SECONDS) && ntp_connected_) {
         ntp_connected(false);
     }
 
@@ -2057,7 +2105,7 @@ bool System::ntp_connected() {
 }
 
 // see if its a BBQKees Gateway by checking the nvs values
-String System::getBBQKeesGatewayDetails(uint8_t detail) {
+std::string System::getBBQKeesGatewayDetails(uint8_t detail) {
 #ifndef EMSESP_STANDALONE
     /*
     if (!EMSESP::nvs_.isKey("mfg")) {
@@ -2091,22 +2139,31 @@ String System::getBBQKeesGatewayDetails(uint8_t detail) {
         if (reg == 7 || esp_efuse_read_reg(EFUSE_BLK3, reg + 1) == 0)
             break;
     }
-    const char * mfg[]   = {"unknown", "BBQKees Electronics", "", "", "", "", "", ""};
-    const char * model[] = {"unknown", "S3", "E32V2", "E32V2.2", "S32", "E32", "", "", ""};
-    const char * board[] = {"CUSTOM", "S32S3", "E32V2", "E32V2_2", "S32", "E32", "", "", ""};
+    static constexpr const char * const mfg[]   = {"unknown", "BBQKees Electronics", "", "", "", "", "", ""};
+    static constexpr const char * const model[] = {"unknown", "S3", "E32V2", "E32V2.2", "S32", "E32", "", "", ""};
+    static constexpr const char * const board[] = {"CUSTOM", "S32S3", "E32V2", "E32V2_2", "S32", "E32", "", "", ""};
     switch (detail) {
     case FUSE_VALUE::MFG:
-        return gw.mfg < 2 ? String(mfg[gw.mfg]) : "unknown";
+        return gw.mfg < 2 ? std::string(mfg[gw.mfg]) : "unknown";
     case FUSE_VALUE::MODEL:
-        return gw.model < 6 ? String(model[gw.model]) : "unknown";
+        return gw.model < 6 ? std::string(model[gw.model]) : "unknown";
     case FUSE_VALUE::BOARD:
-        return gw.model < 6 ? String(board[gw.model]) : board_profile_;
-    case FUSE_VALUE::REV:
-        return String(gw.rev_major) + "." + String(gw.rev_minor);
-    case FUSE_VALUE::BATCH:
-        return String(2000 + gw.year) + (gw.month < 10 ? "0" : "") + String(gw.month) + String(gw.no);
-    case FUSE_VALUE::FUSE:
-        return "0x" + String(gw.reg, 16);
+        return gw.model < 6 ? std::string(board[gw.model]) : board_profile_;
+    case FUSE_VALUE::REV: {
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%u.%u", gw.rev_major, gw.rev_minor);
+        return std::string(buf);
+    }
+    case FUSE_VALUE::BATCH: {
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%u%02u%u", 2000 + gw.year, gw.month, gw.no);
+        return std::string(buf);
+    }
+    case FUSE_VALUE::FUSE: {
+        char buf[16];
+        snprintf(buf, sizeof(buf), "0x%x", gw.reg);
+        return std::string(buf);
+    }
     case FUSE_VALUE::ALL:
     default:
         break;
@@ -2114,8 +2171,9 @@ String System::getBBQKeesGatewayDetails(uint8_t detail) {
     if (!gw.reg || gw.mfg > 1 || gw.model > 5) {
         return "";
     }
-    return String(mfg[gw.mfg]) + " " + String(model[gw.model]) + " rev." + String(gw.rev_major) + "." + String(gw.rev_minor) + "/" + String(2000 + gw.year)
-           + (gw.month < 10 ? "0" : "") + String(gw.month) + String(gw.no);
+    char buf[128];
+    snprintf(buf, sizeof(buf), "%s %s rev.%u.%u/%u%02u%u", mfg[gw.mfg], model[gw.model], gw.rev_major, gw.rev_minor, 2000 + gw.year, gw.month, gw.no);
+    return std::string(buf);
 #else
     return "";
 #endif
@@ -2128,7 +2186,7 @@ String System::getBBQKeesGatewayDetails(uint8_t detail) {
 bool System::uploadFirmwareURL(const char * url) {
 #ifndef EMSESP_STANDALONE
 
-    static String saved_url;
+    static std::string saved_url;
 
     if (url && strlen(url) > 0) {
         // if the passed URL is "reset" abort the current upload. This is called when an error happens during OTA
@@ -2146,7 +2204,7 @@ bool System::uploadFirmwareURL(const char * url) {
     }
 
     // check we have a valid URL from the 1st pass
-    if (saved_url.isEmpty()) {
+    if (saved_url.empty()) {
         LOG_ERROR("Firmware upload failed - invalid URL");
         return false; // error
     }
@@ -2158,7 +2216,7 @@ bool System::uploadFirmwareURL(const char * url) {
     http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS); // important for GitHub 302's
     http.setTimeout(8000);
     http.useHTTP10(true); // use HTTP/1.0 for update since the update handler does not support any transfer Encoding
-    http.begin(saved_url);
+    http.begin(saved_url.c_str());
 
     // start a connection, returns -1 if fails
     int httpCode = http.GET();

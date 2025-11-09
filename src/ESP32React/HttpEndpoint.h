@@ -22,43 +22,48 @@ class HttpEndpoint {
                  JsonStateUpdater<T>     stateUpdater,
                  StatefulService<T> *    statefulService,
                  AsyncWebServer *        server,
-                 const String &          servicePath,
+                 const char *            servicePath,
                  SecurityManager *       securityManager,
                  AuthenticationPredicate authenticationPredicate = AuthenticationPredicates::IS_ADMIN)
         : _stateReader(stateReader)
         , _stateUpdater(stateUpdater)
         , _statefulService(statefulService) {
-        // Create handler for both GET and POST endpoints
-        securityManager->addEndpoint(
-            server, servicePath, authenticationPredicate, [this](AsyncWebServerRequest * request, JsonVariant json) { handleRequest(request, json); }, HTTP_ANY); // ALL methods
+        securityManager->addEndpoint(server, servicePath, authenticationPredicate, 
+            [this](AsyncWebServerRequest * request, JsonVariant json) { handleRequest(request, json); }, HTTP_ANY);
     }
 
   protected:
-    // for POST
     void handleRequest(AsyncWebServerRequest * request, JsonVariant json) {
+        // Handle POST request
         if (request->method() == HTTP_POST) {
-            // Handle POST
             if (!json.is<JsonObject>()) {
-                request->send(400); // error, bad request
+                request->send(400);
                 return;
             }
 
-            StateUpdateResult outcome = _statefulService->updateWithoutPropagation(json.as<JsonObject>(), _stateUpdater);
+            const StateUpdateResult outcome = _statefulService->updateWithoutPropagation(json.as<JsonObjectConst>(), _stateUpdater);
 
             if (outcome == StateUpdateResult::ERROR) {
-                request->send(400); // error, bad request
+                request->send(400);
                 return;
-            } else if (outcome == StateUpdateResult::CHANGED || outcome == StateUpdateResult::CHANGED_RESTART) {
-                // persist changes
+            }
+            
+            if (outcome == StateUpdateResult::CHANGED || outcome == StateUpdateResult::CHANGED_RESTART) {
                 request->onDisconnect([this] { _statefulService->callUpdateHandlers(); });
                 if (outcome == StateUpdateResult::CHANGED_RESTART) {
-                    request->send(205); // reboot required
+                    request->send(205);
                     return;
                 }
             }
         }
 
-        auto *     response   = new AsyncJsonResponse(false);
+        // Send current state (for GET or successful POST)
+        sendStateResponse(request);
+    }
+
+  private:
+    void sendStateResponse(AsyncWebServerRequest * request) {
+        auto * response = new AsyncJsonResponse(false);
         JsonObject jsonObject = response->getRoot().to<JsonObject>();
         _statefulService->read(jsonObject, _stateReader);
         response->setLength();

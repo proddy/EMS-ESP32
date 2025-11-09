@@ -87,7 +87,7 @@ void APSettingsService::startAP() {
     WiFi.setTxPower(WIFI_POWER_8_5dBm); // https://www.wemos.cc/en/latest/c3/c3_mini_1_0_0.html#about-wifi
 #endif
     if (!_dnsServer) {
-        IPAddress apIp = WiFi.softAPIP();
+        const IPAddress apIp = WiFi.softAPIP();
         emsesp::EMSESP::logger().info("Starting Access Point with captive portal on %s", apIp.toString().c_str());
         _dnsServer = new DNSServer;
         _dnsServer->start(DNS_PORT, "*", apIp);
@@ -110,7 +110,7 @@ void APSettingsService::handleDNS() {
     }
 }
 
-APNetworkStatus APSettingsService::getAPNetworkStatus() {
+APNetworkStatus APSettingsService::getAPNetworkStatus() const {
     WiFiMode_t currentWiFiMode = WiFi.getMode();
     bool       apActive        = currentWiFiMode == WIFI_AP || currentWiFiMode == WIFI_AP_STA;
 
@@ -124,8 +124,8 @@ APNetworkStatus APSettingsService::getAPNetworkStatus() {
 
 void APSettings::read(const APSettings & settings, JsonObject root) {
     root["provision_mode"] = settings.provisionMode;
-    root["ssid"]           = settings.ssid;
-    root["password"]       = settings.password;
+    root["ssid"]           = settings.ssid.c_str();
+    root["password"]       = settings.password.c_str();
     root["channel"]        = settings.channel;
     root["ssid_hidden"]    = settings.ssidHidden;
     root["max_clients"]    = settings.maxClients;
@@ -134,7 +134,7 @@ void APSettings::read(const APSettings & settings, JsonObject root) {
     root["subnet_mask"]    = settings.subnetMask.toString();
 }
 
-StateUpdateResult APSettings::update(JsonObject root, APSettings & settings) {
+StateUpdateResult APSettings::update(JsonObjectConst root, APSettings & settings) {
     APSettings newSettings    = {};
     newSettings.provisionMode = static_cast<uint8_t>(root["provision_mode"] | FACTORY_AP_PROVISION_MODE);
 
@@ -153,9 +153,9 @@ StateUpdateResult APSettings::update(JsonObject root, APSettings & settings) {
     newSettings.ssidHidden = root["ssid_hidden"] | FACTORY_AP_SSID_HIDDEN;
     newSettings.maxClients = static_cast<uint8_t>(root["max_clients"] | FACTORY_AP_MAX_CLIENTS);
 
-    JsonUtils::readIP(root, "local_ip", newSettings.localIP, String(FACTORY_AP_LOCAL_IP));
-    JsonUtils::readIP(root, "gateway_ip", newSettings.gatewayIP, String(FACTORY_AP_GATEWAY_IP));
-    JsonUtils::readIP(root, "subnet_mask", newSettings.subnetMask, String(FACTORY_AP_SUBNET_MASK));
+    JsonUtils::readIP(root, "local_ip", newSettings.localIP, FACTORY_AP_LOCAL_IP);
+    JsonUtils::readIP(root, "gateway_ip", newSettings.gatewayIP, FACTORY_AP_GATEWAY_IP);
+    JsonUtils::readIP(root, "subnet_mask", newSettings.subnetMask, FACTORY_AP_SUBNET_MASK);
 
     if (newSettings == settings) {
         return StateUpdateResult::UNCHANGED;

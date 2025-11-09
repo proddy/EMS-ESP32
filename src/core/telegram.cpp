@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 #include "telegram.h"
 #include "emsesp.h"
+#include <cstring>
 
 namespace emsesp {
 
@@ -48,12 +49,10 @@ uuid::log::Logger EMSbus::logger_{F_(telegram), uuid::log::Facility::CONSOLE};
 
 // Calculates CRC checksum using lookup table for speed
 // length excludes the last byte (which mainly is the CRC)
-uint8_t EMSbus::calculate_crc(const uint8_t * data, const uint8_t length) {
-    uint8_t i   = 0;
+uint8_t EMSbus::calculate_crc(const uint8_t * data, const uint8_t length) noexcept {
     uint8_t crc = 0;
-    while (i < length) {
-        crc = ems_crc_table[crc];
-        crc ^= data[i++];
+    for (uint8_t i = 0; i < length; ++i) {
+        crc = ems_crc_table[crc] ^ data[i];
     }
     return crc;
 }
@@ -74,9 +73,9 @@ Telegram::Telegram(const uint8_t   operation,
     , offset(offset)
     , message_length(message_length) {
     // copy complete telegram data over, preventing buffer overflow
-    // faster than using std::move()
-    for (uint8_t i = 0; ((i < message_length) && (i < EMS_MAX_TELEGRAM_MESSAGE_LENGTH)); i++) {
-        message_data[i] = data[i];
+    if (data && message_length > 0) {
+        uint8_t copy_length = (message_length < EMS_MAX_TELEGRAM_MESSAGE_LENGTH) ? message_length : EMS_MAX_TELEGRAM_MESSAGE_LENGTH;
+        std::memcpy(message_data, data, copy_length);
     }
 }
 
@@ -86,6 +85,7 @@ std::string Telegram::to_string() const {
     uint8_t length = 0;
     data[0]        = this->src ^ RxService::ems_mask();
     data[3]        = this->offset;
+    
     if (this->operation == Telegram::Operation::TX_READ) {
         data[1] = this->dest | 0x80;
         data[4] = this->message_data[0];
@@ -109,8 +109,10 @@ std::string Telegram::to_string() const {
             data[2] = this->type_id;
             length  = 4;
         }
-        for (uint8_t i = 0; i < this->message_length; i++) {
-            data[length++] = this->message_data[i];
+        // Use memcpy for message data
+        if (this->message_length > 0) {
+            std::memcpy(data + length, this->message_data, this->message_length);
+            length += this->message_length;
         }
     }
 
@@ -129,10 +131,10 @@ std::string Telegram::to_string_message() const {
 // checks if we have an Rx telegram that needs processing
 void RxService::loop() {
     while (!rx_telegrams_.empty()) {
-        auto telegram = rx_telegrams_.front().telegram_;
-        (void)EMSESP::process_telegram(telegram); // further process the telegram
-        increment_telegram_count();               // increase rx count
-        rx_telegrams_.pop_front();                // remove it from the queue
+        const auto & queued_telegram = rx_telegrams_.front();
+        (void)EMSESP::process_telegram(queued_telegram.telegram_); // further process the telegram
+        increment_telegram_count();                                 // increase rx count
+        rx_telegrams_.pop_front();                                  // remove it from the queue
     }
 }
 
@@ -172,10 +174,10 @@ void RxService::add(uint8_t * data, uint8_t length) {
     }
 
     // src, dest and offset are always in fixed positions
-    uint8_t src       = data[0] & 0x7F; // strip MSB (HT3 adds it)
-    uint8_t dest      = data[1] & 0x7F; // strip MSB, don't care if its read or write for processing
-    uint8_t offset    = data[3];        // offset is always 4th byte
-    uint8_t operation = (data[1] & 0x80) ? Telegram::Operation::RX_READ : Telegram::Operation::RX;
+    const uint8_t src       = data[0] & 0x7F; // strip MSB (HT3 adds it)
+    const uint8_t dest      = data[1] & 0x7F; // strip MSB, don't care if its read or write for processing
+    const uint8_t offset    = data[3];        // offset is always 4th byte
+    const uint8_t operation = (data[1] & 0x80) ? Telegram::Operation::RX_READ : Telegram::Operation::RX;
 
     uint16_t  type_id;
     uint8_t * message_data;   // where the message block starts
@@ -317,7 +319,7 @@ void TxService::send_telegram(const QueuedTxTelegram & tx_telegram) {
     static uint8_t telegram_raw[EMS_MAX_TELEGRAM_LENGTH];
 
     // build the header
-    auto telegram = tx_telegram.telegram_;
+    const auto & telegram = tx_telegram.telegram_;
 
     // src - set MSB if it's Junkers/HT3
     uint8_t src = telegram->src;
@@ -376,9 +378,8 @@ void TxService::send_telegram(const QueuedTxTelegram & tx_telegram) {
         }
 
         // add the data to send to to the end of the header
-        for (uint8_t i = 0; i < telegram->message_length; i++) {
-            telegram_raw[message_p++] = telegram->message_data[i];
-        }
+        std::memcpy(telegram_raw + message_p, telegram->message_data, telegram->message_length);
+        message_p += telegram->message_length;
     }
     // make a copy of the telegram with new dest (without read-flag)
     telegram_last_ = std::make_shared<Telegram>(
@@ -405,9 +406,9 @@ void TxService::send_telegram(const QueuedTxTelegram & tx_telegram) {
     //
     // this is the core send command to the UART
     //
-    uint16_t status = EMSuart::transmit(telegram_raw, length);
+    TxStatus status = EMSuart::transmit(telegram_raw, length);
 
-    if (status == EMS_TX_STATUS_ERR) {
+    if (status == TxStatus::ERR) {
         LOG_ERROR("Failed to transmit Tx via UART.");
         if (telegram->operation == Telegram::Operation::TX_READ) {
             increment_telegram_read_fail_count(); // another Tx fail
@@ -566,16 +567,17 @@ bool TxService::send_raw(const char * telegram_data) {
     }
 
     // since the telegram data is a const, make a copy. add 1 to grab the \0 EOS
-    char telegram[strlen(telegram_data) + 1];
+    const size_t telegram_len = strlen(telegram_data);
+    char telegram[telegram_len + 1];
     strlcpy(telegram, telegram_data, sizeof(telegram));
 
     uint8_t count = 0;
-    uint8_t data[2 + strlen(telegram) / 3];
+    uint8_t data[2 + telegram_len / 3];
 
     // get values
     char * p = strtok(telegram, " ,"); // delimiter
     while (p != nullptr) {
-        data[count++] = (uint8_t)strtol(p, 0, 16);
+        data[count++] = (uint8_t)strtol(p, nullptr, 16);
         p             = strtok(nullptr, " ,");
     }
 
@@ -661,15 +663,6 @@ uint16_t TxService::read_next_tx(const uint8_t offset, const uint8_t length) {
         return telegram_last_->type_id;
     }
     return 0;
-}
-
-// checks if a telegram is sent to us matches the last Tx request
-// incoming Rx src must match the last Tx dest
-// and incoming Rx dest must be us (our ems_bus_id)
-// for both src and dest we strip the MSB 8th bit
-// returns true if the src/dest match the last Tx sent
-bool TxService::is_last_tx(const uint8_t src, const uint8_t dest) const {
-    return (((telegram_last_->dest & 0x7F) == (src & 0x7F)) && ((dest & 0x7F) == ems_bus_id()));
 }
 
 // sends a type_id read request to fetch values after a successful Tx write operation

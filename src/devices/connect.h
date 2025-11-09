@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ class Connect : public EMSdevice {
         // uint8_t tempautotemp_;
         // uint8_t manualtemp_;
 
-        uint8_t room() {
+        uint8_t room() const {
             return room_;
         }
 

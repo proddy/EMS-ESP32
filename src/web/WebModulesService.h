@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ namespace emsesp {
 class WebModules {
   public:
     static void              read(WebModules & webModules, JsonObject root);
-    static StateUpdateResult update(JsonObject root, WebModules & webModules);
+    static StateUpdateResult update(JsonObjectConst root, WebModules & webModules);
 };
 
 class WebModulesService : public StatefulService<WebModules> {

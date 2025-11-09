@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,8 @@ static QueueHandle_t uart_queue;
 uint8_t              tx_mode_     = 0xFF;
 uint32_t             inverse_mask = 0;
 
+constexpr uint8_t HW_BREAK_DURATION = 10; // break duration in bit times for HW mode
+
 /*
 * receive task, wait for break and call incoming_telegram
 */
@@ -56,8 +58,7 @@ void EMSuart::uart_event_task(void * pvParameters) {
                     uart_read_bytes(EMSUART_NUM, telegram, length, portMAX_DELAY);
                     EMSESP::incoming_telegram(telegram, (uint8_t)(length - 1));
                 } else { // flush buffer up to break
-                    uint8_t buf[length];
-                    uart_read_bytes(EMSUART_NUM, buf, length, portMAX_DELAY);
+                    uart_flush_input(EMSUART_NUM);
                 }
                 length = 0;
             } else if (event.type == UART_BUFFER_FULL) {
@@ -142,57 +143,57 @@ void EMSuart::send_poll(const uint8_t data) {
 }
 
 /*
+ * Helper function for timed byte transmission
+ */
+void EMSuart::transmit_with_delay(const uint8_t * buf, const uint8_t len, const uint32_t delay_us, const uint32_t break_us) {
+    for (uint8_t i = 0; i < len; i++) {
+        uart_write_bytes(EMSUART_NUM, &buf[i], 1);
+        delayMicroseconds(delay_us);
+    }
+    uart_gen_break(break_us);
+}
+
+/*
  * Send data to Tx line, ending with a <BRK>
  * buf contains the CRC and len is #bytes including the CRC
- * returns code, 1=success
+ * returns TxStatus code
  */
-uint8_t EMSuart::transmit(const uint8_t * buf, const uint8_t len) {
+TxStatus EMSuart::transmit(const uint8_t * buf, const uint8_t len) {
     if (len == 0 || len >= EMS_MAXBUFFERSIZE) {
-        return EMS_TX_STATUS_ERR;
+        return TxStatus::ERR;
     }
 
     if (tx_mode_ == 0) {
-        return EMS_TX_STATUS_OK;
+        return TxStatus::OK;
     }
 
     last_tx_src_ = len < 4 ? 0 : buf[0];
 
-    if (tx_mode_ == EMS_TXMODE_HW) { // hardware controlled mode
-        uart_write_bytes_with_break(EMSUART_NUM, buf, len, 10);
-        return EMS_TX_STATUS_OK;
-    }
+    const uint8_t hw_mode      = static_cast<uint8_t>(TxMode::HW);
+    const uint8_t emsplus_mode = static_cast<uint8_t>(TxMode::EMSPLUS);
+    const uint8_t ht3_mode     = static_cast<uint8_t>(TxMode::HT3);
 
-    if (tx_mode_ == EMS_TXMODE_EMSPLUS) { // EMS+ with long delay
+    if (tx_mode_ == hw_mode) { // hardware controlled mode
+        uart_write_bytes_with_break(EMSUART_NUM, buf, len, HW_BREAK_DURATION);
+    } else if (tx_mode_ == emsplus_mode) { // EMS+ with long delay
+        transmit_with_delay(buf, len, Timing::EMSPLUS_WAIT, Timing::EMSPLUS_BRK);
+    } else if (tx_mode_ == ht3_mode) { // HT3 with 7 bittimes delay
+        transmit_with_delay(buf, len, Timing::HT3_WAIT, Timing::HT3_BRK);
+    } else { // mode DEFAULT: wait for echo after each byte
         for (uint8_t i = 0; i < len; i++) {
+            size_t rx_len;
+            uart_get_buffered_data_len(EMSUART_NUM, &rx_len);
             uart_write_bytes(EMSUART_NUM, &buf[i], 1);
-            delayMicroseconds(EMSUART_TX_WAIT_PLUS);
+            uint16_t timeoutcnt = Timing::EMS_TIMEOUT;
+            size_t   new_rx_len;
+            do {
+                delayMicroseconds(Timing::EMS_BUSY_WAIT);
+                uart_get_buffered_data_len(EMSUART_NUM, &new_rx_len);
+            } while ((new_rx_len == rx_len) && (--timeoutcnt));
         }
-        uart_gen_break(EMSUART_TX_BRK_PLUS);
-        return EMS_TX_STATUS_OK;
+        uart_gen_break(Timing::EMS_BRK);
     }
-
-    if (tx_mode_ == EMS_TXMODE_HT3) { // HT3 with 7 bittimes delay
-        for (uint8_t i = 0; i < len; i++) {
-            uart_write_bytes(EMSUART_NUM, &buf[i], 1);
-            delayMicroseconds(EMSUART_TX_WAIT_HT3);
-        }
-        uart_gen_break(EMSUART_TX_BRK_HT3);
-        return EMS_TX_STATUS_OK;
-    }
-
-    // mode 1: wait for echo after each byte
-    for (uint8_t i = 0; i < len; i++) {
-        size_t rx0, rx1;
-        uart_get_buffered_data_len(EMSUART_NUM, &rx0);
-        uart_write_bytes(EMSUART_NUM, &buf[i], 1);
-        uint16_t timeoutcnt = EMSUART_TX_TIMEOUT;
-        do {
-            delayMicroseconds(EMSUART_TX_BUSY_WAIT); // burn CPU cycles...
-            uart_get_buffered_data_len(EMSUART_NUM, &rx1);
-        } while ((rx1 == rx0) && (--timeoutcnt));
-    }
-    uart_gen_break(EMSUART_TX_BRK_EMS);
-    return EMS_TX_STATUS_OK;
+    return TxStatus::OK;
 }
 
 } // namespace emsesp

@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@ class Command {
         }
     };
 
-    static std::vector<CmdFunction> commands() {
+    static const std::vector<CmdFunction> & commands() {
         return cmdfunctions_;
     }
 
@@ -134,7 +134,7 @@ class Command {
 
     static bool list(const uint8_t device_type, JsonObject output);
 
-    static uint8_t process(const char * path, const bool is_admin, const JsonObject input, JsonObject output);
+    static uint8_t process(const char * path, const bool is_admin, const JsonObjectConst input, JsonObject output);
 
     static const char * parse_command_string(const char * command, int8_t & id);
     static const char * get_attribute(const char * cmd);

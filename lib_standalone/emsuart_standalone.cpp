@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,11 +51,11 @@ void EMSuart::send_poll(uint8_t data) {
 /*
  * Send data to Tx line, ending with a <BRK>
  * buf contains the CRC and len is #bytes including the CRC
- * returns code, 0=success, 1=brk error, 2=watchdog timeout
+ * returns TxStatus code
  */
-uint16_t EMSuart::transmit(uint8_t * buf, uint8_t len) {
+TxStatus EMSuart::transmit(uint8_t * buf, uint8_t len) {
     if (len == 0) {
-        return EMS_TX_STATUS_OK; // nothing to send
+        return TxStatus::OK; // nothing to send
     }
 
     // Code for when running EMS-ESP standalone without a connected ESP8266 microcontroller
@@ -68,7 +68,7 @@ uint16_t EMSuart::transmit(uint8_t * buf, uint8_t len) {
     }
     Serial.println();
 
-    return EMS_TX_STATUS_OK;
+    return TxStatus::OK;
 }
 
 // like itoa but for hex, and quicker

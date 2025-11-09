@@ -12,9 +12,9 @@ NetworkSettingsService::NetworkSettingsService(AsyncWebServer * server, FS * fs,
     WiFi.onEvent([this](WiFiEvent_t event, WiFiEventInfo_t info) { WiFiEvent(event, info); });
 }
 
-static bool formatBssid(const String & bssid, uint8_t (&mac)[6]) {
+static bool formatBssid(const std::string & bssid, uint8_t (&mac)[6]) {
     uint tmp[6];
-    if (bssid.isEmpty() || sscanf(bssid.c_str(), "%X:%X:%X:%X:%X:%X", &tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4], &tmp[5]) != 6) {
+    if (bssid.empty() || sscanf(bssid.c_str(), "%X:%X:%X:%X:%X:%X", &tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4], &tmp[5]) != 6) {
         return false;
     }
     for (uint8_t i = 0; i < 6; i++) {
@@ -24,7 +24,6 @@ static bool formatBssid(const String & bssid, uint8_t (&mac)[6]) {
 }
 
 void NetworkSettingsService::begin() {
-    // TODO: may need to change this for Arduino Core 3.1 / IDF 5.x
     // We want the device to come up in opmode=0 (WIFI_OFF), when erasing the flash this is not the default.
     // If needed, we save opmode=0 before disabling persistence so the device boots with WiFi disabled in the future.
     if (WiFi.getMode() != WIFI_OFF) {
@@ -214,7 +213,7 @@ void NetworkSettingsService::mDNS_start() const {
 #endif
 }
 
-const char * NetworkSettingsService::disconnectReason(uint8_t code) {
+const char * NetworkSettingsService::disconnectReason(uint8_t code) const {
 #ifndef EMSESP_STANDALONE
     switch (code) {
     case WIFI_REASON_UNSPECIFIED: // = 1,
@@ -314,14 +313,14 @@ void NetworkSettingsService::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) 
 
         break;
 
-    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP: {
         char result[10];
         emsesp::EMSESP::logger().info("WiFi connected (Local IP=%s, hostname=%s, TxPower=%s dBm)",
                                       WiFi.localIP().toString().c_str(),
                                       WiFi.getHostname(),
                                       emsesp::Helpers::render_value(result, ((double)(WiFi.getTxPower()) / 4), 1));
         mDNS_start();
-        break;
+    } break;
 
     case ARDUINO_EVENT_ETH_START:
         // configure for static IP
@@ -331,14 +330,14 @@ void NetworkSettingsService::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) 
         ETH.setHostname(emsesp::EMSESP::system_.hostname().c_str());
         break;
 
-    case ARDUINO_EVENT_ETH_GOT_IP:
+    case ARDUINO_EVENT_ETH_GOT_IP: {
         // prevent double calls to mDNS
         if (!emsesp::EMSESP::system_.ethernet_connected()) {
             emsesp::EMSESP::logger().info("Ethernet connected (Local IP=%s, speed %d Mbps)", ETH.localIP().toString().c_str(), ETH.linkSpeed());
             emsesp::EMSESP::system_.ethernet_connected(true);
             mDNS_start();
         }
-        break;
+    } break;
 
     case ARDUINO_EVENT_ETH_DISCONNECTED:
         emsesp::EMSESP::logger().warning("Ethernet disconnected. Reason: %s (%d)",
@@ -395,18 +394,18 @@ void NetworkSettingsService::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) 
 #endif
 }
 
-void NetworkSettings::read(NetworkSettings & settings, JsonObject root) {
+void NetworkSettings::read(const NetworkSettings & settings, JsonObject root) {
     // connection settings
-    root["ssid"]             = settings.ssid;
-    root["bssid"]            = settings.bssid;
-    root["password"]         = settings.password;
-    root["hostname"]         = settings.hostname;
+    root["ssid"]             = settings.ssid.c_str();
+    root["bssid"]            = settings.bssid.c_str();
+    root["password"]         = settings.password.c_str();
+    root["hostname"]         = settings.hostname.c_str();
     root["static_ip_config"] = settings.staticIPConfig;
     root["bandwidth20"]      = settings.bandwidth20;
     root["nosleep"]          = settings.nosleep;
     root["enableMDNS"]       = settings.enableMDNS;
     root["enableCORS"]       = settings.enableCORS;
-    root["CORSOrigin"]       = settings.CORSOrigin;
+    root["CORSOrigin"]       = settings.CORSOrigin.c_str();
     root["tx_power"]         = settings.tx_power;
 
     // extended settings
@@ -417,7 +416,7 @@ void NetworkSettings::read(NetworkSettings & settings, JsonObject root) {
     JsonUtils::writeIP(root, "dns_ip_2", settings.dnsIP2);
 }
 
-StateUpdateResult NetworkSettings::update(JsonObject root, NetworkSettings & settings) {
+StateUpdateResult NetworkSettings::update(JsonObjectConst root, NetworkSettings & settings) {
     // keep copy of original settings
     auto enableCORS = settings.enableCORS;
     auto CORSOrigin = settings.CORSOrigin;
@@ -458,7 +457,7 @@ StateUpdateResult NetworkSettings::update(JsonObject root, NetworkSettings & set
 
     // see if we need to inform the user of a restart
     if (tx_power != settings.tx_power || enableCORS != settings.enableCORS || CORSOrigin != settings.CORSOrigin
-        || (ssid != settings.ssid && settings.ssid.isEmpty())) {
+        || (ssid != settings.ssid && settings.ssid.empty())) {
         return StateUpdateResult::CHANGED_RESTART; // tell WebUI that a restart is needed
     }
 

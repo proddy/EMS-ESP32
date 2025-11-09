@@ -18,17 +18,20 @@ void AuthenticationService::verifyAuthorization(AsyncWebServerRequest * request)
 // Signs in a user if the username and password match. Provides a JWT to be used in the Authorization header in subsequent requests.
 void AuthenticationService::signIn(AsyncWebServerRequest * request, JsonVariant json) {
     if (json.is<JsonObject>()) {
-        String         username       = json["username"];
-        String         password       = json["password"];
-        Authentication authentication = _securityManager->authenticate(username, password);
-        if (authentication.authenticated) {
-            User *     user            = authentication.user;
-            auto *     response        = new AsyncJsonResponse(false);
-            JsonObject jsonObject      = response->getRoot();
-            jsonObject["access_token"] = _securityManager->generateJWT(user);
-            response->setLength();
-            request->send(response);
-            return;
+        const char *   username_cstr  = json["username"];
+        const char *   password_cstr  = json["password"];
+        if (username_cstr && password_cstr) {
+            std::string    username(username_cstr);
+            std::string    password(password_cstr);
+            Authentication authentication = _securityManager->authenticate(username, password);
+            if (authentication.authenticated) {
+                auto *     response        = new AsyncJsonResponse(false);
+                JsonObject jsonObject      = response->getRoot();
+                jsonObject["access_token"] = _securityManager->generateJWT(authentication.user.get()).c_str();
+                response->setLength();
+                request->send(response);
+                return;
+            }
         }
     }
 

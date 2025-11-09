@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +49,9 @@ class Helpers {
     static uint32_t    hextoint(const char * hex);
     static int         atoint(const char * value);
     static bool        check_abs(const int32_t i);
-    static uint32_t    abs(const int32_t i);
+    static inline uint32_t abs(const int32_t i) {
+        return (i < 0 ? -i : i);
+    }
     static uint16_t    string2minutes(const std::string & str);
     static float       numericoperator2scalefactor(int8_t numeric_operator);
 

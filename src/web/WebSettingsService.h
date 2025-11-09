@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,42 +30,42 @@ namespace emsesp {
 
 class WebSettings {
   public:
-    String   version;
-    String   locale;
-    uint8_t  tx_mode;
-    uint8_t  ems_bus_id;
-    bool     boiler_heatingoff;
-    uint8_t  remote_timeout;
-    bool     remote_timeout_enabled;
-    bool     shower_timer;
-    bool     shower_alert;
-    uint8_t  shower_alert_trigger;  // minutes
-    uint8_t  shower_alert_coldshot; // seconds
-    uint32_t shower_min_duration;   // seconds
-    bool     syslog_enabled;
-    int8_t   syslog_level; // uuid::log::Level
-    uint32_t syslog_mark_interval;
-    String   syslog_host;
-    uint16_t syslog_port;
-    bool     trace_raw;
-    uint8_t  rx_gpio;
-    uint8_t  tx_gpio;
-    uint8_t  dallas_gpio;
-    bool     dallas_parasite;
-    uint8_t  led_gpio;
-    bool     hide_led;
-    uint8_t  led_type;
-    bool     low_clock;
-    bool     telnet_enabled;
-    bool     notoken_api;
-    bool     readonly_mode;
-    bool     analog_enabled;
-    uint8_t  pbutton_gpio;
-    uint8_t  solar_maxflow;
-    String   board_profile;
-    uint8_t  bool_format;
-    uint8_t  bool_dashboard;
-    uint8_t  enum_format;
+    std::string version;
+    std::string locale;
+    uint8_t     tx_mode;
+    uint8_t     ems_bus_id;
+    bool        boiler_heatingoff;
+    uint8_t     remote_timeout;
+    bool        remote_timeout_enabled;
+    bool        shower_timer;
+    bool        shower_alert;
+    uint8_t     shower_alert_trigger;  // minutes
+    uint8_t     shower_alert_coldshot; // seconds
+    uint32_t    shower_min_duration;   // seconds
+    bool        syslog_enabled;
+    int8_t      syslog_level; // uuid::log::Level
+    uint32_t    syslog_mark_interval;
+    std::string syslog_host;
+    uint16_t    syslog_port;
+    bool        trace_raw;
+    uint8_t     rx_gpio;
+    uint8_t     tx_gpio;
+    uint8_t     dallas_gpio;
+    bool        dallas_parasite;
+    uint8_t     led_gpio;
+    bool        hide_led;
+    uint8_t     led_type;
+    bool        low_clock;
+    bool        telnet_enabled;
+    bool        notoken_api;
+    bool        readonly_mode;
+    bool        analog_enabled;
+    uint8_t     pbutton_gpio;
+    uint8_t     solar_maxflow;
+    std::string board_profile;
+    uint8_t     bool_format;
+    uint8_t     bool_dashboard;
+    uint8_t     enum_format;
 
     int8_t  weblog_level;
     uint8_t weblog_buffer;
@@ -86,7 +86,7 @@ class WebSettings {
     bool developer_mode; // developer mode
 
     static void              read(WebSettings & settings, JsonObject root);
-    static StateUpdateResult update(JsonObject root, WebSettings & settings);
+    static StateUpdateResult update(JsonObjectConst root, WebSettings & settings);
 
     enum ChangeFlags : uint8_t {
 

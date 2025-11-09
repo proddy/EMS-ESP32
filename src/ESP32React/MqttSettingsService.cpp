@@ -13,11 +13,13 @@ MqttSettingsService::MqttSettingsService(AsyncWebServer * server, FS * fs, Secur
     addUpdateHandler([this] { onConfigUpdated(); }, false);
 }
 
-static String generateClientId() {
+static std::string generateClientId() {
 #ifdef EMSESP_STANDALONE
     return "ems-esp";
 #else
-    return "esp32-" + String(static_cast<uint32_t>(ESP.getEfuseMac()), HEX);
+    char buf[32];
+    snprintf(buf, sizeof(buf), "esp32-%x", static_cast<uint32_t>(ESP.getEfuseMac()));
+    return std::string(buf);
 #endif
 }
 
@@ -89,15 +91,15 @@ void MqttSettingsService::loop() {
     }
 }
 
-bool MqttSettingsService::isEnabled() {
+bool MqttSettingsService::isEnabled() const {
     return _state.enabled;
 }
 
-bool MqttSettingsService::isConnected() {
+bool MqttSettingsService::isConnected() const {
     return _mqttClient ? _mqttClient->connected() : false;
 }
 
-const char * MqttSettingsService::getClientId() {
+const char * MqttSettingsService::getClientId() const {
     return _mqttClient ? _mqttClient->getClientId() : "";
 }
 
@@ -113,11 +115,11 @@ void MqttSettingsService::onMqttMessage(const espMqttClientTypes::MessagePropert
     emsesp::EMSESP::mqtt_.on_message(topic, payload, len);
 }
 
-espMqttClientTypes::DisconnectReason MqttSettingsService::getDisconnectReason() {
+espMqttClientTypes::DisconnectReason MqttSettingsService::getDisconnectReason() const {
     return _disconnectReason;
 }
 
-MqttClient * MqttSettingsService::getMqttClient() {
+MqttClient * MqttSettingsService::getMqttClient() const {
     return _mqttClient;
 }
 
@@ -172,10 +174,10 @@ bool MqttSettingsService::configureMqtt() {
     }
 
     // only connect if WiFi is connected and MQTT is enabled
-    if (_state.enabled && emsesp::EMSESP::system_.network_connected() && !_state.host.isEmpty()) {
+    if (_state.enabled && emsesp::EMSESP::system_.network_connected() && !_state.host.empty()) {
         // create last will topic with the base prefixed. It has to be static because the client destroys the reference
         static char will_topic[FACTORY_MQTT_MAX_TOPIC_LENGTH];
-        if (_state.base.isEmpty()) {
+        if (_state.base.empty()) {
             snprintf(will_topic, sizeof(will_topic), "status");
         } else {
             snprintf(will_topic, sizeof(will_topic), "%s/status", _state.base.c_str());
@@ -189,7 +191,7 @@ bool MqttSettingsService::configureMqtt() {
                 static_cast<espMqttClientSecure *>(_mqttClient)->setInsecure();
             } else {
                 emsesp::EMSESP::logger().debug("Start secure MQTT with rootCA");
-                String certificate = "-----BEGIN CERTIFICATE-----\n" + _state.rootCA + "\n-----END CERTIFICATE-----\n";
+                const std::string certificate = "-----BEGIN CERTIFICATE-----\n" + _state.rootCA + "\n-----END CERTIFICATE-----\n";
                 static_cast<espMqttClientSecure *>(_mqttClient)->setCACert(certificate.c_str());
             }
             static_cast<espMqttClientSecure *>(_mqttClient)->setServer(_state.host.c_str(), _state.port);
@@ -218,18 +220,18 @@ bool MqttSettingsService::configureMqtt() {
     return false;
 }
 
-void MqttSettings::read(MqttSettings & settings, JsonObject root) {
+void MqttSettings::read(const MqttSettings & settings, JsonObject root) {
 #ifndef TASMOTA_SDK
     root["enableTLS"] = settings.enableTLS;
-    root["rootCA"]    = settings.rootCA;
+    root["rootCA"]    = settings.rootCA.c_str();
 #endif
     root["enabled"]       = settings.enabled;
-    root["host"]          = settings.host;
+    root["host"]          = settings.host.c_str();
     root["port"]          = settings.port;
-    root["base"]          = settings.base;
-    root["username"]      = settings.username;
-    root["password"]      = settings.password;
-    root["client_id"]     = settings.clientId;
+    root["base"]          = settings.base.c_str();
+    root["username"]      = settings.username.c_str();
+    root["password"]      = settings.password.c_str();
+    root["client_id"]     = settings.clientId.c_str();
     root["keep_alive"]    = settings.keepAlive;
     root["clean_session"] = settings.cleanSession;
     root["entity_format"] = settings.entity_format;
@@ -246,14 +248,14 @@ void MqttSettings::read(MqttSettings & settings, JsonObject root) {
     root["mqtt_retain"]             = settings.mqtt_retain;
     root["ha_enabled"]              = settings.ha_enabled;
     root["nested_format"]           = settings.nested_format;
-    root["discovery_prefix"]        = settings.discovery_prefix;
+    root["discovery_prefix"]        = settings.discovery_prefix.c_str();
     root["discovery_type"]          = settings.discovery_type;
     root["publish_single"]          = settings.publish_single;
     root["publish_single2cmd"]      = settings.publish_single2cmd;
     root["send_response"]           = settings.send_response;
 }
 
-StateUpdateResult MqttSettings::update(JsonObject root, MqttSettings & settings) {
+StateUpdateResult MqttSettings::update(JsonObjectConst root, MqttSettings & settings) {
     MqttSettings newSettings = {};
     bool         changed     = false;
 
@@ -385,12 +387,19 @@ StateUpdateResult MqttSettings::update(JsonObject root, MqttSettings & settings)
 
 #ifndef TASMOTA_SDK
     // strip down to certificate only
-    newSettings.rootCA.replace("\r", "");
-    newSettings.rootCA.replace("\n", "");
-    newSettings.rootCA.replace("-----BEGIN CERTIFICATE-----", "");
-    newSettings.rootCA.replace("-----END CERTIFICATE-----", "");
-    newSettings.rootCA.replace(" ", "");
-    if (newSettings.rootCA.length() == 0 && newSettings.enableTLS) {
+    auto replaceAll = [](std::string & str, const std::string & from, const std::string & to) {
+        size_t pos = 0;
+        while ((pos = str.find(from, pos)) != std::string::npos) {
+            str.replace(pos, from.length(), to);
+            pos += to.length();
+        }
+    };
+    replaceAll(newSettings.rootCA, "\r", "");
+    replaceAll(newSettings.rootCA, "\n", "");
+    replaceAll(newSettings.rootCA, "-----BEGIN CERTIFICATE-----", "");
+    replaceAll(newSettings.rootCA, "-----END CERTIFICATE-----", "");
+    replaceAll(newSettings.rootCA, " ", "");
+    if (newSettings.rootCA.empty() && newSettings.enableTLS) {
         newSettings.rootCA = "insecure";
     }
     if (newSettings.enableTLS != settings.enableTLS || newSettings.rootCA != settings.rootCA) {

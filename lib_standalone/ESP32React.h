@@ -28,25 +28,25 @@ class DummySettings {
     bool nosleep     = false;
 
     // MQTT
-    uint16_t publish_time       = 10;
-    uint8_t  mqtt_qos           = 0;
-    bool     mqtt_retain        = false;
-    bool     enabled            = true;
-    uint8_t  nested_format      = 1; // 1=nested 2=single
-    String   discovery_prefix   = "homeassistant";
-    uint8_t  discovery_type     = 0; // HA
-    bool     ha_enabled         = true;
-    String   base               = "ems-esp";
-    bool     publish_single     = false;
-    bool     publish_single2cmd = false;
-    bool     send_response      = false; // don't send response
-    String   host               = "192.168.1.4";
-    uint16_t port               = 1883;
-    String   clientId           = "ems-esp";
-    String   username           = "";
-    uint16_t keepAlive          = 60;
-    bool     cleanSession       = false;
-    uint8_t  entity_format      = 1;
+    uint16_t    publish_time       = 10;
+    uint8_t     mqtt_qos           = 0;
+    bool        mqtt_retain        = false;
+    bool        enabled            = true;
+    uint8_t     nested_format      = 1; // 1=nested 2=single
+    std::string discovery_prefix   = "homeassistant";
+    uint8_t     discovery_type     = 0; // HA
+    bool        ha_enabled         = true;
+    std::string base               = "ems-esp";
+    bool        publish_single     = false;
+    bool        publish_single2cmd = false;
+    bool        send_response      = false; // don't send response
+    std::string host               = "192.168.1.4";
+    uint16_t    port               = 1883;
+    std::string clientId           = "ems-esp";
+    std::string username           = "";
+    uint16_t    keepAlive          = 60;
+    bool        cleanSession       = false;
+    uint8_t     entity_format      = 1;
 
     uint16_t publish_time_boiler     = 10;
     uint16_t publish_time_thermostat = 10;
@@ -56,21 +56,21 @@ class DummySettings {
     uint16_t publish_time_sensor     = 10;
     uint16_t publish_time_heartbeat  = 60;
 
-    String  hostname       = "ems-esp";
-    String  jwtSecret      = "ems-esp";
-    String  ssid           = "ems-esp";
-    String  password       = "ems-esp";
-    String  bssid          = "";
-    String  localIP        = "";
-    String  gatewayIP      = "";
-    String  subnetMask     = "";
-    bool    staticIPConfig = false;
-    String  dnsIP1         = "";
-    String  dnsIP2         = "";
-    bool    enableMDNS     = true;
-    bool    enableCORS     = false;
-    String  CORSOrigin     = "*";
-    uint8_t tx_power       = 0;
+    std::string hostname       = "ems-esp";
+    std::string jwtSecret      = "ems-esp";
+    std::string ssid           = "ems-esp";
+    std::string password       = "ems-esp";
+    std::string bssid          = "";
+    std::string localIP        = "";
+    std::string gatewayIP      = "";
+    std::string subnetMask     = "";
+    bool        staticIPConfig = false;
+    std::string dnsIP1         = "";
+    std::string dnsIP2         = "";
+    bool        enableMDNS     = true;
+    bool        enableCORS     = false;
+    std::string CORSOrigin     = "*";
+    uint8_t     tx_power       = 0;
 
     uint8_t  provisionMode      = 0;
     uint32_t publish_time_water = 0;
@@ -160,7 +160,7 @@ class EMSESPSettingsService {
 
 class JsonUtils {
   public:
-    static void writeIP(JsonObject root, const String & key, const String & ip) {
+    static void writeIP(JsonObject root, const char * key, const std::string & ip) {
         root[key] = ip;
     }
 };

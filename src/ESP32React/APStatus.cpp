@@ -1,5 +1,12 @@
 #include "APStatus.h"
 
+#include <WiFi.h>
+#include <ArduinoJson.h>
+#include <ESPAsyncWebServer.h>
+
+#include "SecurityManager.h"
+#include "APSettingsService.h"
+
 APStatus::APStatus(AsyncWebServer * server, SecurityManager * securityManager, APSettingsService * apSettingsService)
     : _apSettingsService(apSettingsService) {
     securityManager->addEndpoint(server, AP_STATUS_SERVICE_PATH, AuthenticationPredicates::IS_AUTHENTICATED, [this](AsyncWebServerRequest * request) {
@@ -8,7 +15,7 @@ APStatus::APStatus(AsyncWebServer * server, SecurityManager * securityManager, A
 }
 
 void APStatus::apStatus(AsyncWebServerRequest * request) {
-    auto *     response = new AsyncJsonResponse(false);
+    auto *           response = new AsyncJsonResponse(false);
     JsonObject root     = response->getRoot();
 
     root["status"]      = _apSettingsService->getAPNetworkStatus();

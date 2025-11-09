@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,36 +65,36 @@ class EMSdevice {
     std::string  to_string_version();
     std::string  name(); // returns either default or custom name of a device (if defined)
 
-    bool is_device_id(uint8_t device_id) const {
+    inline bool is_device_id(const uint8_t device_id) const {
         return ((device_id & 0x7F) == (device_id_ & 0x7F));
     }
 
-    // Getters
-    uint8_t device_id() const {
+    // Getters - inline for better performance
+    inline uint8_t device_id() const {
         return device_id_;
     }
 
-    uint8_t product_id() const {
+    inline uint8_t product_id() const {
         return product_id_;
     }
 
-    uint8_t device_type() const {
+    inline uint8_t device_type() const {
         return device_type_; // see enum DeviceType below
     }
 
-    const char * version() const {
+    inline const char * version() const {
         return version_;
     }
 
-    uint8_t brand() const {
+    inline uint8_t brand() const {
         return brand_;
     }
 
-    void active(bool active) {
+    inline void active(const bool active) {
         active_ = active;
     }
 
-    const char * default_name() const {
+    inline const char * default_name() const {
         return default_name_;
     }
 
@@ -113,20 +113,20 @@ class EMSdevice {
     }
 
     // set custom device name
-    void custom_name(std::string const & custom_name) {
+    inline void custom_name(const std::string & custom_name) {
         custom_name_ = custom_name;
     }
 
-    std::string custom_name() const {
+    inline const std::string & custom_name() const {
         return custom_name_;
     }
 
     // set device model
-    void model(std::string const & model) {
+    inline void model(const std::string & model) {
         model_ = model;
     }
 
-    std::string model() const {
+    inline const std::string & model() const {
         return model_;
     }
 
@@ -134,24 +134,24 @@ class EMSdevice {
         return unique_id_;
     }
 
-    void unique_id(uint8_t unique_id) {
+    inline void unique_id(const uint8_t unique_id) {
         unique_id_ = unique_id;
     }
 
-    bool has_update() const {
+    inline bool has_update() const {
         return has_update_;
     }
 
-    void has_update(bool flag) {
+    inline void has_update(const bool flag) {
         has_update_ = flag;
     }
 
-    void has_update(void * value) {
+    inline void has_update(void * value) {
         has_update_ = true;
         publish_value(value);
     }
 
-    void has_update(char * value, const char * newvalue, size_t len) {
+    inline void has_update(char * value, const char * newvalue, const size_t len) {
         if (value && newvalue && strcmp(value, newvalue) != 0) {
             strlcpy(value, newvalue, len);
             has_update_ = true;
@@ -159,7 +159,7 @@ class EMSdevice {
         }
     }
 
-    void has_update(uint8_t & value, uint8_t newvalue) {
+    inline void has_update(uint8_t & value, const uint8_t newvalue) {
         if (value != newvalue) {
             value       = newvalue;
             has_update_ = true;
@@ -167,7 +167,7 @@ class EMSdevice {
         }
     }
 
-    void has_update(uint16_t & value, uint16_t newvalue) {
+    inline void has_update(uint16_t & value, const uint16_t newvalue) {
         if (value != newvalue) {
             value       = newvalue;
             has_update_ = true;
@@ -175,7 +175,7 @@ class EMSdevice {
         }
     }
 
-    void has_update(int16_t & value, int16_t newvalue) {
+    inline void has_update(int16_t & value, const int16_t newvalue) {
         if (value != newvalue) {
             value       = newvalue;
             has_update_ = true;
@@ -183,7 +183,7 @@ class EMSdevice {
         }
     }
 
-    void has_update(uint32_t & value, uint32_t newvalue) {
+    inline void has_update(uint32_t & value, const uint32_t newvalue) {
         if (value != newvalue) {
             value       = newvalue;
             has_update_ = true;
@@ -191,18 +191,19 @@ class EMSdevice {
         }
     }
 
-    void has_enumupdate(std::shared_ptr<const Telegram> telegram, uint8_t & value, const uint8_t index, int8_t s = 0) {
+    inline void has_enumupdate(std::shared_ptr<const Telegram> telegram, uint8_t & value, const uint8_t index, const int8_t s = 0) {
         if (telegram->read_enumvalue(value, index, s)) {
             has_update_ = true;
             publish_value((void *)&value);
         }
     }
 
-    void has_enumupdate(std::shared_ptr<const Telegram> telegram, uint8_t & value, const uint8_t index, const std::vector<uint8_t> & maskIn) {
-        uint8_t val = value < maskIn.size() ? maskIn[value] : EMS_VALUE_UINT8_NOTSET;
-        if (telegram->read_value(val, index)) {
+    inline void has_enumupdate(std::shared_ptr<const Telegram> telegram, uint8_t & value, const uint8_t index, const std::vector<uint8_t> & maskIn) {
+        const uint8_t val = (value < maskIn.size()) ? maskIn[value] : EMS_VALUE_UINT8_NOTSET;
+        uint8_t temp_val = val;
+        if (telegram->read_value(temp_val, index)) {
             for (uint8_t i = 0; i < maskIn.size(); i++) {
-                if (val == maskIn[i]) {
+                if (temp_val == maskIn[i]) {
                     value       = i;
                     has_update_ = true;
                     publish_value((void *)&value);
@@ -213,7 +214,7 @@ class EMSdevice {
     }
 
     template <typename Value>
-    void has_update(std::shared_ptr<const Telegram> telegram, Value & value, const uint8_t index, uint8_t s = 0) {
+    inline void has_update(std::shared_ptr<const Telegram> telegram, Value & value, const uint8_t index, const uint8_t s = 0) {
         if (telegram->read_value(value, index, s)) {
             has_update_ = true;
             publish_value((void *)&value);
@@ -221,7 +222,7 @@ class EMSdevice {
     }
 
     template <typename BitValue>
-    void has_bitupdate(std::shared_ptr<const Telegram> telegram, BitValue & value, const uint8_t index, uint8_t b) {
+    inline void has_bitupdate(std::shared_ptr<const Telegram> telegram, BitValue & value, const uint8_t index, const uint8_t b) {
         if (telegram->read_bitvalue(value, index, b)) {
             has_update_ = true;
             publish_value((void *)&value);
@@ -348,10 +349,10 @@ class EMSdevice {
     bool         has_telegram_id(uint16_t id) const;
     void         ha_config_clear();
 
-    bool ha_config_done() const {
+    inline bool ha_config_done() const {
         return ha_config_done_;
     }
-    void ha_config_done(const bool v) {
+    inline void ha_config_done(const bool v) {
         ha_config_done_ = v;
     }
 

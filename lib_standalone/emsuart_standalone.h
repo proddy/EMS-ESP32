@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,8 +23,11 @@
 
 namespace emsesp {
 
-#define EMS_TX_STATUS_ERR 0
-#define EMS_TX_STATUS_OK 1
+// Transmission status codes
+enum class TxStatus : uint8_t {
+    ERR = 0,  // Transmission error
+    OK  = 1   // Transmission successful
+};
 
 class EMSuart {
   public:
@@ -35,7 +38,7 @@ class EMSuart {
     static void     stop();
     static void     restart();
     static void     send_poll(uint8_t data);
-    static uint16_t transmit(uint8_t * buf, uint8_t len);
+    static TxStatus transmit(uint8_t * buf, uint8_t len);
     static uint8_t  last_tx_src() {
         return 0;
     }

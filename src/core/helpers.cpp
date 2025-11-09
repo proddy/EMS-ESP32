@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,10 +36,15 @@ char * Helpers::hextoa(char * result, const uint8_t value) {
 // same as hextoa but uses to a hex std::string
 std::string Helpers::hextoa(const uint8_t value, bool prefix) {
     char buf[3];
+    hextoa(buf, value);
     if (prefix) {
-        return std::string("0x") + hextoa(buf, value);
+        std::string result;
+        result.reserve(4); // "0x" + 2 hex chars
+        result = "0x";
+        result.append(buf, 2);
+        return result;
     }
-    return std::string(hextoa(buf, value));
+    return std::string(buf, 2);
 }
 
 // same for 16 bit values
@@ -54,11 +59,17 @@ char * Helpers::hextoa(char * result, const uint16_t value) {
 
 // same as above but to a hex string
 std::string Helpers::hextoa(const uint16_t value, bool prefix) {
-    char buf[5];
+    char   buf[5];
+    size_t len = (value <= 0xFF) ? 2 : 4;
+    hextoa(buf, value);
     if (prefix) {
-        return std::string("0x") + hextoa(buf, value);
+        std::string result;
+        result.reserve(len + 2); // "0x" + hex chars
+        result = "0x";
+        result.append(buf, len);
+        return result;
     }
-    return std::string(hextoa(buf, value));
+    return std::string(buf, len);
 }
 
 #ifdef EMSESP_STANDALONE
@@ -102,17 +113,21 @@ char * Helpers::ultostr(char * ptr, uint32_t value, const uint8_t base) {
 // http://www.strudel.org.uk/itoa/
 std::string Helpers::itoa(int16_t value) {
     std::string buf;
-    buf.reserve(25); // Pre-allocate enough space.
+    buf.reserve(7); // max "-32768" = 6 chars + null
     int quotient = value;
 
+    if (quotient == 0) {
+        return "0";
+    }
+
     do {
-        buf += "0123456789abcdef"[std::abs(quotient % 10)];
+        buf.push_back("0123456789"[std::abs(quotient % 10)]);
         quotient /= 10;
     } while (quotient);
 
     // Append the negative sign
     if (value < 0)
-        buf += '-';
+        buf.push_back('-');
 
     std::reverse(buf.begin(), buf.end());
     return buf;
@@ -214,27 +229,35 @@ char * Helpers::render_value(char * result, uint8_t value, int8_t format, const 
         return result;
     }
 
-    char s2[10];
+    char * p = result;
+    char   s2[10];
 
     // special case for / 2
     if (format == 2) {
-        strlcpy(result, itoa(new_value >> 1, s2, 10), 5);
-        strlcat(result, ".", 5);
-        strlcat(result, ((new_value & 0x01) ? "5" : "0"), 7);
+        char * tmp = itoa(new_value >> 1, s2, 10);
+        while (*tmp) *p++ = *tmp++;
+        *p++ = '.';
+        *p++ = (new_value & 0x01) ? '5' : '0';
+        *p = '\0';
         return result;
     } else if (format == 4) {
-        strlcpy(result, itoa(new_value >> 2, s2, 10), 5);
-        strlcat(result, ".", 5);
+        char * tmp = itoa(new_value >> 2, s2, 10);
+        while (*tmp) *p++ = *tmp++;
+        *p++ = '.';
         new_value = (new_value & 0x03) * 25;
-        strlcat(result, itoa(new_value, s2, 10), 7);
+        tmp = itoa(new_value, s2, 10);
+        while (*tmp) *p++ = *tmp++;
+        *p = '\0';
         return result;
-
     } else if (format > 0) {
-        strlcpy(result, itoa(new_value / format, s2, 10), 5);
-        strlcat(result, ".", 5);
-        strlcat(result, itoa(new_value % format, s2, 10), 7);
+        char * tmp = itoa(new_value / format, s2, 10);
+        while (*tmp) *p++ = *tmp++;
+        *p++ = '.';
+        tmp = itoa(new_value % format, s2, 10);
+        while (*tmp) *p++ = *tmp++;
+        *p = '\0';
     } else {
-        strlcpy(result, itoa(new_value * format * -1, s2, 10), 5);
+        itoa(new_value * format * -1, result, 10);
     }
 
     return result;
@@ -285,35 +308,39 @@ char * Helpers::render_value(char * result, const double value, const int8_t for
 // format: 0=no division, other divide by the value given and render with a decimal point
 char * Helpers::render_value(char * result, const int32_t value, const int8_t format, const uint8_t fahrenheit) {
     int32_t new_value = fahrenheit ? format ? value * 1.8 + 32 * format * (fahrenheit - 1) : value * 1.8 + 32 * (fahrenheit - 1) : value;
-    char    s[13]     = {0};
+    
     // just print it if no conversion required (format = 0)
     if (!format) {
-        strlcpy(result, itoa(new_value, s, 10), sizeof(s)); // format is 0
+        itoa(new_value, result, 10);
         return result;
     }
 
-    result[0] = '\0';
+    char * p = result;
+    char   s[13];
 
     // check for negative values
     if (new_value < 0) {
-        strlcpy(result, "-", sizeof(s));
-        new_value *= -1; // convert to positive
-    } else {
-        strlcpy(result, "", sizeof(s));
+        *p++ = '-';
+        new_value = -new_value; // convert to positive
     }
 
     // do floating point
     if (format == 2) {
         // divide by 2
-        strlcat(result, itoa(new_value / 2, s, 10), sizeof(s));
-        strlcat(result, ".", sizeof(s));
-        strlcat(result, ((new_value & 0x01) ? "5" : "0"), sizeof(s));
+        char * tmp = itoa(new_value / 2, s, 10);
+        while (*tmp) *p++ = *tmp++;
+        *p++ = '.';
+        *p++ = (new_value & 0x01) ? '5' : '0';
+        *p = '\0';
     } else if (format > 0) {
-        strlcat(result, itoa(new_value / format, s, 10), sizeof(s));
-        strlcat(result, ".", sizeof(s));
-        strlcat(result, itoa(((new_value % format) * 10) / format, s, 10), sizeof(s));
+        char * tmp = itoa(new_value / format, s, 10);
+        while (*tmp) *p++ = *tmp++;
+        *p++ = '.';
+        tmp = itoa(((new_value % format) * 10) / format, s, 10);
+        while (*tmp) *p++ = *tmp++;
+        *p = '\0';
     } else {
-        strlcat(result, itoa(new_value * format * -1, s, 10), sizeof(s));
+        itoa(new_value * format * -1, p, 10);
     }
 
     return result;
@@ -351,30 +378,38 @@ char * Helpers::render_value(char * result, const uint32_t value, const int8_t f
     if (!hasValue(value)) {
         return nullptr;
     }
-    result[0]          = '\0';
+    
     uint32_t new_value = fahrenheit ? format ? value * 1.8 + 32 * format * (fahrenheit - 1) : value * 1.8 + 32 * (fahrenheit - 1) : value;
-    char     s[14]     = {0};
+    char *   p = result;
+    char     s[14];
 
 #ifndef EMSESP_STANDALONE
     if (!format) {
-        strlcpy(result, lltoa(new_value, s, 10), sizeof(s)); // format is 0
+        lltoa(new_value, result, 10);
     } else if (format > 0) {
-        strlcpy(result, lltoa(new_value / format, s, 10), sizeof(s));
-        strlcat(result, ".", sizeof(s));
-        strlcat(result, itoa(((new_value % format) * 10) / format, s, 10), sizeof(s));
+        char * tmp = lltoa(new_value / format, s, 10);
+        while (*tmp) *p++ = *tmp++;
+        *p++ = '.';
+        tmp = itoa(((new_value % format) * 10) / format, s, 10);
+        while (*tmp) *p++ = *tmp++;
         if (format == 100) {
-            strlcat(result, itoa(new_value % 10, s, 10), sizeof(s));
+            tmp = itoa(new_value % 10, s, 10);
+            while (*tmp) *p++ = *tmp++;
         }
+        *p = '\0';
     } else {
-        strlcpy(result, lltoa(new_value * format * -1, s, 10), sizeof(s));
+        lltoa(new_value * format * -1, result, 10);
     }
 #else
     if (!format) {
-        strlcpy(result, ultostr(s, new_value, 10), sizeof(s)); // format is 0
+        ultostr(result, new_value, 10);
     } else {
-        strlcpy(result, ultostr(s, new_value / format, 10), sizeof(s));
-        strlcat(result, ".", sizeof(s));
-        strncat(result, ultostr(s, new_value % format, 10), sizeof(s));
+        char * tmp = ultostr(s, new_value / format, 10);
+        while (*tmp) *p++ = *tmp++;
+        *p++ = '.';
+        tmp = ultostr(s, new_value % format, 10);
+        while (*tmp) *p++ = *tmp++;
+        *p = '\0';
     }
 #endif
 
@@ -476,26 +511,26 @@ std::string Helpers::data_to_hex(const uint8_t * data, const uint8_t length) {
         return "<empty>";
     }
 
-    char str[length * 3];
-    memset(str, 0, sizeof(str));
-
-    char   buffer[4];
-    char * p = &str[0];
+    std::string result;
+    result.reserve(length * 3); // pre-allocate for efficiency
+    
+    char buffer[3];
     for (uint8_t i = 0; i < length; i++) {
         Helpers::hextoa(buffer, data[i]);
-        *p++ = buffer[0];
-        *p++ = buffer[1];
-        *p++ = ' '; // space
+        result.push_back(buffer[0]);
+        result.push_back(buffer[1]);
+        if (i < length - 1) {
+            result.push_back(' '); // space
+        }
     }
-    *--p = '\0'; // null terminate just in case, loosing the trailing space
 
-    return std::string(str);
+    return result;
 }
 
 // takes a hex string and convert it to an unsigned 32bit number (max 8 hex digits)
 // works with only positive numbers
 uint32_t Helpers::hextoint(const char * hex) {
-    if (hex == nullptr) {
+    if (!hex) {
         return 0;
     }
 
@@ -507,21 +542,27 @@ uint32_t Helpers::hextoint(const char * hex) {
     }
 
     while (*hex) {
-        // get current character then increment
-        char byte = *hex++;
-        // transform hex character to the 4bit equivalent number, using the ascii table indexes
-        if (byte == ' ')
-            byte = *hex++; // skip spaces
-        if (byte >= '0' && byte <= '9')
-            byte = byte - '0';
-        else if (byte >= 'a' && byte <= 'f')
+        uint8_t byte = *hex++;
+        
+        // skip spaces
+        if (byte == ' ') {
+            if (*hex == '\0') break;
+            byte = *hex++;
+        }
+        
+        // transform hex character to the 4bit equivalent number
+        if (byte >= '0' && byte <= '9') {
+            byte -= '0';
+        } else if (byte >= 'a' && byte <= 'f') {
             byte = byte - 'a' + 10;
-        else if (byte >= 'A' && byte <= 'F')
+        } else if (byte >= 'A' && byte <= 'F') {
             byte = byte - 'A' + 10;
-        else
+        } else {
             return 0; // error
+        }
+        
         // shift 4 to make space for new digit, and add the 4 bits of the new digit
-        val = (val << 4) | (byte & 0xF);
+        val = (val << 4) | byte;
     }
 
     return val;
@@ -568,11 +609,6 @@ double Helpers::transformNumFloat(double value, const int8_t numeric_operator, c
     return (round(val)) / 100.0;
 }
 
-// abs of a signed 32-bit integer
-uint32_t Helpers::abs(const int32_t i) {
-    return (i < 0 ? -i : i);
-}
-
 // for booleans, use isBool true (EMS_VALUE_BOOL)
 bool Helpers::hasValue(const uint8_t & value, const uint8_t isBool) {
     if (isBool == EMS_VALUE_BOOL) {
@@ -586,11 +622,7 @@ bool Helpers::hasValue(const int8_t & value) {
 }
 
 bool Helpers::hasValue(const char * value) {
-    if ((value == nullptr) || (strlen(value) == 0)) {
-        return false;
-    }
-
-    return (value[0] != '\0');
+    return (value != nullptr && value[0] != '\0');
 }
 
 // for short these are typically 0x8300, 0x7D00 and sometimes 0x8000
@@ -608,39 +640,41 @@ bool Helpers::hasValue(const uint32_t & value) {
 
 // checks if we can convert a char string to an int value
 bool Helpers::value2number(const char * value, int & value_i, const int min, const int max) {
-    if ((value == nullptr) || (strlen(value) == 0)) {
+    if (!value || !value[0]) {
         value_i = 0;
         return false;
     }
 
-    if (strlen(value) > 2 && value[0] == '0' && value[1] == 'x') {
+    if (value[0] == '0' && value[1] == 'x') {
         value_i = hextoint(value);
     } else {
         value_i = atoi(value);
     }
 
-    if (value_i >= min && value_i <= max) {
-        return true;
-    }
-    return false;
+    return (value_i >= min && value_i <= max);
 }
 
 // checks if we can convert a char string to a float value
 bool Helpers::value2float(const char * value, float & value_f) {
-    value_f = 0;
-    if ((value == nullptr) || (strlen(value) == 0)) {
+    if (!value || !value[0]) {
+        value_f = 0;
         return false;
     }
 
-    if (value[0] == '-' || value[0] == '.' || (value[0] >= '0' && value[0] <= '9')) {
+    char c = value[0];
+    if (c == '-' || c == '.' || (c >= '0' && c <= '9')) {
         value_f = atof(value);
         return true;
     }
 
-    if (value[0] == '+' && (value[1] == '.' || (value[1] >= '0' && value[1] <= '9'))) {
-        value_f = atof(value + 1);
-        return true;
+    if (c == '+' && value[1] != '\0') {
+        char c1 = value[1];
+        if (c1 == '.' || (c1 >= '0' && c1 <= '9')) {
+            value_f = atof(value + 1);
+            return true;
+        }
     }
+    value_f = 0;
     return false;
 }
 
@@ -666,8 +700,8 @@ bool Helpers::value2temperature(const char * value, int & value_i, const bool re
 
 // checks if we can convert a char string to a lowercase string
 bool Helpers::value2string(const char * value, std::string & value_s) {
-    if ((value == nullptr) || (strlen(value) == 0)) {
-        value_s = std::string{};
+    if (!value || !value[0]) {
+        value_s.clear();
         return false;
     }
 
@@ -678,22 +712,34 @@ bool Helpers::value2string(const char * value, std::string & value_s) {
 // checks to see if a string (usually a command or payload cmd) looks like a boolean
 // on, off, true, false, 1, 0
 bool Helpers::value2bool(const char * value, bool & value_b) {
-    if ((value == nullptr) || (strlen(value) == 0)) {
+    if (!value || !value[0]) {
         return false;
+    }
+
+    // Quick check for single digit strings
+    if (value[1] == '\0') {
+        if (value[0] == '1') {
+            value_b = true;
+            return true;
+        }
+        if (value[0] == '0') {
+            value_b = false;
+            return true;
+        }
     }
 
     std::string bool_str = toLower(value);
 
-    if ((bool_str == std::string(Helpers::translated_word(FL_(on)))) || (bool_str == toLower(Helpers::translated_word(FL_(ON)))) || (bool_str == "on")
-        || (bool_str == "1") || (bool_str == "true")) {
+    if (bool_str == "on" || bool_str == "true" || bool_str == toLower(Helpers::translated_word(FL_(ON))) 
+        || bool_str == std::string(Helpers::translated_word(FL_(on)))) {
         value_b = true;
-        return true; // is a bool
+        return true;
     }
 
-    if ((bool_str == std::string(Helpers::translated_word(FL_(off)))) || (bool_str == toLower(Helpers::translated_word(FL_(OFF)))) || (bool_str == "off")
-        || (bool_str == "0") || (bool_str == "false")) {
+    if (bool_str == "off" || bool_str == "false" || bool_str == toLower(Helpers::translated_word(FL_(OFF))) 
+        || bool_str == std::string(Helpers::translated_word(FL_(off)))) {
         value_b = false;
-        return true; // is a bool
+        return true;
     }
 
 #ifdef EMSESP_STANDALONE
@@ -706,18 +752,31 @@ bool Helpers::value2bool(const char * value, bool & value_b) {
 // checks to see if a string is member of a vector and return the index, also allow true/false for on/off
 // this for a list of lists, when using translated strings
 bool Helpers::value2enum(const char * value, uint8_t & value_ui, const char * const ** strs) {
-    if ((value == nullptr) || (strlen(value) == 0)) {
+    if (!value || !value[0]) {
         return false;
     }
+    
+    // Quick check for single digit index
+    if (value[1] == '\0' && value[0] >= '0' && value[0] <= '9') {
+        uint8_t idx = value[0] - '0';
+        if (strs[idx]) {
+            value_ui = idx;
+            return true;
+        }
+    }
+    
     std::string str = toLower(value);
+    // Pre-convert common comparison values
+    const std::string str_false = "false";
+    const std::string str_true = "true";
 
     for (value_ui = 0; strs[value_ui]; value_ui++) {
         std::string str1 = toLower(std::string(Helpers::translated_word(strs[value_ui])));
-        std::string str2 = toLower((strs[value_ui][0])); // also check for default language
-        if ((str1 != "")
-            && ((str2 == "off" && str == "false") || (str2 == "on" && str == "true") || (str == str1) || (str == str2)
-                || (value[0] == ('0' + value_ui) && value[1] == '\0'))) {
-            return true;
+        if (!str1.empty()) {
+            std::string str2 = toLower((strs[value_ui][0])); // also check for default language
+            if ((str2 == "off" && str == str_false) || (str2 == "on" && str == str_true) || (str == str1) || (str == str2)) {
+                return true;
+            }
         }
     }
     value_ui = 0;
@@ -737,22 +796,34 @@ bool Helpers::value2enum(const char * value, uint8_t & value_ui, const char * co
 // returns true if found, and sets the value_ui to the index, else false
 // also allow true/false for on/off
 bool Helpers::value2enum(const char * value, uint8_t & value_ui, const char * const * strs) {
-    if ((value == nullptr) || (strlen(value) == 0)) {
+    if (!value || !value[0]) {
         return false;
     }
+    
+    // Quick check for single digit index
+    if (value[1] == '\0' && value[0] >= '0' && value[0] <= '9') {
+        uint8_t idx = value[0] - '0';
+        if (strs[idx]) {
+            value_ui = idx;
+            return true;
+        }
+    }
+    
     std::string str = toLower(value);
-
-    std::string s_on  = Helpers::translated_word(FL_(on));
-    std::string s_off = Helpers::translated_word(FL_(off));
+    // Lowercase the translated strings once before loop
+    const std::string s_on  = toLower(Helpers::translated_word(FL_(on)));
+    const std::string s_off = toLower(Helpers::translated_word(FL_(off)));
+    const std::string str_false = "false";
+    const std::string str_true = "true";
 
     // stops when a nullptr is found, which is the end delimeter of a MAKE_TRANSLATION()
-    // could use count_items() to avoid buffer over-run but this works
     for (value_ui = 0; strs[value_ui]; value_ui++) {
         std::string enum_str = toLower((strs[value_ui]));
 
-        if ((enum_str != "")
-            && ((enum_str == "off" && (str == s_off || str == "false")) || (enum_str == "on" && (str == s_on || str == "true")) || (str == enum_str)
-                || (value[0] == ('0' + value_ui) && value[1] == '\0'))) {
+        if (!enum_str.empty()
+            && ((enum_str == "off" && (str == s_off || str == str_false)) 
+                || (enum_str == "on" && (str == s_on || str == str_true)) 
+                || (str == enum_str))) {
             return true;
         }
     }
@@ -771,19 +842,29 @@ bool Helpers::value2enum(const char * value, uint8_t & value_ui, const char * co
 
 // https://stackoverflow.com/questions/313970/how-to-convert-stdstring-to-lower-case
 std::string Helpers::toLower(std::string const & s) {
-    std::string lc = s;
-    std::transform(lc.begin(), lc.end(), lc.begin(), [](unsigned char c) { return std::tolower(c); });
+    std::string lc;
+    lc.reserve(s.size()); // pre-allocate
+    std::transform(s.begin(), s.end(), std::back_inserter(lc), [](unsigned char c) { return std::tolower(c); });
     return lc;
 }
 
 std::string Helpers::toLower(const char * s) {
-    return toLower(std::string(s));
+    if (!s) return std::string();
+    
+    std::string lc;
+    size_t len = strlen(s);
+    lc.reserve(len);
+    for (size_t i = 0; i < len; ++i) {
+        lc.push_back(std::tolower((unsigned char)s[i]));
+    }
+    return lc;
 }
 
 std::string Helpers::toUpper(std::string const & s) {
-    std::string lc = s;
-    std::transform(lc.begin(), lc.end(), lc.begin(), [](unsigned char c) { return std::toupper(c); });
-    return lc;
+    std::string uc;
+    uc.reserve(s.size()); // pre-allocate
+    std::transform(s.begin(), s.end(), std::back_inserter(uc), [](unsigned char c) { return std::toupper(c); });
+    return uc;
 }
 
 // capitalizes one UTF-8 character in char array

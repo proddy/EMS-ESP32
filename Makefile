@@ -27,10 +27,12 @@ ifeq ($(UNAME_S),Linux)
 endif
 ifeq ($(UNAME_S),Darwin)
     EXTRA_CPPFLAGS = -D OSX -Wno-tautological-constant-out-of-range-compare
-	JOBS ?= $(shell sysctl -n hw.ncpu)
+	JOBS ?= $(shell sysctl -n hw.ncpu 2>/dev/null || echo 4)
 endif
 
 # Set optimal parallel build settings
+# Default to 4 jobs if JOBS is empty
+JOBS ?= 4
 MAKEFLAGS += -j$(JOBS) -l$(shell echo $$(($(JOBS) * 2)))
 
 # $(info Number of jobs: $(JOBS))
@@ -105,13 +107,7 @@ CXX := /usr/bin/g++
 # LDFLAGS   Linker Flags
 #----------------------------------------------------------------------
 CPPFLAGS  += $(DEFINES) $(DEFAULTS) $(INCLUDE)
-CPPFLAGS  += -ggdb -g3 -MMD
-CPPFLAGS  += -flto=auto
-CPPFLAGS  += -Wall -Wextra -Werror -Wswitch-enum
-CPPFLAGS  += -Wno-unused-parameter -Wno-missing-braces -Wno-vla-cxx-extension
-CPPFLAGS  += -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fno-threadsafe-statics
-CPPFLAGS  += -Os -DNDEBUG
-
+CPPFLAGS  += -ggdb -g3 -MMD -flto=auto -Wall -Wextra -Werror -Wswitch-enum -Wno-unused-parameter -Wno-missing-braces -Wno-vla-cxx-extension -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fno-threadsafe-statics -Wunused-variable -Os -DNDEBUG
 CPPFLAGS  += $(EXTRA_CPPFLAGS)
 
 CFLAGS    += $(CPPFLAGS)

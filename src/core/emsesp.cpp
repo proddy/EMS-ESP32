@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -238,17 +238,12 @@ uint8_t EMSESP::bus_status() {
     }
 
     // check if we have Tx issues.
-    uint32_t total_sent = txservice_.telegram_read_count() + txservice_.telegram_write_count();
-    uint32_t total_fail = txservice_.telegram_read_fail_count() + txservice_.telegram_write_fail_count();
+    const uint32_t total_sent = txservice_.telegram_read_count() + txservice_.telegram_write_count();
+    const uint32_t total_fail = txservice_.telegram_read_fail_count() + txservice_.telegram_write_fail_count();
 
     // nothing sent and also no errors - must be ok
-    if ((total_sent == 0) && (total_fail == 0)) {
-        return BUS_STATUS_CONNECTED;
-    }
-
-    // nothing sent, but have Tx errors
-    if ((total_sent == 0) && (total_fail != 0)) {
-        return BUS_STATUS_TX_ERRORS;
+    if (total_sent == 0) {
+        return (total_fail == 0) ? BUS_STATUS_CONNECTED : BUS_STATUS_TX_ERRORS;
     }
 
     // Tx Failure rate > 10%
@@ -261,8 +256,10 @@ uint8_t EMSESP::bus_status() {
 
 // show the EMS bus status plus both Rx and Tx queues
 void EMSESP::show_ems(uuid::console::Shell & shell) {
-    // EMS bus information
-    switch (bus_status()) {
+    // EMS bus information - cache bus_status() to avoid multiple calls
+    const uint8_t bus_status_val = bus_status();
+    
+    switch (bus_status_val) {
     case BUS_STATUS_OFFLINE:
         shell.printfln("EMS Bus is disconnected.");
         break;
@@ -276,7 +273,7 @@ void EMSESP::show_ems(uuid::console::Shell & shell) {
 
     shell.println();
 
-    if (bus_status() != BUS_STATUS_OFFLINE) {
+    if (bus_status_val != BUS_STATUS_OFFLINE) {
         shell.printfln("EMS Bus info:");
         EMSESP::webSettingsService.read([&](WebSettings const & settings) { shell.printfln("  Tx mode: %d", settings.tx_mode); });
         shell.printfln("  Bus protocol: %s", EMSbus::is_ht3() ? "HT3" : "Buderus");
@@ -288,7 +285,8 @@ void EMSESP::show_ems(uuid::console::Shell & shell) {
         shell.printfln("  #read fails (after %d retries): %d", TxService::MAXIMUM_TX_RETRIES, txservice_.telegram_read_fail_count());
         shell.printfln("  #write fails (after %d retries): %d", TxService::MAXIMUM_TX_RETRIES, txservice_.telegram_write_fail_count());
         shell.printfln("  Rx line quality: %d%%", rxservice_.quality());
-        shell.printfln("  Tx line quality: %d%%", (txservice_.read_quality() + txservice_.read_quality()) / 2);
+        // Fixed bug: was calling read_quality() twice instead of read_quality() and write_quality()
+        shell.printfln("  Tx line quality: %d%%", (txservice_.read_quality() + txservice_.write_quality()) / 2);
         shell.println();
     }
 
@@ -461,27 +459,34 @@ void EMSESP::show_device_values(uuid::console::Shell & shell) {
     }
 
     // do this in the order of factory classes to keep a consistent order when displaying
-    for (const auto & device_class : EMSFactory::device_handlers()) {
+    const auto & device_handlers = EMSFactory::device_handlers();
+    for (const auto & device_class : device_handlers) {
         for (const auto & emsdevice : emsdevices) {
             if (emsdevice && (emsdevice->device_type() == device_class.first)) {
                 // print header, with device type translated
-                shell.printfln("%s: %s (%d)", emsdevice->device_type_2_device_name_translated(), emsdevice->to_string().c_str(), emsdevice->count_entities());
+                const uint8_t entity_count = emsdevice->count_entities();
+                shell.printfln("%s: %s (%d)", emsdevice->device_type_2_device_name_translated(), emsdevice->to_string().c_str(), entity_count);
 
-                JsonDocument doc;
-                JsonObject   json = doc.to<JsonObject>();
+                if (entity_count > 0) {
+                    JsonDocument doc;
+                    JsonObject   json = doc.to<JsonObject>();
 
-                emsdevice->generate_values(json, DeviceValueTAG::TAG_NONE, true, EMSdevice::OUTPUT_TARGET::CONSOLE);
+                    emsdevice->generate_values(json, DeviceValueTAG::TAG_NONE, true, EMSdevice::OUTPUT_TARGET::CONSOLE);
 
-                // print line
-                for (JsonPair p : json) {
-                    std::string key = p.key().c_str(); // this will be fullname and the shortname in brackets
+                    // print line
+                    for (JsonPair p : json) {
+                        const std::string key = p.key().c_str(); // this will be fullname and the shortname in brackets
 
-                    // extract the shortname from the key, which is in brackets
-                    std::size_t first_bracket = key.find_last_of('(');
-                    std::size_t last_bracket  = key.find_last_of(')');
-                    std::string uom           = emsdevice->get_value_uom(key.substr(first_bracket + 1, last_bracket - first_bracket - 1));
-
-                    shell.printfln("  %s: %s%s %s%s", key.c_str(), COLOR_BRIGHT_GREEN, p.value().as<std::string>().c_str(), uom.c_str(), COLOR_RESET);
+                        // extract the shortname from the key, which is in brackets
+                        const std::size_t first_bracket = key.find_last_of('(');
+                        const std::size_t last_bracket  = key.find_last_of(')');
+                        
+                        if (first_bracket != std::string::npos && last_bracket != std::string::npos && last_bracket > first_bracket) {
+                            const std::string shortname = key.substr(first_bracket + 1, last_bracket - first_bracket - 1);
+                            const std::string uom       = emsdevice->get_value_uom(shortname);
+                            shell.printfln("  %s: %s%s %s%s", key.c_str(), COLOR_BRIGHT_GREEN, p.value().as<std::string>().c_str(), uom.c_str(), COLOR_RESET);
+                        }
+                    }
                 }
                 shell.println();
             }
@@ -559,7 +564,7 @@ void EMSESP::show_sensor_values(uuid::console::Shell & shell) {
 }
 
 // MQTT publish everything, immediately
-void EMSESP::publish_all(bool force) {
+void EMSESP::publish_all(const bool force) {
     if (force) {
         publish_all_idx_ = 1;
         reset_mqtt_ha();
@@ -646,16 +651,17 @@ void EMSESP::reset_mqtt_ha() {
 // create json doc for the devices values and add to MQTT publish queue
 // this will also create the HA /config topic for each device value
 // generate_values_json is called to build the device value (dv) object array
-void EMSESP::publish_device_values(uint8_t device_type) {
+void EMSESP::publish_device_values(const uint8_t device_type) {
     JsonDocument doc;
     JsonObject   json         = doc.to<JsonObject>();
     bool         need_publish = false;
-    bool         nested       = (Mqtt::is_nested());
+    const bool   nested       = Mqtt::is_nested();
 
     // group by device type
     for (int8_t tag = DeviceValueTAG::TAG_DEVICE_DATA; tag <= DeviceValueTAG::TAG_SRC16; tag++) {
         JsonObject json_tag     = json;
         bool       nest_created = false;
+        
         for (const auto & emsdevice : emsdevices) {
             if (emsdevice && (emsdevice->device_type() == device_type)) {
                 if (nested && !nest_created && emsdevice->has_tags(tag)) {
@@ -665,6 +671,7 @@ void EMSESP::publish_device_values(uint8_t device_type) {
                 need_publish |= emsdevice->generate_values(json_tag, tag, false, EMSdevice::OUTPUT_TARGET::MQTT);
             }
         }
+        
         if (need_publish && !nested) {
             Mqtt::queue_publish(Mqtt::tag_to_topic(device_type, tag), json);
             json         = doc.to<JsonObject>();
@@ -724,34 +731,40 @@ void EMSESP::publish_sensor_values(const bool time, const bool force) {
 
 // MQTT publish a telegram as raw data to the topic 'response'
 void EMSESP::publish_response(std::shared_ptr<const Telegram> telegram) {
-    static char *   buffer = nullptr;
+    static char     buffer[768]; // max 256 hex-codes, 255 spaces, 1 termination - use static allocation
+    static bool     buffer_initialized = false;
     static uint8_t  offset = 0;
     static uint16_t type   = 0;
+    
     // restart on mismatch while collecting telegram
-    if (buffer && (telegram->offset < offset || telegram->type_id != type)) {
-        delete[] buffer;
-        buffer = nullptr;
+    if (buffer_initialized && (telegram->offset < offset || telegram->type_id != type)) {
+        buffer_initialized = false;
     }
-    if (buffer == nullptr) {
+    
+    if (!buffer_initialized) {
         offset = telegram->offset; // store offset from first part
         type   = telegram->type_id;
-        buffer = new char[768]; // max 256 hex-codes, 255 spaces, 1 termination
+        // Initialize buffer with '00 ' pattern
         for (uint16_t i = 0; i < 256; i++) {
             buffer[i * 3]     = '0';
             buffer[i * 3 + 1] = '0';
             buffer[i * 3 + 2] = ' ';
         }
         buffer[267] = '\0';
+        buffer_initialized = true;
     }
+    
     if (telegram->message_length) {
         strlcpy(&buffer[(telegram->offset - offset) * 3], Helpers::data_to_hex(telegram->message_data, telegram->message_length).c_str(), 768);
     } else {
         strlcpy(&buffer[(telegram->offset - offset) * 3], "", 768);
     }
+    
     if (response_id_ != 0) {
         buffer[strlen(buffer)] = ' '; // overwrite termination \0
         return;                       // do not delete buffer
     }
+    
     JsonDocument doc;
     char         s[10];
     doc["src"]    = Helpers::hextoa(s, telegram->src);
@@ -760,13 +773,13 @@ void EMSESP::publish_response(std::shared_ptr<const Telegram> telegram) {
     doc["offset"] = Helpers::hextoa(s, offset);
     doc["data"]   = buffer;
 
-    if (strlen(buffer) && strlen(buffer) <= 11) {
-        uint32_t value = Helpers::hextoint(buffer);
-        doc["value"]   = value;
+    size_t buffer_len = strlen(buffer);
+    if (buffer_len && buffer_len <= 11) {
+        doc["value"] = Helpers::hextoint(buffer);
     }
+    
     Mqtt::queue_publish("response", doc.as<JsonObject>());
-    delete[] buffer;
-    buffer = nullptr;
+    buffer_initialized = false;
 }
 
 // builds json with the detail of each value, for a given device type
@@ -827,12 +840,12 @@ bool EMSESP::get_device_value_info(JsonObject root, const char * cmd, const int8
 std::string EMSESP::device_tostring(const uint8_t device_id) {
     if ((device_id & 0x7F) == EMSbus::ems_bus_id()) {
         return "me";
-    } else if (device_id == 0x00) {
-        return "all";
-    } else {
-        char buffer[5];
-        return Helpers::hextoa(buffer, device_id);
     }
+    if (device_id == 0x00) {
+        return "all";
+    }
+    char buffer[5];
+    return Helpers::hextoa(buffer, device_id);
 }
 
 // created a pretty print telegram as a text string
@@ -843,42 +856,49 @@ std::string EMSESP::pretty_telegram(std::shared_ptr<const Telegram> telegram) {
     uint8_t offset = telegram->offset;
 
     // find name for src and dest by looking up known devices
-    std::string src_name("");
-    std::string dest_name("");
-    std::string type_name("");
+    // Optimize: do all lookups in a single pass
+    std::string src_name;
+    std::string dest_name;
+    std::string type_name;
+    
+    bool src_found  = false;
+    bool dest_found = false;
+    bool type_found = false;
+    
     for (const auto & emsdevice : emsdevices) {
-        // get src & dest
-        if (emsdevice->is_device_id(src)) {
-            src_name = emsdevice->device_type_name();
-        } else if (emsdevice->is_device_id(dest)) {
-            dest_name = emsdevice->device_type_name();
+        // get src & dest names
+        if (!src_found && emsdevice->is_device_id(src)) {
+            src_name  = emsdevice->device_type_name();
+            src_found = true;
         }
+        if (!dest_found && emsdevice->is_device_id(dest)) {
+            dest_name  = emsdevice->device_type_name();
+            dest_found = true;
+        }
+        
         // get the type name
-        if (type_name.empty()) {
+        if (!type_found) {
             if ((telegram->operation == Telegram::Operation::RX_READ && emsdevice->is_device_id(dest))
                 || (telegram->operation != Telegram::Operation::RX_READ && dest == 0 && emsdevice->is_device_id(src))
                 || (telegram->operation != Telegram::Operation::RX_READ && src == EMSbus::ems_bus_id() && emsdevice->is_device_id(dest))) {
-                type_name = emsdevice->telegram_type_name(telegram);
+                type_name  = emsdevice->telegram_type_name(telegram);
+                type_found = !type_name.empty();
+            }
+            // fallback: get type name from src
+            if (!type_found && telegram->operation != Telegram::Operation::RX_READ && emsdevice->is_device_id(src)) {
+                type_name  = emsdevice->telegram_type_name(telegram);
+                type_found = !type_name.empty();
+            }
+            // 2nd fallback: get type name from dest
+            if (!type_found && telegram->operation != Telegram::Operation::RX_READ && emsdevice->is_device_id(dest)) {
+                type_name  = emsdevice->telegram_type_name(telegram);
+                type_found = !type_name.empty();
             }
         }
-    }
-    if (type_name.empty()) {
-        // fallback, get the type name from src
-        for (const auto & emsdevice : emsdevices) {
-            if (telegram->operation != Telegram::Operation::RX_READ && emsdevice->is_device_id(src)) {
-                type_name = emsdevice->telegram_type_name(telegram);
-                break;
-            }
-        }
-    }
-
-    if (type_name.empty()) {
-        // 2nd fallback, get the type name from dest
-        for (const auto & emsdevice : emsdevices) {
-            if (telegram->operation != Telegram::Operation::RX_READ && emsdevice->is_device_id(dest)) {
-                type_name = emsdevice->telegram_type_name(telegram);
-                break;
-            }
+        
+        // Early exit if we found everything
+        if (src_found && dest_found && type_found) {
+            break;
         }
     }
     // if we can't find names for the devices, use their hex values
@@ -921,21 +941,46 @@ std::string EMSESP::pretty_telegram(std::shared_ptr<const Telegram> telegram) {
     }
 
     std::string str;
-    str.reserve(200);
+    str.reserve(256);
+    
+    // Build string efficiently using append operations
+    char hex_buf[10];
+    str.append(src_name);
+    str.push_back('(');
+    str.append(Helpers::hextoa(hex_buf, src));
+    
     if (telegram->operation == Telegram::Operation::RX_READ) {
-        str = src_name + "(" + Helpers::hextoa(src) + ") R " + dest_name + "(" + Helpers::hextoa(dest) + "), " + type_name + "("
-              + Helpers::hextoa(telegram->type_id) + "), length: " + Helpers::itoa(telegram->message_data[0])
-              + ((telegram->message_length > 1) ? ", data: " + Helpers::data_to_hex(telegram->message_data + 1, telegram->message_length - 1) : "");
-    } else if (telegram->dest == 0) {
-        str = src_name + "(" + Helpers::hextoa(src) + ") B " + dest_name + "(" + Helpers::hextoa(dest) + "), " + type_name + "("
-              + Helpers::hextoa(telegram->type_id) + "), data: " + telegram->to_string_message();
+        str.append(") R ");
+        str.append(dest_name);
+        str.push_back('(');
+        str.append(Helpers::hextoa(hex_buf, dest));
+        str.append("), ");
+        str.append(type_name);
+        str.push_back('(');
+        str.append(Helpers::hextoa(hex_buf, telegram->type_id));
+        str.append("), length: ");
+        str.append(Helpers::itoa(telegram->message_data[0]));
+        if (telegram->message_length > 1) {
+            str.append(", data: ");
+            str.append(Helpers::data_to_hex(telegram->message_data + 1, telegram->message_length - 1));
+        }
     } else {
-        str = src_name + "(" + Helpers::hextoa(src) + ") W " + dest_name + "(" + Helpers::hextoa(dest) + "), " + type_name + "("
-              + Helpers::hextoa(telegram->type_id) + "), data: " + telegram->to_string_message();
+        str.append(telegram->dest == 0 ? ") B " : ") W ");
+        str.append(dest_name);
+        str.push_back('(');
+        str.append(Helpers::hextoa(hex_buf, dest));
+        str.append("), ");
+        str.append(type_name);
+        str.push_back('(');
+        str.append(Helpers::hextoa(hex_buf, telegram->type_id));
+        str.append("), data: ");
+        str.append(telegram->to_string_message());
     }
 
     if (offset) {
-        str += " (offset " + Helpers::itoa(offset) + ")";
+        str.append(" (offset ");
+        str.append(Helpers::itoa(offset));
+        str.push_back(')');
     }
 
     return str;
@@ -957,20 +1002,23 @@ void EMSESP::process_UBADevices(std::shared_ptr<const Telegram> telegram) {
     }
 
     // for each byte, check the bits and determine the device_id
+    const uint8_t ems_bus_id = EMSbus::ems_bus_id(); // cache to avoid repeated calls
     for (uint8_t data_byte = 0; data_byte < telegram->message_length; data_byte++) {
         uint8_t next_byte = telegram->message_data[data_byte];
+        if (next_byte == 0) {
+            continue; // skip if no devices active in this byte
+        }
+        
         for (uint8_t bit = 0; bit < 8; bit++) {
-            uint8_t device_id = ((data_byte + 1) * 8) + bit;
-            EMSESP::device_active(device_id, next_byte & 0x01);
-            if (next_byte & 0x01) {
-                // if we haven't already detected this device, request it's version details, unless its us (EMS-ESP)
-                // when the version info is received, it will automagically add the device
-                if ((device_id != EMSbus::ems_bus_id()) && !(EMSESP::device_exists(device_id))) {
-                    LOG_DEBUG("New EMS device detected with ID 0x%02X. Requesting version information.", device_id);
-                    send_read_request(EMSdevice::EMS_TYPE_VERSION, device_id);
-                }
+            const uint8_t device_id = ((data_byte + 1) * 8) + bit;
+            const bool    is_active = next_byte & 0x01;
+            
+            EMSESP::device_active(device_id, is_active);
+            if (is_active && (device_id != ems_bus_id) && !EMSESP::device_exists(device_id)) {
+                LOG_DEBUG("New EMS device detected with ID 0x%02X. Requesting version information.", device_id);
+                send_read_request(EMSdevice::EMS_TYPE_VERSION, device_id);
             }
-            next_byte = next_byte >> 1; // advance 1 bit
+            next_byte >>= 1; // advance 1 bit
         }
     }
 }
@@ -1116,56 +1164,51 @@ bool EMSESP::process_telegram(std::shared_ptr<const Telegram> telegram) {
     // calls the associated process function for that EMS device
     // returns false if the device_id doesn't recognize it
     // after the telegram has been processed, see if there have been values changed and we need to do a MQTT publish
-    bool    telegram_found = false;
-    uint8_t device_found   = 0;
-    // broadcast or send to us
+    bool       telegram_found = false;
+    EMSdevice *device_found   = nullptr;
+    
+    // Combine all device lookups into a single loop for better cache locality
     for (const auto & emsdevice : emsdevices) {
-        if (emsdevice->is_device_id(telegram->src) && (telegram->dest == 0 || telegram->dest == EMSbus::ems_bus_id())) {
+        // broadcast or send to us
+        if (!telegram_found && emsdevice->is_device_id(telegram->src) && (telegram->dest == 0 || telegram->dest == EMSbus::ems_bus_id())) {
             telegram_found = emsdevice->handle_telegram(telegram);
-            device_found   = emsdevice->unique_id();
-            break;
+            device_found   = emsdevice.get();
         }
-    }
-    if (!telegram_found) {
         // check for command to the device
-        for (const auto & emsdevice : emsdevices) {
-            if (emsdevice->is_device_id(telegram->dest) && telegram->src != EMSbus::ems_bus_id()) {
-                telegram_found = emsdevice->handle_telegram(telegram);
-                device_found   = emsdevice->unique_id();
-                break;
-            }
+        else if (!telegram_found && emsdevice->is_device_id(telegram->dest) && telegram->src != EMSbus::ems_bus_id()) {
+            telegram_found = emsdevice->handle_telegram(telegram);
+            device_found   = emsdevice.get();
         }
-    }
-    if (!telegram_found) {
         // check for sends to master thermostat
-        for (const auto & emsdevice : emsdevices) {
-            if (emsdevice->is_device_id(telegram->src) && telegram->dest == 0x10) {
-                telegram_found = emsdevice->handle_telegram(telegram);
-                device_found   = emsdevice->unique_id();
-                break;
-            }
+        else if (!telegram_found && emsdevice->is_device_id(telegram->src) && telegram->dest == 0x10) {
+            telegram_found = emsdevice->handle_telegram(telegram);
+            device_found   = emsdevice.get();
+        }
+        
+        // Exit early if we found the device
+        if (device_found) {
+            break;
         }
     }
-    for (const auto & emsdevice : emsdevices) {
-        if (emsdevice->unique_id() == device_found) {
-            if (!telegram_found && telegram->message_length > 0) {
-                emsdevice->add_handlers_ignored(telegram->type_id);
+    
+    // Process the found device
+    if (device_found) {
+        if (!telegram_found && telegram->message_length > 0) {
+            device_found->add_handlers_ignored(telegram->type_id);
+        }
+        if (wait_validate_ == telegram->type_id) {
+            wait_validate_ = 0;
+        }
+        if (Mqtt::connected() && telegram_found
+            && ((mqtt_.get_publish_onchange(device_found->device_type()) && device_found->has_update())
+                || (telegram->type_id == publish_id_ && telegram->dest == EMSbus::ems_bus_id()))) {
+            if (telegram->type_id == publish_id_) {
+                publish_id_ = 0;
             }
-            if (wait_validate_ == telegram->type_id) {
-                wait_validate_ = 0;
+            device_found->has_update(false); // reset flag
+            if (!Mqtt::publish_single()) {
+                publish_device_values(device_found->device_type()); // publish to MQTT if we explicitly have too
             }
-            if (Mqtt::connected() && telegram_found
-                && ((mqtt_.get_publish_onchange(emsdevice->device_type()) && emsdevice->has_update())
-                    || (telegram->type_id == publish_id_ && telegram->dest == EMSbus::ems_bus_id()))) {
-                if (telegram->type_id == publish_id_) {
-                    publish_id_ = 0;
-                }
-                emsdevice->has_update(false); // reset flag
-                if (!Mqtt::publish_single()) {
-                    publish_device_values(emsdevice->device_type()); // publish to MQTT if we explicitly have too
-                }
-            }
-            break;
         }
     }
     // handle unknown broadcasted telegrams (or send to us)
@@ -1533,15 +1576,19 @@ void EMSESP::incoming_telegram(uint8_t * data, const uint8_t length) {
     // check for poll
     if (length == 1) {
         // if ht3 poll must be ems_bus_id else if Buderus poll must be (ems_bus_id | 0x80)
-        uint8_t         poll_id      = (first_value ^ 0x80 ^ rxservice_.ems_mask());
+        const uint8_t   poll_id      = (first_value ^ 0x80 ^ rxservice_.ems_mask());
+        const uint8_t   our_bus_id   = EMSbus::ems_bus_id();
         static uint32_t connect_time = 0;
+        
         if (!rxservice_.bus_connected()) {
             wait_km_     = true;
             connect_time = uuid::get_uptime_sec();
         }
-        if (poll_id == EMSbus::ems_bus_id()) {
+        
+        if (poll_id == our_bus_id) {
             EMSbus::last_bus_activity(uuid::get_uptime()); // set the flag indication the EMS bus is active
         }
+        
         if (wait_km_) {
             if (poll_id != 0x48 && (uuid::get_uptime_sec() - connect_time) < EMS_WAIT_KM_TIMEOUT) {
                 return;
@@ -1580,25 +1627,33 @@ void EMSESP::incoming_telegram(uint8_t * data, const uint8_t length) {
 
 // fetch devices one by one
 void EMSESP::scheduled_fetch_values() {
-    static uint8_t no = 0;
-    if (no || (uuid::get_uptime() - last_fetch_ > EMS_FETCH_FREQUENCY)) {
-        if (!no) {
-            last_fetch_ = uuid::get_uptime();
-            no          = 1;
-        }
-
-        if (txservice_.tx_queue_empty()) {
-            uint8_t i = 0;
-            for (const auto & emsdevice : emsdevices) {
-                if (++i >= no) {
-                    emsdevice->fetch_values();
-                    no++;
-                    return;
-                }
-            }
-            webCustomEntityService.fetch();
-            no = 0;
-        }
+    static uint8_t device_index = 0;
+    
+    // Check if it's time to start a new fetch cycle
+    if (device_index == 0 && (uuid::get_uptime() - last_fetch_ <= EMS_FETCH_FREQUENCY)) {
+        return;
+    }
+    
+    // Only proceed if TX queue is empty
+    if (!txservice_.tx_queue_empty()) {
+        return;
+    }
+    
+    // Start new cycle
+    if (device_index == 0) {
+        last_fetch_ = uuid::get_uptime();
+        device_index = 1;
+    }
+    
+    // Fetch from devices
+    const size_t device_count = emsdevices.size();
+    if (device_index <= device_count) {
+        emsdevices[device_index - 1]->fetch_values();
+        device_index++;
+    } else {
+        // All devices done, fetch custom entities and reset
+        webCustomEntityService.fetch();
+        device_index = 0;
     }
 }
 
@@ -1677,7 +1732,7 @@ void EMSESP::start() {
         nvs_.begin("ems-esp", false, "nvs");     // fallback to small nvs
     }
 
-    LOG_DEBUG("NVS device information: %s", system_.getBBQKeesGatewayDetails().isEmpty() ? "not set" : system_.getBBQKeesGatewayDetails().c_str());
+    LOG_DEBUG("NVS device information: %s", system_.getBBQKeesGatewayDetails().empty() ? "not set" : system_.getBBQKeesGatewayDetails().c_str());
 
     webSettingsService.begin(); // load EMS-ESP Application settings
 

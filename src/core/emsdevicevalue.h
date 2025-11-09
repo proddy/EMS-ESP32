@@ -1,7 +1,7 @@
 
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,9 @@
 #include "default_settings.h" // for enum types
 
 namespace emsesp {
+
+// Forward declarations
+class EMSESP;
 
 // DeviceValue holds the information for a device entity
 class DeviceValue {
@@ -202,8 +205,7 @@ class DeviceValue {
     );
 
     bool hasValue() const;
-    bool has_tag() const;
-    bool get_min_max(int16_t & dv_set_min, uint32_t & dv_set_max);
+    bool get_min_max(int16_t & dv_set_min, uint32_t & dv_set_max) const;
 
     void               set_custom_minmax();
     bool               get_custom_min(int16_t & val);
@@ -212,17 +214,22 @@ class DeviceValue {
     std::string        get_fullname() const;
     static std::string get_name(const std::string & entity);
 
-    // dv state flags
-    void add_state(uint8_t s) {
+    // inline frequently-called functions for better performance
+    inline bool has_tag() const {
+        return ((tag < NUM_TAGS) && (tag != TAG_NONE) && strlen(DeviceValueTAG_s[tag][0]));
+    }
+
+    // dv state flags - inline for better performance
+    inline void add_state(uint8_t s) {
         state |= s;
     }
-    bool has_state(uint8_t s) const {
+    inline bool has_state(uint8_t s) const {
         return (state & s) == s;
     }
-    void remove_state(uint8_t s) {
+    inline void remove_state(uint8_t s) {
         state &= ~s;
     }
-    uint8_t get_state() const {
+    inline uint8_t get_state() const {
         return state;
     }
 
@@ -230,6 +237,10 @@ class DeviceValue {
     static const char * const * DeviceValueTAG_s[];
     static const char * const   DeviceValueTAG_mqtt[];
     static uint8_t              NUM_TAGS; // # tags
+
+  private:
+    // helper function for temperature conversions
+    uint8_t get_fahrenheit_mode() const;
 };
 
 }; // namespace emsesp

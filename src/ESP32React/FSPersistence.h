@@ -21,10 +21,10 @@ class FSPersistence {
         File settingsFile = _fs->open(_filePath, "r");
 
         if (settingsFile) {
-            JsonDocument         jsonDocument;
-            DeserializationError error = deserializeJson(jsonDocument, settingsFile);
+            JsonDocument               jsonDocument;
+            const DeserializationError error = deserializeJson(jsonDocument, settingsFile);
             if (error == DeserializationError::Ok && jsonDocument.is<JsonObject>()) {
-                JsonObject jsonObject = jsonDocument.as<JsonObject>();
+                JsonObjectConst jsonObject = jsonDocument.as<JsonObjectConst>();
                 _statefulService->updateWithoutPropagation(jsonObject, _stateUpdater);
 #if defined(EMSESP_DEBUG)
                 // Serial.println();
@@ -51,17 +51,17 @@ class FSPersistence {
 
     bool writeToFS() {
         // create and populate a new json object
-        JsonDocument jsonDocument;
+        JsonDocument       jsonDocument;
         JsonObject   jsonObject = jsonDocument.to<JsonObject>();
         _statefulService->read(jsonObject, _stateReader);
 
         // make directories if required, for new IDF4.2 & LittleFS
-        String path(_filePath);
-        int    index = 0;
-        while ((index = path.indexOf('/', static_cast<unsigned int>(index) + 1)) != -1) {
-            String segment = path.substring(0, static_cast<unsigned int>(index));
-            if (!_fs->exists(segment)) {
-                _fs->mkdir(segment);
+        std::string path(_filePath);
+        size_t      index = 0;
+        while ((index = path.find('/', index + 1)) != std::string::npos) {
+            std::string segment = path.substr(0, index);
+            if (!_fs->exists(segment.c_str())) {
+                _fs->mkdir(segment.c_str());
             }
         }
 
@@ -110,8 +110,8 @@ class FSPersistence {
     // We assume the updater supplies sensible defaults if an empty object
     // is supplied, this virtual function allows that to be changed.
     virtual void applyDefaults() {
-        JsonDocument jsonDocument;
-        JsonObject   jsonObject = jsonDocument.as<JsonObject>();
+        JsonDocument       jsonDocument;
+        JsonObjectConst   jsonObject = jsonDocument.as<JsonObjectConst>();
         _statefulService->updateWithoutPropagation(jsonObject, _stateUpdater);
     }
 };

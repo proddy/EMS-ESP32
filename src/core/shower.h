@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,9 +31,6 @@ class Shower {
     void set_shower_state(bool state, bool force = false);
     void create_ha_discovery();
 
-    // commands
-    static bool command_coldshot(const char * value, const int8_t id);
-
     void shower_timer(bool enable) {
         shower_timer_ = enable;
     }
@@ -41,6 +38,7 @@ class Shower {
     void shower_alert(bool enable) {
         shower_alert_ = enable;
     }
+
     void ha_reset() {
         ha_configdone_ = false;
     }
@@ -54,22 +52,27 @@ class Shower {
     void shower_alert_start();
     void shower_alert_stop();
 
-    bool     shower_timer_;          // true if we want to report back on shower times
-    bool     shower_alert_;          // true if we want the alert of cold water
-    uint32_t shower_alert_trigger_;  // default 7 minutes, before trigger a shot of cold water
-    uint32_t shower_alert_coldshot_; // default 10 seconds for cold water before turning back hot water
-    uint32_t shower_min_duration_;   // default 3 minutes (180 seconds), before recognizing its a shower
-    uint32_t next_alert_;
-    bool     ha_configdone_ = false; // for HA MQTT Discovery
-    bool     shower_state_;
+    // Configuration settings
+    bool     shower_timer_          = false; // true if we want to report back on shower times
+    bool     shower_alert_          = false; // true if we want the alert of cold water
+    uint32_t shower_alert_trigger_  = 0;     // default 7 minutes, before trigger a shot of cold water
+    uint32_t shower_alert_coldshot_ = 0;     // default 10 seconds for cold water before turning back hot water
+    uint32_t shower_min_duration_   = 0;     // default 3 minutes (180 seconds), before recognizing its a shower
+    uint32_t next_alert_            = 0;
 
-    uint32_t timer_start_; // sec
-    uint32_t timer_pause_; // sec
-    uint32_t duration_;    // sec
+    // State tracking
+    bool ha_configdone_      = false; // for HA MQTT Discovery
+    bool mqtt_sent_          = false; // track if initial MQTT state has been sent
+    bool shower_state_       = false; // current shower active state
+    bool old_shower_state_   = false; // previous state for change detection
+    bool doing_cold_shot_    = false; // true if we've just sent a jolt of cold water
+    bool force_coldshot_     = false; // flag to force a coldshot
 
-    // cold shot
-    uint32_t alert_timer_start_; // sec
-    bool     doing_cold_shot_;   // true if we've just sent a jolt of cold water
+    // Timing
+    uint32_t timer_start_       = 0; // sec
+    uint32_t timer_pause_       = 0; // sec
+    uint32_t duration_          = 0; // sec
+    uint32_t alert_timer_start_ = 0; // sec
 };
 
 } // namespace emsesp

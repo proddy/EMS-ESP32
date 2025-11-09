@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,18 +40,18 @@ class TemperatureSensor {
         Sensor(const uint8_t addr[]);
         ~Sensor() = default;
 
-        uint64_t internal_id() const {
+        uint64_t internal_id() const noexcept {
             return internal_id_;
         }
 
-        std::string id() const {
+        const std::string & id() const noexcept {
             return id_;
         }
 
-        int16_t offset() const {
+        int16_t offset() const noexcept {
             return offset_;
         }
-        void set_offset(const int16_t offset) {
+        void set_offset(const int16_t offset) noexcept {
             offset_ = offset;
         }
 
@@ -86,27 +86,27 @@ class TemperatureSensor {
     bool get_value_info(JsonObject output, const char * cmd, const int8_t id = -1);
 
     // return back reference to the sensor list, used by other classes
-    std::vector<Sensor> sensors() const {
+    const std::vector<Sensor> & sensors() const noexcept {
         return sensors_;
     }
 
-    uint32_t reads() const {
+    uint32_t reads() const noexcept {
         return sensorreads_;
     }
 
-    uint32_t fails() const {
+    uint32_t fails() const noexcept {
         return sensorfails_;
     }
 
-    bool sensor_enabled() const {
+    bool sensor_enabled() const noexcept {
         return (dallas_gpio_ != 0);
     }
 
-    bool have_sensors() const {
+    bool have_sensors() const noexcept {
         return (!sensors_.empty());
     }
 
-    size_t count_entities() const {
+    size_t count_entities() const noexcept {
         return sensors_.size();
     }
 
@@ -150,7 +150,7 @@ class TemperatureSensor {
 
     bool     temperature_convert_complete();
     int16_t  get_temperature_c(const uint8_t addr[]);
-    uint64_t get_id(const uint8_t addr[]);
+    uint64_t get_id(const uint8_t addr[]) noexcept;
     void     get_value_json(JsonObject output, const Sensor & sensor);
     void     remove_ha_topic(const std::string & id);
 

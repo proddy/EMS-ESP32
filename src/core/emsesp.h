@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -104,10 +104,10 @@ class EMSESP {
 
     static uuid::log::Logger logger();
 
-    static void publish_device_values(uint8_t device_type);
+    static void publish_device_values(const uint8_t device_type);
     static void publish_other_values();
     static void publish_sensor_values(const bool time, const bool force = false);
-    static void publish_all(bool force = false);
+    static void publish_all(const bool force = false);
     static void reset_mqtt_ha();
 
 #ifdef EMSESP_STANDALONE
@@ -151,65 +151,67 @@ class EMSESP {
 
     static void incoming_telegram(uint8_t * data, const uint8_t length);
 
-    static bool sensor_enabled() {
-        return (temperaturesensor_.sensor_enabled());
+    static inline bool sensor_enabled() {
+        return temperaturesensor_.sensor_enabled();
     }
 
-    static bool analog_enabled() {
-        return (analogsensor_.analog_enabled());
+    static inline bool analog_enabled() {
+        return analogsensor_.analog_enabled();
     }
 
     enum Watch : uint8_t { WATCH_OFF, WATCH_ON, WATCH_RAW, WATCH_UNKNOWN };
     static void     watch_id(uint16_t id);
-    static uint16_t watch_id() {
+    static inline uint16_t watch_id() {
         return watch_id_;
     }
 
-    static void watch(uint8_t watch) {
+    static inline void watch(const uint8_t watch) {
         watch_ = watch; // 0=off, 1=on, 2=raw
         if (watch == WATCH_OFF) {
             watch_id_ = 0; // reset watch id if watch is disabled
         }
     }
 
-    static uint8_t watch() {
+    static inline uint8_t watch() {
         return watch_;
     }
-    static void set_read_id(uint16_t id) {
+    
+    static inline void set_read_id(const uint16_t id) {
         read_id_ = id;
     }
 
-    static void set_response_id(uint16_t id) {
+    static inline void set_response_id(const uint16_t id) {
         response_id_ = id;
     }
 
-    static uint16_t response_id() {
+    static inline uint16_t response_id() {
         return response_id_;
     }
 
-    static bool wait_validate() {
+    static inline bool wait_validate() {
         return (wait_validate_ != 0);
     }
-    static void wait_validate(uint16_t wait) {
+    
+    static inline void wait_validate(const uint16_t wait) {
         wait_validate_ = wait;
     }
 
     enum Bus_status : uint8_t { BUS_STATUS_CONNECTED = 0, BUS_STATUS_TX_ERRORS, BUS_STATUS_OFFLINE };
     static uint8_t bus_status();
 
-    static bool tap_water_active() {
+    static inline bool tap_water_active() {
         return tap_water_active_;
     }
 
-    static void tap_water_active(const bool tap_water_active) {
+    static inline void tap_water_active(const bool tap_water_active) {
         tap_water_active_ = tap_water_active;
     }
 
-    static bool trace_raw() {
+    static inline bool trace_raw() {
         return trace_raw_;
     }
 
-    static void trace_raw(bool set) {
+    static inline void trace_raw(const bool set) {
         trace_raw_ = set;
     }
 

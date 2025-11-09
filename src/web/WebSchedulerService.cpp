@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,15 +70,15 @@ void WebScheduler::read(WebScheduler & webScheduler, JsonObject root) {
 
 // call on initialization and also when the Schedule web page is saved
 // this loads the data into the internal class
-StateUpdateResult WebScheduler::update(JsonObject root, WebScheduler & webScheduler) {
+StateUpdateResult WebScheduler::update(JsonObjectConst root, WebScheduler & webScheduler) {
     // reset the list
     Command::erase_device_commands(EMSdevice::DeviceType::SCHEDULER);
     webScheduler.scheduleItems.clear();
     EMSESP::webSchedulerService.ha_reset();
 
     // build up the list of schedule items
-    auto scheduleItems = root["schedule"].as<JsonArray>();
-    for (const JsonObject schedule : scheduleItems) {
+    auto scheduleItems = root["schedule"].as<JsonArrayConst>();
+    for (const JsonObjectConst schedule : scheduleItems) {
         // create each schedule item, overwriting any previous settings
         // ignore the id (as this is only used in the web for table rendering)
         auto si   = ScheduleItem();

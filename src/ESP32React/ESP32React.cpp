@@ -21,7 +21,7 @@ ESP32React::ESP32React(AsyncWebServer * server, FS * fs)
 
     ArRequestHandlerFunction indexHtmlHandler = nullptr;
 
-    WWWData::registerRoutes([server, &indexHtmlHandler](const char * uri, const String & contentType, const uint8_t * content, size_t len, const String & hash) {
+    WWWData::registerRoutes([server, &indexHtmlHandler](const char * uri, const char * contentType, const uint8_t * content, size_t len, const char * hash) {
         ArRequestHandlerFunction requestHandler = [contentType, content, len, hash](AsyncWebServerRequest * request) {
             AsyncWebServerResponse * response;
 
@@ -66,14 +66,14 @@ ESP32React::ESP32React(AsyncWebServer * server, FS * fs)
 
 void ESP32React::begin() {
     _networkSettingsService.begin();
-    _networkSettingsService.read([&](NetworkSettings & networkSettings) {
+    _networkSettingsService.read([](const NetworkSettings & networkSettings) {
         DefaultHeaders & defaultHeaders = DefaultHeaders::Instance();
         if (networkSettings.enableCORS) {
-            defaultHeaders.addHeader("Access-Control-Allow-Origin", networkSettings.CORSOrigin);
+            defaultHeaders.addHeader("Access-Control-Allow-Origin", networkSettings.CORSOrigin.c_str());
             defaultHeaders.addHeader("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization");
             defaultHeaders.addHeader("Access-Control-Allow-Credentials", "true");
         }
-        defaultHeaders.addHeader("Server", networkSettings.hostname);
+        defaultHeaders.addHeader("Server", networkSettings.hostname.c_str());
     });
     _apSettingsService.begin();
     _ntpSettingsService.begin();

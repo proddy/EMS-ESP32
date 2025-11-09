@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -235,9 +235,11 @@ bool Connect::set_name(const char * value, const int8_t id) {
         return false;
     }
     Helpers::utf8tolatin1(rc->name_, value, sizeof(rc->name_));
-    uint8_t len = strlen(rc->name_) * 2 + 2;
-    uint8_t data[len];
-    for (uint8_t i = 0; i < strlen(rc->name_) + 1; i++) { // include terminating '\0'
+    // Optimization: calculate strlen once instead of calling it multiple times in loop
+    const uint8_t name_len = strlen(rc->name_);
+    uint8_t       len      = name_len * 2 + 2;
+    uint8_t       data[len];
+    for (uint8_t i = 0; i < name_len + 1; i++) { // include terminating '\0'
         data[2 * i]     = 0;
         data[2 * i + 1] = rc->name_[i];
     }

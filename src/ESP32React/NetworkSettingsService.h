@@ -64,17 +64,17 @@
 class NetworkSettings {
   public:
     // core wifi configuration
-    String  ssid;
-    String  bssid;
-    String  password;
-    String  hostname;
-    bool    staticIPConfig;
-    bool    bandwidth20;
-    uint8_t tx_power;
-    bool    nosleep;
-    bool    enableMDNS;
-    bool    enableCORS;
-    String  CORSOrigin;
+    std::string ssid;
+    std::string bssid;
+    std::string password;
+    std::string hostname;
+    bool        staticIPConfig;
+    bool        bandwidth20;
+    uint8_t     tx_power;
+    bool        nosleep;
+    bool        enableMDNS;
+    bool        enableCORS;
+    std::string CORSOrigin;
 
     // optional configuration for static IP address
     IPAddress localIP;
@@ -83,8 +83,8 @@ class NetworkSettings {
     IPAddress dnsIP1;
     IPAddress dnsIP2;
 
-    static void              read(NetworkSettings & settings, JsonObject root);
-    static StateUpdateResult update(JsonObject root, NetworkSettings & settings);
+    static void              read(const NetworkSettings & settings, JsonObject root);
+    static StateUpdateResult update(JsonObjectConst root, NetworkSettings & settings);
 };
 
 class NetworkSettingsService : public StatefulService<NetworkSettings> {
@@ -109,7 +109,7 @@ class NetworkSettingsService : public StatefulService<NetworkSettings> {
 
     void         WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
     void         mDNS_start() const;
-    const char * disconnectReason(uint8_t code);
+    const char * disconnectReason(uint8_t code) const;
     void         reconfigureWiFiConnection();
     void         manageSTA();
     void         setWiFiPowerOnRSSI();

@@ -5,7 +5,9 @@
 #include "ESPAsyncWebServer.h"
 #include "AsyncJson.h"
 
-#include <list>
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 #define FACTORY_JWT_SECRET "ems-esp"
 #define ACCESS_TOKEN_PARAMATER "access_token"
@@ -17,54 +19,66 @@
 
 class User {
   public:
-    String username;
-    String password;
-    bool   admin;
+    std::string username;
+    std::string password;
+    bool        admin;
 
-  public:
-    User(String username, String password, bool admin)
-        : username(username)
-        , password(password)
+    User(std::string username, std::string password, bool admin)
+        : username(std::move(username))
+        , password(std::move(password))
         , admin(admin) {
     }
+
+    // Default copy/move operations are fine for this class
+    User(const User &) = default;
+    User(User &&) noexcept = default;
+    User & operator=(const User &) = default;
+    User & operator=(User &&) noexcept = default;
 };
 
 class Authentication {
   public:
-    User *  user;
-    boolean authenticated;
+    std::unique_ptr<User> user;
+    bool                  authenticated = false;
 
-  public:
-    Authentication(User & user)
-        : user(new User(user))
+    explicit Authentication(const User & user)
+        : user(std::make_unique<User>(user))
         , authenticated(true) {
     }
-    Authentication()
-        : user(nullptr)
-        , authenticated(false) {
-    }
-    ~Authentication() {
-        delete (user);
-    }
+
+    Authentication() = default;
+
+    // Move-only semantics (unique_ptr is not copyable)
+    Authentication(Authentication &&) noexcept = default;
+    Authentication & operator=(Authentication &&) noexcept = default;
+
+    // Delete copy operations to prevent double-ownership
+    Authentication(const Authentication &) = delete;
+    Authentication & operator=(const Authentication &) = delete;
+
+    ~Authentication() = default;
 };
 
-typedef std::function<boolean(Authentication & authentication)> AuthenticationPredicate;
+typedef std::function<bool(const Authentication & authentication)> AuthenticationPredicate;
 
 class AuthenticationPredicates {
   public:
-    static bool NONE_REQUIRED(Authentication & authentication) {
+    static constexpr bool NONE_REQUIRED(const Authentication & authentication) {
+        (void)authentication;
         return true;
-    };
-    static bool IS_AUTHENTICATED(Authentication & authentication) {
+    }
+    static bool IS_AUTHENTICATED(const Authentication & authentication) {
         return authentication.authenticated;
-    };
-    static bool IS_ADMIN(Authentication & authentication) {
-        return authentication.authenticated && authentication.user->admin;
-    };
+    }
+    static bool IS_ADMIN(const Authentication & authentication) {
+        return authentication.authenticated && authentication.user && authentication.user->admin;
+    }
 };
 
 class SecurityManager {
   public:
+    virtual ~SecurityManager() = default;
+
     virtual Authentication               authenticateRequest(AsyncWebServerRequest * request)                                    = 0;
     virtual ArRequestFilterFunction      filterRequest(AuthenticationPredicate predicate)                                        = 0;
     virtual ArRequestHandlerFunction     wrapRequest(ArRequestHandlerFunction onRequest, AuthenticationPredicate predicate)      = 0;

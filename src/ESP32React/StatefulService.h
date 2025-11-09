@@ -5,7 +5,6 @@
 #include <ArduinoJson.h>
 
 #include <vector>
-#include <list>
 #include <functional>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
@@ -18,7 +17,7 @@ enum class StateUpdateResult {
 };
 
 template <typename T>
-using JsonStateUpdater = std::function<StateUpdateResult(JsonObject root, T & settings)>;
+using JsonStateUpdater = std::function<StateUpdateResult(JsonObjectConst root, T & settings)>;
 
 template <typename T>
 using JsonStateReader = std::function<void(T & settings, JsonObject root)>;
@@ -46,13 +45,20 @@ class StatefulService {
         , _accessMutex(xSemaphoreCreateRecursiveMutex()) {
     }
 
+    ~StatefulService() {
+        if (_accessMutex != nullptr) {
+            vSemaphoreDelete(_accessMutex);
+        }
+    }
+
     update_handler_id_t addUpdateHandler(StateUpdateCallback cb, bool allowRemove = true) {
         if (!cb) {
             return 0;
         }
         StateUpdateHandlerInfo_t updateHandler(std::move(cb), allowRemove);
+        update_handler_id_t      id = updateHandler._id;
         _updateHandlers.push_back(std::move(updateHandler));
-        return updateHandler._id;
+        return id;
     }
 
     void removeUpdateHandler(update_handler_id_t id) {
@@ -66,47 +72,41 @@ class StatefulService {
         }
     }
 
-    StateUpdateResult update(std::function<StateUpdateResult(T &)> stateUpdater) {
+    StateUpdateResult update(const std::function<StateUpdateResult(T &)> & stateUpdater, bool propagate = true) {
         beginTransaction();
         StateUpdateResult result = stateUpdater(_state);
         endTransaction();
-        if (result == StateUpdateResult::CHANGED) {
+        if (propagate && result == StateUpdateResult::CHANGED) {
             callUpdateHandlers();
         }
         return result;
     }
 
-    StateUpdateResult updateWithoutPropagation(std::function<StateUpdateResult(T &)> stateUpdater) {
-        beginTransaction();
-        StateUpdateResult result = stateUpdater(_state);
-        endTransaction();
-        return result;
+    StateUpdateResult updateWithoutPropagation(const std::function<StateUpdateResult(T &)> & stateUpdater) {
+        return update(stateUpdater, false);
     }
 
-    StateUpdateResult update(JsonObject jsonObject, JsonStateUpdater<T> stateUpdater) {
+    StateUpdateResult update(JsonObjectConst jsonObject, const JsonStateUpdater<T> & stateUpdater, bool propagate = true) {
         beginTransaction();
         StateUpdateResult result = stateUpdater(jsonObject, _state);
         endTransaction();
-        if (result == StateUpdateResult::CHANGED) {
+        if (propagate && result == StateUpdateResult::CHANGED) {
             callUpdateHandlers();
         }
         return result;
     }
 
-    StateUpdateResult updateWithoutPropagation(JsonObject jsonObject, JsonStateUpdater<T> stateUpdater) {
-        beginTransaction();
-        StateUpdateResult result = stateUpdater(jsonObject, _state);
-        endTransaction();
-        return result;
+    StateUpdateResult updateWithoutPropagation(JsonObjectConst jsonObject, const JsonStateUpdater<T> & stateUpdater) {
+        return update(jsonObject, stateUpdater, false);
     }
 
-    void read(std::function<void(T &)> stateReader) {
+    void read(const std::function<void(T &)> & stateReader) {
         beginTransaction();
         stateReader(_state);
         endTransaction();
     }
 
-    void read(JsonObject jsonObject, JsonStateReader<T> stateReader) {
+    void read(JsonObject jsonObject, const JsonStateReader<T> & stateReader) {
         beginTransaction();
         stateReader(_state, jsonObject);
         endTransaction();
@@ -121,11 +121,11 @@ class StatefulService {
   protected:
     T _state;
 
-    inline void beginTransaction() {
+    inline void beginTransaction() noexcept {
         xSemaphoreTakeRecursive(_accessMutex, portMAX_DELAY);
     }
 
-    inline void endTransaction() {
+    inline void endTransaction() noexcept {
         xSemaphoreGiveRecursive(_accessMutex);
     }
 

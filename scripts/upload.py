@@ -139,7 +139,8 @@ def on_upload(source, target, env):
         print()
 
         if response.status_code != 200:
-            print_fail("Upload failed (code " + response.status.code + ").")
+            print_fail("Upload failed (code " +
+                       str(response.status_code) + ").")
         else:
             print_success("Upload successful. Rebooting device.")
             restart_headers = {

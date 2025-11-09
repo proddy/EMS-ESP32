@@ -51,7 +51,7 @@ class ESP32React {
         return &_mqttSettingsService;
     }
 
-    MqttClient * getMqttClient() {
+    MqttClient * getMqttClient() const {
         return _mqttSettingsService.getMqttClient();
     }
 
@@ -60,11 +60,11 @@ class ESP32React {
     //
 
     // true if AP is active
-    bool apStatus() {
+    bool apStatus() const {
         return _apSettingsService.getAPNetworkStatus() == APNetworkStatus::ACTIVE;
     }
 
-    uint16_t getWifiReconnects() {
+    uint16_t getWifiReconnects() const {
         return _networkSettingsService.getWifiReconnects();
     }
 

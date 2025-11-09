@@ -65,40 +65,40 @@
 
 class MqttSettings {
   public:
-    bool     enabled;
-    String   host;
-    uint16_t port;
-    String   rootCA;
-    bool     enableTLS;
-    String   username;
-    String   password;
-    String   clientId;
-    uint16_t keepAlive;
-    bool     cleanSession;
+    bool        enabled;
+    std::string host;
+    uint16_t    port;
+    std::string rootCA;
+    bool        enableTLS;
+    std::string username;
+    std::string password;
+    std::string clientId;
+    uint16_t    keepAlive;
+    bool        cleanSession;
 
     // EMS-ESP specific
-    String   base;
-    uint16_t publish_time_boiler;
-    uint16_t publish_time_thermostat;
-    uint16_t publish_time_solar;
-    uint16_t publish_time_mixer;
-    uint16_t publish_time_water;
-    uint16_t publish_time_other;
-    uint16_t publish_time_sensor;
-    uint16_t publish_time_heartbeat;
-    uint8_t  mqtt_qos;
-    bool     mqtt_retain;
-    bool     ha_enabled;
-    uint8_t  nested_format;
-    String   discovery_prefix;
-    uint8_t  discovery_type;
-    bool     publish_single;
-    bool     publish_single2cmd;
-    bool     send_response;
-    uint8_t  entity_format;
+    std::string base;
+    uint16_t    publish_time_boiler;
+    uint16_t    publish_time_thermostat;
+    uint16_t    publish_time_solar;
+    uint16_t    publish_time_mixer;
+    uint16_t    publish_time_water;
+    uint16_t    publish_time_other;
+    uint16_t    publish_time_sensor;
+    uint16_t    publish_time_heartbeat;
+    uint8_t     mqtt_qos;
+    bool        mqtt_retain;
+    bool        ha_enabled;
+    uint8_t     nested_format;
+    std::string discovery_prefix;
+    uint8_t     discovery_type;
+    bool        publish_single;
+    bool        publish_single2cmd;
+    bool        send_response;
+    uint8_t     entity_format;
 
-    static void              read(MqttSettings & settings, JsonObject root);
-    static StateUpdateResult update(JsonObject root, MqttSettings & settings);
+    static void              read(const MqttSettings & settings, JsonObject root);
+    static StateUpdateResult update(JsonObjectConst root, MqttSettings & settings);
 };
 
 class MqttSettingsService : public StatefulService<MqttSettings> {
@@ -109,11 +109,11 @@ class MqttSettingsService : public StatefulService<MqttSettings> {
     void                                 begin();
     void                                 startClient();
     void                                 loop();
-    bool                                 isEnabled();
-    bool                                 isConnected();
-    const char *                         getClientId();
-    espMqttClientTypes::DisconnectReason getDisconnectReason();
-    MqttClient *                         getMqttClient();
+    bool                                 isEnabled() const;
+    bool                                 isConnected() const;
+    const char *                         getClientId() const;
+    espMqttClientTypes::DisconnectReason getDisconnectReason() const;
+    MqttClient *                         getMqttClient() const;
 
   protected:
     void onConfigUpdated();

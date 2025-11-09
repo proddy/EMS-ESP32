@@ -58,12 +58,12 @@ enum APNetworkStatus { ACTIVE = 0, INACTIVE, LINGERING };
 
 class APSettings {
   public:
-    uint8_t provisionMode;
-    String  ssid;
-    String  password;
-    uint8_t channel;
-    bool    ssidHidden;
-    uint8_t maxClients;
+    uint8_t     provisionMode;
+    std::string ssid;
+    std::string password;
+    uint8_t     channel;
+    bool        ssidHidden;
+    uint8_t     maxClients;
 
     IPAddress localIP;
     IPAddress gatewayIP;
@@ -76,7 +76,7 @@ class APSettings {
     }
 
     static void              read(const APSettings & settings, JsonObject root);
-    static StateUpdateResult update(JsonObject root, APSettings & settings);
+    static StateUpdateResult update(JsonObjectConst root, APSettings & settings);
 };
 
 class APSettingsService : public StatefulService<APSettings> {
@@ -85,7 +85,7 @@ class APSettingsService : public StatefulService<APSettings> {
 
     void            begin();
     void            loop();
-    APNetworkStatus getAPNetworkStatus();
+    APNetworkStatus getAPNetworkStatus() const;
 
   private:
     HttpEndpoint<APSettings>  _httpEndpoint;

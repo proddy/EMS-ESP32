@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <deque>
+#include <utility>
 #include <math.h>
 
 class Token {
@@ -43,9 +44,10 @@ class Token {
         RightParen,
     };
 
-    Token(Type type, const std::string & s, int8_t precedence = -1, bool rightAssociative = false)
+    // Optimize: Use move semantics for string parameter
+    Token(Type type, std::string s, int8_t precedence = -1, bool rightAssociative = false)
         : type{type}
-        , str(s)
+        , str(std::move(s))
         , precedence{precedence}
         , rightAssociative{rightAssociative} {
     }

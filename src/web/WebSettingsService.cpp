@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,17 +33,17 @@ WebSettingsService::WebSettingsService(AsyncWebServer * server, FS * fs, Securit
 }
 
 void WebSettings::read(WebSettings & settings, JsonObject root) {
-    root["version"]               = settings.version;
-    root["board_profile"]         = settings.board_profile;
+    root["version"]               = settings.version.c_str();
+    root["board_profile"]         = settings.board_profile.c_str();
     root["platform"]              = EMSESP_PLATFORM;
-    root["locale"]                = settings.locale;
+    root["locale"]                = settings.locale.c_str();
     root["tx_mode"]               = settings.tx_mode;
     root["ems_bus_id"]            = settings.ems_bus_id;
     root["syslog_enabled"]        = settings.syslog_enabled;
     root["syslog_level"]          = settings.syslog_level;
     root["trace_raw"]             = settings.trace_raw;
     root["syslog_mark_interval"]  = settings.syslog_mark_interval;
-    root["syslog_host"]           = settings.syslog_host;
+    root["syslog_host"]           = settings.syslog_host.c_str();
     root["syslog_port"]           = settings.syslog_port;
     root["boiler_heatingoff"]     = settings.boiler_heatingoff;
     root["remote_timeout"]        = settings.remote_timeout;
@@ -86,7 +86,7 @@ void WebSettings::read(WebSettings & settings, JsonObject root) {
 }
 
 // call on initialization and also when settings are updated via web or console
-StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
+StateUpdateResult WebSettings::update(JsonObjectConst root, WebSettings & settings) {
     // load the version from the settings config. This can be blank and later used in System::check_upgrade()
     settings.version = root["version"] | EMSESP_DEFAULT_VERSION;
 
@@ -104,17 +104,17 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
 #endif
 
     // get the current board profile saved in the settings file
-    String org_board_profile = settings.board_profile;
-    settings.board_profile   = root["board_profile"] | EMSESP_DEFAULT_BOARD_PROFILE; // this is set at compile time in platformio.ini, other it's "default"
-    String old_board_profile = settings.board_profile;
+    std::string org_board_profile = settings.board_profile;
+    settings.board_profile        = root["board_profile"] | EMSESP_DEFAULT_BOARD_PROFILE; // this is set at compile time in platformio.ini, other it's "default"
+    std::string old_board_profile = settings.board_profile;
 
     // The optional NVS boot value has priority and overrides any board_profile setting.
     // We only do this for BBQKees boards
-    // Note 1: we never set the NVS boot value in the code - this is done on initial pre-loading
+    // Note 1: we never set the NVS boot value in the code - this is done on initial pre-flashing at factory
     // Note 2: The board profile is dynamically changed for the session, but the value in the settings file on the FS remains untouched
-    if (EMSESP::system_.getBBQKeesGatewayDetails(FUSE_VALUE::MFG).startsWith("BBQKees")) {
-        String bbq_board = EMSESP::system_.getBBQKeesGatewayDetails(FUSE_VALUE::BOARD);
-        if (!bbq_board.isEmpty()) {
+    if (EMSESP::system_.getBBQKeesGatewayDetails(FUSE_VALUE::MFG).rfind("BBQKees", 0) == 0) {
+        std::string bbq_board = EMSESP::system_.getBBQKeesGatewayDetails(FUSE_VALUE::BOARD);
+        if (!bbq_board.empty()) {
 #if defined(EMSESP_DEBUG)
             EMSESP::logger().info("Overriding board profile with fuse value %s", bbq_board.c_str());
 #endif
@@ -203,7 +203,7 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     }
 
     if (org_board_profile != settings.board_profile) {
-        if (org_board_profile.isEmpty()) {
+        if (org_board_profile.empty()) {
             EMSESP::logger().info("Setting board profile to %s", settings.board_profile.c_str());
         } else {
             EMSESP::logger().info("Setting board profile to %s (was %s)", settings.board_profile.c_str(), org_board_profile.c_str());
@@ -265,8 +265,8 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     check_flag(prev, settings.syslog_port, ChangeFlags::SYSLOG);
 
 #ifndef EMSESP_STANDALONE
-    String old_syslog_host = settings.syslog_host;
-    settings.syslog_host   = root["syslog_host"] | EMSESP_DEFAULT_SYSLOG_HOST;
+    std::string old_syslog_host = settings.syslog_host;
+    settings.syslog_host        = root["syslog_host"] | EMSESP_DEFAULT_SYSLOG_HOST;
     if (old_syslog_host != settings.syslog_host) {
         add_flags(ChangeFlags::SYSLOG);
     }
@@ -353,8 +353,8 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
         check_flag(prev, settings.enum_format, ChangeFlags::MQTT);
     }
 
-    String old_locale = settings.locale;
-    settings.locale   = root["locale"] | EMSESP_DEFAULT_LOCALE;
+    std::string old_locale = settings.locale;
+    settings.locale        = root["locale"] | EMSESP_DEFAULT_LOCALE;
     EMSESP::system_.locale(settings.locale);
     if (Mqtt::ha_enabled() && old_locale != settings.locale) {
         add_flags(ChangeFlags::MQTT);

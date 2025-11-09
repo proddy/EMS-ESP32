@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 // compilation unit (current file). It is equivalent to the old C static keyword.
 #define REGISTER_FACTORY(derivedClass, device_type)                                                                                                            \
     namespace {                                                                                                                                                \
-    auto registry_##derivedClass = ConcreteEMSFactory<derivedClass>(device_type);                                                                              \
+    const auto registry_##derivedClass = ConcreteEMSFactory<derivedClass>(device_type);                                                                        \
     }
 
 namespace emsesp {
@@ -42,56 +42,49 @@ class EMSFactory {
 
     // Register factory object of derived class
     // using the device_type as the unique identifier
-    static auto registerFactory(const uint8_t device_type, EMSFactory * factory) -> void {
-        auto & reg       = EMSFactory::getRegister();
-        reg[device_type] = factory;
+    static auto registerFactory(const uint8_t device_type, EMSFactory * factory) noexcept -> void {
+        getRegister()[device_type] = factory;
     }
 
     using FactoryMap = std::map<uint8_t, EMSFactory *>;
 
     // returns all registered classes (really only for debugging)
-    static auto device_handlers() -> FactoryMap {
-        return EMSFactory::getRegister();
+    [[nodiscard]] static auto device_handlers() noexcept -> const FactoryMap & {
+        return getRegister();
     }
 
-    // Construct derived class returning an unique ptr
-    static auto add(const uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, const char * default_name, uint8_t flags, uint8_t brand)
-        -> std::unique_ptr<EMSdevice> {
-        return std::unique_ptr<EMSdevice>(EMSFactory::makeRaw(device_type, device_id, product_id, version, default_name, flags, brand));
+    // Construct derived class returning a unique ptr
+    [[nodiscard]] static auto add(const uint8_t device_type, const uint8_t device_id, const uint8_t product_id, const char * version, 
+                                   const char * default_name, const uint8_t flags, const uint8_t brand) -> std::unique_ptr<EMSdevice> {
+        auto & reg = getRegister();
+        auto   it  = reg.find(device_type);
+        if (it != reg.end()) {
+            return std::unique_ptr<EMSdevice>(it->second->construct(device_type, device_id, product_id, version, default_name, flags, brand));
+        }
+        return nullptr;
     }
 
-    virtual auto construct(uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, const char * name, uint8_t flags, uint8_t brand) const
-        -> EMSdevice * = 0;
+    [[nodiscard]] virtual auto construct(uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, 
+                                          const char * name, uint8_t flags, uint8_t brand) const -> EMSdevice * = 0;
 
   private:
     // Force global variable to be initialized, thus it avoids the "initialization order fiasco"
-    static auto getRegister() -> FactoryMap & {
+    static auto getRegister() noexcept -> FactoryMap & {
         static FactoryMap classRegister{};
         return classRegister;
-    }
-
-    // Construct derived class returning a raw pointer
-    // find which EMS device it is and use that class
-    static auto makeRaw(const uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, const char * name, uint8_t flags, uint8_t brand)
-        -> EMSdevice * {
-        auto it = EMSFactory::getRegister().find(device_type);
-        if (it != EMSFactory::getRegister().end()) {
-            return it->second->construct(device_type, device_id, product_id, version, name, flags, brand);
-        }
-        return nullptr;
     }
 };
 
 template <typename DerivedClass>
-class ConcreteEMSFactory : EMSFactory {
+class ConcreteEMSFactory final : public EMSFactory {
   public:
     // Register this global object on the EMSFactory register
-    ConcreteEMSFactory(const uint8_t device_type) {
+    explicit ConcreteEMSFactory(const uint8_t device_type) {
         EMSFactory::registerFactory(device_type, this);
     }
 
-    auto construct(uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, const char * name, uint8_t flags, uint8_t brand) const
-        -> EMSdevice * {
+    [[nodiscard]] auto construct(uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, 
+                                  const char * name, uint8_t flags, uint8_t brand) const -> EMSdevice * override {
         return new DerivedClass(device_type, device_id, product_id, version, name, flags, brand);
     }
 };

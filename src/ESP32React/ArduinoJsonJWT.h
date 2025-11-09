@@ -8,26 +8,28 @@
 #include <libb64/cencode.h>
 #include <mbedtls/md.h>
 
+#include <string>
+
 class ArduinoJsonJWT {
   public:
-    explicit ArduinoJsonJWT(String secret);
+    explicit ArduinoJsonJWT(std::string secret);
 
-    void   setSecret(String secret);
-    String getSecret();
+    void        setSecret(std::string secret);
+    std::string getSecret() const;
 
-    String buildJWT(JsonObject payload);
-    void   parseJWT(String jwt, JsonDocument & jsonDocument);
+    std::string buildJWT(JsonObject payload);
+    void        parseJWT(const std::string & jwt, JsonDocument & jsonDocument);
 
   private:
-    String _secret;
+    std::string _secret;
 
-    String sign(String & value);
+    std::string sign(const std::string & value);
 
-    static String encode(const char * cstr, int len);
-    static String decode(String value);
+    static std::string encode(const char * cstr, int len);
+    static std::string decode(const std::string & value);
 
-    static const String & getJWTHeader() {
-        static const String JWT_HEADER = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+    static const std::string & getJWTHeader() {
+        static const std::string JWT_HEADER = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
         return JWT_HEADER;
     }
 };

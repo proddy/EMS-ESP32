@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,9 +35,8 @@ using uuid::log::Level;
 #define LOG_WARNING(...) logger_.warning(__VA_ARGS__)
 #define LOG_ERROR(...) logger_.err(__VA_ARGS__)
 
-// flash strings
+// String vector for handling lists of strings
 using uuid::string_vector;
-using string_vector = std::vector<const char *>;
 
 #ifdef FPSTR
 #undef FPSTR
@@ -45,37 +44,41 @@ using string_vector = std::vector<const char *>;
 
 // clang-format off
 
+// Flash string pointer (no-op for this platform)
 #define FPSTR(pstr_pointer) pstr_pointer
+
+// String literal macros for flash memory optimization
 #define MAKE_WORD_CUSTOM(string_name, string_literal) static const char __pstr__##string_name[] = string_literal;
 #define MAKE_WORD(string_name) MAKE_WORD_CUSTOM(string_name, #string_name)
 
+// Accessors for strings and string lists
 #define F_(string_name) (__pstr__##string_name)
 #define FL_(list_name) (__pstr__L_##list_name)
 
-// The language settings below must match system.cpp
+// Translation macros - language settings must match system.cpp
 #if defined(EMSESP_TEST)
-// in Test mode use two languages (en & de) to save flash memory needed for the tests
+// Test mode: use two languages (EN & DE) to save flash memory for tests
 #define MAKE_WORD_TRANSLATION(list_name, en, de, ...)       static const char * const __pstr__L_##list_name[] = {en, de, nullptr};
 #define MAKE_TRANSLATION(list_name, shortname, en, de, ...) static const char * const __pstr__L_##list_name[] = {shortname, en, de, nullptr};
 #elif defined(EMSESP_EN_ONLY)
-// EN only
+// English only mode
 #define MAKE_WORD_TRANSLATION(list_name, en, ...)       static const char * const __pstr__L_##list_name[] = {en, nullptr};
 #define MAKE_TRANSLATION(list_name, shortname, en, ...) static const char * const __pstr__L_##list_name[] = {shortname, en, nullptr};
 #elif defined(EMSESP_DE_ONLY)
-// EN + DE
+// English + German mode
 #define MAKE_WORD_TRANSLATION(list_name, en, de, ...)       static const char * const __pstr__L_##list_name[] = {en, de, nullptr};
 #define MAKE_TRANSLATION(list_name, shortname, en, de, ...) static const char * const __pstr__L_##list_name[] = {shortname, en, de, nullptr};
 #else
+// Full multilingual mode
 #define MAKE_WORD_TRANSLATION(list_name, ...) static const char * const __pstr__L_##list_name[] = {__VA_ARGS__, nullptr};
 #define MAKE_TRANSLATION(list_name, ...)      static const char * const __pstr__L_##list_name[] = {__VA_ARGS__, nullptr};
 #endif
 
+// String lists without translation support
 #define MAKE_NOTRANSLATION(list_name, ...) static const char * const __pstr__L_##list_name[] = {__VA_ARGS__, nullptr};
 
-// fixed strings, no translations
+// Enum macros
 #define MAKE_ENUM_FIXED(enum_name, ...) static const char * const __pstr__L_##enum_name[] = {__VA_ARGS__, nullptr};
-
-// with translations
 #define MAKE_ENUM(enum_name, ...)       static const char * const * __pstr__L_##enum_name[] = {__VA_ARGS__, nullptr};
 
 // clang-format on

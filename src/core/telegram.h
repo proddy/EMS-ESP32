@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ class Telegram {
     std::string to_string() const;
 
     // reads a bit value from a given telegram position
-    bool read_bitvalue(uint8_t & value, const uint8_t index, const uint8_t bit) const {
+    inline bool read_bitvalue(uint8_t & value, const uint8_t index, const uint8_t bit) const noexcept {
         uint8_t abs_index = (index - this->offset);
         if ((abs_index >= this->message_length) || (abs_index > EMS_MAX_TELEGRAM_MESSAGE_LENGTH)) {
             return false; // out of bounds
@@ -122,7 +122,7 @@ class Telegram {
     // 2-compliment : https://www.rapidtables.com/convert/number/decimal-to-hex.html
     // https://en.wikipedia.org/wiki/Two%27s_complement
     // s is to override number of bytes read (e.g. use 3 to simulate a uint24_t)
-    bool read_value(Value & value, const uint8_t index, uint8_t s = 0) const {
+    inline bool read_value(Value & value, const uint8_t index, uint8_t s = 0) const noexcept {
         uint8_t num_bytes = (!s) ? sizeof(Value) : s;
         // check for out of bounds, if so don't modify the value
         auto msg_size = (index - this->offset + num_bytes - 1);
@@ -140,7 +140,7 @@ class Telegram {
         return (val != value);
     }
 
-    bool read_enumvalue(uint8_t & value, const uint8_t index, int8_t start = 0) const {
+    inline bool read_enumvalue(uint8_t & value, const uint8_t index, int8_t start = 0) const noexcept {
         if ((index < this->offset) || ((index - this->offset) >= this->message_length)) {
             return false;
         }
@@ -163,31 +163,31 @@ class EMSbus {
     static constexpr uint8_t EMS_MASK_BUDERUS   = 0xFF; // EMS bus type Buderus
     static constexpr uint8_t EMS_TX_ERROR_LIMIT = 10;   // % limit of failed Tx read/write attempts before showing a warning
 
-    static bool is_ht3() {
+    static inline bool is_ht3() noexcept {
         return (ems_mask_ == EMS_MASK_HT3);
     }
 
-    static uint8_t ems_mask() {
+    static inline uint8_t ems_mask() noexcept {
         return ems_mask_;
     }
 
-    static void ems_mask(uint8_t ems_mask) {
+    static inline void ems_mask(uint8_t ems_mask) noexcept {
         ems_mask_ = ems_mask & 0x80; // only keep the MSB (8th bit)
     }
 
-    static uint8_t tx_mode() {
+    static inline uint8_t tx_mode() noexcept {
         return tx_mode_;
     }
 
-    static void tx_mode(uint8_t tx_mode) {
+    static inline void tx_mode(uint8_t tx_mode) noexcept {
         tx_mode_ = tx_mode;
     }
 
-    static uint8_t ems_bus_id() {
+    static inline uint8_t ems_bus_id() noexcept {
         return ems_bus_id_;
     }
 
-    static void ems_bus_id(uint8_t ems_bus_id) {
+    static inline void ems_bus_id(uint8_t ems_bus_id) noexcept {
         ems_bus_id_ = ems_bus_id;
     }
 
@@ -205,7 +205,7 @@ class EMSbus {
 
 
     // sets the flag for EMS bus connected
-    static void last_bus_activity(uint32_t timestamp) {
+    static inline void last_bus_activity(uint32_t timestamp) noexcept {
         // record the first time we connected to the BUS, as this will be our uptime
         if (!last_bus_activity_) {
             bus_uptime_start_ = timestamp;
@@ -216,21 +216,21 @@ class EMSbus {
     }
 
     // return bus uptime in seconds
-    static uint32_t bus_uptime() {
+    static inline uint32_t bus_uptime() noexcept {
         if (!bus_uptime_start_) {
             return 0; // not yet initialized
         }
         return (uint32_t)((uuid::get_uptime() - bus_uptime_start_) / 1000ULL);
     }
 
-    static uint8_t tx_state() {
+    static inline uint8_t tx_state() noexcept {
         return tx_state_;
     }
-    static void tx_state(uint8_t tx_state) {
+    static inline void tx_state(uint8_t tx_state) noexcept {
         tx_state_ = tx_state;
     }
 
-    static uint8_t calculate_crc(const uint8_t * data, const uint8_t length);
+    static uint8_t calculate_crc(const uint8_t * data, const uint8_t length) noexcept;
 
   private:
     static constexpr uint32_t EMS_BUS_TIMEOUT = 30000; // timeout in ms before recognizing the ems bus is offline (30 seconds)
@@ -253,20 +253,20 @@ class RxService : public EMSbus {
     void add(uint8_t * data, uint8_t length);
     void add_empty(const uint8_t src, const uint8_t dst, const uint16_t type_id, uint8_t offset);
 
-    uint32_t telegram_count() const {
+    inline uint32_t telegram_count() const noexcept {
         return telegram_count_;
     }
 
-    void increment_telegram_count() {
+    inline void increment_telegram_count() noexcept {
         telegram_count_++;
     }
 
-    uint32_t telegram_error_count() const {
+    inline uint32_t telegram_error_count() const noexcept {
         return telegram_error_count_;
     }
 
     // returns a %
-    uint8_t quality() const {
+    inline uint8_t quality() const noexcept {
         if (telegram_error_count_ == 0) {
             return 100; // all good, 100%
         }
@@ -287,7 +287,7 @@ class RxService : public EMSbus {
         }
     };
 
-    std::deque<QueuedRxTelegram> queue() const {
+    inline const std::deque<QueuedRxTelegram> & queue() const noexcept {
         return rx_telegrams_;
     }
 
@@ -325,81 +325,83 @@ class TxService : public EMSbus {
     bool     send_raw(const char * telegram_data);
     void     send_poll() const;
     void     retry_tx(const uint8_t operation, const uint8_t * data, const uint8_t length);
-    bool     is_last_tx(const uint8_t src, const uint8_t dest) const;
+    inline bool is_last_tx(const uint8_t src, const uint8_t dest) const noexcept {
+        return (((telegram_last_->dest & 0x7F) == (src & 0x7F)) && ((dest & 0x7F) == ems_bus_id()));
+    }
     uint16_t post_send_query();
     uint16_t read_next_tx(const uint8_t offset, const uint8_t length);
 
-    uint8_t retry_count() const {
+    inline uint8_t retry_count() const noexcept {
         return retry_count_;
     }
 
-    void reset_retry_count() {
+    inline void reset_retry_count() noexcept {
         retry_count_ = 0;
     }
 
-    void set_post_send_query(uint16_t type_id) {
+    inline void set_post_send_query(uint16_t type_id) noexcept {
         telegram_last_post_send_query_ = type_id;
     }
 
-    uint16_t get_post_send_query() const {
+    inline uint16_t get_post_send_query() const noexcept {
         return telegram_last_post_send_query_;
     }
 
-    uint32_t telegram_read_count() const {
+    inline uint32_t telegram_read_count() const noexcept {
         return telegram_read_count_;
     }
-    uint32_t telegram_write_count() const {
+    inline uint32_t telegram_write_count() const noexcept {
         return telegram_write_count_;
     }
 
-    void telegram_read_count(uint32_t telegram_read_count) {
+    inline void telegram_read_count(uint32_t telegram_read_count) noexcept {
         telegram_read_count_ = telegram_read_count;
     }
 
-    void telegram_write_count(uint32_t telegram_write_count) {
+    inline void telegram_write_count(uint32_t telegram_write_count) noexcept {
         telegram_write_count_ = telegram_write_count;
     }
 
-    void increment_telegram_read_count() {
+    inline void increment_telegram_read_count() noexcept {
         telegram_read_count_++;
     }
 
-    void increment_telegram_write_count() {
+    inline void increment_telegram_write_count() noexcept {
         telegram_write_count_++;
     }
 
-    uint32_t telegram_read_fail_count() const {
+    inline uint32_t telegram_read_fail_count() const noexcept {
         return telegram_read_fail_count_;
     }
 
-    uint32_t telegram_write_fail_count() const {
+    inline uint32_t telegram_write_fail_count() const noexcept {
         return telegram_write_fail_count_;
     }
 
-    void telegram_fail_count(uint32_t telegram_fail_count) {
+    inline void telegram_fail_count(uint32_t telegram_fail_count) noexcept {
         telegram_read_fail_count_  = telegram_fail_count;
         telegram_write_fail_count_ = telegram_fail_count;
     }
 
-    uint8_t read_quality() const {
+    inline uint8_t read_quality() const noexcept {
         if (telegram_read_fail_count_ == 0) {
             return 100; // all good, 100%
         }
         return (100 - (uint8_t)(telegram_read_fail_count_ * 100 / (telegram_read_fail_count_ + telegram_read_count_)));
     }
 
-    uint8_t write_quality() const {
+    inline uint8_t write_quality() const noexcept {
         if (telegram_write_fail_count_ == 0) {
             return 100; // all good, 100%
         }
         return (100 - (uint8_t)(telegram_write_fail_count_ * 100 / (telegram_write_fail_count_ + telegram_write_count_)));
     }
 
-    void increment_telegram_read_fail_count() {
+    inline void increment_telegram_read_fail_count() noexcept {
         telegram_read_fail_count_++;
     }
 
-    void increment_telegram_write_fail_count() {
+    inline void increment_telegram_write_fail_count() noexcept {
         telegram_write_fail_count_++;
     }
 
@@ -419,11 +421,11 @@ class TxService : public EMSbus {
         }
     };
 
-    std::deque<QueuedTxTelegram> queue() const {
+    inline const std::deque<QueuedTxTelegram> & queue() const noexcept {
         return tx_telegrams_;
     }
 
-    bool tx_queue_empty() const {
+    inline bool tx_queue_empty() const noexcept {
         return tx_telegrams_.empty();
     }
 

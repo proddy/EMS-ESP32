@@ -1,15 +1,11 @@
 #ifndef APStatus_h
 #define APStatus_h
 
-#include <WiFi.h>
-#include <AsyncTCP.h>
-
-#include <ArduinoJson.h>
-#include <ESPAsyncWebServer.h>
-#include <IPAddress.h>
-
-#include "SecurityManager.h"
-#include "APSettingsService.h"
+// Forward declarations
+class AsyncWebServer;
+class AsyncWebServerRequest;
+class SecurityManager;
+class APSettingsService;
 
 #define AP_STATUS_SERVICE_PATH "/rest/apStatus"
 

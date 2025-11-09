@@ -13,11 +13,11 @@ NetworkStatus::NetworkStatus(AsyncWebServer * server, SecurityManager * security
 }
 
 void NetworkStatus::networkStatus(AsyncWebServerRequest * request) {
-    auto *     response = new AsyncJsonResponse(false);
+    auto *           response = new AsyncJsonResponse(false);
     JsonObject root     = response->getRoot();
 
-    bool        ethernet_connected = emsesp::EMSESP::system_.ethernet_connected();
-    wl_status_t wifi_status        = WiFi.status();
+    const bool        ethernet_connected = emsesp::EMSESP::system_.ethernet_connected();
+    const wl_status_t wifi_status        = WiFi.status();
 
     // see if Ethernet is connected
     if (ethernet_connected) {

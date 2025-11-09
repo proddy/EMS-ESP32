@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,9 +18,8 @@
 
 #include "emsesp.h"
 
-using namespace emsesp;
-
-static EMSESP application; // the main application
+// Main application instance - static initialization ensures it's ready before setup()
+static emsesp::EMSESP application;
 
 void setup() {
     application.start();

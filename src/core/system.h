@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -91,7 +91,7 @@ class System {
     static bool command_service(const char * cmd, const char * value);
 
     static bool get_value_info(JsonObject root, const char * cmd);
-    static void get_value_json(JsonObject output, const std::string & circuit, const std::string & name, JsonVariant val);
+    static void get_value_json(JsonObject output, const std::string & circuit, const std::string & name, JsonVariantConst val);
 
 #if defined(EMSESP_TEST)
     static bool command_test(const char * value, const int8_t id);
@@ -111,21 +111,21 @@ class System {
     void send_heartbeat();
     void send_info_mqtt();
 
-    bool syslog_enabled() {
+    bool syslog_enabled() const noexcept {
         return syslog_enabled_;
     }
 
 #ifndef EMSESP_STANDALONE
-    unsigned long syslog_count() {
+    unsigned long syslog_count() const noexcept {
         return syslog_.message_count();
     }
 
-    unsigned long syslog_fails() {
+    unsigned long syslog_fails() const noexcept {
         return syslog_.message_fails();
     }
 #endif
 
-    String getBBQKeesGatewayDetails(uint8_t detail = 0);
+    std::string getBBQKeesGatewayDetails(uint8_t detail = 0);
 
     static bool uploadFirmwareURL(const char * url = nullptr);
 
@@ -145,27 +145,27 @@ class System {
 
     static bool readCommand(const char * data);
 
-    bool telnet_enabled() {
+    bool telnet_enabled() const noexcept {
         return telnet_enabled_;
     }
 
-    bool modbus_enabled() {
+    bool modbus_enabled() const noexcept {
         return modbus_enabled_;
     }
 
-    uint16_t modbus_port() {
+    uint16_t modbus_port() const noexcept {
         return modbus_port_;
     }
 
-    uint8_t modbus_max_clients() {
+    uint8_t modbus_max_clients() const noexcept {
         return modbus_max_clients_;
     }
 
-    uint32_t modbus_timeout() {
+    uint32_t modbus_timeout() const noexcept {
         return modbus_timeout_;
     }
 
-    bool analog_enabled() {
+    bool analog_enabled() const noexcept {
         return analog_enabled_;
     }
 
@@ -177,29 +177,29 @@ class System {
         hide_led_ = b;
     }
 
-    bool readonly_mode() {
+    bool readonly_mode() const noexcept {
         return readonly_mode_;
     }
 
-    void readonly_mode(bool readonly_mode) {
+    void readonly_mode(const bool readonly_mode) noexcept {
         readonly_mode_ = readonly_mode;
     }
 
-    bool developer_mode() {
+    bool developer_mode() const noexcept {
         return developer_mode_;
     }
 
-    void developer_mode(bool developer_mode) {
+    void developer_mode(const bool developer_mode) noexcept {
         developer_mode_ = developer_mode;
     }
 
     // Boolean Format API/MQTT
-    uint8_t bool_format() {
+    uint8_t bool_format() const noexcept {
         return bool_format_;
     }
 
     // Boolean Format Web
-    uint8_t bool_dashboard() {
+    uint8_t bool_dashboard() const noexcept {
         return bool_dashboard_;
     }
 
@@ -210,47 +210,47 @@ class System {
     // BOOL_FORMAT_TRUEFALSE = 4
     // BOOL_FORMAT_10_STR = 5
     // BOOL_FORMAT_10 = 6
-    void bool_format(uint8_t format) {
+    void bool_format(const uint8_t format) noexcept {
         bool_format_ = format;
     }
 
-    void bool_dashboard(uint8_t format) {
+    void bool_dashboard(const uint8_t format) noexcept {
         bool_dashboard_ = format;
     }
 
-    uint8_t enum_format() {
+    uint8_t enum_format() const noexcept {
         return enum_format_;
     }
 
-    void enum_format(uint8_t format) {
+    void enum_format(const uint8_t format) noexcept {
         enum_format_ = format;
     }
 
-    std::string board_profile() {
-        return std::string(board_profile_.c_str());
+    const std::string & board_profile() const noexcept {
+        return board_profile_;
     }
 
-    std::string hostname() {
+    const std::string & hostname() const noexcept {
         return hostname_;
     }
 
-    void hostname(const std::string hostname) {
+    void hostname(const std::string & hostname) {
         hostname_ = hostname;
     }
 
-    bool ethernet_connected() {
+    bool ethernet_connected() const noexcept {
         return ethernet_connected_;
     }
 
-    void ethernet_connected(bool b) {
+    void ethernet_connected(const bool b) noexcept {
         ethernet_connected_ = b;
     }
 
-    void has_ipv6(bool b) {
+    void has_ipv6(const bool b) noexcept {
         has_ipv6_ = b;
     }
 
-    bool has_ipv6() {
+    bool has_ipv6() const noexcept {
         return has_ipv6_;
     }
 
@@ -265,25 +265,25 @@ class System {
 #endif
     }
 
-    void fahrenheit(bool b) {
+    void fahrenheit(const bool b) noexcept {
         fahrenheit_ = b;
     }
 
-    bool fahrenheit() {
+    bool fahrenheit() const noexcept {
         return fahrenheit_;
     }
 
-    uint8_t language_index();
+    uint8_t language_index() const;
 
-    void locale(String locale) {
+    void locale(const std::string & locale) {
         locale_ = locale;
     }
 
-    std::string locale() {
-        return std::string(locale_.c_str());
+    const std::string & locale() const {
+        return locale_;
     }
 
-    void healthcheck(uint8_t healthcheck) {
+    void healthcheck(const uint8_t healthcheck) noexcept {
         healthcheck_ = healthcheck;
     }
 
@@ -291,28 +291,28 @@ class System {
     void wifi_reconnect();
     void show_users(uuid::console::Shell & shell);
 
-    uint32_t FStotal() {
+    uint32_t FStotal() const noexcept {
         return fstotal_;
     }
 
-    void PSram(uint32_t psram) {
+    void PSram(const uint32_t psram) noexcept {
         psram_ = psram / 1024;
     }
-    uint32_t PSram() {
+    uint32_t PSram() const noexcept {
         return psram_;
     }
-    uint32_t appFree() {
+    uint32_t appFree() const noexcept {
         return appfree_;
     }
-    uint32_t appUsed() {
+    uint32_t appUsed() const noexcept {
         return appused_;
     }
 
     // memory in kb
-    static uint32_t getMaxAllocMem() {
+    static uint32_t getMaxAllocMem() noexcept {
         return max_alloc_mem_;
     }
-    static uint32_t getHeapMem() {
+    static uint32_t getHeapMem() noexcept {
         return heap_mem_;
     }
     static void refreshHeapMem() {
@@ -322,10 +322,10 @@ class System {
 #endif
     }
 
-    static bool test_set_all_active() {
+    static bool test_set_all_active() noexcept {
         return test_set_all_active_;
     }
-    static void test_set_all_active(bool n) {
+    static void test_set_all_active(const bool n) {
 #if defined(EMSESP_TEST)
         if (n) {
             logger_.debug("Using dummy entity values");
@@ -335,7 +335,7 @@ class System {
     }
 
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
-    float temperature() {
+    float temperature() const noexcept {
         return temperature_;
     }
 #endif
@@ -396,13 +396,13 @@ class System {
     // EMS-ESP settings
     // copies from WebSettings class in WebSettingsService.h and loaded with reload_settings()
     std::string hostname_;
-    String      locale_;
+    std::string locale_;
     bool        hide_led_;
     uint8_t     led_type_;
     uint8_t     led_gpio_;
     bool        analog_enabled_;
     bool        low_clock_;
-    String      board_profile_;
+    std::string board_profile_;
     uint8_t     pbutton_gpio_;
     uint8_t     rx_gpio_;
     uint8_t     tx_gpio_;
@@ -411,14 +411,14 @@ class System {
     bool        syslog_enabled_;
     int8_t      syslog_level_;
     uint32_t    syslog_mark_interval_;
-    String      syslog_host_;
+    std::string syslog_host_;
     uint16_t    syslog_port_;
     bool        fahrenheit_;
     uint8_t     bool_dashboard_;
     uint8_t     bool_format_;
     uint8_t     enum_format_;
     bool        readonly_mode_;
-    String      version_;
+    std::string version_;
     bool        modbus_enabled_;
     uint16_t    modbus_port_;
     uint8_t     modbus_max_clients_;

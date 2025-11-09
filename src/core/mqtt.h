@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,15 +47,15 @@ class Mqtt {
 
     static void load_settings();
 
-    void set_publish_time_boiler(uint16_t publish_time);
-    void set_publish_time_thermostat(uint16_t publish_time);
-    void set_publish_time_solar(uint16_t publish_time);
-    void set_publish_time_mixer(uint16_t publish_time);
-    void set_publish_time_water(uint16_t publish_time);
-    void set_publish_time_other(uint16_t publish_time);
-    void set_publish_time_sensor(uint16_t publish_time);
-    void set_publish_time_heartbeat(uint16_t publish_time);
-    bool get_publish_onchange(uint8_t device_type);
+    void set_publish_time_boiler(const uint16_t publish_time);
+    void set_publish_time_thermostat(const uint16_t publish_time);
+    void set_publish_time_solar(const uint16_t publish_time);
+    void set_publish_time_mixer(const uint16_t publish_time);
+    void set_publish_time_water(const uint16_t publish_time);
+    void set_publish_time_other(const uint16_t publish_time);
+    void set_publish_time_sensor(const uint16_t publish_time);
+    void set_publish_time_heartbeat(const uint16_t publish_time);
+    bool get_publish_onchange(const uint8_t device_type);
 
     enum Operation : uint8_t { PUBLISH, SUBSCRIBE, UNSUBSCRIBE };
     enum NestedFormat : uint8_t { NESTED = 1, SINGLE };
@@ -66,7 +66,7 @@ class Mqtt {
     static void on_connect();
     static void on_disconnect(espMqttClientTypes::DisconnectReason reason);
     static void on_message(const char * topic, const uint8_t * payload, size_t len);
-    static void subscribe(const uint8_t device_type, const std::string & topic, mqtt_sub_function_p cb);
+    static void subscribe(const uint8_t device_type, const std::string & topic, const mqtt_sub_function_p cb);
     static void subscribe(const std::string & topic);
     static void resubscribe();
 
@@ -85,7 +85,7 @@ class Mqtt {
     static bool queue_ha(const char * topic, const JsonObjectConst payload);
     static bool queue_remove_topic(const char * topic);
 
-    static bool publish_ha_sensor_config_dv(DeviceValue & dv,
+    static bool publish_ha_sensor_config_dv(const DeviceValue & dv,
                                             const char *  model,
                                             const char *  brand,
                                             const char *  version,
@@ -141,7 +141,7 @@ class Mqtt {
         return mqtt_enabled_;
     }
 
-    static void enabled(bool mqtt_enabled) {
+    static void enabled(const bool mqtt_enabled) {
         mqtt_enabled_ = mqtt_enabled;
     }
 
@@ -194,7 +194,7 @@ class Mqtt {
         return entity_format_;
     }
 
-    static void entity_format(uint8_t n) {
+    static void entity_format(const uint8_t n) {
         entity_format_ = n;
     }
 
@@ -202,7 +202,7 @@ class Mqtt {
         return discovery_type_;
     }
 
-    static void nested_format(uint8_t nested_format) {
+    static void nested_format(const uint8_t nested_format) {
         nested_format_ = nested_format;
     }
 
@@ -214,7 +214,7 @@ class Mqtt {
         return publish_single2cmd_;
     }
 
-    static void publish_single(bool publish_single) {
+    static void publish_single(const bool publish_single) {
         publish_single_ = publish_single;
     }
 
@@ -222,7 +222,7 @@ class Mqtt {
         return mqtt_enabled_ && ha_enabled_;
     }
 
-    static void ha_enabled(bool ha_enabled) {
+    static void ha_enabled(const bool ha_enabled) {
         ha_enabled_ = ha_enabled;
     }
 
@@ -230,7 +230,7 @@ class Mqtt {
         return ha_climate_reset_;
     }
 
-    static void ha_climate_reset(bool reset) {
+    static void ha_climate_reset(const bool reset) {
         ha_climate_reset_ = reset;
     }
 
@@ -242,15 +242,15 @@ class Mqtt {
         lastresponse_.clear();
     }
 
-    void set_qos(uint8_t mqtt_qos) const {
+    void set_qos(const uint8_t mqtt_qos) const {
         mqtt_qos_ = mqtt_qos;
     }
 
-    void set_retain(bool mqtt_retain) const {
+    void set_retain(const bool mqtt_retain) const {
         mqtt_retain_ = mqtt_retain;
     }
 
-    static std::string tag_to_topic(uint8_t device_type, int8_t tag);
+    static std::string tag_to_topic(const uint8_t device_type, const int8_t tag);
 
     static void
     add_ha_classes(JsonObject doc, const uint8_t device_type, const uint8_t type, const uint8_t uom, const char * entity = nullptr, bool is_discovery = true);

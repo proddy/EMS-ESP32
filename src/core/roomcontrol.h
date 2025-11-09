@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ class Roomctrl {
     // Product-Id of the remote
     enum RemoteType : uint8_t { NONE = 0, RC20 = 113, FB10 = 109, RC100H = 200, SENSOR = 0x40, RC200 = 157, RC100 = 165, RT800 = 3 };
 
-    static void send(uint8_t addr);
-    static void check(uint8_t addr, const uint8_t * data, const uint8_t length);
+    static void send(const uint8_t addr);
+    static void check(const uint8_t addr, const uint8_t * data, const uint8_t length);
     static void set_remotetemp(const uint8_t type, const uint8_t hc, const int16_t temp);
     static void set_remotehum(const uint8_t type, const uint8_t hc, const int8_t hum);
     static bool is_remote(const uint8_t hc) {
@@ -42,15 +42,15 @@ class Roomctrl {
     enum SendType : uint8_t { TEMP, HUMI };
 
     static uint8_t get_hc(const uint8_t addr);
-    static void    version(uint8_t addr, uint8_t dst, uint8_t hc);
-    static void    unknown(uint8_t addr, uint8_t dst, uint8_t type, uint8_t offset);
-    static void    unknown(uint8_t addr, uint8_t dst, uint8_t offset, uint8_t typeh, uint8_t typel);
-    static void    temperature(uint8_t addr, uint8_t dst, uint8_t hc);
-    static void    humidity(uint8_t addr, uint8_t dst, uint8_t hc);
+    static void    version(const uint8_t addr, const uint8_t dst, const uint8_t hc);
+    static void    unknown(const uint8_t addr, const uint8_t dst, const uint8_t type, const uint8_t offset);
+    static void    unknown(const uint8_t addr, const uint8_t dst, const uint8_t offset, const uint8_t typeh, const uint8_t typel);
+    static void    temperature(const uint8_t addr, const uint8_t dst, const uint8_t hc);
+    static void    humidity(const uint8_t addr, const uint8_t dst, const uint8_t hc);
     static void    nack_write();
     static void    ack_write();
-    static void    replyF7(uint8_t addr, uint8_t dst, uint8_t offset, uint8_t typehh, uint8_t typeh, uint8_t typel, uint8_t hc);
-    static int16_t calc_dew(int16_t temp, uint8_t hum);
+    static void    replyF7(const uint8_t addr, const uint8_t dst, const uint8_t offset, const uint8_t typehh, const uint8_t typeh, const uint8_t typel, const uint8_t hc);
+    static int16_t calc_dew(const int16_t temp, const uint8_t humi);
 
     static bool     switch_off_[HCS];
     static uint32_t send_time_[HCS];

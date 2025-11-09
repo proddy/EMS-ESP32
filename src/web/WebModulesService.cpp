@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,11 +74,11 @@ void WebModules::read(WebModules & webModules, JsonObject root) {
 // read any Module settings from the settings file
 // and then apply the enable/disable that is set by the user
 // This function is called when ems-esp boots and also on a save from the Modules web page
-StateUpdateResult WebModules::update(JsonObject root, WebModules & webModules) {
+StateUpdateResult WebModules::update(JsonObjectConst root, WebModules & webModules) {
     bool err = false;
     if (root["modules"].is<JsonArray>()) {
-        auto modules = root["modules"].as<JsonArray>();
-        for (const JsonObject module : modules) {
+        auto modules = root["modules"].as<JsonArrayConst>();
+        for (const JsonObjectConst module : modules) {
             auto key     = module["key"].as<const char *>();
             auto license = module["license"].as<const char *>();
             auto enable  = module["enabled"].as<bool>();

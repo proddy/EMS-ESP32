@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -239,55 +239,42 @@ uint8_t DeviceValue::NUM_TAGS = sizeof(DeviceValue::DeviceValueTAG_s) / sizeof(c
 // returns true if its valid
 // state is stored in the dv object
 bool DeviceValue::hasValue() const {
-    bool has_value = false;
     switch (type) {
     case DeviceValueType::BOOL:
-        has_value = Helpers::hasValue(*(uint8_t *)(value_p), EMS_VALUE_BOOL);
-        break;
+        return Helpers::hasValue(*(uint8_t *)(value_p), EMS_VALUE_BOOL);
     case DeviceValueType::STRING:
-        has_value = Helpers::hasValue((char *)(value_p));
-        break;
+        return Helpers::hasValue((char *)(value_p));
     case DeviceValueType::ENUM:
-        has_value = Helpers::hasValue(*(uint8_t *)(value_p));
-        break;
-    case DeviceValueType::INT8:
-        has_value = Helpers::hasValue(*(int8_t *)(value_p));
-        break;
     case DeviceValueType::UINT8:
-        has_value = Helpers::hasValue(*(uint8_t *)(value_p));
-        break;
+        return Helpers::hasValue(*(uint8_t *)(value_p));
+    case DeviceValueType::INT8:
+        return Helpers::hasValue(*(int8_t *)(value_p));
     case DeviceValueType::INT16:
-        has_value = Helpers::hasValue(*(int16_t *)(value_p));
-        break;
+        return Helpers::hasValue(*(int16_t *)(value_p));
     case DeviceValueType::UINT16:
-        has_value = Helpers::hasValue(*(uint16_t *)(value_p));
-        break;
+        return Helpers::hasValue(*(uint16_t *)(value_p));
     case DeviceValueType::UINT24:
     case DeviceValueType::TIME:
     case DeviceValueType::UINT32:
-        has_value = Helpers::hasValue(*(uint32_t *)(value_p));
-        break;
+        return Helpers::hasValue(*(uint32_t *)(value_p));
     case DeviceValueType::CMD:
-        has_value = true; // we count command as an actual entity
-        break;
+        return true; // we count command as an actual entity
     default:
-        break;
+        return false;
     }
-
-    return has_value;
 }
 
-// See if the device value has a tag and it's not empty
-bool DeviceValue::has_tag() const {
-    return ((tag < DeviceValue::NUM_TAGS) && (tag != TAG_NONE) && strlen(DeviceValueTAG_s[tag][0]));
+// helper function for temperature conversions
+uint8_t DeviceValue::get_fahrenheit_mode() const {
+    return !EMSESP::system_.fahrenheit() ? 0 : (uom == DeviceValueUOM::DEGREES) ? 2 : (uom == DeviceValueUOM::DEGREES_R) ? 1 : 0;
 }
 
 // set the min and max value for a device value
 // converts to signed int, which means rounding to an whole integer
 // returns false if there is no min/max needed
 // Types BOOL, ENUM, STRING and CMD are not used
-bool DeviceValue::get_min_max(int16_t & dv_set_min, uint32_t & dv_set_max) {
-    uint8_t fahrenheit = !EMSESP::system_.fahrenheit() ? 0 : (uom == DeviceValueUOM::DEGREES) ? 2 : (uom == DeviceValueUOM::DEGREES_R) ? 1 : 0;
+bool DeviceValue::get_min_max(int16_t & dv_set_min, uint32_t & dv_set_max) const {
+    const uint8_t fahrenheit = get_fahrenheit_mode();
 
     // if we have individual limits set already, just do the conversion
     // limits are not scaled with num operator and temperatures are °C
@@ -301,28 +288,26 @@ bool DeviceValue::get_min_max(int16_t & dv_set_min, uint32_t & dv_set_max) {
     dv_set_min = 0;
     dv_set_max = 0;
 
-    if (type == DeviceValueType::UINT16) {
+    switch (type) {
+    case DeviceValueType::UINT16:
         dv_set_min = Helpers::transformNumFloat(0, numeric_operator, fahrenheit);
         dv_set_max = Helpers::transformNumFloat(EMS_VALUE_UINT16_NOTSET - 1, numeric_operator, fahrenheit);
         return true;
-    }
 
-    if (type == DeviceValueType::INT16) {
+    case DeviceValueType::INT16:
         dv_set_min = Helpers::transformNumFloat(-EMS_VALUE_INT16_NOTSET + 1, numeric_operator, fahrenheit);
         dv_set_max = Helpers::transformNumFloat(EMS_VALUE_INT16_NOTSET - 1, numeric_operator, fahrenheit);
         return true;
-    }
 
-    if (type == DeviceValueType::UINT8) {
+    case DeviceValueType::UINT8:
         if (uom == DeviceValueUOM::PERCENT) {
             dv_set_max = 100;
         } else {
             dv_set_max = Helpers::transformNumFloat(EMS_VALUE_UINT8_NOTSET - 1, numeric_operator, fahrenheit);
         }
         return true;
-    }
 
-    if (type == DeviceValueType::INT8) {
+    case DeviceValueType::INT8:
         if (uom == DeviceValueUOM::PERCENT) {
             dv_set_min = -100;
             dv_set_max = 100;
@@ -331,50 +316,60 @@ bool DeviceValue::get_min_max(int16_t & dv_set_min, uint32_t & dv_set_max) {
             dv_set_max = Helpers::transformNumFloat(EMS_VALUE_INT8_NOTSET - 1, numeric_operator, fahrenheit);
         }
         return true;
-    }
 
-    if (type == DeviceValueType::UINT24 || type == DeviceValueType::TIME || type == DeviceValueType::UINT32) {
+    case DeviceValueType::UINT24:
+    case DeviceValueType::TIME:
+    case DeviceValueType::UINT32:
         dv_set_max = Helpers::transformNumFloat(EMS_VALUE_UINT24_NOTSET - 1, numeric_operator);
         return true;
-    }
 
-    return false; // nothing changed, not supported
+    default:
+        return false; // nothing changed, not supported
+    }
 }
 
 // extract custom min from custom_fullname
 bool DeviceValue::get_custom_min(int16_t & val) {
-    auto    min_pos    = custom_fullname.find('>');
-    bool    has_min    = (min_pos != std::string::npos);
-    uint8_t fahrenheit = !EMSESP::system_.fahrenheit() ? 0 : (uom == DeviceValueUOM::DEGREES) ? 2 : (uom == DeviceValueUOM::DEGREES_R) ? 1 : 0;
-    if (has_min) {
-        int32_t v = Helpers::atoint(custom_fullname.substr(min_pos + 1).c_str());
-        if (fahrenheit) {
-            v = (v - (32 * (fahrenheit - 1))) / 1.8; // reset to °C
-        }
-        if (max > 0 && v > 0 && (uint32_t)v > max) {
-            return false;
-        }
-        val = v;
+    const auto min_pos = custom_fullname.find('>');
+    if (min_pos == std::string::npos) {
+        return false;
     }
-    return has_min;
+
+    const uint8_t fahrenheit = get_fahrenheit_mode();
+    int32_t       v          = Helpers::atoint(custom_fullname.substr(min_pos + 1).c_str());
+    
+    if (fahrenheit) {
+        v = (v - (32 * (fahrenheit - 1))) / 1.8; // reset to °C
+    }
+    
+    if (max > 0 && v > 0 && (uint32_t)v > max) {
+        return false;
+    }
+    
+    val = v;
+    return true;
 }
 
 // extract custom max from custom_fullname
 bool DeviceValue::get_custom_max(uint32_t & val) {
-    auto    max_pos    = custom_fullname.find('<');
-    bool    has_max    = (max_pos != std::string::npos);
-    uint8_t fahrenheit = !EMSESP::system_.fahrenheit() ? 0 : (uom == DeviceValueUOM::DEGREES) ? 2 : (uom == DeviceValueUOM::DEGREES_R) ? 1 : 0;
-    if (has_max) {
-        int32_t v = Helpers::atoint(custom_fullname.substr(max_pos + 1).c_str());
-        if (fahrenheit) {
-            v = (v - (32 * (fahrenheit - 1))) / 1.8; // reset to °C
-        }
-        if (v < 0 || v < (int32_t)min) {
-            return false;
-        }
-        val = v;
+    const auto max_pos = custom_fullname.find('<');
+    if (max_pos == std::string::npos) {
+        return false;
     }
-    return has_max;
+
+    const uint8_t fahrenheit = get_fahrenheit_mode();
+    int32_t       v          = Helpers::atoint(custom_fullname.substr(max_pos + 1).c_str());
+    
+    if (fahrenheit) {
+        v = (v - (32 * (fahrenheit - 1))) / 1.8; // reset to °C
+    }
+    
+    if (v < 0 || v < (int32_t)min) {
+        return false;
+    }
+    
+    val = v;
+    return true;
 }
 
 // sets min max to stored custom values (if set)
@@ -384,32 +379,24 @@ void DeviceValue::set_custom_minmax() {
 }
 
 std::string DeviceValue::get_custom_fullname() const {
-    auto min_pos    = custom_fullname.find('>');
-    auto max_pos    = custom_fullname.find('<');
-    auto minmax_pos = min_pos < max_pos ? min_pos : max_pos;
-    if (minmax_pos != std::string::npos) {
-        return custom_fullname.substr(0, minmax_pos);
-    }
-    return custom_fullname;
+    const auto min_pos    = custom_fullname.find('>');
+    const auto max_pos    = custom_fullname.find('<');
+    const auto minmax_pos = (min_pos < max_pos) ? min_pos : max_pos;
+    
+    return (minmax_pos != std::string::npos) ? custom_fullname.substr(0, minmax_pos) : custom_fullname;
 }
 
 // returns the translated fullname or the custom fullname (if provided)
 // always returns a std::string
 std::string DeviceValue::get_fullname() const {
-    std::string customname = get_custom_fullname();
-    if (customname.empty()) {
-        return Helpers::translated_word(fullname);
-    }
-    return customname;
+    const std::string customname = get_custom_fullname();
+    return customname.empty() ? Helpers::translated_word(fullname) : customname;
 }
 
 // returns any custom name defined in the entity_id
 std::string DeviceValue::get_name(const std::string & entity) {
-    auto pos = entity.find('|');
-    if (pos != std::string::npos) {
-        return entity.substr(2, pos - 2);
-    }
-    return entity.substr(2);
+    const auto pos = entity.find('|');
+    return (pos != std::string::npos) ? entity.substr(2, pos - 2) : entity.substr(2);
 }
 
 } // namespace emsesp

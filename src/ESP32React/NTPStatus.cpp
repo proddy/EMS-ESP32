@@ -10,31 +10,33 @@ NTPStatus::NTPStatus(AsyncWebServer * server, SecurityManager * securityManager)
     });
 }
 
+namespace {
 /*
  * Formats the time using the format provided.
  *
  * Uses a 25 byte buffer, large enough to fit an ISO time string with offset.
  */
-String formatTime(tm * time, const char * format) {
-    std::array<char, 25> time_string{};
+const char * formatTime(tm * time, const char * format) {
+    static thread_local std::array<char, 25> time_string{};
     strftime(time_string.data(), time_string.size(), format, time);
-    return {time_string.data()};
+    return time_string.data();
 }
 
-String toUTCTimeString(tm * time) {
+const char * toUTCTimeString(tm * time) {
     return formatTime(time, "%FT%TZ");
 }
 
-String toLocalTimeString(tm * time) {
+const char * toLocalTimeString(tm * time) {
     return formatTime(time, "%FT%T");
 }
+} // namespace
 
 void NTPStatus::ntpStatus(AsyncWebServerRequest * request) {
-    auto *     response = new AsyncJsonResponse(false);
+    auto *           response = new AsyncJsonResponse(false);
     JsonObject root     = response->getRoot();
 
     // grab the current instant in unix seconds
-    time_t now = time(nullptr);
+    const time_t now = time(nullptr);
 
     // only provide enabled/disabled status for now
     root["status"] = [] {

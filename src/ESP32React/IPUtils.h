@@ -5,17 +5,14 @@
 
 class IPUtils {
   public:
-    static bool isSet(const IPAddress & ip) {
-        return ip != getNotSetIP();
+    // Check if IP address is set (not INADDR_NONE)
+    [[nodiscard]] static inline bool isSet(const IPAddress & ip) noexcept {
+        return ip != INADDR_NONE;
     }
-    static bool isNotSet(const IPAddress & ip) {
-        return ip == getNotSetIP();
-    }
-
-  private:
-    static const IPAddress & getNotSetIP() {
-        static const IPAddress IP_NOT_SET = IPAddress(INADDR_NONE);
-        return IP_NOT_SET;
+    
+    // Check if IP address is not set (equals INADDR_NONE)
+    [[nodiscard]] static inline bool isNotSet(const IPAddress & ip) noexcept {
+        return ip == INADDR_NONE;
     }
 };
 

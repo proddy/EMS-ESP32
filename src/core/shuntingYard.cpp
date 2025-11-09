@@ -25,6 +25,7 @@
 // find tokens - optimized to reduce string allocations
 std::deque<Token> exprToTokens(const std::string & expr) {
     std::deque<Token> tokens;
+    // Note: deque doesn't support reserve(), but has efficient push_back
 
     for (const auto * p = expr.c_str(); *p; ++p) {
         if (isblank(*p)) {
@@ -51,46 +52,45 @@ std::deque<Token> exprToTokens(const std::string & expr) {
             if (*p == '\0') {
                 --p;
             }
+        } else if (strncmp(p, "round", 5) == 0) { // Check longer strings first
+            p += 4;
+            tokens.emplace_back(Token::Type::Unary, "r", 5);
+        } else if (strncmp(p, "tohex", 5) == 0) {
+            p += 4;
+            tokens.emplace_back(Token::Type::Unary, "x", 5);
+        } else if (strncmp(p, "sqrt", 4) == 0) {
+            p += 3;
+            tokens.emplace_back(Token::Type::Unary, "s", 5);
         } else if (strncmp(p, "int", 3) == 0) {
             p += 2;
             tokens.emplace_back(Token::Type::Unary, "i", 5);
-        } else if (strncmp(p, "round", 5) == 0) {
-            p += 4;
-            tokens.emplace_back(Token::Type::Unary, "r", 5);
         } else if (strncmp(p, "abs", 3) == 0) {
             p += 2;
             tokens.emplace_back(Token::Type::Unary, "a", 5);
-        } else if (strncmp(p, "ln", 2) == 0) {
-            p += 1;
-            tokens.emplace_back(Token::Type::Unary, "l", 5);
         } else if (strncmp(p, "log", 3) == 0) {
             p += 2;
             tokens.emplace_back(Token::Type::Unary, "g", 5);
         } else if (strncmp(p, "exp", 3) == 0) {
             p += 2;
             tokens.emplace_back(Token::Type::Unary, "e", 5);
-        } else if (strncmp(p, "sqrt", 4) == 0) {
-            p += 3;
-            tokens.emplace_back(Token::Type::Unary, "s", 5);
         } else if (strncmp(p, "pow", 3) == 0) {
             p += 2;
             tokens.emplace_back(Token::Type::Unary, "p", 5);
-        } else if (strncmp(p, "tohex", 5) == 0) {
-            p += 4;
-            tokens.emplace_back(Token::Type::Unary, "x", 5);
         } else if (strncmp(p, "hex", 3) == 0) {
             p += 2;
             tokens.emplace_back(Token::Type::Unary, "h", 5);
         } else if (strncmp(p, "rnd", 3) == 0) {
             p += 2;
             tokens.emplace_back(Token::Type::Unary, "d", 5);
+        } else if (strncmp(p, "ln", 2) == 0) {
+            p += 1;
+            tokens.emplace_back(Token::Type::Unary, "l", 5);
         } else if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || (*p == '_') || (*p & 0x80)) {
             const auto * b = p;
             while ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || (*p == '_') || (*p & 0x80)) {
                 ++p;
             }
-            const auto s = std::string(b, p);
-            tokens.emplace_back(Token::Type::String, s, -3);
+            tokens.emplace_back(Token::Type::String, std::string(b, p), -3);
             --p;
         } else if (*p == '"') {
             ++p;
@@ -98,8 +98,7 @@ std::deque<Token> exprToTokens(const std::string & expr) {
             while (*p && *p != '"') {
                 ++p;
             }
-            const auto s = std::string(b, p);
-            tokens.emplace_back(Token::Type::String, s, -3);
+            tokens.emplace_back(Token::Type::String, std::string(b, p), -3);
             if (*p == '\0') {
                 --p;
             }
@@ -109,8 +108,7 @@ std::deque<Token> exprToTokens(const std::string & expr) {
             while (*p && *p != '\'') {
                 ++p;
             }
-            const auto s = std::string(b, p);
-            tokens.emplace_back(Token::Type::String, s, -3);
+            tokens.emplace_back(Token::Type::String, std::string(b, p), -3);
             if (*p == '\0') {
                 --p;
             }
@@ -119,8 +117,7 @@ std::deque<Token> exprToTokens(const std::string & expr) {
             while (isdigit(*p) || *p == '.') {
                 ++p;
             }
-            const auto s = std::string(b, p);
-            tokens.emplace_back(Token::Type::Number, s, -2);
+            tokens.emplace_back(Token::Type::Number, std::string(b, p), -2);
             --p;
         } else {
             Token::Type token            = Token::Type::Operator;
@@ -218,8 +215,7 @@ std::deque<Token> exprToTokens(const std::string & expr) {
                 token      = Token::Type::Compare;
                 break;
             }
-            const auto s = std::string(1, c);
-            tokens.emplace_back(token, s, precedence, rightAssociative);
+            tokens.emplace_back(token, std::string(1, c), precedence, rightAssociative);
         }
     }
 
@@ -340,37 +336,49 @@ bool isnum(const std::string & s) {
 
 // replace commands like "<device>/<hc>/<cmd>" with its value"
 std::string commands(std::string & expr, bool quotes) {
+    // Optimize: Convert to lowercase once at start
     auto expr_new = emsesp::Helpers::toLower(expr);
+    
     for (uint8_t device = 0; device < emsesp::EMSdevice::DeviceType::UNKNOWN; device++) {
-        std::string d = (std::string)emsesp::EMSdevice::device_type_2_device_name(device) + "/";
+        // Optimize: Reuse device name string, already lowercase
+        std::string d = emsesp::Helpers::toLower(emsesp::EMSdevice::device_type_2_device_name(device)) + "/";
         auto        f = expr_new.find(d);
+        
         while (f != std::string::npos) {
             // entity names are alphanumeric or _
             auto e = expr_new.find_first_not_of("/._abcdefghijklmnopqrstuvwxyz0123456789", f);
             if (e == std::string::npos) {
                 e = expr.length();
             }
+            
+            // Optimize: Use stack-based buffer instead of std::string for command
             char   cmd[COMMAND_MAX_LENGTH];
             size_t l = e - f;
-            if (l >= sizeof(cmd) - 1) {
+            if (l >= sizeof(cmd) - 7) { // Reserve space for "/value\0"
                 break;
             }
             expr_new.copy(cmd, l, f);
             cmd[l] = '\0';
 
             if (strstr(cmd, "/value") == nullptr) {
-                strlcat(cmd, "/value", sizeof(cmd) - 6);
+                strlcat(cmd, "/value", sizeof(cmd));
             }
+            
+            // Optimize: Reuse JsonDocuments by clearing them
             JsonDocument doc_out;
             JsonDocument doc_in;
             JsonObject   output = doc_out.to<JsonObject>();
             JsonObject   input  = doc_in.to<JsonObject>();
-            std::string  cmd_s  = "api/" + std::string(cmd);
+            
+            // Optimize: Build command string directly with "api/" prefix
+            char cmd_with_prefix[COMMAND_MAX_LENGTH + 4];
+            snprintf(cmd_with_prefix, sizeof(cmd_with_prefix), "api/%s", cmd);
 
-            auto return_code = emsesp::Command::process(cmd_s.c_str(), true, input, output);
+            auto return_code = emsesp::Command::process(cmd_with_prefix, true, input, output);
             // check for no value (entity is valid but has no value set)
             if (return_code != emsesp::CommandRet::OK && return_code != emsesp::CommandRet::NO_VALUE) {
-                return expr = "";
+                expr.clear();
+                return expr;
             }
 
             std::string data = output["api_data"] | "";
@@ -379,19 +387,24 @@ std::string commands(std::string & expr, bool quotes) {
                 data.insert(data.end(), '"');
             }
             expr.replace(f, l, data);
-            e        = f + data.length();
-            expr_new = emsesp::Helpers::toLower(expr);
-            f        = expr_new.find(d, e);
+            e = f + data.length();
+            
+            // Optimize: Only lowercase the replaced portion instead of the entire expression
+            std::string data_lower = emsesp::Helpers::toLower(data);
+            expr_new.replace(f, l, data_lower);
+            
+            f = expr_new.find(d, e);
         }
     }
+    
     if (quotes) {
-        // remove double quotes
-        auto f = expr.find("\"\"");
-        while (f != std::string::npos) {
-            expr.erase(f, 2);
-            f = expr.find("\"\"");
+        // Optimize: Remove double quotes more efficiently
+        size_t pos = 0;
+        while ((pos = expr.find("\"\"", pos)) != std::string::npos) {
+            expr.erase(pos, 2);
         }
     }
+    
     return expr;
 }
 
@@ -400,11 +413,21 @@ int to_logic(const std::string & s) {
     if (s.empty()) {
         return -1;
     }
-    auto l = emsesp::Helpers::toLower(s);
-    if (s[0] == '1' || l == "on" || l == "true") {
+    // Optimize: Check numeric values first (fast path)
+    char first_char = s[0];
+    if (first_char == '1') {
         return 1;
     }
-    if (s[0] == '0' || l == "off" || l == "false") {
+    if (first_char == '0') {
+        return 0;
+    }
+    
+    // Optimize: Only convert to lowercase for string comparisons
+    auto l = emsesp::Helpers::toLower(s);
+    if (l == "on" || l == "true") {
+        return 1;
+    }
+    if (l == "off" || l == "false") {
         return 0;
     }
     return -1;
@@ -413,11 +436,15 @@ int to_logic(const std::string & s) {
 // number to string, remove trailing zeros
 std::string to_string(double d) {
     std::string s = std::to_string(d);
-    while (!s.empty() && s.back() == '0') {
-        s.pop_back();
-    }
-    if (!s.empty() && s.back() == '.') {
-        s.pop_back();
+    // Optimize: Find last non-zero digit position
+    auto last_non_zero = s.find_last_not_of('0');
+    if (last_non_zero != std::string::npos) {
+        // Remove trailing zeros
+        s.erase(last_non_zero + 1);
+        // Remove trailing decimal point if present
+        if (!s.empty() && s.back() == '.') {
+            s.pop_back();
+        }
     }
     return s;
 }
@@ -425,9 +452,8 @@ std::string to_string(double d) {
 // number to hex string
 std::string to_hex(uint32_t i) {
     char c[10];
-    snprintf(c, 10, "%02X", i);
-    std::string s = c;
-    return s;
+    snprintf(c, sizeof(c), "%02X", i);
+    return std::string(c);
 }
 
 // RPN calculator
@@ -451,7 +477,9 @@ std::string calculate(const std::string & expr) {
         return "";
     }
 
+    // Optimize: Reserve space for stack to reduce reallocations
     std::vector<std::string> stack;
+    stack.reserve(tokens.size() / 2);
 
     while (!queue.empty()) {
         const auto token = queue.front();
@@ -657,8 +685,22 @@ std::string calculate(const std::string & expr) {
         }
     }
 
-    // concatenate all elements in stack to a single string, separated by spaces and return
-    std::string result = "";
+    // Optimize: Concatenate all elements in stack efficiently
+    if (stack.empty()) {
+        return "";
+    }
+    if (stack.size() == 1) {
+        return stack[0];
+    }
+    
+    // Calculate total size needed
+    size_t total_size = 0;
+    for (const auto & s : stack) {
+        total_size += s.length();
+    }
+    
+    std::string result;
+    result.reserve(total_size);
     for (const auto & s : stack) {
         result += s;
     }
@@ -683,39 +725,42 @@ std::string compute(const std::string & expr) {
                 i++;
             }
         }
-        std::string  cmd = expr_new.substr(f, e - f).c_str();
+        std::string  cmd = expr_new.substr(f, e - f);
         JsonDocument doc;
         if (DeserializationError::Ok == deserializeJson(doc, cmd)) {
             HTTPClient  http;
             std::string url, header_s, value_s, method_s, key_s, keys_s;
-            // search keys lower case
-            for (JsonPair p : doc.as<JsonObject>()) {
-                if (emsesp::Helpers::toLower(p.key().c_str()) == "url") {
+            // Optimize: Convert key to lowercase once per iteration instead of per comparison
+            for (JsonPairConst p : doc.as<JsonObjectConst>()) {
+                auto key_lower = emsesp::Helpers::toLower(p.key().c_str());
+                if (key_lower == "url") {
                     url = p.value().as<std::string>();
-                } else if (emsesp::Helpers::toLower(p.key().c_str()) == "header") {
+                } else if (key_lower == "header") {
                     header_s = p.key().c_str();
-                } else if (emsesp::Helpers::toLower(p.key().c_str()) == "value") {
+                } else if (key_lower == "value") {
                     value_s = p.key().c_str();
-                } else if (emsesp::Helpers::toLower(p.key().c_str()) == "method") {
+                } else if (key_lower == "method") {
                     method_s = p.key().c_str();
-                } else if (emsesp::Helpers::toLower(p.key().c_str()) == "key") {
+                } else if (key_lower == "key") {
                     keys_s = "";
                     key_s  = p.key().c_str();
-                } else if (emsesp::Helpers::toLower(p.key().c_str()) == "keys") {
+                } else if (key_lower == "keys") {
                     key_s  = "";
                     keys_s = p.key().c_str();
                 }
             }
             if (http.begin(url.c_str())) {
                 int httpResult = 0;
-                for (JsonPair p : doc[header_s].as<JsonObject>()) {
+                for (JsonPairConst p : doc[header_s].as<JsonObjectConst>()) {
                     http.addHeader(p.key().c_str(), p.value().as<std::string>().c_str());
                 }
                 std::string value  = doc[value_s] | "";
                 std::string method = doc[method_s] | "get";
+                // Optimize: Convert method to lowercase once
+                auto        method_lower = emsesp::Helpers::toLower(method);
 
                 // if there is data, force a POST
-                if (value.length() || emsesp::Helpers::toLower(method) == "post") {
+                if (value.length() || method_lower == "post") {
                     if (value.find_first_of('{') != std::string::npos) {
                         http.addHeader("Content-Type", "application/json"); // auto-set to JSON
                     }

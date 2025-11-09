@@ -30,13 +30,13 @@
 
 class NTPSettings {
   public:
-    bool   enabled;
-    String tzLabel;
-    String tzFormat;
-    String server;
+    bool        enabled;
+    std::string tzLabel;
+    std::string tzFormat;
+    std::string server;
 
-    static void              read(NTPSettings & settings, JsonObject root);
-    static StateUpdateResult update(JsonObject root, NTPSettings & settings);
+    static void              read(const NTPSettings & settings, JsonObject root);
+    static StateUpdateResult update(JsonObjectConst root, NTPSettings & settings);
 };
 
 class NTPSettingsService : public StatefulService<NTPSettings> {

@@ -7,6 +7,9 @@
 #include <AsyncJson.h>
 
 #include <list>
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 #define ACCESS_TOKEN_PARAMATER "access_token"
 
@@ -16,12 +19,12 @@
 
 class User {
   public:
-    String username;
-    String password;
-    bool   admin;
+    std::string username;
+    std::string password;
+    bool        admin;
 
   public:
-    User(String username, String password, bool admin)
+    User(std::string username, std::string password, bool admin)
         : username(std::move(username))
         , password(std::move(password))
         , admin(admin) {
@@ -30,23 +33,29 @@ class User {
 
 class Authentication {
   public:
-    User *  user          = nullptr;
-    boolean authenticated = false;
+    std::unique_ptr<User> user;
+    boolean               authenticated = false;
 
   public:
     explicit Authentication(const User & user)
-        : user(new User(user))
+        : user(std::make_unique<User>(user))
         , authenticated(true) {
     }
 
     Authentication() = default;
 
-    ~Authentication() {
-        delete user;
-    }
+    // Move-only semantics (unique_ptr is not copyable)
+    Authentication(Authentication &&) noexcept = default;
+    Authentication & operator=(Authentication &&) noexcept = default;
+
+    // Delete copy operations to prevent double-ownership
+    Authentication(const Authentication &) = delete;
+    Authentication & operator=(const Authentication &) = delete;
+
+    ~Authentication() = default;
 };
 
-typedef std::function<boolean(Authentication & authentication)> AuthenticationPredicate;
+typedef std::function<boolean(const Authentication & authentication)> AuthenticationPredicate;
 
 class AuthenticationPredicates {
   public:
@@ -65,10 +74,10 @@ class AuthenticationPredicates {
 class SecurityManager {
   public:
     // Authenticate, returning the user if found
-    virtual Authentication authenticate(const String & username, const String & password) = 0;
+    virtual Authentication authenticate(const std::string & username, const std::string & password) = 0;
 
     // Generate a JWT for the user provided
-    virtual String generateJWT(const User * user) = 0;
+    virtual std::string generateJWT(const User * user) = 0;
 
     // Check the request header for the Authorization token
     virtual Authentication authenticateRequest(AsyncWebServerRequest * request) = 0;

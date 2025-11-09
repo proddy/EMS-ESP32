@@ -12,10 +12,12 @@ namespace emsesp {
 class WebStatusService {
   public:
     WebStatusService(AsyncWebServer * server, SecurityManager * securityManager);
-    void set_current_version(const std::string & version) {
+    
+    void set_current_version(const std::string & version) noexcept {
         current_version_s = version;
     }
-    std::string get_current_version() {
+    
+    const std::string & get_current_version() const noexcept {
         return current_version_s;
     }
 

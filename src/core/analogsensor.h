@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,11 +37,11 @@ class AnalogSensor {
         Sensor(const uint8_t gpio, const std::string & name, const double offset, const double factor, const uint8_t uom, const int8_t type);
         ~Sensor() = default;
 
-        void set_offset(const double offset) {
+        void set_offset(const double offset) noexcept {
             offset_ = offset;
         }
 
-        std::string name() const {
+        const std::string & name() const noexcept {
             return name_;
         }
 
@@ -49,43 +49,43 @@ class AnalogSensor {
             name_ = name;
         }
 
-        uint8_t gpio() const {
+        uint8_t gpio() const noexcept {
             return gpio_;
         }
 
-        double value() const {
+        double value() const noexcept {
             return value_;
         }
 
-        void set_value(const double value) {
+        void set_value(const double value) noexcept {
             value_ = value;
         }
 
-        double factor() const {
+        double factor() const noexcept {
             return factor_;
         }
 
-        void set_factor(const double factor) {
+        void set_factor(const double factor) noexcept {
             factor_ = factor;
         }
 
-        double offset() const {
+        double offset() const noexcept {
             return offset_;
         }
 
-        void set_uom(const uint8_t uom) {
+        void set_uom(const uint8_t uom) noexcept {
             uom_ = uom;
         }
 
-        uint8_t uom() const {
+        uint8_t uom() const noexcept {
             return uom_;
         }
 
-        int8_t type() const {
+        int8_t type() const noexcept {
             return type_;
         }
 
-        void set_type(const int8_t type) {
+        void set_type(const int8_t type) noexcept {
             type_ = type;
         }
 
@@ -139,30 +139,30 @@ class AnalogSensor {
     bool updated_values();
 
     // return back reference to the sensor list, used by other classes
-    std::vector<Sensor> sensors() const {
+    const std::vector<Sensor> & sensors() const noexcept {
         return sensors_;
     }
 
-    uint32_t reads() const {
+    uint32_t reads() const noexcept {
         return sensorreads_;
     }
 
-    uint32_t fails() const {
+    uint32_t fails() const noexcept {
         return sensorfails_;
     }
 
-    bool analog_enabled() const {
-        return (analog_enabled_);
+    bool analog_enabled() const noexcept {
+        return analog_enabled_;
     }
 
-    bool have_sensors() const {
-        return (!sensors_.empty());
+    bool have_sensors() const noexcept {
+        return !sensors_.empty();
     }
 
-    size_t count_entities(bool include_disabled = true) const {
+    size_t count_entities(const bool include_disabled = true) const noexcept {
         if (!include_disabled) {
             // count number of items in sensors_ where type is not set to disabled
-            return std::count_if(sensors_.begin(), sensors_.end(), [](const Sensor & sensor) { return sensor.type() != AnalogSensor::AnalogType::NOTUSED; });
+            return std::count_if(sensors_.begin(), sensors_.end(), [](const Sensor & sensor) noexcept { return sensor.type() != AnalogSensor::AnalogType::NOTUSED; });
         }
         return sensors_.size();
     }

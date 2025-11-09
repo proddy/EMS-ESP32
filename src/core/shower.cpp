@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,8 +22,6 @@ namespace emsesp {
 
 uuid::log::Logger Shower::logger_{F_(shower), uuid::log::Facility::CONSOLE};
 
-static bool force_coldshot = false;
-
 void Shower::start() {
     EMSESP::webSettingsService.read([&](WebSettings const & settings) {
         shower_timer_          = settings.shower_timer;
@@ -40,11 +38,11 @@ void Shower::start() {
             LOG_INFO("Forcing coldshot...");
             if (shower_state_) {
                 output["message"] = "OK";
-                force_coldshot    = true;
+                force_coldshot_   = true;
             } else {
                 output["message"] = "Coldshot failed. Shower not active";
                 LOG_WARNING("Coldshot failed. Shower not active");
-                force_coldshot = false;
+                force_coldshot_ = false;
             }
             return true;
         },
@@ -59,7 +57,6 @@ void Shower::loop() {
 
     // if haven't done already send the MQTT topic shower_active with the current state
     // which creates the HA Discovery topic
-    static bool mqtt_sent_ = false;
     if (!mqtt_sent_) {
         if (Mqtt::connected()) {
             create_ha_discovery();
@@ -68,7 +65,7 @@ void Shower::loop() {
         }
     }
 
-    auto time_now = uuid::get_uptime_sec(); // in sec
+    const uint32_t time_now = uuid::get_uptime_sec(); // in sec
 
     // if already in cold mode, ignore all this logic until we're out of the cold blast
     if (!doing_cold_shot_) {
@@ -91,7 +88,7 @@ void Shower::loop() {
                     LOG_DEBUG("hot water still running, starting shower timer");
                 }
                 // check if the shower has been on too long
-                else if ((shower_alert_ && ((time_now - timer_start_) > next_alert_)) || force_coldshot) {
+                else if ((shower_alert_ && ((time_now - timer_start_) > next_alert_)) || force_coldshot_) {
                     shower_alert_start();
                 }
             }
@@ -109,21 +106,7 @@ void Shower::loop() {
                     duration_ = (timer_pause_ - timer_start_ - SHOWER_OFFSET_TIME); // duration in seconds
                     if (duration_ > shower_min_duration_) {
                         JsonDocument doc;
-
-                        // duration in seconds
-                        doc["duration"] = duration_; // seconds
-                        // time_t now      = time(nullptr);
-                        // // if NTP enabled, publish timestamp
-                        // if (now > 1576800000) { // year 2020
-                        //     // doc["timestamp_s"] = now; // if needed, in seconds
-                        //     tm * tm_ = localtime(&now);
-                        //     char dt[25];
-                        //     strftime(dt, sizeof(dt), "%FT%T%z", tm_);
-                        //     doc["timestamp"] = dt;
-                        //     LOG_INFO("Shower finished %s (duration %lus)", dt, duration_);
-                        // } else {
-                        //     LOG_INFO("Shower finished (duration %lus)", duration_);
-                        // }
+                        doc["duration"] = duration_; // duration in seconds
                         LOG_INFO("Shower finished (duration %lus)", duration_);
                         Mqtt::queue_publish("shower_data", doc.as<JsonObject>());
                     }
@@ -153,7 +136,7 @@ void Shower::shower_alert_start() {
     LOG_DEBUG("Shower Alert started");
     (void)Command::call(EMSdevice::DeviceType::BOILER, "tapactivated", "false", DeviceValueTAG::TAG_DHW1);
     doing_cold_shot_   = true;
-    force_coldshot     = false;
+    force_coldshot_    = false;
     alert_timer_start_ = uuid::get_uptime_sec(); // timer starts now
 }
 
@@ -163,7 +146,7 @@ void Shower::shower_alert_stop() {
         LOG_DEBUG("Shower Alert stopped");
         (void)Command::call(EMSdevice::DeviceType::BOILER, "tapactivated", "true", DeviceValueTAG::TAG_DHW1);
         doing_cold_shot_ = false;
-        force_coldshot   = false;
+        force_coldshot_  = false;
         next_alert_ += shower_alert_trigger_;
     }
 }
@@ -174,7 +157,6 @@ void Shower::set_shower_state(bool state, bool force) {
     shower_state_ = state;
 
     // only publish if that state has changed
-    static bool old_shower_state_ = false;
     if ((shower_state_ == old_shower_state_) && !force) {
         return;
     }
@@ -182,7 +164,7 @@ void Shower::set_shower_state(bool state, bool force) {
 
     // always publish as a string - see https://github.com/emsesp/EMS-ESP/issues/369
     // and with retain flag set so HA will pick it up when EMS-ESP reboots
-    char s[12];
+    char s[8];
     Mqtt::queue_publish_retain("shower_active", Helpers::render_boolean(s, shower_state_));
 }
 
@@ -248,29 +230,6 @@ void Shower::create_ha_discovery() {
 
         snprintf(topic, sizeof(topic), "sensor/%s/shower_duration/config", Mqtt::basename().c_str());
         Mqtt::queue_ha(topic, doc.as<JsonObject>()); // publish the config payload with retain flag
-
-        //
-        // shower timestamp
-        //
-        /* commented out as the publish of timestamp
-        doc.clear();
-
-        snprintf(str, sizeof(str), "%s_shower_timestamp", Mqtt::basename().c_str());
-
-        doc["uniq_id"]   = str;
-
-        snprintf(stat_t, sizeof(stat_t), "%s/shower_data", Mqtt::base().c_str());
-        doc["stat_t"] = stat_t;
-
-        doc["name"]    = "Shower Timestamp";
-        doc["val_tpl"] = "{{value_json.timestamp if value_json.timestamp is defined else 0}}";
-        // doc["ent_cat"] = "diagnostic";
-
-        Mqtt::add_ha_sections_to_doc("shower", stat_t, doc, false, "value_json.timestamp is defined");
-
-        snprintf(topic, sizeof(topic), "sensor/%s/shower_timestamp/config", Mqtt::basename().c_str());
-        Mqtt::queue_ha(topic, doc.as<JsonObject>()); // publish the config payload with retain flag
-        */
     }
 }
 

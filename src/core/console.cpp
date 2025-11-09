@@ -1,7 +1,7 @@
 
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -105,7 +105,9 @@ static void setup_commands(std::shared_ptr<Commands> const & commands) {
             }
         },
         [](Shell const & shell, const std::vector<std::string> & current_arguments, const std::string & next_argument) -> std::vector<std::string> {
-            return std::vector<std::string>{"system", "users", "devices", "log", "ems", "values", "mqtt", "commands"};
+            // Optimized: Use static const vector to avoid repeated allocations
+            static const std::vector<std::string> show_options{"system", "users", "devices", "log", "ems", "values", "mqtt", "commands"};
+            return show_options;
         });
 
 
@@ -150,7 +152,7 @@ static void setup_commands(std::shared_ptr<Commands> const & commands) {
                     uint64_t now = uuid::get_uptime_ms();
 
                     EMSESP::esp32React.getSecuritySettingsService()->read([&](SecuritySettings & securitySettings) {
-                        if (!password.empty() && (securitySettings.jwtSecret.equals(password.c_str()))) {
+                        if (!password.empty() && (securitySettings.jwtSecret == password)) {
                             become_admin(shell);
                         } else {
                             shell.delay_until(now + INVALID_PASSWORD_DELAY_MS, [](Shell & shell) {
@@ -342,7 +344,9 @@ static void setup_commands(std::shared_ptr<Commands> const & commands) {
             }
         },
         [](Shell & shell, const std::vector<std::string> & current_arguments, const std::string & next_argument) -> std::vector<std::string> {
-            return std::vector<std::string>{"0B", "0D", "0A", "0E", "0F", "48", "49", "4A", "4B", "4C", "4D"};
+            // Optimized: Use static const vector to avoid repeated allocations
+            static const std::vector<std::string> bus_ids{"0B", "0D", "0A", "0E", "0F", "48", "49", "4A", "4B", "4C", "4D"};
+            return bus_ids;
         });
 
     commands->add_command(ShellContext::MAIN,
@@ -391,7 +395,17 @@ static void setup_commands(std::shared_ptr<Commands> const & commands) {
                           string_vector{F_(deviceid_mandatory), F_(typeid_mandatory), F_(offset_optional), F_(length_optional)},
                           [=](Shell & shell, const std::vector<std::string> & arguments) {
                               // loop through arguments and add to data as text, separated by a space
+                              // Optimized: Pre-calculate string size and reserve to prevent reallocations
+                              size_t total_size = 0;
+                              for (const auto & arg : arguments) {
+                                  total_size += arg.size();
+                              }
+                              if (!arguments.empty()) {
+                                  total_size += arguments.size() - 1; // spaces between args
+                              }
+
                               std::string data;
+                              data.reserve(total_size);
                               for (const auto & arg : arguments) {
                                   if (!data.empty()) {
                                       data += " ";
@@ -568,6 +582,8 @@ static void setup_commands(std::shared_ptr<Commands> const & commands) {
         [](Shell & shell, const std::vector<std::string> & current_arguments, const std::string & next_argument) -> std::vector<std::string> {
             if (current_arguments.empty()) {
                 std::vector<std::string> devices_list;
+                // Optimized: Reserve space to avoid reallocations (3 base + device_handlers)
+                devices_list.reserve(3 + EMSFactory::device_handlers().size());
                 devices_list.emplace_back(EMSdevice::device_type_2_device_name(EMSdevice::DeviceType::SYSTEM));
                 devices_list.emplace_back(EMSdevice::device_type_2_device_name(EMSdevice::DeviceType::TEMPERATURESENSOR));
                 devices_list.emplace_back(EMSdevice::device_type_2_device_name(EMSdevice::DeviceType::ANALOGSENSOR));
@@ -581,6 +597,8 @@ static void setup_commands(std::shared_ptr<Commands> const & commands) {
                 uint8_t device_type = EMSdevice::device_name_2_device_type(current_arguments[0].c_str());
                 if (Command::device_has_commands(device_type)) {
                     std::vector<std::string> command_list;
+                    // Optimized: Reserve space based on commands size
+                    command_list.reserve(Command::commands().size());
                     for (const auto & cf : Command::commands()) {
                         if (cf.device_type_ == device_type) {
                             command_list.emplace_back(cf.cmd_);
@@ -697,17 +715,19 @@ EMSESPConsole::EMSESPConsole(EMSESP & emsesp, Stream & stream, bool local)
     : EMSESPShell(emsesp, stream, ShellContext::MAIN, local ? (CommandFlags::USER | CommandFlags::LOCAL) : CommandFlags::USER)
     , name_("ttyS0")
 #ifndef EMSESP_STANDALONE
-    , pty_(std::numeric_limits<size_t>::max())
     , addr_()
+    , pty_(std::numeric_limits<size_t>::max())
     , port_(0)
 #endif
 {
 }
 
 #ifndef EMSESP_STANDALONE
-EMSESPConsole::EMSESPConsole(EMSESP & emsesp, Stream & stream, const IPAddress & addr, uint16_t port)
+EMSESPConsole::EMSESPConsole(EMSESP & emsesp, Stream & stream, IPAddress addr, uint16_t port)
     : EMSESPShell(emsesp, stream, ShellContext::MAIN, CommandFlags::USER)
+    , name_()
     , addr_(addr)
+    , pty_(0)
     , port_(port) {
     std::array<char, 16> text;
 

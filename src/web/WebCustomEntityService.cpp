@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ void WebCustomEntity::read(WebCustomEntity & webEntity, JsonObject root) {
 
 // call on initialization and also when the Entity web page is updated/saved
 // this loads the data into the internal class
-StateUpdateResult WebCustomEntity::update(JsonObject root, WebCustomEntity & webCustomEntity) {
+StateUpdateResult WebCustomEntity::update(JsonObjectConst root, WebCustomEntity & webCustomEntity) {
     // reset everything to start fresh
     Command::erase_device_commands(EMSdevice::DeviceType::CUSTOM);
     JsonDocument doc;
@@ -83,8 +83,8 @@ StateUpdateResult WebCustomEntity::update(JsonObject root, WebCustomEntity & web
 
     // rebuild the list
     if (root["entities"].is<JsonArray>()) {
-        auto entities = root["entities"].as<JsonArray>();
-        for (const JsonObject ei : entities) {
+        auto entities = root["entities"].as<JsonArrayConst>();
+        for (const JsonObjectConst ei : entities) {
             auto entityItem       = CustomEntityItem();
             entityItem.ram        = ei["ram"];
             entityItem.device_id  = ei["device_id"]; // send as numeric, will be converted to string in web
