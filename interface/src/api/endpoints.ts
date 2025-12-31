@@ -1,60 +1,68 @@
-import { xhrRequestAdapter } from '@alova/adapter-xhr';
+import { type AlovaXHRResponse, xhrRequestAdapter } from '@alova/adapter-xhr';
 import { createAlova } from 'alova';
 import ReactHook from 'alova/react';
-import { unpack } from '../api/unpack';
 
-export const ACCESS_TOKEN = 'access_token';
+import { unpack } from './unpack';
 
-const host = window.location.host;
-export const WEB_SOCKET_ROOT = 'ws://' + host + '/ws/';
-export const EVENT_SOURCE_ROOT = 'http://' + host + '/es/';
+export const ACCESS_TOKEN = 'access_token' as const;
+
+// Cached token to avoid repeated localStorage access
+let cachedToken: string | null = null;
+
+const getAccessToken = (): string | null => {
+  if (cachedToken === null) {
+    cachedToken = localStorage.getItem(ACCESS_TOKEN);
+  }
+  return cachedToken;
+};
+
+// Clear token cache when needed (e.g., on logout)
+export const clearTokenCache = (): void => {
+  cachedToken = null;
+};
+
+const handleResponse = async (response: AlovaXHRResponse) => {
+  // Handle various HTTP status codes
+  if (response.status === 205) {
+    throw new Error('Reboot required');
+  }
+  if (response.status === 400) {
+    throw new Error('Request Failed');
+  }
+  if (response.status >= 400) {
+    throw new Error(response.statusText);
+  }
+
+  const data = (await response.data) as ArrayBuffer;
+
+  // Unpack MessagePack data if ArrayBuffer
+  if (data instanceof ArrayBuffer) {
+    return unpack(data) as ArrayBuffer;
+  }
+
+  return data;
+};
 
 export const alovaInstance = createAlova({
   statesHook: ReactHook,
-  timeout: 3000, // 3 seconds but throwing a timeout error
-  localCache: null,
-  // localCache: {
-  //   GET: {
-  //     mode: 'placeholder', // see https://alova.js.org/learning/response-cache/#cache-replaceholder-mode
-  //     expire: 2000
-  //   }
-  // },
+  cacheFor: null, // disable cache
   requestAdapter: xhrRequestAdapter(),
   beforeRequest(method) {
-    if (localStorage.getItem(ACCESS_TOKEN)) {
-      method.config.headers.Authorization = 'Bearer ' + localStorage.getItem(ACCESS_TOKEN);
+    const token = getAccessToken();
+    if (token) {
+      method.config.headers.Authorization = `Bearer ${token}`;
     }
   },
-
   responded: {
-    onSuccess: async (response) => {
-      // if (response.status === 202) {
-      //   throw new Error('Wait'); // wifi scan in progress
-      // } else
-      if (response.status === 205) {
-        throw new Error('Reboot required');
-      } else if (response.status === 400) {
-        throw new Error('Request Failed');
-      } else if (response.status >= 400) {
-        throw new Error(response.statusText);
-      }
-      const data = await response.data;
-      if (response.data instanceof ArrayBuffer) {
-        return unpack(data);
-      }
-      return data;
-    }
-
-    // Interceptor for request failure. This interceptor will be entered when the request is wrong.
-    // http errors like 401 (unauthorized) are handled either in the methods or AuthenticatedRouting()
-    // onError: (error, method) => {
-    //   alert(error.message);
-    // }
+    onSuccess: handleResponse
   }
 });
 
 export const alovaInstanceGH = createAlova({
-  baseURL: 'https://api.github.com/repos/emsesp/EMS-ESP32/releases',
+  baseURL:
+    process.env.NODE_ENV === 'development'
+      ? '/gh'
+      : 'https://api.github.com/repos/emsesp/EMS-ESP32/releases',
   statesHook: ReactHook,
   requestAdapter: xhrRequestAdapter()
 });

@@ -1,29 +1,38 @@
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import type { FC } from 'react';
+import { useLocation } from 'react-router';
+
 import { Box, Toolbar } from '@mui/material';
-import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+
+import { PROJECT_NAME } from 'env';
+import type { RequiredChildrenProps } from 'utils';
+
 import LayoutAppBar from './LayoutAppBar';
 import LayoutDrawer from './LayoutDrawer';
 import { LayoutContext } from './context';
-import type { FC } from 'react';
-
-import type { RequiredChildrenProps } from 'utils';
-import { PROJECT_NAME } from 'api/env';
 
 export const DRAWER_WIDTH = 210;
 
-const Layout: FC<RequiredChildrenProps> = ({ children }) => {
+const LayoutComponent: FC<RequiredChildrenProps> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [title, setTitle] = useState(PROJECT_NAME);
   const { pathname } = useLocation();
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  // Memoize drawer toggle handler to prevent unnecessary re-renders
+  const handleDrawerToggle = useCallback(() => {
+    setMobileOpen((prev) => !prev);
+  }, []);
 
-  useEffect(() => setMobileOpen(false), [pathname]);
+  // Close drawer when route changes
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({ title, setTitle }), [title]);
 
   return (
-    <LayoutContext.Provider value={{ title, setTitle }}>
+    <LayoutContext.Provider value={contextValue}>
       <LayoutAppBar title={title} onToggleDrawer={handleDrawerToggle} />
       <LayoutDrawer mobileOpen={mobileOpen} onClose={handleDrawerToggle} />
       <Box component="main" sx={{ marginLeft: { md: `${DRAWER_WIDTH}px` } }}>
@@ -33,5 +42,7 @@ const Layout: FC<RequiredChildrenProps> = ({ children }) => {
     </LayoutContext.Provider>
   );
 };
+
+const Layout = memo(LayoutComponent);
 
 export default Layout;

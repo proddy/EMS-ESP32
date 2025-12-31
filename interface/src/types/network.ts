@@ -20,7 +20,7 @@ export enum WiFiEncryptionType {
   WIFI_AUTH_WPA2_WPA3_PSK = 7
 }
 
-export interface NetworkStatus {
+export interface NetworkStatusType {
   status: NetworkConnectionStatus;
   local_ip: string;
   local_ipv6: string;
@@ -34,15 +34,15 @@ export interface NetworkStatus {
   dns_ip_1: string;
   dns_ip_2: string;
   hostname: string;
+  reconnect_count: number;
 }
 
-export interface NetworkSettings {
+export interface NetworkSettingsType {
   ssid: string;
   bssid: string;
   password: string;
   hostname: string;
   static_ip_config: boolean;
-  enableIPv6?: boolean;
   bandwidth20: boolean;
   nosleep: boolean;
   tx_power: number;
@@ -54,6 +54,7 @@ export interface NetworkSettings {
   enableMDNS: boolean;
   enableCORS: boolean;
   CORSOrigin: string;
+  [key: string]: unknown;
 }
 
 export interface WiFiNetworkList {

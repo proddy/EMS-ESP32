@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  Paul Derbyshire
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,23 +18,30 @@
 
 #include "emsesp.h"
 
+using ::uuid::console::Shell;
+
 namespace emsesp {
 
 WebLogService::WebLogService(AsyncWebServer * server, SecurityManager * securityManager)
-    : events_(EVENT_SOURCE_LOG_PATH) {
-    // get & set settings
-    server->on(LOG_SETTINGS_PATH, [this](AsyncWebServerRequest * request, JsonVariant json) { getSetValues(request, json); });
+    : events_(EMSESP_EVENT_SOURCE_LOG_PATH) {
+    // there is a GET and a POST for LogSettings endpoint, in one function
+    securityManager->addEndpoint(
+        server,
+        EMSESP_LOG_SETTINGS_PATH,
+        AuthenticationPredicates::IS_AUTHENTICATED,
+        [this](AsyncWebServerRequest * request, JsonVariant json) { getSetValues(request, json); },
+        HTTP_ANY);
 
-    // for bring back the whole log - is a command, hence a POST
-    server->on(FETCH_LOG_PATH, HTTP_POST, [this](AsyncWebServerRequest * request) { fetchLog(request); });
-
-    events_.setFilter(securityManager->filterRequest(AuthenticationPredicates::IS_ADMIN));
+    // Add authentication filter to EventSource
+    // EventSource (SSE) cannot use custom headers, so authentication is done via URL parameter
+    // events_.setFilter(securityManager->filterRequest(AuthenticationPredicates::IS_AUTHENTICATED));
     server->addHandler(&events_);
 }
 
 // start the log service with INFO level
 void WebLogService::begin() {
-    uuid::log::Logger::register_handler(this, uuid::log::Level::INFO);
+    level_ = uuid::log::Level::INFO;
+    uuid::log::Logger::register_handler(this, level_);
 }
 
 // apply the user settings
@@ -43,24 +50,10 @@ void WebLogService::start() {
         maximum_log_messages_ = settings.weblog_buffer;
         limit_log_messages_   = maximum_log_messages_;
         compact_              = settings.weblog_compact;
-        uuid::log::Logger::register_handler(this, (uuid::log::Level)settings.weblog_level);
-        if ((uuid::log::Level)settings.weblog_level == uuid::log::Level::OFF) {
-            log_messages_.clear();
-        }
+        level_                = (uuid::log::Level)settings.weblog_level;
     });
-}
-
-uuid::log::Level WebLogService::log_level() const {
-    return uuid::log::Logger::get_log_level(this);
-}
-
-void WebLogService::log_level(uuid::log::Level level) {
-    EMSESP::webSettingsService.update([&](WebSettings & settings) {
-        settings.weblog_level = level;
-        return StateUpdateResult::CHANGED;
-    });
-    uuid::log::Logger::register_handler(this, level);
-    if (level == uuid::log::Level::OFF) {
+    uuid::log::Logger::register_handler(this, level_);
+    if (level_ == uuid::log::Level::OFF) {
         log_messages_.clear();
     }
 }
@@ -69,71 +62,71 @@ size_t WebLogService::num_log_messages() const {
     return log_messages_.size();
 }
 
-size_t WebLogService::maximum_log_messages() const {
-    return maximum_log_messages_;
-}
-
-void WebLogService::maximum_log_messages(size_t count) {
-    maximum_log_messages_ = std::max((size_t)1, count);
-    if (limit_log_messages_ > maximum_log_messages_) {
-        limit_log_messages_ = maximum_log_messages_;
-    }
-    while (log_messages_.size() > maximum_log_messages_) {
-        log_messages_.pop_front();
-    }
-    EMSESP::webSettingsService.update([&](WebSettings & settings) {
-        settings.weblog_buffer = count;
-        return StateUpdateResult::CHANGED;
-    });
-}
-
-bool WebLogService::compact() const {
-    return compact_;
-}
-
-void WebLogService::compact(bool compact) {
-    compact_ = compact;
-    EMSESP::webSettingsService.update([&](WebSettings & settings) {
-        settings.weblog_compact = compact;
-        return StateUpdateResult::CHANGED;
-    });
-}
-
-WebLogService::QueuedLogMessage::QueuedLogMessage(unsigned long id, std::shared_ptr<uuid::log::Message> && content)
+WebLogService::QueuedLogMessage::QueuedLogMessage(unsigned long id, uint64_t uptime, uuid::log::Level level, const char * name, std::string text)
     : id_(id)
-    , content_(std::move(content)) {
+    , uptime_(uptime)
+    , level_(level)
+    , name_(name)
+    , text_(text.c_str()) {
 }
 
 void WebLogService::operator<<(std::shared_ptr<uuid::log::Message> message) {
 #ifndef EMSESP_STANDALONE
-    size_t maxAlloc = ESP.getMaxAllocHeap();
-    if (limit_log_messages_ > 5 && maxAlloc < 46080) {
-        --limit_log_messages_;
-    } else if (limit_log_messages_ < maximum_log_messages_ && maxAlloc > 51200) {
-        ++limit_log_messages_;
+    if (emsesp::EMSESP::system_.PSram()) {
+        limit_log_messages_ = maximum_log_messages_;
+    } else {
+        uint32_t maxAlloc = ESP.getMaxAllocHeap();
+        if (limit_log_messages_ > 5 && maxAlloc < (50 * 1024)) { // 50k
+            --limit_log_messages_;
+        } else if (limit_log_messages_ < maximum_log_messages_ && maxAlloc > (60 * 1024)) { //  60k
+            ++limit_log_messages_;
+        }
     }
 #endif
     while (log_messages_.size() >= limit_log_messages_) {
         log_messages_.pop_front();
     }
 
-    log_messages_.emplace_back(++log_message_id_, std::move(message));
+    log_messages_.emplace_back(++log_message_id_, message->uptime_ms, message->level, message->name, message->text.c_str());
+}
 
-    EMSESP::esp8266React.getNTPSettingsService()->read([&](NTPSettings & settings) {
-        if (!settings.enabled || (time(nullptr) < 1500000000L)) {
-            time_offset_ = 0;
+// dumps out the contents of log buffer to shell console
+void WebLogService::show(Shell & shell) {
+    if (log_messages_.empty()) {
+        return;
+    }
+
+    shell.println();
+    shell.printfln("Recent Log (level %s, max %d messages):", uuid::log::format_level_uppercase(level_), maximum_log_messages_);
+    shell.println();
+
+    for (const auto & message : log_messages_) {
+        char time_string[26];
+        shell.print(messagetime(time_string, message.uptime_, sizeof(time_string)));
+        shell.printf(" %c %lu: [%s] ", uuid::log::format_level_char(message.level_), message.id_, message.name_);
+
+        if ((message.level_ == uuid::log::Level::ERR) || (message.level_ == uuid::log::Level::WARNING)) {
+            shell.print(COLOR_RED);
+            shell.println(message.text_.c_str());
+            shell.print(COLOR_RESET);
+        } else if (message.level_ == uuid::log::Level::INFO) {
+            shell.print(COLOR_YELLOW);
+            shell.println(message.text_.c_str());
+            shell.print(COLOR_RESET);
+        } else if (message.level_ == uuid::log::Level::DEBUG) {
+            shell.print(COLOR_CYAN);
+            shell.println(message.text_.c_str());
+            shell.print(COLOR_RESET);
         } else {
-            uint32_t offset = time(nullptr) - uuid::get_uptime_sec();
-            // if NTP is more that 1 sec apart, correct setting
-            if (time_offset_ < offset - 1 || time_offset_ > offset + 1) {
-                time_offset_ = offset;
-            }
+            shell.println(message.text_.c_str());
         }
-    });
+    }
+
+    shell.println();
 }
 
 void WebLogService::loop() {
-    if (!events_.count() || log_messages_.empty()) {
+    if (!events_.count() || log_messages_.empty() || events_.avgPacketsWaiting() >= SSE_MAX_QUEUED_MESSAGES) {
         return;
     }
 
@@ -142,16 +135,17 @@ void WebLogService::loop() {
         return;
     }
 
-    // put a small delay in
+    /*
+    // put a small delay in - https://github.com/emsesp/EMS-ESP32/issues/1652
     if (uuid::get_uptime_ms() - last_transmit_ < REFRESH_SYNC) {
         return;
     }
     last_transmit_ = uuid::get_uptime_ms();
+    */
 
     // flush
     for (const auto & message : log_messages_) {
         if (message.id_ > log_message_id_tail_) {
-            log_message_id_tail_ = message.id_;
             transmit(message);
             return;
         }
@@ -160,12 +154,13 @@ void WebLogService::loop() {
 
 // convert time to real offset
 char * WebLogService::messagetime(char * out, const uint64_t t, const size_t bufsize) {
-    if (!time_offset_) {
+    time_t offset = time(nullptr) - uuid::get_uptime_sec();
+    if (offset < 1500000000L) {
         strlcpy(out, uuid::log::format_timestamp_ms(t, 3).c_str(), bufsize);
     } else {
-        time_t t1 = time_offset_ + t / 1000ULL;
-        char   timestr[bufsize];
-        strftime(timestr, bufsize, "%F %T", localtime(&t1));
+        time_t t1 = offset + (time_t)(t / 1000);
+        char   timestr[25];
+        strftime(timestr, 25, "%FT%T", localtime(&t1));
         snprintf(out, bufsize, "%s.%03d", timestr, (uint16_t)(t % 1000));
     }
     return out;
@@ -178,54 +173,65 @@ void WebLogService::transmit(const QueuedLogMessage & message) {
     JsonObject logEvent = jsonDocument.to<JsonObject>();
     char       time_string[25];
 
-    logEvent["t"] = messagetime(time_string, message.content_->uptime_ms, sizeof(time_string));
-    logEvent["l"] = message.content_->level;
+    logEvent["t"] = messagetime(time_string, message.uptime_, sizeof(time_string));
+    logEvent["l"] = message.level_; // .content_->level;
     logEvent["i"] = message.id_;
-    logEvent["n"] = message.content_->name;
-    logEvent["m"] = message.content_->text;
+    logEvent["n"] = message.name_; // content_->name;
+    logEvent["m"] = message.text_; // content_->text;
 
-    size_t len    = measureJson(jsonDocument);
-    char * buffer = new char[len + 1];
+    size_t len    = measureJson(jsonDocument) + 1;
+    char * buffer = new char[len];
     if (buffer) {
-        serializeJson(jsonDocument, buffer, len + 1);
+        serializeJson(jsonDocument, buffer, len);
         events_.send(buffer, "message", message.id_);
+        log_message_id_tail_ = message.id_;
     }
     delete[] buffer;
 }
 
-// send the complete log buffer to the API, not filtering on log level
-// done by resetting the pointer
-void WebLogService::fetchLog(AsyncWebServerRequest * request) {
-    log_message_id_tail_ = 0;
-    request->send(200);
-}
-
-// sets the values like level after a POST
+// sets the values after a POST
 void WebLogService::getSetValues(AsyncWebServerRequest * request, JsonVariant json) {
     if ((request->method() == HTTP_GET) || (!json.is<JsonObject>())) {
         // GET - return the values
-        auto *     response  = new AsyncJsonResponse(false);
-        JsonObject root      = response->getRoot();
-        root["level"]        = log_level();
-        root["max_messages"] = maximum_log_messages();
-        root["compact"]      = compact();
+        auto *     response    = new AsyncJsonResponse(false);
+        JsonObject root        = response->getRoot();
+        root["level"]          = level_;
+        root["max_messages"]   = maximum_log_messages_;
+        root["compact"]        = compact_;
+        root["psram"]          = (EMSESP::system_.PSram() > 0);
+        root["developer_mode"] = EMSESP::system_.developer_mode();
+
         response->setLength();
         request->send(response);
+
+        // reset the tail pointer so complete log is sent
+        log_message_id_tail_ = 0;
+
         return;
     }
-
     // POST - write the settings
-    auto && body = json.as<JsonObject>();
+    level_                = json["level"];
+    maximum_log_messages_ = json["max_messages"];
+    compact_              = json["compact"];
 
-    uuid::log::Level level = body["level"];
-    log_level(level);
+    uuid::log::Logger::register_handler(this, level_);
+    if (level_ == uuid::log::Level::OFF) {
+        log_messages_.clear();
+    }
 
-    uint8_t max_messages = body["max_messages"];
-    maximum_log_messages(max_messages);
+    if (limit_log_messages_ > maximum_log_messages_) {
+        limit_log_messages_ = maximum_log_messages_;
+        while (log_messages_.size() > limit_log_messages_) {
+            log_messages_.pop_front();
+        }
+    }
 
-    bool comp = body["compact"];
-    compact(comp);
-
+    EMSESP::webSettingsService.update([&](WebSettings & settings) {
+        settings.weblog_compact = compact_;
+        settings.weblog_level   = level_;
+        settings.weblog_buffer  = maximum_log_messages_;
+        return StateUpdateResult::CHANGED;
+    });
     request->send(200); // OK
 }
 

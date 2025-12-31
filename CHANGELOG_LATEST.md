@@ -1,11 +1,3 @@
 # Changelog
 
-## [3.x]
-
-## **IMPORTANT! BREAKING CHANGES**
-
-## Added
-
-## Fixed
-
-## Changed
+For more details go to [emsesp.org](https://emsesp.org/).

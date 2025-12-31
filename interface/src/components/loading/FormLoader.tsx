@@ -1,25 +1,30 @@
+import { memo } from 'react';
+
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { Box, Button, CircularProgress, Typography } from '@mui/material';
-import type { FC } from 'react';
+import { Box, Button, CircularProgress } from '@mui/material';
 
 import { MessageBox } from 'components';
-
 import { useI18nContext } from 'i18n/i18n-react';
 
 interface FormLoaderProps {
-  message?: string;
   errorMessage?: string;
   onRetry?: () => void;
 }
 
-const FormLoader: FC<FormLoaderProps> = ({ errorMessage, onRetry, message = 'Loading…' }) => {
+const FormLoaderComponent = ({ errorMessage, onRetry }: FormLoaderProps) => {
   const { LL } = useI18nContext();
 
   if (errorMessage) {
     return (
-      <MessageBox my={2} level="error" message={errorMessage}>
+      <MessageBox level="error" message={errorMessage}>
         {onRetry && (
-          <Button startIcon={<RefreshIcon />} variant="contained" color="error" onClick={onRetry}>
+          <Button
+            sx={{ ml: 2 }}
+            startIcon={<RefreshIcon />}
+            variant="contained"
+            color="error"
+            onClick={onRetry}
+          >
             {LL.RETRY()}
           </Button>
         )}
@@ -31,11 +36,10 @@ const FormLoader: FC<FormLoaderProps> = ({ errorMessage, onRetry, message = 'Loa
       <Box py={2}>
         <CircularProgress size={100} />
       </Box>
-      <Typography variant="h6" fontWeight={400} textAlign="center">
-        {message}
-      </Typography>
     </Box>
   );
 };
+
+const FormLoader = memo(FormLoaderComponent);
 
 export default FormLoader;

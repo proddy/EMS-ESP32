@@ -1,38 +1,28 @@
-import ForwardIcon from '@mui/icons-material/Forward';
-import { Box, Paper, Typography, MenuItem, TextField, Button } from '@mui/material';
-import { useRequest } from 'alova';
-import { useContext, useState } from 'react';
+import { memo, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
+
+import ForwardIcon from '@mui/icons-material/Forward';
+import { Box, Button, Paper, Typography } from '@mui/material';
+
+import * as AuthenticationApi from 'components/routing/authentication';
+import { useRequest } from 'alova/client';
 import type { ValidateFieldsError } from 'async-validator';
-
-import type { Locales } from 'i18n/i18n-types';
-import type { ChangeEventHandler, FC } from 'react';
-import type { SignInRequest } from 'types';
-import * as AuthenticationApi from 'api/authentication';
-import { PROJECT_NAME } from 'api/env';
-
-import { ValidatedPasswordField, ValidatedTextField } from 'components';
+import {
+  LanguageSelector,
+  ValidatedPasswordField,
+  ValidatedTextField
+} from 'components';
 import { AuthenticationContext } from 'contexts/authentication';
-
-import DEflag from 'i18n/DE.svg';
-import FRflag from 'i18n/FR.svg';
-import GBflag from 'i18n/GB.svg';
-import ITflag from 'i18n/IT.svg';
-import NLflag from 'i18n/NL.svg';
-import NOflag from 'i18n/NO.svg';
-import PLflag from 'i18n/PL.svg';
-import SKflag from 'i18n/SK.svg';
-import SVflag from 'i18n/SV.svg';
-import TRflag from 'i18n/TR.svg';
-import { I18nContext } from 'i18n/i18n-react';
-import { loadLocaleAsync } from 'i18n/i18n-util.async';
+import { PROJECT_NAME } from 'env';
+import { useI18nContext } from 'i18n/i18n-react';
+import type { SignInRequest } from 'types';
 import { onEnterCallback, updateValue } from 'utils';
 import { SIGN_IN_REQUEST_VALIDATOR, validate } from 'validators';
 
-const SignIn: FC = () => {
+const SignIn = memo(() => {
   const authenticationContext = useContext(AuthenticationContext);
 
-  const { LL, setLocale, locale } = useContext(I18nContext);
+  const { LL } = useI18nContext();
 
   const [signInRequest, setSignInRequest] = useState<SignInRequest>({
     username: '',
@@ -41,20 +31,30 @@ const SignIn: FC = () => {
   const [processing, setProcessing] = useState<boolean>(false);
   const [fieldErrors, setFieldErrors] = useState<ValidateFieldsError>();
 
-  const { send: callSignIn, onSuccess } = useRequest((request: SignInRequest) => AuthenticationApi.signIn(request), {
-    immediate: false
-  });
-
-  onSuccess((response) => {
+  const { send: callSignIn } = useRequest(
+    (request: SignInRequest) => AuthenticationApi.signIn(request),
+    {
+      immediate: false
+    }
+  ).onSuccess((response) => {
     if (response.data) {
       authenticationContext.signIn(response.data.access_token);
     }
   });
 
-  const updateLoginRequestValue = updateValue(setSignInRequest);
+  // Memoize callback to prevent recreation on every render
+  const updateLoginRequestValue = useMemo(
+    () =>
+      updateValue((updater) =>
+        setSignInRequest(
+          updater as unknown as (prevState: SignInRequest) => SignInRequest
+        )
+      ),
+    []
+  );
 
-  const signIn = async () => {
-    await callSignIn(signInRequest).catch((event) => {
+  const signIn = useCallback(async () => {
+    await callSignIn(signInRequest).catch((event: Error) => {
       if (event.message === 'Unauthorized') {
         toast.warning(LL.INVALID_LOGIN());
       } else {
@@ -62,9 +62,9 @@ const SignIn: FC = () => {
       }
       setProcessing(false);
     });
-  };
+  }, [callSignIn, signInRequest, LL]);
 
-  const validateAndSignIn = async () => {
+  const validateAndSignIn = useCallback(async () => {
     setProcessing(true);
     SIGN_IN_REQUEST_VALIDATOR.messages({
       required: LL.IS_REQUIRED('%s')
@@ -72,20 +72,23 @@ const SignIn: FC = () => {
     try {
       await validate(SIGN_IN_REQUEST_VALIDATOR, signInRequest);
       await signIn();
-    } catch (errors: any) {
-      setFieldErrors(errors);
+    } catch (error) {
+      setFieldErrors(error as ValidateFieldsError);
       setProcessing(false);
     }
-  };
+  }, [signInRequest, signIn, LL]);
 
-  const submitOnEnter = onEnterCallback(signIn);
+  // Memoize callback to prevent recreation on every render
+  const submitOnEnter = useMemo(() => onEnterCallback(signIn), [signIn]);
 
-  const onLocaleSelected: ChangeEventHandler<HTMLInputElement> = async ({ target }) => {
-    const loc = target.value as Locales;
-    localStorage.setItem('lang', loc);
-    await loadLocaleAsync(loc);
-    setLocale(loc);
-  };
+  // get rid of scrollbar
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
 
   return (
     <Box
@@ -108,87 +111,61 @@ const SignIn: FC = () => {
           width: '100%'
         })}
       >
-        <Typography variant="h4">{PROJECT_NAME}</Typography>
-
-        <TextField name="locale" variant="outlined" value={locale} onChange={onLocaleSelected} size="small" select>
-          <MenuItem key="de" value="de">
-            <img src={DEflag} style={{ width: 16, verticalAlign: 'middle' }} />
-            &nbsp;DE
-          </MenuItem>
-          <MenuItem key="en" value="en">
-            <img src={GBflag} style={{ width: 16, verticalAlign: 'middle' }} />
-            &nbsp;EN
-          </MenuItem>
-          <MenuItem key="fr" value="fr">
-            <img src={FRflag} style={{ width: 16, verticalAlign: 'middle' }} />
-            &nbsp;FR
-          </MenuItem>
-          <MenuItem key="it" value="it">
-            <img src={ITflag} style={{ width: 16, verticalAlign: 'middle' }} />
-            &nbsp;IT
-          </MenuItem>
-          <MenuItem key="nl" value="nl">
-            <img src={NLflag} style={{ width: 16, verticalAlign: 'middle' }} />
-            &nbsp;NL
-          </MenuItem>
-          <MenuItem key="no" value="no">
-            <img src={NOflag} style={{ width: 16, verticalAlign: 'middle' }} />
-            &nbsp;NO
-          </MenuItem>
-          <MenuItem key="pl" value="pl">
-            <img src={PLflag} style={{ width: 16, verticalAlign: 'middle' }} />
-            &nbsp;PL
-          </MenuItem>
-          <MenuItem key="sk" value="sk">
-            <img src={SKflag} style={{ width: 16, verticalAlign: 'middle' }} />
-            &nbsp;SK
-          </MenuItem>
-          <MenuItem key="sv" value="sv">
-            <img src={SVflag} style={{ width: 16, verticalAlign: 'middle' }} />
-            &nbsp;SV
-          </MenuItem>
-          <MenuItem key="tr" value="tr">
-            <img src={TRflag} style={{ width: 16, verticalAlign: 'middle' }} />
-            &nbsp;TR
-          </MenuItem>
-        </TextField>
-
-        <Box display="flex" flexDirection="column" alignItems="center">
+        <Typography mb={1} variant="h4">
+          {PROJECT_NAME}
+        </Typography>
+        <LanguageSelector />
+        <Box
+          mt={1}
+          display="flex"
+          flexDirection="column"
+          gap={1}
+          alignItems="center"
+        >
           <ValidatedTextField
-            fieldErrors={fieldErrors}
+            fieldErrors={fieldErrors || {}}
             disabled={processing}
             sx={{
-              width: 240
+              width: '32ch'
             }}
             name="username"
             label={LL.USERNAME(0)}
             value={signInRequest.username}
             onChange={updateLoginRequestValue}
-            margin="normal"
-            variant="outlined"
+            slotProps={{
+              input: {
+                autoCapitalize: 'none',
+                autoCorrect: 'off'
+              }
+            }}
           />
           <ValidatedPasswordField
-            fieldErrors={fieldErrors}
+            fieldErrors={fieldErrors || {}}
             disabled={processing}
             sx={{
-              width: 240
+              width: '32ch'
             }}
             name="password"
             label={LL.PASSWORD()}
             value={signInRequest.password}
             onChange={updateLoginRequestValue}
             onKeyDown={submitOnEnter}
-            variant="outlined"
           />
         </Box>
 
-        <Button variant="contained" color="primary" sx={{ mt: 2 }} onClick={validateAndSignIn} disabled={processing}>
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{ mt: 2 }}
+          onClick={validateAndSignIn}
+          disabled={processing}
+        >
           <ForwardIcon sx={{ mr: 1 }} />
           {LL.SIGN_IN()}
         </Button>
       </Paper>
     </Box>
   );
-};
+});
 
 export default SignIn;

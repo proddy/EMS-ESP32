@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  Paul Derbyshire
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,47 +20,42 @@
 
 namespace emsesp {
 
-WebDataService::WebDataService(AsyncWebServer * server, SecurityManager * securityManager)
+WebDataService::WebDataService(AsyncWebServer * server, SecurityManager * securityManager) {
+    // write endpoints - POSTs
+    securityManager->addEndpoint(server,
+                                 EMSESP_WRITE_DEVICE_VALUE_SERVICE_PATH,
+                                 AuthenticationPredicates::IS_ADMIN,
+                                 [this](AsyncWebServerRequest * request, JsonVariant json) { write_device_value(request, json); });
 
-{
-    // write endpoints
-    server->on(WRITE_DEVICE_VALUE_SERVICE_PATH,
-               securityManager->wrapCallback([this](AsyncWebServerRequest * request, JsonVariant json) { write_device_value(request, json); },
-                                             AuthenticationPredicates::IS_ADMIN));
-    server->on(WRITE_TEMPERATURE_SENSOR_SERVICE_PATH,
-               securityManager->wrapCallback([this](AsyncWebServerRequest * request, JsonVariant json) { write_temperature_sensor(request, json); },
-                                             AuthenticationPredicates::IS_ADMIN));
-    server->on(WRITE_ANALOG_SENSOR_SERVICE_PATH,
-               securityManager->wrapCallback([this](AsyncWebServerRequest * request, JsonVariant json) { write_analog_sensor(request, json); },
-                                             AuthenticationPredicates::IS_ADMIN));
+    securityManager->addEndpoint(server,
+                                 EMSESP_WRITE_TEMPERATURE_SENSOR_SERVICE_PATH,
+                                 AuthenticationPredicates::IS_ADMIN,
+                                 [this](AsyncWebServerRequest * request, JsonVariant json) { write_temperature_sensor(request, json); });
+
+    securityManager->addEndpoint(server,
+                                 EMSESP_WRITE_ANALOG_SENSOR_SERVICE_PATH,
+                                 AuthenticationPredicates::IS_ADMIN,
+                                 [this](AsyncWebServerRequest * request, JsonVariant json) { write_analog_sensor(request, json); });
+
     // GET's
-    server->on(DEVICE_DATA_SERVICE_PATH,
-               HTTP_GET,
-               securityManager->wrapRequest([this](AsyncWebServerRequest * request) { device_data(request); }, AuthenticationPredicates::IS_AUTHENTICATED));
+    securityManager->addEndpoint(server, EMSESP_DEVICE_DATA_SERVICE_PATH, AuthenticationPredicates::IS_AUTHENTICATED, [this](AsyncWebServerRequest * request) {
+        device_data(request);
+    });
 
+    securityManager->addEndpoint(server, EMSESP_CORE_DATA_SERVICE_PATH, AuthenticationPredicates::IS_AUTHENTICATED, [this](AsyncWebServerRequest * request) {
+        core_data(request);
+    });
 
-    server->on(CORE_DATA_SERVICE_PATH,
-               HTTP_GET,
-               securityManager->wrapRequest([this](AsyncWebServerRequest * request) { core_data(request); }, AuthenticationPredicates::IS_AUTHENTICATED));
+    securityManager->addEndpoint(server, EMSESP_SENSOR_DATA_SERVICE_PATH, AuthenticationPredicates::IS_AUTHENTICATED, [this](AsyncWebServerRequest * request) {
+        sensor_data(request);
+    });
 
-    server->on(SENSOR_DATA_SERVICE_PATH,
-               HTTP_GET,
-               securityManager->wrapRequest([this](AsyncWebServerRequest * request) { sensor_data(request); }, AuthenticationPredicates::IS_AUTHENTICATED));
-
-    // POST's
-    server->on(SCAN_DEVICES_SERVICE_PATH,
-               HTTP_POST,
-               securityManager->wrapRequest([this](AsyncWebServerRequest * request) { scan_devices(request); }, AuthenticationPredicates::IS_ADMIN));
+    securityManager->addEndpoint(server, EMSESP_DASHBOARD_DATA_SERVICE_PATH, AuthenticationPredicates::IS_AUTHENTICATED, [this](AsyncWebServerRequest * request) {
+        dashboard_data(request);
+    });
 }
 
-// scan devices service
-void WebDataService::scan_devices(AsyncWebServerRequest * request) {
-    EMSESP::logger().info("Scanning devices...");
-    EMSESP::scan_devices();
-    request->send(200);
-}
-
-// this is used in the dashboard and contains all ems device information
+// this is used in the Devices page and contains all EMS device information
 // /coreData endpoint
 void WebDataService::core_data(AsyncWebServerRequest * request) {
     auto *     response = new AsyncJsonResponse(false);
@@ -76,11 +71,12 @@ void WebDataService::core_data(AsyncWebServerRequest * request) {
             obj["tn"]      = emsdevice->device_type_2_device_name_translated(); // translated device type name
             obj["t"]       = emsdevice->device_type();                          // device type number
             obj["b"]       = emsdevice->brand_to_char();                        // brand
-            obj["n"]       = emsdevice->name();                                 // name
+            obj["n"]       = emsdevice->name();                                 // custom name
             obj["d"]       = emsdevice->device_id();                            // deviceid
             obj["p"]       = emsdevice->product_id();                           // productid
             obj["v"]       = emsdevice->version();                              // version
             obj["e"]       = emsdevice->count_entities();                       // number of entities
+            obj["url"]     = emsdevice->device_type_name();                     // non-translated, lower-case, used for API URL in customization page
         }
     }
 
@@ -88,7 +84,7 @@ void WebDataService::core_data(AsyncWebServerRequest * request) {
     uint8_t customEntities = EMSESP::webCustomEntityService.count_entities();
     if (customEntities) {
         JsonObject obj = devices.add<JsonObject>();
-        obj["id"]      = 99;                                                // the last unique id
+        obj["id"]      = EMSdevice::DeviceTypeUniqueID::CUSTOM_UID;
         obj["tn"]      = Helpers::translated_word(FL_(custom_device));      // translated device type name
         obj["t"]       = EMSdevice::DeviceType::CUSTOM;                     // device type number
         obj["b"]       = Helpers::translated_word(FL_(na));                 // brand
@@ -131,6 +127,7 @@ void WebDataService::sensor_data(AsyncWebServerRequest * request) {
                 obj["u"] = DeviceValueUOM::DEGREES;
                 obj["o"] = (float)(sensor.offset()) / 10;
             }
+            obj["s"] = sensor.is_system();
         }
     }
 
@@ -147,30 +144,39 @@ void WebDataService::sensor_data(AsyncWebServerRequest * request) {
             obj["o"]       = sensor.offset();
             obj["f"]       = sensor.factor();
             obj["t"]       = sensor.type();
-
-            if (sensor.type() != AnalogSensor::AnalogType::NOTUSED) {
-                obj["v"] = Helpers::transformNumFloat(sensor.value(), 0); // is optional and is a float
-            } else {
-                obj["v"] = 0; // must have a value for web sorting to work
-            }
+            obj["s"]       = sensor.is_system();
+            obj["v"]       = Helpers::transformNumFloat(sensor.value()); // is optional and is a float
         }
     }
 
     root["analog_enabled"] = EMSESP::analog_enabled();
     root["platform"]       = EMSESP_PLATFORM;
 
+    // send back a list of valid and unused GPIOs still available for use
+    JsonArray available_gpios = root["available_gpios"].to<JsonArray>();
+    for (const auto & gpio : EMSESP::system_.available_gpios()) {
+        available_gpios.add(gpio);
+    }
+
+    // disable types that can only be used once
+    JsonArray exclude_types = root["exclude_types"].to<JsonArray>();
+    for (uint8_t type : EMSESP::analogsensor_.exclude_types()) {
+        exclude_types.add(type);
+    }
+
     response->setLength();
     request->send(response);
 }
 
 // The unique_id is the unique record ID from the Web table to identify which device to load
+// endpoint /rest/deviceData?id=n
 // Compresses the JSON using MsgPack https://msgpack.org/index.html
 void WebDataService::device_data(AsyncWebServerRequest * request) {
     uint8_t id;
     if (request->hasParam(F_(id))) {
         id = Helpers::atoint(request->getParam(F_(id))->value().c_str()); // get id from url
 
-        auto * response = new AsyncJsonResponse(false, true); // use msgPack
+        auto * response = new AsyncMessagePackResponse();
 
         // check size
         // while (!response) {
@@ -182,7 +188,7 @@ void WebDataService::device_data(AsyncWebServerRequest * request) {
         for (const auto & emsdevice : EMSESP::emsdevices) {
             if (emsdevice->unique_id() == id) {
                 // wait max 2.5 sec for updated data (post_send_delay is 2 sec)
-                for (uint16_t i = 0; i < (emsesp::TxService::POST_SEND_DELAY + 500) && EMSESP::wait_validate(); i++) {
+                for (uint16_t i = 0; i < (TxService::POST_SEND_DELAY + 500) && EMSESP::wait_validate(); i++) {
                     delay(1);
                 }
                 EMSESP::wait_validate(0); // reset in case of timeout
@@ -203,7 +209,7 @@ void WebDataService::device_data(AsyncWebServerRequest * request) {
         }
 
 #ifndef EMSESP_STANDALONE
-        if (id == 99) {
+        if (id == EMSdevice::DeviceTypeUniqueID::CUSTOM_UID) {
             JsonObject output = response->getRoot();
             EMSESP::webCustomEntityService.generate_value_web(output);
             response->setLength();
@@ -214,7 +220,7 @@ void WebDataService::device_data(AsyncWebServerRequest * request) {
     }
 
     // invalid
-    AsyncWebServerResponse * response = request->beginResponse(400);
+    AsyncWebServerResponse * response = request->beginResponse(400); // bad request
     request->send(response);
 }
 
@@ -233,80 +239,75 @@ void WebDataService::write_device_value(AsyncWebServerRequest * request, JsonVar
         }
 
         // using the unique ID from the web find the real device type
-        for (const auto & emsdevice : EMSESP::emsdevices) {
-            if (emsdevice->unique_id() == unique_id) {
-                // parse the command as it could have a hc or wwc prefixed, e.g. hc2/seltemp
-                int8_t id = -1;                                     // default
-                cmd       = Command::parse_command_string(cmd, id); // extract hc or wwc
-
-                // create JSON for output
-                auto *     response = new AsyncJsonResponse(false);
-                JsonObject output   = response->getRoot();
-
-                // the data could be in any format, but we need string
-                // authenticated is always true
-                uint8_t return_code = CommandRet::NOT_FOUND;
-                uint8_t device_type = emsdevice->device_type();
-                if (data.is<const char *>()) {
-                    return_code = Command::call(device_type, cmd, data.as<const char *>(), true, id, output);
-                } else if (data.is<int>()) {
-                    char s[10];
-                    return_code = Command::call(device_type, cmd, Helpers::render_value(s, data.as<int32_t>(), 0), true, id, output);
-                } else if (data.is<float>()) {
-                    char s[10];
-                    return_code = Command::call(device_type, cmd, Helpers::render_value(s, data.as<float>(), 1), true, id, output);
-                } else if (data.is<bool>()) {
-                    return_code = Command::call(device_type, cmd, data.as<bool>() ? "true" : "false", true, id, output);
+        uint8_t device_type = EMSdevice::DeviceType::UNKNOWN;
+        switch (unique_id) {
+        case EMSdevice::DeviceTypeUniqueID::CUSTOM_UID:
+            device_type = EMSdevice::DeviceType::CUSTOM;
+            break;
+        case EMSdevice::DeviceTypeUniqueID::SCHEDULER_UID:
+            device_type = EMSdevice::DeviceType::SCHEDULER;
+            break;
+        case EMSdevice::DeviceTypeUniqueID::TEMPERATURESENSOR_UID:
+            device_type = EMSdevice::DeviceType::TEMPERATURESENSOR;
+            break;
+        case EMSdevice::DeviceTypeUniqueID::ANALOGSENSOR_UID:
+            device_type = EMSdevice::DeviceType::ANALOGSENSOR;
+            break;
+        default:
+            for (const auto & emsdevice : EMSESP::emsdevices) {
+                if (emsdevice->unique_id() == unique_id) {
+                    device_type = emsdevice->device_type();
+                    break;
                 }
-
-                // write debug
-                if (return_code != CommandRet::OK) {
-                    EMSESP::logger().err("Write command failed %s (%s)", (const char *)output["message"], Command::return_code_string(return_code).c_str());
-                } else {
-#if defined(EMSESP_DEBUG)
-                    EMSESP::logger().debug("Write command successful");
-#endif
-                }
-
-                response->setCode((return_code == CommandRet::OK) ? 200 : 400); // bad request
-                response->setLength();
-                request->send(response);
-                return;
             }
+            break;
         }
-
-        // special check for custom entities (which have a unique id of 99)
-        if (unique_id == 99) {
-            // parse the command as it could have a hc or wwc prefixed, e.g. hc2/seltemp
-            int8_t id              = -1;
-            cmd                    = Command::parse_command_string(cmd, id);
-            auto *     response    = new AsyncJsonResponse(false);
-            JsonObject output      = response->getRoot();
-            uint8_t    return_code = CommandRet::NOT_FOUND;
-            uint8_t    device_type = EMSdevice::DeviceType::CUSTOM;
-            if (data.is<const char *>()) {
-                return_code = Command::call(device_type, cmd, data.as<const char *>(), true, id, output);
-            } else if (data.is<int>()) {
-                char s[10];
-                return_code = Command::call(device_type, cmd, Helpers::render_value(s, data.as<int32_t>(), 0), true, id, output);
-            } else if (data.is<float>()) {
-                char s[10];
-                return_code = Command::call(device_type, cmd, Helpers::render_value(s, data.as<float>(), 1), true, id, output);
-            }
-            if (return_code != CommandRet::OK) {
-                EMSESP::logger().err("Write command failed %s (%s)", (const char *)output["message"], Command::return_code_string(return_code).c_str());
-            } else {
-#if defined(EMSESP_DEBUG)
-                EMSESP::logger().debug("Write command successful");
-#endif
-            }
-
-            response->setCode((return_code == CommandRet::OK) ? 200 : 400); // bad request
-            response->setLength();
+        if (device_type == EMSdevice::DeviceType::UNKNOWN) {
+            EMSESP::logger().warning("Write command failed, bad device id: %d", unique_id);
+            AsyncWebServerResponse * response = request->beginResponse(400); // bad request
             request->send(response);
             return;
         }
+        // create JSON for output
+        auto *     response = new AsyncJsonResponse(false);
+        JsonObject output   = response->getRoot();
+        // the data could be in any format, but we need string
+        // authenticated is always true
+        uint8_t return_code = CommandRet::NOT_FOUND;
+        // parse the command as it could have a hc or dhw prefixed, e.g. hc2/seltemp
+        int8_t id = -1; // default
+        if (device_type >= EMSdevice::DeviceType::BOILER) {
+            cmd = Command::parse_command_string(cmd, id); // extract hc or dhw
+        }
+        if (data.is<const char *>()) {
+            return_code = Command::call(device_type, cmd, data.as<const char *>(), true, id, output);
+        } else if (data.is<int>()) {
+            char s[20];
+            return_code = Command::call(device_type, cmd, Helpers::render_value(s, data.as<int32_t>(), 0), true, id, output);
+        } else if (data.is<float>()) {
+            char s[20];
+            return_code = Command::call(device_type, cmd, Helpers::render_value(s, data.as<float>(), 1), true, id, output);
+        } else if (data.is<bool>()) {
+            return_code = Command::call(device_type, cmd, data.as<bool>() ? "true" : "false", true, id, output);
+        }
+
+        // write log
+        if (return_code != CommandRet::OK) {
+            // is already logged by command and message contains code
+            // EMSESP::logger().err("Write command failed %s (%s)", (const char *)output["message"], Command::return_code_string(return_code));
+        } else {
+#if defined(EMSESP_DEBUG)
+            EMSESP::logger().debug("Write command successful");
+#endif
+        }
+
+        response->setCode((return_code == CommandRet::OK) ? 200 : 400); // bad request
+        response->setLength();
+        request->send(response);
+        return;
     }
+
+    EMSESP::logger().warning("Write command failed, bad json");
 
     // if we reach here, fail
     AsyncWebServerResponse * response = request->beginResponse(400); // bad request
@@ -320,8 +321,8 @@ void WebDataService::write_temperature_sensor(AsyncWebServerRequest * request, J
     if (json.is<JsonObject>()) {
         JsonObject sensor = json;
 
-        std::string id   = sensor["id"]; // this is the key
-        std::string name = sensor["name"];
+        const char * id   = sensor["id"]; // this is the key
+        const char * name = sensor["name"];
 
         // calculate offset. We'll convert it to an int and * 10
         float   offset   = sensor["offset"];
@@ -330,7 +331,9 @@ void WebDataService::write_temperature_sensor(AsyncWebServerRequest * request, J
             offset10 = offset / 0.18;
         }
 
-        ok = EMSESP::temperaturesensor_.update(id, name, offset10);
+        bool is_system = sensor["is_system"] | false;
+
+        ok = EMSESP::temperaturesensor_.update(id, name, offset10, is_system);
     }
 
     AsyncWebServerResponse * response = request->beginResponse(ok ? 200 : 400); // bad request
@@ -343,17 +346,171 @@ void WebDataService::write_analog_sensor(AsyncWebServerRequest * request, JsonVa
     if (json.is<JsonObject>()) {
         JsonObject analog = json;
 
-        uint8_t     gpio    = analog["gpio"];
-        std::string name    = analog["name"];
-        double      factor  = analog["factor"];
-        double      offset  = analog["offset"];
-        uint8_t     uom     = analog["uom"];
-        int8_t      type    = analog["type"];
-        bool        deleted = analog["deleted"];
-        ok                  = EMSESP::analogsensor_.update(gpio, name, offset, factor, uom, type, deleted);
+        uint8_t      gpio      = analog["gpio"];
+        const char * name      = analog["name"];
+        double       factor    = analog["factor"];
+        double       offset    = analog["offset"];
+        uint8_t      uom       = analog["uom"];
+        int8_t       type      = analog["type"];
+        bool         deleted   = analog["deleted"];
+        bool         is_system = analog["is_system"] | false;
+        ok                     = EMSESP::analogsensor_.update(gpio, name, offset, factor, uom, type, deleted, is_system);
     }
 
-    AsyncWebServerResponse * response = request->beginResponse(ok ? 200 : 400); // bad request
+    AsyncWebServerResponse * response = request->beginResponse(ok ? 200 : 400); // ok or bad request
+    request->send(response);
+}
+
+// this is used in the dashboard and contains all ems device information
+// /dashboardData endpoint
+void WebDataService::dashboard_data(AsyncWebServerRequest * request) {
+    auto * response = new AsyncMessagePackResponse();
+
+#if defined(EMSESP_STANDALONE)
+    JsonDocument doc;
+    JsonObject   root = doc.to<JsonObject>();
+#else
+    JsonObject root = response->getRoot();
+#endif
+
+    // add state of EMS bus
+    root["connected"] = EMSESP::bus_status() != 2;
+
+    // add all the data
+    JsonArray nodes = root["nodes"].to<JsonArray>();
+
+    // first fetch all the recognized devices
+    for (const auto & emsdevice : EMSESP::emsdevices) {
+        if (emsdevice->count_entities_fav()) {
+            JsonObject obj = nodes.add<JsonObject>();
+            obj["id"]      = emsdevice->unique_id();   // it's unique id
+            obj["n"]       = emsdevice->name();        // custom name
+            obj["t"]       = emsdevice->device_type(); // device type number
+            emsdevice->generate_values_web(obj, true); // is_dashboard = true
+        }
+    }
+
+    // add custom entities, if we have any
+    if (EMSESP::webCustomEntityService.count_entities()) {
+        JsonObject obj = nodes.add<JsonObject>();
+        obj["id"]      = EMSdevice::DeviceTypeUniqueID::CUSTOM_UID; // it's unique id
+        obj["t"]       = EMSdevice::DeviceType::CUSTOM;             // device type number
+        EMSESP::webCustomEntityService.generate_value_web(obj, true);
+    }
+
+    // add temperature sensors, if we have any
+    if (EMSESP::temperaturesensor_.count_entities(true)) { // no system sensors
+        JsonObject obj  = nodes.add<JsonObject>();
+        obj["id"]       = EMSdevice::DeviceTypeUniqueID::TEMPERATURESENSOR_UID; // it's unique id
+        obj["t"]        = EMSdevice::DeviceType::TEMPERATURESENSOR;             // device type number
+        JsonArray nodes = obj["nodes"].to<JsonArray>();
+        uint8_t   count = 0;
+        for (const auto & sensor : EMSESP::temperaturesensor_.sensors()) {
+            // ignore system sensors
+            if (sensor.is_system()) {
+                continue;
+            }
+            JsonObject node = nodes.add<JsonObject>();
+            node["id"]      = (EMSdevice::DeviceTypeUniqueID::TEMPERATURESENSOR_UID * 100) + count++;
+
+            JsonObject dv = node["dv"].to<JsonObject>();
+            dv["id"]      = std::string("00") + sensor.name();
+            if (EMSESP::system_.fahrenheit()) {
+                if (Helpers::hasValue(sensor.temperature_c)) {
+                    dv["v"] = (float)sensor.temperature_c * 0.18 + 32;
+                }
+                dv["u"] = DeviceValueUOM::FAHRENHEIT;
+            } else {
+                if (Helpers::hasValue(sensor.temperature_c)) {
+                    dv["v"] = (float)sensor.temperature_c / 10;
+                }
+                dv["u"] = DeviceValueUOM::DEGREES;
+            }
+        }
+    }
+
+    // add analog sensors, count excludes disabled entries
+    if (EMSESP::analog_enabled() && EMSESP::analogsensor_.count_entities(true)) {
+        JsonObject obj  = nodes.add<JsonObject>();
+        obj["id"]       = EMSdevice::DeviceTypeUniqueID::ANALOGSENSOR_UID; // it's unique id
+        obj["t"]        = EMSdevice::DeviceType::ANALOGSENSOR;             // device type number
+        JsonArray nodes = obj["nodes"].to<JsonArray>();
+        uint8_t   count = 0;
+        for (const auto & sensor : EMSESP::analogsensor_.sensors()) {
+            // ignore system and disabled sensors
+            if (sensor.is_system()) {
+                continue;
+            }
+            JsonObject node = nodes.add<JsonObject>();
+            node["id"]      = (EMSdevice::DeviceTypeUniqueID::ANALOGSENSOR_UID * 100) + count++;
+
+            JsonObject dv = node["dv"].to<JsonObject>();
+            dv["id"]      = std::string("00") + sensor.name();
+#if CONFIG_IDF_TARGET_ESP32
+            if (sensor.type() == AnalogSensor::AnalogType::DIGITAL_OUT && (sensor.gpio() == 25 || sensor.gpio() == 26)) {
+                obj["v"] = Helpers::transformNumFloat(sensor.value());
+            } else
+#elif CONFIG_IDF_TARGET_ESP32S2
+            if (sensor.type() == AnalogSensor::AnalogType::DIGITAL_OUT && (sensor.gpio() == 17 || sensor.gpio() == 18)) {
+                obj["v"] = Helpers::transformNumFloat(sensor.value());
+            } else
+#endif
+                if (sensor.type() == AnalogSensor::AnalogType::DIGITAL_OUT || sensor.type() == AnalogSensor::AnalogType::DIGITAL_IN
+                    || sensor.type() == AnalogSensor::AnalogType::PULSE) {
+                char s[12];
+                dv["v"]     = Helpers::render_boolean(s, sensor.value() != 0, true);
+                JsonArray l = dv["l"].to<JsonArray>();
+                l.add(Helpers::render_boolean(s, false, true));
+                l.add(Helpers::render_boolean(s, true, true));
+            } else {
+                dv["v"] = Helpers::transformNumFloat(sensor.value());
+                dv["u"] = sensor.uom();
+            }
+            if (sensor.type() == AnalogSensor::AnalogType::COUNTER
+                || (sensor.type() >= AnalogSensor::AnalogType::DIGITAL_OUT && sensor.type() <= AnalogSensor::AnalogType::PWM_2)
+                || sensor.type() == AnalogSensor::AnalogType::RGB || sensor.type() == AnalogSensor::AnalogType::PULSE
+                || (sensor.type() >= AnalogSensor::AnalogType::CNT_0 && sensor.type() <= AnalogSensor::AnalogType::CNT_2)) {
+                dv["c"] = sensor.name();
+            }
+        }
+    }
+
+    // show scheduler, with name, on/off
+    if (EMSESP::webSchedulerService.count_entities(true)) {
+        JsonObject obj  = nodes.add<JsonObject>();
+        obj["id"]       = EMSdevice::DeviceTypeUniqueID::SCHEDULER_UID; // it's unique id
+        obj["t"]        = EMSdevice::DeviceType::SCHEDULER;             // device type number
+        JsonArray nodes = obj["nodes"].to<JsonArray>();
+        uint8_t   count = 0;
+
+        EMSESP::webSchedulerService.read([&](const WebScheduler & webScheduler) {
+            for (const ScheduleItem & scheduleItem : webScheduler.scheduleItems) {
+                // only add if we have a name - we don't need a u (UOM) for this
+                if (scheduleItem.name[0] != '\0') {
+                    JsonObject node = nodes.add<JsonObject>();
+                    node["id"]      = (EMSdevice::DeviceTypeUniqueID::SCHEDULER_UID * 100) + count++;
+
+                    JsonObject dv = node["dv"].to<JsonObject>();
+                    dv["id"]      = std::string("00") + scheduleItem.name;
+                    dv["c"]       = scheduleItem.name;
+                    char s[12];
+                    dv["v"]     = Helpers::render_boolean(s, scheduleItem.active, true);
+                    JsonArray l = dv["l"].to<JsonArray>();
+                    l.add(Helpers::render_boolean(s, false, true));
+                    l.add(Helpers::render_boolean(s, true, true));
+                }
+            }
+        });
+    }
+
+#if defined(EMSESP_TEST) && defined(EMSESP_STANDALONE)
+    Serial.println();
+    Serial.print("All dashboard_data: ");
+    serializeJson(root, Serial);
+    Serial.println();
+#endif
+
+    response->setLength();
     request->send(response);
 }
 

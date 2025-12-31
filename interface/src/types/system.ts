@@ -1,5 +1,33 @@
+import type { busConnectionStatus } from 'app/main/types';
+
+import type { NetworkConnectionStatus } from './network';
+
+// match SYSTEM_STATUS in System.h
+export enum SystemStatusCodes {
+  SYSTEM_STATUS_NORMAL = 0,
+  SYSTEM_STATUS_PENDING_UPLOAD = 1,
+  SYSTEM_STATUS_UPLOADING = 100,
+  SYSTEM_STATUS_ERROR_UPLOAD = 3,
+  SYSTEM_STATUS_PENDING_RESTART = 4,
+  SYSTEM_STATUS_RESTART_REQUESTED = 5,
+  SYSTEM_STATUS_INVALID_GPIO = 6
+}
+
 export interface SystemStatus {
   emsesp_version: string;
+  bus_status: busConnectionStatus;
+  uptime: number;
+  bus_uptime: number;
+  num_devices: number;
+  num_sensors: number;
+  num_analogs: number;
+  ntp_status: number;
+  ntp_time?: string;
+  mqtt_status: boolean;
+  ap_status: boolean;
+  network_status: NetworkConnectionStatus;
+  wifi_rssi: number;
+  build_flags: string;
   esp_platform: string;
   max_alloc_heap: number;
   cpu_type: string;
@@ -16,17 +44,23 @@ export interface SystemStatus {
   app_free: number;
   fs_used: number;
   fs_free: number;
-  uptime: string;
   free_mem: number;
+  psram: boolean;
   psram_size?: number;
   free_psram?: number;
+  free_caps: number;
+  model: string;
   has_loader: boolean;
-}
-
-export interface OTASettings {
-  enabled: boolean;
-  port: number;
-  password: string;
+  has_partition: boolean;
+  partitions: {
+    partition: string;
+    version: string;
+    size: number;
+    install_date?: string;
+  }[];
+  status: number; // System Status Codes which matches SYSTEM_STATUS in System.h
+  developer_mode: boolean;
+  temperature?: number;
 }
 
 export enum LogLevel {
@@ -50,5 +84,7 @@ export interface LogEntry {
 export interface LogSettings {
   level: number;
   max_messages: number;
-  compact: false;
+  compact: boolean;
+  psram: boolean;
+  developer_mode: boolean;
 }

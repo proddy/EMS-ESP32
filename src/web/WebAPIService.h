@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  Paul Derbyshire
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,22 +21,20 @@
 
 #define EMSESP_API_SERVICE_PATH "/api"
 
-#define GET_SETTINGS_PATH "/rest/getSettings"
-#define GET_CUSTOMIZATIONS_PATH "/rest/getCustomizations"
-#define GET_SCHEDULE_PATH "/rest/getSchedule"
-#define GET_ENTITIES_PATH "/rest/getEntities"
-
 namespace emsesp {
 
 class WebAPIService {
   public:
     WebAPIService(AsyncWebServer * server, SecurityManager * securityManager);
 
-    void webAPIService(AsyncWebServerRequest * request, JsonVariant json);
+    void webAPIService(AsyncWebServerRequest * request, JsonVariant input);
+    void webAPIService(AsyncWebServerRequest * request, const char * data); // for plain text data
 
-#ifdef EMSESP_TEST
-    // for test.cpp
-    void webAPIService(AsyncWebServerRequest * request);
+#if defined(EMSESP_TEST)
+    // for test.cpp and running unit tests
+    void         webAPIService(AsyncWebServerRequest * request);
+    void         storeResponse(JsonObject response);
+    const char * getResponse();
 #endif
 
     static uint32_t api_count() {
@@ -54,10 +52,6 @@ class WebAPIService {
     static uint16_t api_fails_;
 
     void parse(AsyncWebServerRequest * request, JsonObject input);
-    void getSettings(AsyncWebServerRequest * request);
-    void getCustomizations(AsyncWebServerRequest * request);
-    void getSchedule(AsyncWebServerRequest * request);
-    void getEntities(AsyncWebServerRequest * request);
 };
 
 } // namespace emsesp

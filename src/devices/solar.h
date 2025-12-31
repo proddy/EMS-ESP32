@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  Paul Derbyshire
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,8 +33,12 @@ class Solar : public EMSdevice {
     int16_t collectorTemp_;     // TS1: Temperature sensor for collector array 1
     int16_t cylBottomTemp_;     // TS2: Temperature sensor 1 cylinder, bottom cyl (solar thermal system)
     int16_t cylBottomTemp2_;    // TS5: Temperature sensor 2 cylinder, bottom cyl, or swimming pool (solar thermal system)
+    int16_t cylBottomTemp3_;    // TS11: Temperature sensor 3. cylinder
+    int16_t cylTopTemp_;        // TS10: Temperature sensor 1 cylinder, Top
     int16_t heatExchangerTemp_; // TS6: Heat exchanger temperature sensor
     int16_t collector2Temp_;    // TS7: Temperature sensor for collector array 2
+    int16_t ts8_;               // TS8: Temperature sensor for ?
+    int16_t ts16_;              // TS16: Temperature sensor for ?
     int16_t cylMiddleTemp_;     // TS14: Cylinder middle temp
     int16_t retHeatAssist_;     // TS15: return temperature heating assistance
     uint8_t solarPumpMod_;      // PS1: modulation solar pump
@@ -46,6 +50,9 @@ class Solar : public EMSdevice {
     uint8_t m1Valve_;           // M1:  heat assistance valve
     uint8_t m1Power_;           // M1:  heat assistance valve
     uint8_t vs1Status_;         // VS1: status
+    uint8_t vs3Status_;         // VS3: status
+    uint8_t transferPump_;
+    uint8_t transferPumpMod_;
 
     // 0x363 heat counter
     uint16_t heatCntFlowTemp_;
@@ -98,7 +105,8 @@ class Solar : public EMSdevice {
     uint8_t solarPump2Mode_;        // 00=off, 01=PWM, 02=10V
 
     // telegram 0x35C Heat assistance
-    uint8_t solarHeatAssist_; // is *10
+    int8_t heatAssistOn_;  // is *10
+    int8_t heatAssistOff_; // is *10
 
     // telegram 0x035F
     uint8_t cylPriority_; // 0 or 1
@@ -113,35 +121,6 @@ class Solar : public EMSdevice {
     uint8_t  collector1Type_; // Type of collector field 1, 01=flat, 02=vacuum
     uint16_t collector2Area_; // Area of collector field 2
     uint8_t  collector2Type_; // Type of collector field 2, 01=flat, 02=vacuum
-
-    // SM100wwTemperature - 0x07D6
-    uint16_t wwTemp_1_;
-    uint16_t wwTemp_3_;
-    uint16_t wwTemp_4_;
-    uint16_t wwTemp_5_;
-    uint16_t wwTemp_7_;
-
-    // SM100wwStatus - 0x07AA
-    uint8_t wwPump_;
-
-    // SM100wwParam - 0x07A6
-    uint8_t wwMaxTemp_;
-    uint8_t wwSelTemp_;
-    uint8_t wwRedTemp_;
-    uint8_t wwDailyTemp_;
-    uint8_t wwDisinfectionTemp_;
-
-    // SM100wwKeepWarm - 0x07AE
-    uint8_t wwKeepWarm_;
-
-    // SM100wwCirc - 0x07A5
-    uint8_t wwCirc_;
-    uint8_t wwCircMode_;
-
-    // SM100wwStatus2 - 0x07E0
-    uint8_t wwFlow_;
-    uint8_t wwPumpMod_;
-    uint8_t wwStatus2_;
 
     // SM10Config - 0x96
     uint8_t wwMinTemp_;
@@ -177,14 +156,6 @@ class Solar : public EMSdevice {
 
     void process_SM100HeatAssist(std::shared_ptr<const Telegram> telegram);
     void process_SM100Differential(std::shared_ptr<const Telegram> telegram);
-
-    void process_SM100wwTemperature(std::shared_ptr<const Telegram> telegram);
-    void process_SM100wwStatus(std::shared_ptr<const Telegram> telegram);
-    void process_SM100wwStatus2(std::shared_ptr<const Telegram> telegram);
-    void process_SM100wwCommand(std::shared_ptr<const Telegram> telegram);
-    void process_SM100wwCirc(std::shared_ptr<const Telegram> telegram);
-    void process_SM100wwParam(std::shared_ptr<const Telegram> telegram);
-    void process_SM100wwKeepWarm(std::shared_ptr<const Telegram> telegram);
 
     void process_ISM1StatusMessage(std::shared_ptr<const Telegram> telegram);
     void process_ISM1Set(std::shared_ptr<const Telegram> telegram);
@@ -225,15 +196,8 @@ class Solar : public EMSdevice {
     bool set_cylPriority(const char * value, const int8_t id);
     bool set_heatAssist(const char * value, const int8_t id);
     bool set_diffControl(const char * value, const int8_t id);
-
-    bool set_wwSelTemp(const char * value, const int8_t id);
-    bool set_wwMaxTemp(const char * value, const int8_t id);
-    bool set_wwRedTemp(const char * value, const int8_t id);
-    bool set_wwCirc(const char * value, const int8_t id);
-    bool set_wwCircMode(const char * value, const int8_t id);
-    bool set_wwKeepWarm(const char * value, const int8_t id);
-    bool set_wwDisinfectionTemp(const char * value, const int8_t id);
-    bool set_wwDailyTemp(const char * value, const int8_t id);
+    bool set_solarHeatAssistOn(const char * value, const int8_t id);
+    bool set_solarHeatAssistOff(const char * value, const int8_t id);
 };
 
 } // namespace emsesp

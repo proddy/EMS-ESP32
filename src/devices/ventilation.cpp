@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  Paul Derbyshire
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,28 +30,29 @@ Ventilation::Ventilation(uint8_t device_type, uint8_t device_id, uint8_t product
     register_telegram_type(0x583, "VentilationMonitor", false, MAKE_PF_CB(process_MonitorMessage));
     register_telegram_type(0x5D9, "Airquality", false, MAKE_PF_CB(process_VOCMessage));
     register_telegram_type(0x587, "Bypass", false, MAKE_PF_CB(process_BypassMessage));
-    // register_telegram_type(0x5, "VentilationSet", true, MAKE_PF_CB(process_SetMessage));
+    register_telegram_type(0x55C, "VentilationSet", true, MAKE_PF_CB(process_SetMessage));
 
     register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
                           &outFresh_,
-                          DeviceValueType::SHORT,
+                          DeviceValueType::INT16,
                           DeviceValueNumOp::DV_NUMOP_DIV10,
                           FL_(outFresh),
                           DeviceValueUOM::DEGREES);
-    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &inFresh_, DeviceValueType::SHORT, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(inFresh), DeviceValueUOM::DEGREES);
-    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &outEx_, DeviceValueType::SHORT, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(outEx), DeviceValueUOM::DEGREES);
-    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &inEx_, DeviceValueType::SHORT, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(inEx), DeviceValueUOM::DEGREES);
-    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &ventInSpeed_, DeviceValueType::UINT, FL_(ventInSpeed), DeviceValueUOM::PERCENT);
-    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &ventOutSpeed_, DeviceValueType::UINT, FL_(ventOutSpeed), DeviceValueUOM::PERCENT);
+    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &inFresh_, DeviceValueType::INT16, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(inFresh), DeviceValueUOM::DEGREES);
+    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &outEx_, DeviceValueType::INT16, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(outEx), DeviceValueUOM::DEGREES);
+    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &inEx_, DeviceValueType::INT16, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(inEx), DeviceValueUOM::DEGREES);
+    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &ventInSpeed_, DeviceValueType::UINT8, FL_(ventInSpeed), DeviceValueUOM::PERCENT);
+    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &ventOutSpeed_, DeviceValueType::UINT8, FL_(ventOutSpeed), DeviceValueUOM::PERCENT);
     register_device_value(
         DeviceValueTAG::TAG_DEVICE_DATA, &mode_, DeviceValueType::ENUM, FL_(enum_ventMode), FL_(ventMode), DeviceValueUOM::NONE, MAKE_CF_CB(set_ventMode));
-    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &voc_, DeviceValueType::USHORT, FL_(airquality), DeviceValueUOM::NONE);
-    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &humidity_, DeviceValueType::UINT, FL_(airHumidity), DeviceValueUOM::PERCENT);
-    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &bypass_, DeviceValueType::BOOL, FL_(bypass), DeviceValueUOM::NONE, MAKE_CF_CB(set_bypass));
+    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &voc_, DeviceValueType::UINT16, FL_(airquality), DeviceValueUOM::NONE);
+    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &humidity_, DeviceValueType::UINT8, FL_(airHumidity), DeviceValueUOM::PERCENT);
+    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &bypass_, DeviceValueType::BOOL, FL_(airbypass), DeviceValueUOM::NONE, MAKE_CF_CB(set_bypass));
 }
 
-// message
+// message 0x055C, data: 08 01 11 17
 void Ventilation::process_SetMessage(std::shared_ptr<const Telegram> telegram) {
+    has_update(telegram, bypass_, 1);
 }
 
 // message 583
@@ -85,9 +86,10 @@ void Ventilation::process_ModeMessage(std::shared_ptr<const Telegram> telegram) 
     has_enumupdate(telegram, mode_, 0, -1);
 }
 
-// message 0x0587, data: 01 00
+// message 0x0587, data: 00 00 64 00 64 0A 00 01 54 01 00 01 00 00 00 46 00 00 00 02 00 A3 00 A3
 void Ventilation::process_BypassMessage(std::shared_ptr<const Telegram> telegram) {
-    has_update(telegram, bypass_, 1);
+    // has_update(telegram, bypass_closing, 0);
+    // has_update(telegram, bypass_opening, 1);
 }
 
 bool Ventilation::set_ventMode(const char * value, const int8_t id) {

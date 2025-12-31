@@ -5,6 +5,250 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.8.0]
+
+## Added
+
+- analogsensor types: NTC and RGB-Led
+- Flag for HMC310 [#2465](https://github.com/emsesp/EMS-ESP32/issues/2465)
+- boiler auxheatersource [#2489](https://github.com/emsesp/EMS-ESP32/discussions/2489)
+- thermostat last error for RC100/300 [#2501](https://github.com/emsesp/EMS-ESP32/issues/2501)
+- boiler 0xC6 telegram [#1963](https://github.com/emsesp/EMS-ESP32/issues/1963)
+- CS6800i changes [#2448](https://github.com/emsesp/EMS-ESP32/issues/2448), [#2449](https://github.com/emsesp/EMS-ESP32/issues/2449)
+- charging pump [#2544](https://github.com/emsesp/EMS-ESP32/issues/2544)
+- hybrid CSH5800iG [#2569](https://github.com/emsesp/EMS-ESP32/issues/2569)
+- added EMS Device details to Home Assistant MQTT Discovery
+- disinfection command [#2601](https://github.com/emsesp/EMS-ESP32/issues/2601)
+- added new board profile for upcoming BBQKees E32V2.2
+- set differential pressure entity in Mixer device
+- set set climate action cooling/heating in HA [#2583](https://github.com/emsesp/EMS-ESP32/issues/2583)
+- Internal sensors of E32V2_2
+- FW200 display options [#2610](https://github.com/emsesp/EMS-ESP32/discussions/2610)
+- CR11 mode settings OFF/MANUAL depends on selTemp [#2437](https://github.com/emsesp/EMS-ESP32/issues/2437)
+- implemented eFuse settings for BBQKees boards to store model type and ESP chipset
+- Analogsensors for pulse output [#2624](https://github.com/emsesp/EMS-ESP32/discussions/2624)
+- Analogsensors frequency input [#2631](https://github.com/emsesp/EMS-ESP32/discussions/2631)
+- SRC plus thermostats [#2636](https://github.com/emsesp/EMS-ESP32/issues/2636)
+- Greenstar 2000 [#2645](https://github.com/emsesp/EMS-ESP32/issues/2645)
+- RC3xx `dhw modetype` [#2659](https://github.com/emsesp/EMS-ESP32/discussions/2659)
+- new boiler entities VR0,VR1, compressor speed [#2669](https://github.com/emsesp/EMS-ESP32/issues/2669)
+- solar temperature TS16 [#2690](https://github.com/emsesp/EMS-ESP32/issues/2690)
+- pumpmode enum for HT3 boilers, add commands for manual defrost, chimneysweeper [#2727](https://github.com/emsesp/EMS-ESP32/issues/2727)
+- pid settings [#2735](https://github.com/emsesp/EMS-ESP32/issues/2735)
+- refresh MQTT button added to MQTT Settings page
+- heating assistance, rounding custum settings [#2763](https://github.com/emsesp/EMS-ESP32/discussions/2763)
+- added counter 0..2 for short pulses, high frequency [#2758](https://github.com/emsesp/EMS-ESP32/issues/2758)
+- added LWT (Last Will and Testament) to MQTT entities in Home Assistant
+- added api/metrics endpoint for prometheus integration by @gr3enk [#2774](https://github.com/emsesp/EMS-ESP32/pull/2774)
+- added RTL8201 to eth phy list [#2800](https://github.com/emsesp/EMS-ESP32/issues/2800)
+- added partitions to Web UI Version page, so previous firmware versions can be installed [#2837](https://github.com/emsesp/EMS-ESP32/issues/2837)
+- button pressures show LED. On a long press (10 seconds) the LED flashes for 5 seconds to indicate a factory reset is about to happen. [#2848](https://github.com/emsesp/EMS-ESP32/issues/2848)
+- added `txpause` command to pause the TX, by setting Txmode to 0 (disabled) [#2850](https://github.com/emsesp/EMS-ESP32/issues/2850)
+
+## Fixed
+
+- dhw/switchtime [#2490](https://github.com/emsesp/EMS-ESP32/issues/2490)
+- switch to secure mqtt [#2492](https://github.com/emsesp/EMS-ESP32/issues/2492)
+- update link buttons [#2497](https://github.com/emsesp/EMS-ESP32/issues/2497)
+- refresh scheduler states [#2502](https://github.com/emsesp/EMS-ESP32/discussions/2502)
+- also rebuild HA config on mqtt connect for scheduler, custom and shower
+- FB100 controls the hc, not the master [#2510](https://github.com/emsesp/EMS-ESP32/issues/2510)
+- IPM DHW module, [#2524](https://github.com/emsesp/EMS-ESP32/issues/2524)
+- charge optimization [#2543](https://github.com/emsesp/EMS-ESP32/issues/2543)
+- shower active state retained, shows correctly in HA
+- MQTT Command Topic with slashes [#2571](https://github.com/emsesp/EMS-ESP32/issues/2571)
+- Add pulsed water meter input to V1.3 gateway with Lilygo S3 [#2550](https://github.com/emsesp/EMS-ESP32/issues/2550)
+- fix missing long 10-second press of Button to perform a factory reset
+- fix wwMaxPower on Junkers ZBS14 [#2609](https://github.com/emsesp/EMS-ESP32/issues/2609)
+- ventilation bypass state from telegram 0x55C [#1197](https://github.com/emsesp/EMS-ESP32/issues/1197)
+- set selflowtemp for ems+ boilers [#2641](https://github.com/emsesp/EMS-ESP32/discussions/2641)
+- syslog timestamp [#2704](https://github.com/emsesp/EMS-ESP32/issues/2704)
+- fixed FS format command [#2720](https://github.com/emsesp/EMS-ESP32/discussions/2720)
+- dhw priority setting to boiler and mixer, telegrams 0x2CC, 0x2CD, etc.
+- check for valid GPIOs when board profile is changed [#2841](https://github.com/emsesp/EMS-ESP32/issues/2841)
+
+## Changed
+
+- show console log with ISO date/time [#2533](https://github.com/emsesp/EMS-ESP32/discussions/2533)
+- removed ESP32 CPU temperature
+- updated core libraries like AsyncTCP, AsyncWebServer and Modbus
+- remove command `scan deep`
+- ignore repeated `forceheatingoff` commands [#2641](https://github.com/emsesp/EMS-ESP32/discussions/2641)
+- optimized web for better performance by adding lazy loading and caching
+- internal system analog sensors (core_voltage, supply_voltage and gateway_temperature) cannot be accidentally removed
+- double click button reconnects EMS-ESP to AP
+- place system message command in side scheduler loop to reduce stack memory usage by 2KB
+- syslog mark interval set to 1 hour
+- handle process_telegram in oneloop
+- improved GPIO validation for Analog Sensors and System GPIOs
+- entities with no values are greyed out in the Web UI in the Customization page
+- added System Status to Web Status page
+- show number on entities and supported languages in log on boot
+- on tx read fail delay the 3rd. retry 2 sec
+- move vectors and lists to PSRAM
+- removed unused last topic/payload echo-check
+- added Home Assistant device details to MQTT Discovery for all devices
+- device_class and state_class changes for HA MQTT Discovery [#2825](https://github.com/emsesp/EMS-ESP32/issues/2825)
+
+
+## [3.7.2] 22 March 2025
+
+## Added
+
+- change enum_heatingtype for remote control [#2268](https://github.com/emsesp/EMS-ESP32/issues/2268)
+- system service commands [#2182](https://github.com/emsesp/EMS-ESP32/issues/2182)
+- read 0x02A5 for thermostat CT200 [#2277](https://github.com/emsesp/EMS-ESP32/issues/2277)
+- add "duplicate" option to Custom Entities [#2266](https://github.com/emsesp/EMS-ESP32/discussion/2266)
+- mask bits for bool custom entities
+- thermostat `reduce threshold` [#2288](https://github.com/emsesp/EMS-ESP32/issues/2288)
+- thermostat `absent` [#1957](https://github.com/emsesp/EMS-ESP32/issues/1957)
+- CR11 thermostat [#2295](https://github.com/emsesp/EMS-ESP32/issues/2295)
+- Show ESP32's CPU temp in Hardware Status
+- vacation mode for the CR50 [#2403](https://github.com/emsesp/EMS-ESP32/issues/2403)
+- new Console command "set admin password" to set WebUI admin password
+- support nested conditions in scheduler [#2451](https://github.com/emsesp/EMS-ESP32/issues/2451)
+- allow mixed case in scheduler expressions [#2457](https://github.com/emsesp/EMS-ESP32/issues/2457)
+- Suprapur-o [#2470](https://github.com/emsesp/EMS-ESP32/issues/2470)
+
+## Fixed
+
+- long numbers of custom entities [#2267](https://github.com/emsesp/EMS-ESP32/issues/2267)
+- modbus command path to `api/` [#2276](https://github.com/emsesp/EMS-ESP32/issues/2276)
+- info command for devices without entity-commands [#2274](https://github.com/emsesp/EMS-ESP32/issues/2274)
+- CW100 settings telegram 0x241 [#2290](https://github.com/emsesp/EMS-ESP32/issues/2290)
+- modbus signed 8bit values [#2294](https://github.com/emsesp/EMS-ESP32/issues/2294)
+- thermostat date [#2313](https://github.com/emsesp/EMS-ESP32/issues/2313)
+- Updated unknown compressor stati "enum_hpactivity" [#2311](https://github.com/emsesp/EMS-ESP32/pull/2311)
+- Underline Tab headers in WebUI
+- console unit tests fixed due to changed shell output
+- tx-queue overflow in some heatpump systems [#2455](https://github.com/emsesp/EMS-ESP32/issues/2455)
+
+## Changed
+
+- show operation in pretty telegram between src and dst [#2263](https://github.com/emsesp/EMS-ESP32/discussions/2263)
+- update eModbus to 1.7.2 [#2254](https://github.com/emsesp/EMS-ESP32/issues/2254)
+- modbus timeout default to 300 sec, change setting from ms to sec [#2254](https://github.com/emsesp/EMS-ESP32/issues/2254)
+- update AsyncTCP and ESPAsyncWebServer to latest versions
+- update Arduino pio platform to 3.10.0 and optimized flash using build flags
+- Version checker in WebUI improved
+- rename `remoteseltemp` to `cooltemp` [#2456](https://github.com/emsesp/EMS-ESP32/issues/2456)
+
+## [3.7.1] 29 November 2024
+
+## Added
+
+- include HA "unit_of_meas", "stat_cla" and "dev_cla" attributes for Number sensors [#2149](https://github.com/emsesp/EMS-ESP32/issues/2149)
+- Bosch CS6800i AW - Silent Mode + Electrical Power Reduction (HP) [#2147](https://github.com/emsesp/EMS-ESP32/issues/2147)
+- `/api/system/showeralert` and `/api/system/showertimer` [#2182](https://github.com/emsesp/EMS-ESP32/issues/2182)
+- MX400 [#2198](https://github.com/emsesp/EMS-ESP32/issues/2198)
+- SM200 values [#2212](https://github.com/emsesp/EMS-ESP32/discussions/2212)
+
+## Fixed
+
+- Modbus integration in 3.7.0 missing offset [#2148](https://github.com/emsesp/EMS-ESP32/issues/2148)
+- fix changing TZ in NTPsettings without clearing enable+server, added DST support [#2142](https://github.com/emsesp/EMS-ESP32/issues/2142)
+- Support MQTT Discovery (AD) with Domoticz [#2177](https://github.com/emsesp/EMS-ESP32/issues/2177)
+- wwExtra (dhw extra) changed from temperature reading to number
+- auxheaterstatus [#2192](https://github.com/emsesp/EMS-ESP32/issues/2192)
+- lastCode character check [#2189](https://github.com/emsesp/EMS-ESP32/issues/2189)
+- reading too many telegram parts
+- heatpump cost UOMs [#2188](https://github.com/emsesp/EMS-ESP32/issues/2188)
+- analog dac output and inputs on dac pins [#2201](https://github.com/emsesp/EMS-ESP32/discussions/2201)
+- api memory leak [#2216](https://github.com/emsesp/EMS-ESP32/issues/2216)
+- modbus multiple mixers [#2229](https://github.com/emsesp/EMS-ESP32/issues/2229)
+- Last Will (LWT) not set on MQTT Connect [#2247](https://github.com/emsesp/EMS-ESP32/issues/2247)
+
+## Changed
+
+- name of wwstarts2 [#2217](https://github.com/emsesp/EMS-ESP32/discussions/2217)
+
+## [3.7.0] 27 October 2024
+
+## **IMPORTANT! BREAKING CHANGES with 3.6.5**
+
+- "ww" and "wwc" has been renamed to "dhw". It is nested JSON object in both the MQTT and API outputs. The old prefix has also been removed from MQTT topics ([#1634](https://github.com/emsesp/EMS-ESP32/issues/1634)). This will impact historical data in home automation systems like Home Assistant and IOBroker. To preserve the current value of dhw energy (was previously nrgww) refer to this issue [#1938](https://github.com/emsesp/EMS-ESP32/issues/1938).
+- dhw entities from the MM100/SM100 have been moved under a new Device called 'water'.
+- The automatically generated temperature sensor ID has replaced dashes (`-`) with underscores (`_`) to be compatible with Home Assistant.
+- `api/system/info` has it's JSON key names changed to camelCase syntax.
+
+For more details go to [emsesp.org](https://emsesp.org/).
+
+## Added
+
+- some more entities for dhw with SM100 module
+- thermostat second dhw circuit [#1634](https://github.com/emsesp/EMS-ESP32/issues/1634)
+- remote thermostat emulation for RC100H, RC200 and FB10 [#1287](https://github.com/emsesp/EMS-ESP32/discussions/1287), [#1602](https://github.com/emsesp/EMS-ESP32/discussions/1602), [#1551](https://github.com/emsesp/EMS-ESP32/discussions/1551)
+- heatpump dhw stop temperatures [#1624](https://github.com/emsesp/EMS-ESP32/issues/1624)
+- reset history [#1695](https://github.com/emsesp/EMS-ESP32/issues/1695)
+- heatpump entities `fan` and `shutdown` [#1690](https://github.com/emsesp/EMS-ESP32/discussions/1690)
+- mqtt HA-mode 3 for v3.6 compatible HA entities, set on update v3.6->v3.7
+- HP input states [#1723](https://github.com/emsesp/EMS-ESP32/discussions/1723)
+- holiday settings for rego 3000  [#1735](https://github.com/emsesp/EMS-ESP32/issues/1735)
+- Added scripts for OTA (scripts/upload.py and upload_cli.py) [#1738](https://github.com/emsesp/EMS-ESP32/issues/1738)
+- timeout for remote thermostat emulation [#1680](https://github.com/emsesp/EMS-ESP32/discussions/1680), [#1774](https://github.com/emsesp/EMS-ESP32/issues/1774)
+- CR120 thermostat as own model() [#1779](https://github.com/emsesp/EMS-ESP32/discussions/1779)
+- modules - external linkable module library [#1778](https://github.com/emsesp/EMS-ESP32/issues/1778)
+- scheduler onChange and Conditions [#1806](https://github.com/emsesp/EMS-ESP32/issues/1806)
+- make remote control timeout editable [#1774](https://github.com/emsesp/EMS-ESP32/issues/1774)
+- added extra pump characteristics (mode and pressure for EMS+) by @SLTKA [#1802](https://github.com/emsesp/EMS-ESP32/pull/1802)
+- allow device name to be customized [#1174](https://github.com/emsesp/EMS-ESP32/issues/1174)
+- Modbus support by @mheyse [#1744](https://github.com/emsesp/EMS-ESP32/issues/1744)
+- System Message command [#1854](https://github.com/emsesp/EMS-ESP32/issues/1854)
+- scheduler can use web get/post for values and commands [#1806](https://github.com/emsesp/EMS-ESP32/issues/1806)
+- RT800 remote emulation [#1867](https://github.com/emsesp/EMS-ESP32/issues/1867)
+- RC310 cooling parameters [#1857](https://github.com/emsesp/EMS-ESP32/issues/1857)
+- command `api/device/entities` [#1897](https://github.com/emsesp/EMS-ESP32/issues/1897)
+- switchprogmode [#1903](https://github.com/emsesp/EMS-ESP32/discussions/1903)
+- autodetect and download firmware upgrades via the WebUI
+- command 'show log' that lists out the current weblog buffer, showing last messages.
+- default web log buffer to 25 lines for ESP32s with no PSRAM
+- try and determine correct board profile if none is set during boot
+- auto Scroll in WebLog UI - reduced delay so incoming logs are faster
+- uploading custom support info, shown to Guest users in Help page [#2054](https://github.com/emsesp/EMS-ESP32/issues/2054)
+- feature: Dashboard showing all data (favorites, sensors, custom) [#1958](https://github.com/emsesp/EMS-ESP32/issues/1958)
+- entity for low-temperature boilers pump start temp (pumpOnTemp) #2088 [#2088](https://github.com/emsesp/EMS-ESP32/issues/2088)
+- internal ESP32 temperature sensor on the S3 [#2077](https://github.com/emsesp/EMS-ESP32/issues/2077)
+- MQTT status topic (used in connect and last will) set to Retain [#2086](https://github.com/emsesp/EMS-ESP32/discussions/2086)
+- Czech language [2096](https://github.com/emsesp/EMS-ESP32/issues/2096)
+- Developer Mode and send EMS Read Commands from WebUI [#2116](https://github.com/emsesp/EMS-ESP32/issues/2116)
+- Scheduler functions [#2115](https://github.com/emsesp/EMS-ESP32/issues/2115)
+- Set device custom name from telegram 0x01 [#2073](https://github.com/emsesp/EMS-ESP32/issues/2073)
+
+## Fixed
+
+- remote thermostat emulation for RC200 on Rego2000/3000 thermostats [#1691](https://github.com/emsesp/EMS-ESP32/discussions/1691)
+- log shows data for F7/F9 requests
+- Detection of LittleFS for factory setting wasn't working
+- Check for bad GPIOs with Ethernet before the ethernet is initialized
+- Show values with factor 50 on webUI [#2064](https://github.com/emsesp/EMS-ESP32/issues/2064)
+- Rendering of values between -1 and 0
+- Value for 32bit times not-set [#2109](https://github.com/emsesp/EMS-ESP32/issues/2109)
+
+## Changed
+
+- use flag for BC400 compatible thermostats, manage different mode settings
+- use factory partition for 16M flash
+- store digital out states to nvs
+- Refresh UI - moving settings to one location [#1665](https://github.com/emsesp/EMS-ESP32/issues/1665)
+- rename DeviceValueTypes, add UINT32 for custom entities
+- dynamic register dhw circuits for thermostat
+- removed OTA feature [#1738](https://github.com/emsesp/EMS-ESP32/issues/1738)
+- added shower min duration [#1801](https://github.com/emsesp/EMS-ESP32/issues/1801)
+- Include TXT file along with the generated CSV for Device Data export/download
+- thermostat/remotetemp as command [#1835](https://github.com/emsesp/EMS-ESP32/discussions/1835)
+- temperaturesensor id notation with underscore [#1794](https://github.com/emsesp/EMS-ESP32/discussions/1794)
+- Change key-names in JSON to be compliant and consistent [#1860](https://github.com/emsesp/EMS-ESP32/issues/1860)
+- Updates to webUI [#1920](https://github.com/emsesp/EMS-ESP32/issues/1920)
+- Correct firmware naming #1933 [#1933](https://github.com/emsesp/EMS-ESP32/issues/1933)
+- Don't start Serial console if not connected to a Serial port. Will initiate manually after a CTRL-C/CTRL-S  
+- WebLog UI matches color schema of the terminal console correctly
+- Updated Web libraries, ArduinoJson
+- Help page doesn't show detailed tech info if the user is not 'admin' role [#2054](https://github.com/emsesp/EMS-ESP32/issues/2054)
+- removed system command `allvalues` and moved to an action called `export`
+- Show ems-esp internal devices in device list of system/info
+- Scheduler and mqtt run async on systems with psram
+- Show IPv6 address type (local/global/ula) in log
+
 ## [3.6.5] March 23 2024
 
 ## **IMPORTANT! BREAKING CHANGES**

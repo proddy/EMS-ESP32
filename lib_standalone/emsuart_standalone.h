@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2024  Paul Derbyshire
+ * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,12 @@
 
 #include "Arduino.h"
 
+#define EMS_TXMODE_OFF 0
+#define EMS_TXMODE_DEFAULT 1
+#define EMS_TXMODE_EMSPLUS 2
+#define EMS_TXMODE_HT3 3
+#define EMS_TXMODE_HW 4
+
 namespace emsesp {
 
 #define EMS_TX_STATUS_ERR 0
@@ -36,6 +42,9 @@ class EMSuart {
     static void     restart();
     static void     send_poll(uint8_t data);
     static uint16_t transmit(uint8_t * buf, uint8_t len);
+    static uint8_t  last_tx_src() {
+        return 0;
+    }
 
   private:
     static char * hextoa(char * result, const uint8_t value);
