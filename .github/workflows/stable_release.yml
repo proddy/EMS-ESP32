@@ -1,4 +1,4 @@
-name: 'Build stable main release'
+name: 'Build stable release'
 
 permissions:
   contents: write
