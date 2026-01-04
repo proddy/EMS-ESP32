@@ -1721,11 +1721,11 @@ void EMSESP::start() {
     LOG_INFO("EMS-ESP version %s", EMSESP_APP_VERSION);
 #endif
 
-    // check if the firmware is fresh
+    // check if the firmware is fresh, i.e. a new install or a new version has been uploaded
     // this is set in UploadFileService::uploadComplete()
     // and reset in System::set_partition_install_date()
     if (!EMSESP::nvs_.getBool(EMSESP_NVS_BOOT_NEW_FIRMWARE)) {
-        LOG_DEBUG("Firmware is fresh");
+        LOG_DEBUG("Firmware is fresh install");
     }
 
     LOG_DEBUG("System is running in Debug mode");
@@ -1837,7 +1837,7 @@ void EMSESP::loop() {
         if (EMSESP::system_.systemStatus() == SYSTEM_STATUS::SYSTEM_STATUS_INVALID_GPIO) {
             static bool only_once = false;
             if (!only_once) {
-                LOG_ERROR("Invalid GPIOs used. Please check your settings and log");
+                LOG_ERROR("Invalid GPIOs used. Please check your settings and the system log");
                 only_once = true;
             }
         }

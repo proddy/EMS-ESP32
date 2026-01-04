@@ -105,8 +105,8 @@ uint32_t System::led_flash_duration_   = 0;
 bool     System::led_flash_timer_      = false;
 
 // GPIOs
-std::vector<uint8_t, AllocatorPSRAM<uint8_t>>              System::valid_system_gpios_;
-std::vector<System::GpioInfo, AllocatorPSRAM<System::GpioInfo>> System::used_gpios_;
+std::vector<uint8_t, AllocatorPSRAM<uint8_t>>                     System::valid_system_gpios_;
+std::vector<System::GpioUsage, AllocatorPSRAM<System::GpioUsage>> System::used_gpios_;
 
 // find the index of the language
 // 0 = EN, 1 = DE, etc...
@@ -1216,16 +1216,16 @@ void System::show_system(uuid::console::Shell & shell) {
     // GPIOs
     shell.println(" GPIOs:");
     shell.printf("  in use:");
-    for (const auto & gpio_info : used_gpios_) {
-        shell.printf(" %d(%s)", gpio_info.pin, gpio_info.name.c_str());
+    for (const auto & usage : used_gpios_) {
+        shell.printf(" %d(%s)", usage.pin, usage.source.c_str());
     }
-    shell.printfln(" (total %d)", used_gpios_.size());
+    shell.printfln(" [total %d]", used_gpios_.size());
     auto available = available_gpios();
     shell.printf("  available:");
     for (const auto & gpio : available) {
         shell.printf(" %d", gpio);
     }
-    shell.printfln(" (total %d)", available.size());
+    shell.printfln(" [total %d]", available.size());
     // List all partitions and their version info
     shell.println(" Partitions:");
     for (const auto & partition : partition_info_) {
@@ -1410,7 +1410,7 @@ bool System::check_upgrade() {
     // see if we're missing a version, will be < 3.5.0b13 from Dec 23 2022
     missing_version = (settingsVersion.empty() || (settingsVersion.length() < 5));
     if (missing_version) {
-        LOG_WARNING("No version information found");
+        LOG_WARNING("No version information found. Assuming version 3.5.0");
         settingsVersion = "3.5.0"; // this was the last stable version without version info
     }
 
@@ -1422,7 +1422,7 @@ bool System::check_upgrade() {
     bool        save_version          = true;
     bool        reboot_required       = false;
 
-    LOG_DEBUG("Checking for version upgrades (settings file is v%d.%d.%d%s)",
+    LOG_DEBUG("Checking for version upgrades from v%d.%d.%d%s",
               settings_version.major(),
               settings_version.minor(),
               settings_version.patch(),
@@ -2031,8 +2031,8 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
 #else
     node["version"] = EMSESP_APP_VERSION;
 #endif
-    node["uptime"]    = uuid::log::format_timestamp_ms(uuid::get_uptime_ms(), 3);
-    node["uptimeSec"] = uuid::get_uptime_sec();
+    node["uptime"]      = uuid::log::format_timestamp_ms(uuid::get_uptime_ms(), 3);
+    node["uptimeSec"]   = uuid::get_uptime_sec();
     node["resetReason"] = EMSESP::system_.reset_reason(0) + " / " + EMSESP::system_.reset_reason(1);
 #ifndef EMSESP_STANDALONE
     node["platform"]        = EMSESP_PLATFORM;
@@ -2045,8 +2045,8 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
     node["usedApp"]         = EMSESP::system_.appUsed();                            // kilobytes
     node["freeApp"]         = EMSESP::system_.appFree();                            // kilobytes
     node["partition"]       = (const char *)esp_ota_get_running_partition()->label; // active partition
-    node["flash_chip_size"] = ESP.getFlashChipSize() / 1024;                         // kilobytes
-    node["psram"] = (EMSESP::system_.PSram() > 0); // make boolean
+    node["flash_chip_size"] = ESP.getFlashChipSize() / 1024;                        // kilobytes
+    node["psram"]           = (EMSESP::system_.PSram() > 0);                        // make boolean
     if (EMSESP::system_.PSram()) {
         node["psramSize"] = EMSESP::system_.PSram();
         node["freePsram"] = ESP.getFreePsram() / 1024;
@@ -2057,17 +2057,17 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
 #endif
 #endif
     node["txpause"] = EMSbus::tx_mode() == EMS_TXMODE_OFF;
-    
+
     // GPIO information
     std::string gpios_in_use_str;
-    for (const auto & gpio_info : EMSESP::system_.used_gpios_) {
+    for (const auto & usage : EMSESP::system_.used_gpios_) {
         if (!gpios_in_use_str.empty()) {
             gpios_in_use_str += ", ";
         }
-        gpios_in_use_str += Helpers::itoa(gpio_info.pin) + "(" + gpio_info.name + ")";
+        gpios_in_use_str += Helpers::itoa(usage.pin);
     }
     node["gpios_in_use"] = gpios_in_use_str;
-    
+
     std::string gpios_available_str;
     for (const auto & gpio : EMSESP::system_.available_gpios()) {
         if (!gpios_available_str.empty()) {
@@ -2866,9 +2866,10 @@ std::vector<uint8_t, AllocatorPSRAM<uint8_t>> System::string_range_to_vector(con
         process_exclude(exclude.substr(prev));
 
         // remove excluded GPIOs from the main list
-        gpios.erase(std::remove_if(gpios.begin(), gpios.end(), [&exclude_gpios](uint8_t gpio) {
-            return std::find(exclude_gpios.begin(), exclude_gpios.end(), gpio) != exclude_gpios.end();
-        }), gpios.end());
+        gpios.erase(std::remove_if(gpios.begin(),
+                                   gpios.end(),
+                                   [&exclude_gpios](uint8_t gpio) { return std::find(exclude_gpios.begin(), exclude_gpios.end(), gpio) != exclude_gpios.end(); }),
+                    gpios.end());
     }
 
     return gpios;
@@ -2885,7 +2886,7 @@ void System::set_valid_system_gpios() {
 #if CONFIG_IDF_TARGET_ESP32C3
     // not valid:
     //   20-21 are UART0
-    valid_system_gpios_ = string_range_to_vector("0-10", "20-21");
+    valid_system_gpios_ = string_range_to_vector("0-21", "20-21");
 #elif CONFIG_IDF_TARGET_ESP32S2
     // not valid:
     //   6-11 are used for SPI flash and PSRAM
@@ -2911,19 +2912,19 @@ void System::set_valid_system_gpios() {
     // not valid:
     //   6-11 are used for SPI flash and PSRAM
     //   16-17 are also used for SPI flash and PSRAM
-    //   26-32 are used for SPI flash and PSRAM
-    //   33-37 also used for SPI flash and PSRAM, on Octal SPI PSRAM (ESP32-S3R8, ESP32-S3R8V, ESP32-S3R16V)
-    //   9-10 are used for SPI flash and PSRAM
-    //   19-20 used for JTAG-USB
+    //   26-31 are used for SPI flash and PSRAM
+    //   19-20 are used for JTAG-USB
     //   45-46 are strapping pins
-    //   1 and 3 are UART0 pins, but used for some eth-boards (BBQKees-E32, OlimexPOE)
+    //   1 & 3 are UART0 pins, but used for some eth-boards (BBQKees-E32, OlimexPOE)
     //   42 transitions low on reset, slower than other GPIOs which can cause issues in time-sensitive applications
     // notes:
+    //   32 is reserved for LED on E32V2_2 boards
     //   34-39 are input only (ADC1), and can be used
-    //   25 and 26 are DAC (Digital-to-Analog Converter) pins, and can be used
+    //   25-26 are DAC (Digital-to-Analog Converter) pins, and can be used
+    //   36 & 39 are reserved for the internal supply_voltage and core_voltage
     if (ESP.getPsramSize() > 0) {
         // if psram is enabled remove pins 16 and 17 from the list
-        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 16-17, 26-32, 33-37, 9-10, 19-20, 45-46, 1, 3, 42");
+        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 16-17, 26-31, 19-20, 45-46, 1, 3, 42");
     } else {
         valid_system_gpios_ = string_range_to_vector("0-39", "19-20, 45-46, 1, 3, 42");
     }
@@ -2938,9 +2939,9 @@ bool System::add_gpio(uint8_t pin, const char * source_name) {
     // check if this is a valid user GPIO
     if (std::find(valid_system_gpios_.begin(), valid_system_gpios_.end(), pin) != valid_system_gpios_.end()) {
         // It's valid now check if it's already in the used list
-        auto it = std::find_if(used_gpios_.begin(), used_gpios_.end(), [pin, source_name](const GpioInfo & gpio_info) { return gpio_info.pin == pin && gpio_info.name != source_name; });
+        auto it = std::find_if(used_gpios_.begin(), used_gpios_.end(), [pin](const GpioUsage & usage) { return usage.pin == pin; });
         if (it != used_gpios_.end()) {
-            LOG_WARNING("Can't add GPIO %d for %s, already in use by %s", pin, source_name, it->name.c_str());
+            LOG_WARNING("GPIO %d for %s is already in use by %s", pin, source_name, it->source.c_str());
             return false; // Pin is already used
         }
     } else {
@@ -2953,14 +2954,14 @@ bool System::add_gpio(uint8_t pin, const char * source_name) {
     remove_gpio(pin);
 
     LOG_DEBUG("Adding GPIO %d for %s to used gpio list", pin, source_name);
-    used_gpios_.push_back({pin, source_name}); // add to used list with name
+    used_gpios_.push_back({pin, source_name}); // add to used list
 
     return true;
 }
 
 // remove a gpio from both valid and used lists
 void System::remove_gpio(uint8_t pin, bool also_system) {
-    auto it = std::find_if(used_gpios_.begin(), used_gpios_.end(), [pin](const GpioInfo & gpio_info) { return gpio_info.pin == pin; });
+    auto it = std::find_if(used_gpios_.begin(), used_gpios_.end(), [pin](const GpioUsage & usage) { return usage.pin == pin; });
     if (it != used_gpios_.end()) {
         LOG_DEBUG("GPIO %d removed from used gpio list", pin);
         used_gpios_.erase(it);
@@ -2979,8 +2980,7 @@ void System::remove_gpio(uint8_t pin, bool also_system) {
 std::vector<uint8_t> System::available_gpios() {
     std::vector<uint8_t> gpios;
     for (const auto & gpio : valid_system_gpios_) {
-        auto it = std::find_if(used_gpios_.begin(), used_gpios_.end(), [gpio](const GpioInfo & gpio_info) { return gpio_info.pin == gpio; });
-        if (it == used_gpios_.end()) {
+        if (std::find_if(used_gpios_.begin(), used_gpios_.end(), [gpio](const GpioUsage & usage) { return usage.pin == gpio; }) == used_gpios_.end()) {
             gpios.push_back(gpio); // didn't find it in used_gpios_, so it's available
         }
     }
@@ -2989,8 +2989,8 @@ std::vector<uint8_t> System::available_gpios() {
 
 // make a snapshot of the current GPIOs
 void System::make_snapshot_gpios(std::vector<int8_t> & u_gpios, std::vector<int8_t> & s_gpios) {
-    for (const auto & gpio_info : used_gpios_) {
-        u_gpios.push_back(gpio_info.pin);
+    for (const auto & usage : used_gpios_) {
+        u_gpios.push_back(usage.pin);
     }
     for (const auto & gpio : valid_system_gpios_) {
         s_gpios.push_back(gpio);

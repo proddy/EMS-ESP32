@@ -116,7 +116,8 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     // see if the user has changed the board profile
     // this will set: led_gpio, dallas_gpio, rx_gpio, tx_gpio, pbutton_gpio, phy_type, eth_power, eth_phy_addr, eth_clock_mode, led_type
     // this will always run when EMS-ESP starts since original_settings{} is empty
-    if (original_settings.board_profile != settings.board_profile) {
+    if (original_settings.board_profile != settings.board_profile || original_settings.board_profile == "default"
+        || original_settings.board_profile.length() == 0) {
         set_board_profile(settings);
         add_flags(ChangeFlags::RESTART);
     }

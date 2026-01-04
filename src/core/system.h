@@ -442,8 +442,12 @@ class System {
     static std::vector<uint8_t, AllocatorPSRAM<uint8_t>> string_range_to_vector(const std::string & range, const std::string & exclude = "");
 
     // GPIOs
-    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>>  valid_system_gpios_; // list of valid GPIOs for the ESP32 board that can be used
-    static std::vector<GpioInfo, AllocatorPSRAM<GpioInfo>> used_gpios_;         // list of GPIOs used by the application with their names
+    struct GpioUsage {
+        uint8_t     pin;
+        std::string source;
+    };
+    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>>          valid_system_gpios_; // list of valid GPIOs for the ESP32 board that can be used
+    static std::vector<GpioUsage, AllocatorPSRAM<GpioUsage>>      used_gpios_;         // list of GPIOs used by the application
 
     int8_t wifi_quality(int8_t dBm);
 
