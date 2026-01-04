@@ -2474,7 +2474,13 @@ bool Thermostat::set_wwcharge(const char * value, const int8_t id) {
     }
 
     if ((model() == EMSdevice::EMS_DEVICE_FLAG_JUNKERS)) {
-        write_command(0x0115, 0, b ? 0xFF : 0x00, 0x01D3);
+        // see https://github.com/emsesp/EMS-ESP32/discussions/2860#discussioncomment-15395821
+        if (dhw->id() == DeviceValueTAG::TAG_DHW2) {
+            write_command(0x0115, 2, b ? 0xFF : 0, 0x01D3);
+        } else {
+            uint16_t data = b ? 0xFFFF : 0;
+            write_command(0x0115, 0, (uint8_t *)&data, 2, 0x01D3);
+        }
     } else {
         write_command(0x02F5 + dhw->offset(), 11, b ? 0xFF : 0x00, 0x02F5 + dhw->offset());
     }
@@ -4020,7 +4026,7 @@ bool Thermostat::set_temperature(const float temperature, const uint8_t mode, co
         case HeatingCircuit::Mode::MINFLOW:
             set_typeid      = summer_typeids[hc->hc()];
             validate_typeid = set_typeid;
-            offset          = hc->heatingtype == 3 ? 8 : 13;
+            offset          = hc->heatingtype != 3 && model == EMS_DEVICE_FLAG_BC400 ? 13 : 8;
             factor          = 1;
             break;
         case HeatingCircuit::Mode::MAXFLOW:
