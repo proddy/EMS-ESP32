@@ -2888,12 +2888,13 @@ void System::set_valid_system_gpios() {
     // get free gpios based on board/platform type
 #if CONFIG_IDF_TARGET_ESP32C3
     // non valid GPIOs:
-    //   3, 9-10 are strapping pins that can affect boot behaviour
+    //   3 and 10 are strapping pins that can affect boot behaviour
     //   8 is connected to the internal ULP (Ultra Low Power) coprocessor and should be avoided for external connections
     //   11 is used for internal flash connection
     // notes on valid GPIOs:
     //   there are no input only pins on a C3
-    valid_system_gpios_ = string_range_to_vector("0-21", "3, 9-10, 8, 11");
+    //   9 is used as the button on BOARD_C3_MINI_V1
+    valid_system_gpios_ = string_range_to_vector("0-21", "3, 10, 8, 11");
 #elif CONFIG_IDF_TARGET_ESP32S2
     // non valid GPIOs:
     //   3, 45-46 are strapping pins that can affect boot behaviour
@@ -2904,7 +2905,7 @@ void System::set_valid_system_gpios() {
 #elif CONFIG_IDF_TARGET_ESP32S3
     // non valid GPIOs:
     //   3 is a strapping pin that could affect boot behaviour if pulled high/low at boot time
-    //   6-11 are used for SPI flash and PSRAM
+    //   6-7, 9-11 are used for SPI flash and PSRAM (we allow 8)
     //   19-20 are USB-JTAG pins
     //   26-32 are usually used for SPI flash and PSRAM and not recommended for other use
     //   33-37 are used for Octal SPI flash or PSRAM
@@ -2913,18 +2914,20 @@ void System::set_valid_system_gpios() {
     //   11-20 are ADC analog input only pins
     //   47 and 48 are valid on a Wemos S3 (https://github.com/emsesp/EMS-ESP32/issues/2874)
     //   16 and 17 is UART2, which we allow
-    valid_system_gpios_ = string_range_to_vector("0-48", "3, 6-11, 19-20, 26-32, 33-37, 45-46");
+    //   Liligo S3 profile uses 8 for Rx
+    valid_system_gpios_ = string_range_to_vector("0-48", "3, 6-7, 9-11, 19-20, 26-32, 33-37, 45-46");
 #elif CONFIG_IDF_TARGET_ESP32
     // non valid GPIOs:
-    //   2, 4, 12-15, 25-27 are ADC2 and can conflict with the Wi-Fi module (12-15 is also USB-JTAG)
+    //   12-13, 15, 25-27 are ADC2 and can conflict with the Wi-Fi module (12-15 is also USB-JTAG)
     //   6-11 and 16-17 are used for SPI flash and PSRAM
     // notes on valid GPIOs:
+    //   2, 4, 14 are used on BBQKees boards for the LED, Dallas and/or Rx
     //   25-26 are DAC (Digital-to-Analog Converter) pins, and can be used
     //   34-39 are input only, and can't be used for output (36=internal supply_voltage, 39=internal core_voltage on a BBQKees E32V2.2)
     if (ESP.getPsramSize() > 0) {
-        valid_system_gpios_ = string_range_to_vector("0-39", "2, 4, 12-15, 25-27, 6-11, 16-17"); // remove PSRAM pins from the list
+        valid_system_gpios_ = string_range_to_vector("0-39", "12-13, 15, 25-27, 6-11, 16-17"); // remove PSRAM pins from the list
     } else {
-        valid_system_gpios_ = string_range_to_vector("0-39", "2, 4, 12-15, 25-27");
+        valid_system_gpios_ = string_range_to_vector("0-39", "12-13, 15, 25-27");
     }
 #elif defined(EMSESP_STANDALONE)
     valid_system_gpios_ = string_range_to_vector("0-39");
