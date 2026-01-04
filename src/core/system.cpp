@@ -2799,7 +2799,10 @@ uint8_t System::systemStatus() {
     return systemStatus_;
 }
 
-// takes a string range like "6-11, 1, 23, 24-48" which has optional ranges and single values and converts to a vector of ints
+// takes two arguments:
+//  the first is the full range of pins to consider
+//  the second is a string range of GPIOs to exclude, like "6-11, 1, 23, 24-48"
+// returns a vector array of GPIOs that are valid for use
 std::vector<uint8_t, AllocatorPSRAM<uint8_t>> System::string_range_to_vector(const std::string & range, const std::string & exclude) {
     std::vector<uint8_t, AllocatorPSRAM<uint8_t>> gpios;
     std::string::size_type                        pos  = 0;
@@ -2876,7 +2879,7 @@ std::vector<uint8_t, AllocatorPSRAM<uint8_t>> System::string_range_to_vector(con
 }
 
 // initialize a list of valid GPIOs based on the ESP32 board
-// string_to_vector() take two strings, the first is the range of GPIOs to use, the second is the range of GPIOs to exclude
+// string_to_vector() take two strings, the first is the range of GPIOs to use, the second is a list of GPIOs to exclude
 // note: we always allow 0, which is used to indicate Dallas or LED is disabled
 void System::set_valid_system_gpios() {
     valid_system_gpios_.clear(); // reset system list
@@ -2884,49 +2887,44 @@ void System::set_valid_system_gpios() {
 
     // get free gpios based on board/platform type
 #if CONFIG_IDF_TARGET_ESP32C3
-    // not valid:
-    //   20-21 are UART0
-    valid_system_gpios_ = string_range_to_vector("0-21", "20-21");
+    // non valid GPIOs:
+    //   3, 9-10 are strapping pins that can affect boot behaviour
+    //   8 is connected to the internal ULP (Ultra Low Power) coprocessor and should be avoided for external connections
+    //   11 is used for internal flash connection
+    // notes on valid GPIOs:
+    //   there are no input only pins on a C3
+    valid_system_gpios_ = string_range_to_vector("0-21", "3, 9-10, 8, 11");
 #elif CONFIG_IDF_TARGET_ESP32S2
-    // not valid:
-    //   6-11 are used for SPI flash and PSRAM
-    //   16-17 are also used for SPI flash and PSRAM
-    //   45-46 are strapping pins
-    //   43-44 are UART0
-    // notes:
+    // non valid GPIOs:
+    //   3, 45-46 are strapping pins that can affect boot behaviour
+    //   6-11 and 35 are used for SPI flash and PSRAM
+    // notes on valid GPIOs:
     //   34-39 are input only
-    valid_system_gpios_ = string_range_to_vector("0-46", "6-11, 16-17, 45-46, 43-44");
+    valid_system_gpios_ = string_range_to_vector("0-46", "3, 45-46, 6-11, 35");
 #elif CONFIG_IDF_TARGET_ESP32S3
-    // not valid:
-    //   43-44 are UART0 pins
-    //   19-20 are USB-JTAG pins
-    //   33-37 for Octal SPI (SPIIO4 through SPIIO7 and SPIDQS) on 32MB boards
-    //   3, 45-46 are strapping pins
-    //   26-32 are typically used for SPI flash and PSRAM
-    //   42 transitions low on reset, slower than other GPIOs which can cause issues in time-sensitive applications
-    // notes:
-    //   34-39 are input only, and can be used
-    //   47 and 48 are valid on a Wemos S3 (https://github.com/emsesp/EMS-ESP32/issues/2874)
-    valid_system_gpios_ = string_range_to_vector("0-48", "43-44, 19-20, 33-37, 3, 45-46, 26-32, 42");
-#elif CONFIG_IDF_TARGET_ESP32
-    // not valid:
+    // non valid GPIOs:
+    //   3 is a strapping pin that could affect boot behaviour if pulled high/low at boot time
     //   6-11 are used for SPI flash and PSRAM
-    //   16-17 are also used for SPI flash and PSRAM
-    //   26-31 are used for SPI flash and PSRAM
-    //   19-20 are used for JTAG-USB
-    //   45-46 are strapping pins
-    //   1 & 3 are UART0 pins, but used for some eth-boards (BBQKees-E32, OlimexPOE)
-    //   42 transitions low on reset, slower than other GPIOs which can cause issues in time-sensitive applications
-    // notes:
-    //   32 is reserved for LED on E32V2_2 boards
-    //   34-39 are input only (ADC1), and can be used
+    //   19-20 are USB-JTAG pins
+    //   26-32 are usually used for SPI flash and PSRAM and not recommended for other use
+    //   33-37 are used for Octal SPI flash or PSRAM
+    //   45-46 are strapping pins that can affect boot behaviour
+    // notes on valid GPIOs:
+    //   11-20 are ADC analog input only pins
+    //   47 and 48 are valid on a Wemos S3 (https://github.com/emsesp/EMS-ESP32/issues/2874)
+    //   16 and 17 is UART2, which we allow
+    valid_system_gpios_ = string_range_to_vector("0-48", "3, 6-11, 19-20, 26-32, 33-37, 45-46");
+#elif CONFIG_IDF_TARGET_ESP32
+    // non valid GPIOs:
+    //   2, 4, 12-15, 25-27 are ADC2 and can conflict with the Wi-Fi module (12-15 is also USB-JTAG)
+    //   6-11 and 16-17 are used for SPI flash and PSRAM
+    // notes on valid GPIOs:
     //   25-26 are DAC (Digital-to-Analog Converter) pins, and can be used
-    //   36 & 39 are reserved for the internal supply_voltage and core_voltage
+    //   34-39 are input only, and can't be used for output (36=internal supply_voltage, 39=internal core_voltage on a BBQKees E32V2.2)
     if (ESP.getPsramSize() > 0) {
-        // if psram is enabled remove pins 16 and 17 from the list
-        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 16-17, 26-31, 19-20, 45-46, 1, 3, 42");
+        valid_system_gpios_ = string_range_to_vector("0-39", "2, 4, 12-15, 25-27, 6-11, 16-17"); // remove PSRAM pins from the list
     } else {
-        valid_system_gpios_ = string_range_to_vector("0-39", "19-20, 45-46, 1, 3, 42");
+        valid_system_gpios_ = string_range_to_vector("0-39", "2, 4, 12-15, 25-27");
     }
 #elif defined(EMSESP_STANDALONE)
     valid_system_gpios_ = string_range_to_vector("0-39");
