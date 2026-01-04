@@ -67,103 +67,159 @@ void test_4() {
 }
 
 void test_5() {
+    auto expected_response =
+        "[{\"api_data\":\"# HELP emsesp_heatingoff force heating off, boolean, readable, writeable, visible\\n# TYPE emsesp_heatingoff "
+        "gauge\\nemsesp_heatingoff 0\\n# HELP emsesp_heatingactive is my heating on?, boolean, readable, visible\\n# TYPE emsesp_heatingactive "
+        "gauge\\nemsesp_heatingactive 0\\n# HELP emsesp_tapwateractive tapwater active, boolean, readable, visible\\n# TYPE emsesp_tapwateractive "
+        "gauge\\nemsesp_tapwateractive 1\\n# HELP emsesp_selflowtemp selected flow temperature, °C, readable, writeable, visible\\n# TYPE emsesp_selflowtemp "
+        "gauge\\nemsesp_selflowtemp 0\\n# HELP emsesp_curflowtemp current flow temperature, °C, readable, visible\\n# TYPE emsesp_curflowtemp "
+        "gauge\\nemsesp_curflowtemp 60.20\\n# HELP emsesp_rettemp return temperature, °C, readable, visible\\n# TYPE emsesp_rettemp gauge\\nemsesp_rettemp "
+        "48.10\\n# HELP emsesp_syspress system pressure, bar, readable, visible\\n# TYPE emsesp_syspress gauge\\nemsesp_syspress 1.40\\n# HELP emsesp_burngas "
+        "gas, boolean, readable, visible\\n# TYPE emsesp_burngas gauge\\nemsesp_burngas 1\\n# HELP emsesp_burngas2 gas stage 2, boolean, readable, visible\\n# "
+        "TYPE emsesp_burngas2 gauge\\nemsesp_burngas2 0\\n# HELP emsesp_flamecurr flame current, µA, readable, visible\\n# TYPE emsesp_flamecurr "
+        "gauge\\nemsesp_flamecurr 37.40\\n# HELP emsesp_fanwork fan, boolean, readable, visible\\n# TYPE emsesp_fanwork gauge\\nemsesp_fanwork 1\\n# HELP "
+        "emsesp_ignwork ignition, boolean, readable, visible\\n# TYPE emsesp_ignwork gauge\\nemsesp_ignwork 0\\n# HELP emsesp_oilpreheat oil preheating, "
+        "boolean, readable, visible\\n# TYPE emsesp_oilpreheat gauge\\nemsesp_oilpreheat 0\\n# HELP emsesp_heatingpump heating pump, boolean, readable, "
+        "visible\\n# TYPE emsesp_heatingpump gauge\\nemsesp_heatingpump 1\\n# HELP emsesp_selburnpow burner selected max power, %, readable, writeable, "
+        "visible\\n# TYPE emsesp_selburnpow gauge\\nemsesp_selburnpow 115\\n# HELP emsesp_curburnpow burner current power, %, readable, visible\\n# TYPE "
+        "emsesp_curburnpow gauge\\nemsesp_curburnpow 61\\n# HELP emsesp_ubauptime total UBA operating time, minutes, readable, visible\\n# TYPE "
+        "emsesp_ubauptime gauge\\nemsesp_ubauptime 3940268\\n# HELP emsesp_servicecodenumber service code number, readable, visible\\n# TYPE "
+        "emsesp_servicecodenumber gauge\\nemsesp_servicecodenumber 201\\n# HELP emsesp_seltemp selected temperature, °C, readable, writeable, visible\\n# TYPE "
+        "emsesp_seltemp gauge\\nemsesp_seltemp{circuit=\\\"dhw\\\"} 52\\n# HELP emsesp_comfort comfort, enum, (0: hot; 1: eco; 2: intelligent), readable, "
+        "writeable, visible\\n# TYPE emsesp_comfort gauge\\nemsesp_comfort{circuit=\\\"dhw\\\"} 0\\n# HELP emsesp_flowtempoffset flow temperature offset, °C, "
+        "readable, writeable, visible\\n# TYPE emsesp_flowtempoffset gauge\\nemsesp_flowtempoffset{circuit=\\\"dhw\\\"} 40\\n# HELP emsesp_chargeoptimization "
+        "charge optimization, boolean, readable, writeable, visible\\n# TYPE emsesp_chargeoptimization gauge\\nemsesp_chargeoptimization{circuit=\\\"dhw\\\"} "
+        "0\\n# HELP emsesp_circpump circulation pump available, boolean, readable, writeable, visible\\n# TYPE emsesp_circpump "
+        "gauge\\nemsesp_circpump{circuit=\\\"dhw\\\"} 0\\n# HELP emsesp_chargetype charging type, enum, (0: chargepump; 1: 3-way valve), readable, visible\\n# "
+        "TYPE emsesp_chargetype gauge\\nemsesp_chargetype{circuit=\\\"dhw\\\"} 1\\n# HELP emsesp_hyston hysteresis on temperature, °C, readable, writeable, "
+        "visible\\n# TYPE emsesp_hyston gauge\\nemsesp_hyston{circuit=\\\"dhw\\\"} -5\\n# HELP emsesp_disinfectiontemp disinfection temperature, °C, readable, "
+        "writeable, visible\\n# TYPE emsesp_disinfectiontemp gauge\\nemsesp_disinfectiontemp{circuit=\\\"dhw\\\"} 70\\n# HELP emsesp_circmode circulation pump "
+        "mode, enum, (0: off; 1: 1x3min; 2: 2x3min; 3: 3x3min; 4: 4x3min; 5: 5x3min; 6: 6x3min; 7: continuous), readable, writeable, visible\\n# TYPE "
+        "emsesp_circmode gauge\\nemsesp_circmode{circuit=\\\"dhw\\\"} 0\\n# HELP emsesp_circ circulation active, boolean, readable, writeable, visible\\n# "
+        "TYPE emsesp_circ gauge\\nemsesp_circ{circuit=\\\"dhw\\\"} 0\\n# HELP emsesp_storagetemp1 storage intern temperature, °C, readable, visible\\n# TYPE "
+        "emsesp_storagetemp1 gauge\\nemsesp_storagetemp1{circuit=\\\"dhw\\\"} 53.80\\n# HELP emsesp_activated activated, boolean, readable, writeable, "
+        "visible\\n# TYPE emsesp_activated gauge\\nemsesp_activated{circuit=\\\"dhw\\\"} 1\\n# HELP emsesp_3wayvalve 3-way valve active, boolean, readable, "
+        "visible\\n# TYPE emsesp_3wayvalve gauge\\nemsesp_3wayvalve{circuit=\\\"dhw\\\"} 1\\n# HELP emsesp_chargepump charge pump, boolean, readable, "
+        "visible\\n# TYPE emsesp_chargepump gauge\\nemsesp_chargepump{circuit=\\\"dhw\\\"} 0\\n# HELP emsesp_nompower nominal Power, kW, readable, writeable, "
+        "visible\\n# TYPE emsesp_nompower gauge\\nemsesp_nompower 0\\n# HELP emsesp_nrgtotal total energy, kWh, readable, visible\\n# TYPE emsesp_nrgtotal "
+        "gauge\\nemsesp_nrgtotal 0\\n# HELP emsesp_nrgheat energy heating, kWh, readable, writeable, visible\\n# TYPE emsesp_nrgheat gauge\\nemsesp_nrgheat "
+        "0\\n# HELP emsesp_nrg energy, kWh, readable, writeable, visible\\n# TYPE emsesp_nrg gauge\\nemsesp_nrg{circuit=\\\"dhw\\\"} 0\\n\"}]";
+    TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler/metrics"));
+}
+
+void test_6() {
     auto expected_response = "[{\"name\":\"comfort\",\"fullname\":\"dhw "
                              "comfort\",\"circuit\":\"dhw\",\"index\":0,\"enum\":[\"hot\",\"eco\",\"intelligent\"],\"value\":\"hot\",\"type\":\"enum\","
                              "\"readable\":true,\"writeable\":true,\"visible\":true}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler/comfort"));
 }
 
-void test_6() {
+void test_7() {
     auto expected_response = "[{\"api_data\":\"hot\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler/comfort/value"));
 }
 
-void test_7() {
+void test_8() {
     auto expected_response = "[{\"api_data\":\"dhw comfort\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler/comfort/fullname"));
 }
 
-void test_8() {
+void test_9() {
     auto expected_response = "[{\"name\":\"outdoortemp\",\"fullname\":\"outside "
                              "temperature\",\"circuit\":\"\",\"type\":\"number\",\"uom\":\"°C\",\"state_class\":\"measurement\",\"device_class\":"
                              "\"temperature\",\"readable\":true,\"writeable\":false,\"visible\":true}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler/outdoortemp"));
 }
 
-void test_9() {
+void test_10() {
     auto expected_response = "[{\"name\":\"chargetype\",\"fullname\":\"dhw charging type\",\"circuit\":\"dhw\",\"index\":1,\"enum\":[\"chargepump\",\"3-way "
                              "valve\"],\"value\":\"3-way valve\",\"type\":\"enum\",\"readable\":true,\"writeable\":false,\"visible\":true}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler/dhw/chargetype"));
 }
 
-void test_10() {
+void test_11() {
     auto expected_response = "[{\"api_data\":\"false\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler/dhw.chargetype/writeable"));
 }
 
-void test_11() {
+void test_12() {
     auto expected_response = "[{\"api_data\":\"37.4\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler/flamecurr/value"));
 }
 
-void test_12() {
+void test_13() {
     auto expected_response = "[{\"hc1\":{\"seltemp\":20.5,\"currtemp\":22.8,\"haclimate\":\"roomTemp\",\"modetype\":\"heat\",\"remotetemp\":null},\"hc2\":{"
                              "\"seltemp\":20.6,\"currtemp\":22.9,\"haclimate\":\"roomTemp\",\"modetype\":\"eco\",\"remotetemp\":null},\"hc3\":{\"seltemp\":20."
                              "7,\"currtemp\":23.0,\"haclimate\":\"roomTemp\",\"modetype\":\"nofrost\",\"remotetemp\":null},\"dhw\":{}}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/thermostat"));
 }
 
-void test_13() {
+void test_14() {
     auto expected_response = "[{\"seltemp\":20.5,\"currtemp\":22.8,\"haclimate\":\"roomTemp\",\"modetype\":\"heat\",\"remotetemp\":null}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/thermostat/hc1/values"));
 }
 
-void test_14() {
+void test_15() {
+    auto expected_response =
+        "[{\"api_data\":\"# HELP emsesp_seltemp selected room temperature, °C, readable, writeable, visible\\n# TYPE emsesp_seltemp "
+        "gauge\\nemsesp_seltemp{circuit=\\\"hc1\\\"} 20.50\\n# HELP emsesp_currtemp current room temperature, °C, readable, visible\\n# TYPE emsesp_currtemp "
+        "gauge\\nemsesp_currtemp{circuit=\\\"hc1\\\"} 22.80\\n# HELP emsesp_haclimate mqtt discovery current room temperature, enum, (0: selTemp; 1: "
+        "roomTemp), readable, visible\\n# TYPE emsesp_haclimate gauge\\nemsesp_haclimate{circuit=\\\"hc1\\\"} 1\\n# HELP emsesp_modetype mode type, enum, (0: "
+        "nofrost; 1: eco; 2: heat), readable, visible\\n# TYPE emsesp_modetype gauge\\nemsesp_modetype{circuit=\\\"hc1\\\"} "
+        "2\\nemsesp_seltemp{circuit=\\\"hc2\\\"} 20.60\\nemsesp_currtemp{circuit=\\\"hc2\\\"} 22.90\\nemsesp_haclimate{circuit=\\\"hc2\\\"} "
+        "1\\nemsesp_modetype{circuit=\\\"hc2\\\"} 1\\nemsesp_seltemp{circuit=\\\"hc3\\\"} 20.70\\nemsesp_currtemp{circuit=\\\"hc3\\\"} "
+        "23\\nemsesp_haclimate{circuit=\\\"hc3\\\"} 1\\nemsesp_modetype{circuit=\\\"hc3\\\"} 0\\n\"}]";
+    TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/thermostat/metrics"));
+}
+
+void test_16() {
     auto expected_response = "[{\"name\":\"seltemp\",\"fullname\":\"hc1 selected room "
                              "temperature\",\"circuit\":\"hc1\",\"value\":20.5,\"type\":\"number\",\"min\":0,\"max\":30,\"uom\":\"°C\",\"state_class\":"
                              "\"measurement\",\"device_class\":\"temperature\",\"readable\":true,\"writeable\":true,\"visible\":true}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/thermostat/hc1/seltemp"));
 }
 
-void test_15() {
+void test_17() {
     auto expected_response = "[{\"name\":\"seltemp\",\"fullname\":\"hc2 selected room "
                              "temperature\",\"circuit\":\"hc2\",\"value\":20.6,\"type\":\"number\",\"min\":0,\"max\":30,\"uom\":\"°C\",\"state_class\":"
                              "\"measurement\",\"device_class\":\"temperature\",\"readable\":true,\"writeable\":true,\"visible\":true}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/thermostat/hc2/seltemp"));
 }
 
-void test_16() {
+void test_18() {
     auto expected_response = "[{\"test_custom\":0.00,\"test_read_only\":70.00,\"test_ram\":\"14\",\"test_seltemp\":\"14\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/custom"));
 }
 
-void test_17() {
+void test_19() {
     auto expected_response = "[{\"test_custom\":0.00,\"test_read_only\":70.00,\"test_ram\":\"14\",\"test_seltemp\":\"14\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/custom/info"));
 }
 
-void test_18() {
+void test_20() {
     auto expected_response = "[{\"name\":\"test_seltemp\",\"fullname\":\"test_seltemp\",\"storage\":\"ram\",\"type\":\"number\",\"readable\":true,"
                              "\"writeable\":true,\"visible\":true,\"ent_cat\":\"diagnostic\",\"value\":\"14\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/custom/test_seltemp"));
 }
 
-void test_19() {
+void test_21() {
     auto expected_response = "[{\"api_data\":\"14\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/custom/test_seltemp/value"));
 }
 
-void test_20() {
+void test_22() {
     auto expected_response = "[{\"name\":\"test_custom\",\"fullname\":\"test_custom\",\"storage\":\"ems\",\"type\":\"number\",\"readable\":true,\"writeable\":"
                              "true,\"visible\":true,\"device_id\":\"0x08\",\"type_id\":\"0x18\",\"offset\":0,\"factor\":1,\"ent_cat\":\"diagnostic\",\"uom\":"
                              "\"°C\",\"state_class\":\"measurement\",\"device_class\":\"temperature\",\"value\":0.00}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/custom/test_custom"));
 }
 
-void test_21() {
+void test_23() {
     auto expected_response =
         "[{\"system\":{\"version\":\"dev\",\"uptime\":\"000+00:00:00.000\",\"uptimeSec\":0,\"resetReason\":\"Unknown / "
-        "Unknown\"},\"network\":{\"network\":\"WiFi\",\"hostname\":\"ems-esp\",\"RSSI\":-23,\"TxPowerSetting\":0,\"staticIP\":false,\"lowBandwidth\":false,"
+        "Unknown\",\"txpause\":false,\"gpios_in_use\":\"23, 5, 2, 18, 0\",\"gpios_available\":\"1, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, "
+        "21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, "
+        "39\"},\"network\":{\"network\":\"WiFi\",\"hostname\":\"ems-esp\",\"RSSI\":-23,\"TxPowerSetting\":0,\"staticIP\":false,\"lowBandwidth\":false,"
         "\"disableSleep\":true,\"enableMDNS\":true,\"enableCORS\":false},\"ntp\":{\"NTPstatus\":\"disconnected\",\"enabled\":true,\"server\":\"pool.ntp.org\","
         "\"tzLabel\":\"Europe/"
         "London\",\"NTPStatus\":\"disconnected\"},\"ap\":{\"provisionMode\":\"always\",\"ssid\":\"ems-esp\"},\"mqtt\":{\"MQTTStatus\":\"disconnected\","
@@ -189,10 +245,12 @@ void test_21() {
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/system"));
 }
 
-void test_22() {
+void test_24() {
     auto expected_response =
         "[{\"system\":{\"version\":\"dev\",\"uptime\":\"000+00:00:00.000\",\"uptimeSec\":0,\"resetReason\":\"Unknown / "
-        "Unknown\"},\"network\":{\"network\":\"WiFi\",\"hostname\":\"ems-esp\",\"RSSI\":-23,\"TxPowerSetting\":0,\"staticIP\":false,\"lowBandwidth\":false,"
+        "Unknown\",\"txpause\":false,\"gpios_in_use\":\"23, 5, 2, 18, 0\",\"gpios_available\":\"1, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, "
+        "21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, "
+        "39\"},\"network\":{\"network\":\"WiFi\",\"hostname\":\"ems-esp\",\"RSSI\":-23,\"TxPowerSetting\":0,\"staticIP\":false,\"lowBandwidth\":false,"
         "\"disableSleep\":true,\"enableMDNS\":true,\"enableCORS\":false},\"ntp\":{\"NTPstatus\":\"disconnected\",\"enabled\":true,\"server\":\"pool.ntp.org\","
         "\"tzLabel\":\"Europe/"
         "London\",\"NTPStatus\":\"disconnected\"},\"ap\":{\"provisionMode\":\"always\",\"ssid\":\"ems-esp\"},\"mqtt\":{\"MQTTStatus\":\"disconnected\","
@@ -218,169 +276,255 @@ void test_22() {
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/system/info"));
 }
 
-void test_23() {
+void test_25() {
+    auto expected_response =
+        "[{\"api_data\":\"# HELP emsesp_system_uptimesec uptimeSec\\n# TYPE emsesp_system_uptimesec gauge\\nemsesp_system_uptimesec 0\\n# HELP "
+        "emsesp_system_txpause txpause\\n# TYPE emsesp_system_txpause gauge\\nemsesp_system_txpause 0\\n# HELP emsesp_system_info info\\n# TYPE "
+        "emsesp_system_info gauge\\nemsesp_system_info{version=\\\"dev\\\", resetreason=\\\"Unknown / Unknown\\\", gpios_in_use=\\\"23, 5, 2, 18, 0\\\", "
+        "gpios_available=\\\"1, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, "
+        "39\\\"} 1\\n# HELP emsesp_network_rssi RSSI\\n# TYPE emsesp_network_rssi gauge\\nemsesp_network_rssi -23\\n# HELP emsesp_network_txpowersetting "
+        "TxPowerSetting\\n# TYPE emsesp_network_txpowersetting gauge\\nemsesp_network_txpowersetting 0\\n# HELP emsesp_network_staticip staticIP\\n# TYPE "
+        "emsesp_network_staticip gauge\\nemsesp_network_staticip 0\\n# HELP emsesp_network_lowbandwidth lowBandwidth\\n# TYPE emsesp_network_lowbandwidth "
+        "gauge\\nemsesp_network_lowbandwidth 0\\n# HELP emsesp_network_disablesleep disableSleep\\n# TYPE emsesp_network_disablesleep "
+        "gauge\\nemsesp_network_disablesleep 1\\n# HELP emsesp_network_enablemdns enableMDNS\\n# TYPE emsesp_network_enablemdns "
+        "gauge\\nemsesp_network_enablemdns 1\\n# HELP emsesp_network_enablecors enableCORS\\n# TYPE emsesp_network_enablecors "
+        "gauge\\nemsesp_network_enablecors 0\\n# HELP emsesp_network_info info\\n# TYPE emsesp_network_info gauge\\nemsesp_network_info{network=\\\"WiFi\\\", "
+        "hostname=\\\"ems-esp\\\"} 1\\n# HELP emsesp_ntp_enabled enabled\\n# TYPE emsesp_ntp_enabled gauge\\nemsesp_ntp_enabled 1\\n# HELP emsesp_ntp_info "
+        "info\\n# TYPE emsesp_ntp_info gauge\\nemsesp_ntp_info{ntpstatus=\\\"disconnected\\\", server=\\\"pool.ntp.org\\\", tzlabel=\\\"Europe/London\\\"} "
+        "1\\n# HELP emsesp_ap_info info\\n# TYPE emsesp_ap_info gauge\\nemsesp_ap_info{provisionmode=\\\"always\\\", ssid=\\\"ems-esp\\\"} 1\\n# HELP "
+        "emsesp_mqtt_mqttpublishes MQTTPublishes\\n# TYPE emsesp_mqtt_mqttpublishes gauge\\nemsesp_mqtt_mqttpublishes 0\\n# HELP emsesp_mqtt_mqttqueued "
+        "MQTTQueued\\n# TYPE emsesp_mqtt_mqttqueued gauge\\nemsesp_mqtt_mqttqueued 0\\n# HELP emsesp_mqtt_mqttpublishfails MQTTPublishFails\\n# TYPE "
+        "emsesp_mqtt_mqttpublishfails gauge\\nemsesp_mqtt_mqttpublishfails 0\\n# HELP emsesp_mqtt_mqttreconnects MQTTReconnects\\n# TYPE "
+        "emsesp_mqtt_mqttreconnects gauge\\nemsesp_mqtt_mqttreconnects 0\\n# HELP emsesp_mqtt_enabled enabled\\n# TYPE emsesp_mqtt_enabled "
+        "gauge\\nemsesp_mqtt_enabled 1\\n# HELP emsesp_mqtt_keepalive keepAlive\\n# TYPE emsesp_mqtt_keepalive gauge\\nemsesp_mqtt_keepalive 60\\n# HELP "
+        "emsesp_mqtt_cleansession cleanSession\\n# TYPE emsesp_mqtt_cleansession gauge\\nemsesp_mqtt_cleansession 0\\n# HELP emsesp_mqtt_entityformat "
+        "entityFormat\\n# TYPE emsesp_mqtt_entityformat gauge\\nemsesp_mqtt_entityformat 1\\n# HELP emsesp_mqtt_discoverytype discoveryType\\n# TYPE "
+        "emsesp_mqtt_discoverytype gauge\\nemsesp_mqtt_discoverytype 0\\n# HELP emsesp_mqtt_nestedformat nestedFormat\\n# TYPE emsesp_mqtt_nestedformat "
+        "gauge\\nemsesp_mqtt_nestedformat 1\\n# HELP emsesp_mqtt_haenabled haEnabled\\n# TYPE emsesp_mqtt_haenabled gauge\\nemsesp_mqtt_haenabled 1\\n# HELP "
+        "emsesp_mqtt_mqttqos mqttQos\\n# TYPE emsesp_mqtt_mqttqos gauge\\nemsesp_mqtt_mqttqos 0\\n# HELP emsesp_mqtt_mqttretain mqttRetain\\n# TYPE "
+        "emsesp_mqtt_mqttretain gauge\\nemsesp_mqtt_mqttretain 0\\n# HELP emsesp_mqtt_publishtimeheartbeat publishTimeHeartbeat\\n# TYPE "
+        "emsesp_mqtt_publishtimeheartbeat gauge\\nemsesp_mqtt_publishtimeheartbeat 60\\n# HELP emsesp_mqtt_publishtimeboiler publishTimeBoiler\\n# TYPE "
+        "emsesp_mqtt_publishtimeboiler gauge\\nemsesp_mqtt_publishtimeboiler 10\\n# HELP emsesp_mqtt_publishtimethermostat publishTimeThermostat\\n# TYPE "
+        "emsesp_mqtt_publishtimethermostat gauge\\nemsesp_mqtt_publishtimethermostat 10\\n# HELP emsesp_mqtt_publishtimesolar publishTimeSolar\\n# TYPE "
+        "emsesp_mqtt_publishtimesolar gauge\\nemsesp_mqtt_publishtimesolar 10\\n# HELP emsesp_mqtt_publishtimemixer publishTimeMixer\\n# TYPE "
+        "emsesp_mqtt_publishtimemixer gauge\\nemsesp_mqtt_publishtimemixer 10\\n# HELP emsesp_mqtt_publishtimewater publishTimeWater\\n# TYPE "
+        "emsesp_mqtt_publishtimewater gauge\\nemsesp_mqtt_publishtimewater 0\\n# HELP emsesp_mqtt_publishtimeother publishTimeOther\\n# TYPE "
+        "emsesp_mqtt_publishtimeother gauge\\nemsesp_mqtt_publishtimeother 10\\n# HELP emsesp_mqtt_publishtimesensor publishTimeSensor\\n# TYPE "
+        "emsesp_mqtt_publishtimesensor gauge\\nemsesp_mqtt_publishtimesensor 10\\n# HELP emsesp_mqtt_publishsingle publishSingle\\n# TYPE "
+        "emsesp_mqtt_publishsingle gauge\\nemsesp_mqtt_publishsingle 0\\n# HELP emsesp_mqtt_publish2command publish2command\\n# TYPE "
+        "emsesp_mqtt_publish2command gauge\\nemsesp_mqtt_publish2command 0\\n# HELP emsesp_mqtt_sendresponse sendResponse\\n# TYPE emsesp_mqtt_sendresponse "
+        "gauge\\nemsesp_mqtt_sendresponse 0\\n# HELP emsesp_mqtt_info info\\n# TYPE emsesp_mqtt_info gauge\\nemsesp_mqtt_info{mqttstatus=\\\"disconnected\\\", "
+        "clientid=\\\"ems-esp\\\", base=\\\"ems-esp\\\", discoveryprefix=\\\"homeassistant\\\"} 1\\n# HELP emsesp_syslog_enabled enabled\\n# TYPE "
+        "emsesp_syslog_enabled gauge\\nemsesp_syslog_enabled 0\\n# HELP emsesp_sensor_temperaturesensors temperatureSensors\\n# TYPE "
+        "emsesp_sensor_temperaturesensors gauge\\nemsesp_sensor_temperaturesensors 3\\n# HELP emsesp_sensor_temperaturesensorreads temperatureSensorReads\\n# "
+        "TYPE emsesp_sensor_temperaturesensorreads gauge\\nemsesp_sensor_temperaturesensorreads 0\\n# HELP emsesp_sensor_temperaturesensorfails "
+        "temperatureSensorFails\\n# TYPE emsesp_sensor_temperaturesensorfails gauge\\nemsesp_sensor_temperaturesensorfails 0\\n# HELP "
+        "emsesp_sensor_analogsensors analogSensors\\n# TYPE emsesp_sensor_analogsensors gauge\\nemsesp_sensor_analogsensors 5\\n# HELP "
+        "emsesp_sensor_analogsensorreads analogSensorReads\\n# TYPE emsesp_sensor_analogsensorreads gauge\\nemsesp_sensor_analogsensorreads 0\\n# HELP "
+        "emsesp_sensor_analogsensorfails analogSensorFails\\n# TYPE emsesp_sensor_analogsensorfails gauge\\nemsesp_sensor_analogsensorfails 0\\n# HELP "
+        "emsesp_api_apicalls APICalls\\n# TYPE emsesp_api_apicalls gauge\\nemsesp_api_apicalls 0\\n# HELP emsesp_api_apifails APIFails\\n# TYPE "
+        "emsesp_api_apifails gauge\\nemsesp_api_apifails 0\\n# HELP emsesp_bus_bustelegramsreceived busTelegramsReceived\\n# TYPE "
+        "emsesp_bus_bustelegramsreceived gauge\\nemsesp_bus_bustelegramsreceived 8\\n# HELP emsesp_bus_busreads busReads\\n# TYPE emsesp_bus_busreads "
+        "gauge\\nemsesp_bus_busreads 0\\n# HELP emsesp_bus_buswrites busWrites\\n# TYPE emsesp_bus_buswrites gauge\\nemsesp_bus_buswrites 0\\n# HELP "
+        "emsesp_bus_busincompletetelegrams busIncompleteTelegrams\\n# TYPE emsesp_bus_busincompletetelegrams gauge\\nemsesp_bus_busincompletetelegrams 0\\n# "
+        "HELP emsesp_bus_busreadsfailed busReadsFailed\\n# TYPE emsesp_bus_busreadsfailed gauge\\nemsesp_bus_busreadsfailed 0\\n# HELP "
+        "emsesp_bus_buswritesfailed busWritesFailed\\n# TYPE emsesp_bus_buswritesfailed gauge\\nemsesp_bus_buswritesfailed 0\\n# HELP "
+        "emsesp_bus_busrxlinequality busRxLineQuality\\n# TYPE emsesp_bus_busrxlinequality gauge\\nemsesp_bus_busrxlinequality 100\\n# HELP "
+        "emsesp_bus_bustxlinequality busTxLineQuality\\n# TYPE emsesp_bus_bustxlinequality gauge\\nemsesp_bus_bustxlinequality 100\\n# HELP emsesp_bus_info "
+        "info\\n# TYPE emsesp_bus_info gauge\\nemsesp_bus_info{busstatus=\\\"connected\\\", busprotocol=\\\"Buderus\\\"} 1\\n# HELP emsesp_settings_txmode "
+        "txMode\\n# TYPE emsesp_settings_txmode gauge\\nemsesp_settings_txmode 8\\n# HELP emsesp_settings_emsbusid emsBusID\\n# TYPE emsesp_settings_emsbusid "
+        "gauge\\nemsesp_settings_emsbusid 11\\n# HELP emsesp_settings_showertimer showerTimer\\n# TYPE emsesp_settings_showertimer "
+        "gauge\\nemsesp_settings_showertimer 0\\n# HELP emsesp_settings_showerminduration showerMinDuration\\n# TYPE emsesp_settings_showerminduration "
+        "gauge\\nemsesp_settings_showerminduration 180\\n# HELP emsesp_settings_showeralert showerAlert\\n# TYPE emsesp_settings_showeralert "
+        "gauge\\nemsesp_settings_showeralert 0\\n# HELP emsesp_settings_hideled hideLed\\n# TYPE emsesp_settings_hideled gauge\\nemsesp_settings_hideled 0\\n# "
+        "HELP emsesp_settings_notokenapi noTokenApi\\n# TYPE emsesp_settings_notokenapi gauge\\nemsesp_settings_notokenapi 0\\n# HELP "
+        "emsesp_settings_readonlymode readonlyMode\\n# TYPE emsesp_settings_readonlymode gauge\\nemsesp_settings_readonlymode 0\\n# HELP "
+        "emsesp_settings_fahrenheit fahrenheit\\n# TYPE emsesp_settings_fahrenheit gauge\\nemsesp_settings_fahrenheit 0\\n# HELP "
+        "emsesp_settings_dallasparasite dallasParasite\\n# TYPE emsesp_settings_dallasparasite gauge\\nemsesp_settings_dallasparasite 0\\n# HELP "
+        "emsesp_settings_boolformat boolFormat\\n# TYPE emsesp_settings_boolformat gauge\\nemsesp_settings_boolformat 1\\n# HELP emsesp_settings_booldashboard "
+        "boolDashboard\\n# TYPE emsesp_settings_booldashboard gauge\\nemsesp_settings_booldashboard 1\\n# HELP emsesp_settings_enumformat enumFormat\\n# TYPE "
+        "emsesp_settings_enumformat gauge\\nemsesp_settings_enumformat 1\\n# HELP emsesp_settings_analogenabled analogEnabled\\n# TYPE "
+        "emsesp_settings_analogenabled gauge\\nemsesp_settings_analogenabled 1\\n# HELP emsesp_settings_telnetenabled telnetEnabled\\n# TYPE "
+        "emsesp_settings_telnetenabled gauge\\nemsesp_settings_telnetenabled 1\\n# HELP emsesp_settings_maxweblogbuffer maxWebLogBuffer\\n# TYPE "
+        "emsesp_settings_maxweblogbuffer gauge\\nemsesp_settings_maxweblogbuffer 25\\n# HELP emsesp_settings_modbusenabled modbusEnabled\\n# TYPE "
+        "emsesp_settings_modbusenabled gauge\\nemsesp_settings_modbusenabled 0\\n# HELP emsesp_settings_forceheatingoff forceHeatingOff\\n# TYPE "
+        "emsesp_settings_forceheatingoff gauge\\nemsesp_settings_forceheatingoff 0\\n# HELP emsesp_settings_developermode developerMode\\n# TYPE "
+        "emsesp_settings_developermode gauge\\nemsesp_settings_developermode 0\\n# HELP emsesp_settings_info info\\n# TYPE emsesp_settings_info "
+        "gauge\\nemsesp_settings_info{boardprofile=\\\"S32\\\", locale=\\\"en\\\"} 1\\n# HELP emsesp_device_productid productID\\n# TYPE "
+        "emsesp_device_productid gauge\\nemsesp_device_productid{type=\\\"boiler\\\", name=\\\"My Custom Boiler\\\", deviceid=\\\"0x08\\\", "
+        "version=\\\"01.00\\\"} 123\\n# HELP emsesp_device_entities entities\\n# TYPE emsesp_device_entities "
+        "gauge\\nemsesp_device_entities{type=\\\"boiler\\\", name=\\\"My Custom Boiler\\\", deviceid=\\\"0x08\\\", version=\\\"01.00\\\"} "
+        "39\\nemsesp_device_productid{type=\\\"thermostat\\\", name=\\\"FW120\\\", deviceid=\\\"0x10\\\", version=\\\"01.00\\\"} "
+        "192\\nemsesp_device_entities{type=\\\"thermostat\\\", name=\\\"FW120\\\", deviceid=\\\"0x10\\\", version=\\\"01.00\\\"} "
+        "15\\nemsesp_device_entities{type=\\\"temperaturesensor\\\", name=\\\"temperaturesensor\\\"} 3\\nemsesp_device_entities{type=\\\"analogsensor\\\", "
+        "name=\\\"analogsensor\\\"} 5\\nemsesp_device_entities{type=\\\"scheduler\\\", name=\\\"scheduler\\\"} 2\\nemsesp_device_entities{type=\\\"custom\\\", "
+        "name=\\\"custom\\\"} 4\\n\"}]";
+    TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/system/metrics"));
+}
+
+void test_26() {
     auto expected_response =
         "[{\"name\":\"locale\",\"circuit\":\"settings\",\"readable\":true,\"writeable\":false,\"visible\":true,\"value\":\"en\",\"type\":\"string\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/system/settings/locale"));
 }
 
-void test_24() {
+void test_27() {
     auto expected_response = "[{}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/system/fetch"));
 }
 
-void test_25() {
+void test_28() {
     auto expected_response = "[{\"network\":\"WiFi\",\"hostname\":\"ems-esp\",\"RSSI\":\"-23\",\"TxPowerSetting\":\"0\",\"staticIP\":\"false\","
                              "\"lowBandwidth\":\"false\",\"disableSleep\":\"true\",\"enableMDNS\":\"true\",\"enableCORS\":\"false\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/system/network/values"));
 }
 
-void test_26() {
+void test_29() {
     auto expected_response = "[{\"test_scheduler\":\"on\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/scheduler"));
 }
 
-void test_27() {
+void test_30() {
     auto expected_response = "[{\"test_scheduler\":\"on\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/scheduler/info"));
 }
 
-void test_28() {
+void test_31() {
     auto expected_response = "[{\"name\":\"test_scheduler\",\"fullname\":\"test_scheduler\",\"type\":\"boolean\",\"value\":\"on\",\"time\":\"12:00\","
                              "\"command\":\"system/fetch\",\"cmd_data\":\"10\",\"readable\":true,\"writeable\":true,\"visible\":true}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/scheduler/test_scheduler"));
 }
 
-void test_29() {
+void test_32() {
     auto expected_response = "[{\"test_tempsensor1\":12.3,\"test_tempsensor2\":45.6,\"gateway_temperature\":28.1}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/temperaturesensor"));
 }
 
-void test_30() {
+void test_33() {
     auto expected_response = "[{\"test_tempsensor1\":12.3,\"test_tempsensor2\":45.6,\"gateway_temperature\":28.1}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/temperaturesensor/info"));
 }
 
-void test_31() {
+void test_34() {
     auto expected_response = "[{\"id\":\"0B_0C0D_0E0F_1011\",\"name\":\"test_tempsensor2\",\"fullname\":\"test_tempsensor2\",\"value\":45.6,\"type\":"
                              "\"number\",\"uom\":\"°C\",\"readable\":true,\"writeable\":false,\"visible\":true,\"is_system\":false}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/temperaturesensor/test_tempsensor2"));
 }
 
-void test_32() {
+void test_35() {
     auto expected_response = "[{\"id\":\"0B_0C0D_0E0F_1011\",\"name\":\"test_tempsensor2\",\"fullname\":\"test_tempsensor2\",\"value\":45.6,\"type\":"
                              "\"number\",\"uom\":\"°C\",\"readable\":true,\"writeable\":false,\"visible\":true,\"is_system\":false}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/temperaturesensor/0B_0C0D_0E0F_1011"));
 }
 
-void test_33() {
+void test_36() {
     auto expected_response = "[{\"api_data\":\"45.6\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/temperaturesensor/test_tempsensor2/value"));
 }
 
-void test_34() {
+void test_37() {
     auto expected_response = "[{\"test_analogsensor1\":0,\"test_analogsensor2\":1,\"test_analogsensor3\":0,\"test_analogsensor4\":0,\"test_analogsensor5\":0}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/analogsensor"));
 }
 
-void test_35() {
+void test_38() {
     auto expected_response = "[{\"test_analogsensor1\":0,\"test_analogsensor2\":1,\"test_analogsensor3\":0,\"test_analogsensor4\":0,\"test_analogsensor5\":0}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/analogsensor/info"));
 }
 
-void test_36() {
+void test_39() {
     auto expected_response =
         "[{\"name\":\"test_analogsensor1\",\"fullname\":\"test_analogsensor1\",\"gpio\":36,\"type\":\"number\",\"analog\":\"adc\",\"value\":0,\"readable\":"
         "true,\"writeable\":false,\"visible\":true,\"is_system\":false,\"offset\":0,\"factor\":0.2,\"uom\":\"mV\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/analogsensor/test_analogsensor1"));
 }
 
-void test_37() {
+void test_40() {
     auto expected_response = "[{\"api_data\":\"0\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/analogsensor/test_analogsensor1/offset"));
 }
 
-void test_38() {
+void test_41() {
     auto expected_response = "[{\"message\":\"unknown device boiler2\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler2"));
 }
 
-void test_39() {
+void test_42() {
     auto expected_response = "[{}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler/bad/value"));
 }
 
-void test_40() {
+void test_43() {
     auto expected_response = "[{\"message\":\"no attribute 'valu' in comfort\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler/comfort/valu"));
 }
 
-void test_41() {
+void test_44() {
     auto expected_response = "[{\"message\":\"no 'settings' in system\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/system/settings/locale2"));
 }
 
-void test_42() {
+void test_45() {
     auto expected_response = "[{\"message\":\"no 'settings2' in system\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/system/settings2"));
 }
 
-void test_43() {
+void test_46() {
     auto expected_response = "[{\"message\":\"no 'settings2' in system\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/system/settings2/locale2"));
 }
 
-void test_44() {
+void test_47() {
     auto expected_response = "[{\"message\":\"no 'test_scheduler2' in scheduler\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/scheduler/test_scheduler2"));
 }
 
-void test_45() {
+void test_48() {
     auto expected_response = "[{\"message\":\"no attribute 'val' in test_scheduler\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/scheduler/test_scheduler/val"));
 }
 
-void test_46() {
+void test_49() {
     auto expected_response = "[{\"message\":\"no 'test_scheduler2' in scheduler\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/scheduler/test_scheduler2/val2"));
 }
 
-void test_47() {
+void test_50() {
     auto expected_response = "[{\"message\":\"no 'test_seltemp2' in custom\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/custom/test_seltemp2"));
 }
 
-void test_48() {
+void test_51() {
     auto expected_response = "[{\"message\":\"Command test_seltemp failed (Error)\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/custom/test_seltemp/val"));
 }
 
-void test_49() {
+void test_52() {
     auto expected_response = "[{\"message\":\"no 'test_sensor20' in temperaturesensor\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/temperaturesensor/test_sensor20"));
 }
 
-void test_50() {
+void test_53() {
     auto expected_response = "[{\"message\":\"no '0b_0c0d_0e0f_xxxx' in temperaturesensor\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/temperaturesensor/0B_0C0D_0E0F_XXXX"));
 }
 
-void test_51() {
+void test_54() {
     auto expected_response = "[{\"message\":\"no attribute 'bad' in test_tempsensor2\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/temperaturesensor/test_tempsensor2/bad"));
 }
 
-void test_52() {
+void test_55() {
     auto expected_response = "[{\"message\":\"no attribute 'bad' in test_analogsensor1\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/analogsensor/test_analogsensor1/bad"));
 }
 
-void test_53() {
+void test_56() {
     auto expected_response = "[{\"message\":\"no 'test_analog10' in analogsensor\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/analogsensor/test_analog10"));
 }
 
-void test_54() {
+void test_57() {
     auto expected_response = "[{\"message\":\"no 'test_analog10' in analogsensor\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/analogsensor/test_analog10/bad2"));
 }
@@ -440,6 +584,9 @@ void run_tests() {
     RUN_TEST(test_52);
     RUN_TEST(test_53);
     RUN_TEST(test_54);
+    RUN_TEST(test_55);
+    RUN_TEST(test_56);
+    RUN_TEST(test_57);
 }
 
 // ---------- END - CUT HERE ----------
