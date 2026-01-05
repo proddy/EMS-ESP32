@@ -562,8 +562,8 @@ void Mqtt::ha_status() {
 // Note we don't use camelCase as it would change the HA entity_id and impact historic data
 #ifndef EMSESP_STANDALONE
     if (!EMSESP::system_.ethernet_connected() || WiFi.isConnected()) {
-        publish_system_ha_sensor_config(DeviceValueType::INT8, "WiFi RSSI", "rssi", DeviceValueUOM::DBM);
-        publish_system_ha_sensor_config(DeviceValueType::INT8, "WiFi strength", "wifistrength", DeviceValueUOM::PERCENT);
+        publish_system_ha_sensor_config(DeviceValueType::INT8, "RSSI", "rssi", DeviceValueUOM::DBM);
+        publish_system_ha_sensor_config(DeviceValueType::INT8, "Signal", "wifistrength", DeviceValueUOM::PERCENT);
     }
 #endif
 
