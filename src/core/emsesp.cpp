@@ -20,6 +20,7 @@
 
 #ifndef EMSESP_STANDALONE
 #include "esp_ota_ops.h"
+#include "rom/rtc.h"
 #endif
 
 static_assert(uuid::thread_safe, "uuid-common must be thread-safe");
@@ -1721,15 +1722,31 @@ void EMSESP::start() {
     LOG_INFO("EMS-ESP version %s", EMSESP_APP_VERSION);
 #endif
 
+    LOG_DEBUG("System is running in Debug mode");
+
     // check if the firmware is fresh, i.e. a new install or a new version has been uploaded
     // this is set in UploadFileService::uploadComplete()
     // and reset in System::set_partition_install_date()
-    if (!EMSESP::nvs_.getBool(EMSESP_NVS_BOOT_NEW_FIRMWARE)) {
-        LOG_DEBUG("Firmware is fresh install");
+    if (EMSESP::nvs_.getBool(EMSESP_NVS_BOOT_NEW_FIRMWARE)) {
+        LOG_DEBUG("Firmware is a new install");
+    } else {
+// check if the firmware has been uploaded via Serial/USB
+#if defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32C3)
+        if (rtc_get_reset_reason(0) == 11) { // ESP_RST_USB (Reset by USB peripheral, on CPU 0 only
+#else
+        if ((rtc_get_reset_reason(0) == 14 || rtc_get_reset_reason(1) == 14)) { // APP CPU reset by PRO CPU, can be either CPUs
+#endif
+            LOG_DEBUG("Firmware is a new install, uploaded via Serial/USB");
+            EMSESP::nvs_.putBool(emsesp::EMSESP_NVS_BOOT_NEW_FIRMWARE, true); // set flag so it's picked up later to set the install date
+        }
     }
 
-    LOG_DEBUG("System is running in Debug mode");
+// S2 are C3 are both single core
+#if defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32C3)
+    LOG_INFO("Last system reset reason Core0: %s", system_.reset_reason(0).c_str());
+#else
     LOG_INFO("Last system reset reason Core0: %s, Core1: %s", system_.reset_reason(0).c_str(), system_.reset_reason(1).c_str());
+#endif
 
 // see if we're restoring a settings file
 #ifndef EMSESP_STANDALONE
