@@ -35,6 +35,7 @@
     "managed_components/**",
     "pnpm-*.yaml",
     "vite.config.ts",
-    "lib/esp32-psram/**"
+    "lib/esp32-psram/**",
+    "test/test_api/test_api.h"
   ]
   }
