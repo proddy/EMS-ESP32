@@ -43,6 +43,10 @@ class Heatpump : public EMSdevice {
     int8_t  switchOverTemp_;
     uint8_t heatingPumpMod_;
     uint8_t hpCompSpd_;
+    uint8_t hpActivity_;
+
+    uint16_t hpPower_;
+    uint16_t hpCurrPower_;
 
     // Function test
     uint8_t airPurgeMode_;
@@ -97,6 +101,7 @@ class Heatpump : public EMSdevice {
     void process_HpStarts(std::shared_ptr<const Telegram> telegram);
     void process_HpEnergy1(std::shared_ptr<const Telegram> telegram);
     void process_HpEnergy2(std::shared_ptr<const Telegram> telegram);
+    void process_HpPower(std::shared_ptr<const Telegram> telegram);
 
     bool set_controlStrategy(const char * value, const int8_t id);
     bool set_lowNoiseMode(const char * value, const int8_t id);
