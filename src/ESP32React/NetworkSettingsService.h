@@ -64,10 +64,10 @@
 class NetworkSettings {
   public:
     // core wifi configuration
-    String  ssid;
-    String  bssid;
-    String  password;
-    String  hostname;
+    String  ssid           = FACTORY_WIFI_SSID;
+    String  bssid          = "";
+    String  password       = FACTORY_WIFI_PASSWORD;
+    String  hostname       = FACTORY_WIFI_HOSTNAME;
     bool    staticIPConfig = false;
     bool    bandwidth20    = false;
     uint8_t tx_power       = 0;

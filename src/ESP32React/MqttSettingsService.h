@@ -66,19 +66,19 @@
 
 class MqttSettings {
   public:
-    bool     enabled = FACTORY_MQTT_ENABLED;
-    String   host;
-    uint16_t port = FACTORY_MQTT_PORT;
-    String   rootCA;
+    bool     enabled   = FACTORY_MQTT_ENABLED;
+    String   host      = FACTORY_MQTT_HOST;
+    uint16_t port      = FACTORY_MQTT_PORT;
+    String   rootCA    = "";
     bool     enableTLS = false;
-    String   username;
-    String   password;
+    String   username  = FACTORY_MQTT_USERNAME;
+    String   password  = FACTORY_MQTT_PASSWORD;
     String   clientId;
     uint16_t keepAlive    = FACTORY_MQTT_KEEP_ALIVE;
     bool     cleanSession = FACTORY_MQTT_CLEAN_SESSION;
 
     // EMS-ESP specific
-    String   base;
+    String   base                    = FACTORY_MQTT_BASE;
     uint16_t publish_time_boiler     = EMSESP_DEFAULT_PUBLISH_TIME;
     uint16_t publish_time_thermostat = EMSESP_DEFAULT_PUBLISH_TIME;
     uint16_t publish_time_solar      = EMSESP_DEFAULT_PUBLISH_TIME;
@@ -91,12 +91,12 @@ class MqttSettings {
     bool     mqtt_retain             = EMSESP_DEFAULT_MQTT_RETAIN;
     bool     ha_enabled              = EMSESP_DEFAULT_HA_ENABLED;
     uint8_t  nested_format           = EMSESP_DEFAULT_NESTED_FORMAT;
-    String   discovery_prefix;
-    uint8_t  discovery_type     = EMSESP_DEFAULT_DISCOVERY_TYPE;
-    bool     publish_single     = EMSESP_DEFAULT_PUBLISH_SINGLE;
-    bool     publish_single2cmd = EMSESP_DEFAULT_PUBLISH_SINGLE2CMD;
-    bool     send_response      = EMSESP_DEFAULT_SEND_RESPONSE;
-    uint8_t  entity_format      = EMSESP_DEFAULT_ENTITY_FORMAT;
+    String   discovery_prefix        = EMSESP_DEFAULT_DISCOVERY_PREFIX;
+    uint8_t  discovery_type          = EMSESP_DEFAULT_DISCOVERY_TYPE;
+    bool     publish_single          = EMSESP_DEFAULT_PUBLISH_SINGLE;
+    bool     publish_single2cmd      = EMSESP_DEFAULT_PUBLISH_SINGLE2CMD;
+    bool     send_response           = EMSESP_DEFAULT_SEND_RESPONSE;
+    uint8_t  entity_format           = EMSESP_DEFAULT_ENTITY_FORMAT;
 
     static void              read(MqttSettings & settings, JsonObject root);
     static StateUpdateResult update(JsonObject root, MqttSettings & settings);

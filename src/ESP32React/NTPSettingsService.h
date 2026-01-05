@@ -30,10 +30,10 @@
 
 class NTPSettings {
   public:
-    bool   enabled = FACTORY_NTP_ENABLED;
-    String tzLabel;
-    String tzFormat;
-    String server;
+    bool   enabled  = FACTORY_NTP_ENABLED;
+    String tzLabel  = FACTORY_NTP_TIME_ZONE_LABEL;
+    String tzFormat = FACTORY_NTP_TIME_ZONE_FORMAT;
+    String server   = FACTORY_NTP_SERVER;
 
     static void              read(NTPSettings & settings, JsonObject root);
     static StateUpdateResult update(JsonObject root, NTPSettings & settings);
