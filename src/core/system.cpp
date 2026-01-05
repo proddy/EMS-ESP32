@@ -316,11 +316,9 @@ void System::get_partition_info() {
 
     auto current_partition = (const char *)esp_ota_get_running_partition()->label;
 
-    // update the current version and partition name in NVS if not already set (saves on flash wearing)
-    if (EMSESP::nvs_.getString(current_partition) != EMSESP_APP_VERSION || emsesp::EMSESP::nvs_.getBool(emsesp::EMSESP_NVS_BOOT_NEW_FIRMWARE, false)) {
-        if (EMSESP::nvs_.getBool(emsesp::EMSESP_NVS_BOOT_NEW_FIRMWARE, false)) {
-            EMSESP::nvs_.putBool(emsesp::EMSESP_NVS_BOOT_NEW_FIRMWARE, false);
-        }
+    // update the current version and partition name in NVS if not already set
+    if (EMSESP::nvs_.getString(current_partition) != EMSESP_APP_VERSION || emsesp::EMSESP::nvs_.getBool(emsesp::EMSESP_NVS_BOOT_NEW_FIRMWARE, true)) {
+        EMSESP::nvs_.putBool(emsesp::EMSESP_NVS_BOOT_NEW_FIRMWARE, false);
         EMSESP::nvs_.putString(current_partition, EMSESP_APP_VERSION);
         char c[20];
         snprintf(c, sizeof(c), "d_%s", current_partition);
@@ -2464,15 +2462,15 @@ bool System::command_txpause(const char * value, const int8_t id) {
 
 // format command - factory reset, removing all config files
 bool System::command_format(const char * value, const int8_t id) {
-#if !defined(EMSESP_STANDALONE) && !defined(EMSESP_DEBUG)
-    // don't really format the filesystem in debug or standalone mode
+#if !defined(EMSESP_STANDALONE) && !defined(EMSESP_TEST)
+    // don't really format the filesystem in test or standalone mode
     if (LittleFS.format()) {
         LOG_INFO("Filesystem formatted successfully. All config files removed.");
     } else {
         LOG_ERROR("Format failed");
     }
 #else
-    LOG_INFO("Format command not available in standalone or debug mode");
+    LOG_ERROR("Format command not available in standalone or test mode");
 #endif
 
     // restart will be handled by the main loop
@@ -2569,21 +2567,6 @@ bool System::ntp_connected() {
 // see if its a BBQKees Gateway by checking the nvs values
 String System::getBBQKeesGatewayDetails(uint8_t detail) {
 #ifndef EMSESP_STANDALONE
-    /*
-    if (!EMSESP::nvs_.isKey("mfg")) {
-        return "";
-    }
-
-    // mfg can be either "BBQKees" or "BBQKees Electronics"
-    auto mfg = EMSESP::nvs_.getString("mfg");
-    if (mfg) {
-        if (!mfg.startsWith("BBQKees")) {
-            return "";
-        }
-    }
-
-    return "BBQKees Gateway Model " + EMSESP::nvs_.getString("model") + " v" + EMSESP::nvs_.getString("hwrevision") + "/" + EMSESP::nvs_.getString("batch");
-*/
     union {
         struct {
             uint32_t no : 4;
@@ -2596,14 +2579,17 @@ String System::getBBQKeesGatewayDetails(uint8_t detail) {
         };
         uint32_t reg;
     } gw;
+
     for (uint8_t reg = 0; reg < 8; reg++) {
         gw.reg = esp_efuse_read_reg(EFUSE_BLK3, reg);
         if (reg == 7 || esp_efuse_read_reg(EFUSE_BLK3, reg + 1) == 0)
             break;
     }
+
     const char * mfg[]   = {"unknown", "BBQKees Electronics", "", "", "", "", "", ""};
     const char * model[] = {"unknown", "S3", "E32V2", "E32V2.2", "S32", "E32", "", "", ""};
     const char * board[] = {"CUSTOM", "S32S3", "E32V2", "E32V2_2", "S32", "E32", "", "", ""};
+
     switch (detail) {
     case FUSE_VALUE::MFG:
         return gw.mfg < 2 ? String(mfg[gw.mfg]) : "unknown";
@@ -2621,9 +2607,11 @@ String System::getBBQKeesGatewayDetails(uint8_t detail) {
     default:
         break;
     }
+
     if (!gw.reg || gw.mfg > 1 || gw.model > 5) {
         return "";
     }
+
     return String(mfg[gw.mfg]) + " " + String(model[gw.model]) + " rev." + String(gw.rev_major) + "." + String(gw.rev_minor) + "/" + String(2000 + gw.year)
            + (gw.month < 10 ? "0" : "") + String(gw.month) + String(gw.no);
 #else
@@ -2925,22 +2913,22 @@ void System::set_valid_system_gpios() {
 
 #elif CONFIG_IDF_TARGET_ESP32
     // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html
-    // GPIO5 = strapping pins
     // GPIO6 - GPIO11, GPIO16 - GPIO17 = used for SPI flash and PSRAM
     // GPIO12 - GPIO15 = USB-JTAG (12 and 15 are also strapping pins) but we allow GPIO14 (see below)
     //
     // notes on what is allowed:
     // GPIO34, GPIO35, GPIO37 = input only
-    // GPIO2, GPIO4, GPIO14 = used on BBQKees boards for either LED, Dallas or Rx
+    // GPIO2, GPIO4, GPIO5, GPIO14 = used on BBQKees boards for either LED, Dallas or Rx
+    // GPIO23 and GPIO18 are used by Ethernet
     // GPIO25 - GPIO37 = ADC2
     // GPIO32 - GPIO39 = ADC1
     // GPIO36 = used on BBQKees boards for supply_voltage (E32V2.2) (note may conflict with WiFI on other boards)
     // GPIO39 = used on BBQKees boards for core_voltage (E32V2.2) (note may conflict with WiFI on other boards)
     if (ESP.getPsramSize() > 0) {
         // remove PSRAM pins from the list
-        valid_system_gpios_ = string_range_to_vector("0-39", "5, 6-11, 16-17, 12, 13, 15");
+        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 16-17, 12, 13, 15");
     } else {
-        valid_system_gpios_ = string_range_to_vector("0-39", "5, 12, 13, 15");
+        valid_system_gpios_ = string_range_to_vector("0-39", "12, 13, 15");
     }
 #elif defined(EMSESP_STANDALONE)
     valid_system_gpios_ = string_range_to_vector("0-39");
