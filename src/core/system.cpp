@@ -2915,6 +2915,7 @@ void System::set_valid_system_gpios() {
     // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html
     // GPIO6 - GPIO11, GPIO16 - GPIO17 = used for SPI flash and PSRAM
     // GPIO12 - GPIO15 = USB-JTAG (12 and 15 are also strapping pins) but we allow GPIO14 (see below)
+    // GPIO20, GPIO24, GPIO28 - GPIO31 = don't exist
     //
     // notes on what is allowed:
     // GPIO34, GPIO35, GPIO37 = input only
@@ -2925,10 +2926,10 @@ void System::set_valid_system_gpios() {
     // GPIO36 = used on BBQKees boards for supply_voltage (E32V2.2) (note may conflict with WiFI on other boards)
     // GPIO39 = used on BBQKees boards for core_voltage (E32V2.2) (note may conflict with WiFI on other boards)
     if (ESP.getPsramSize() > 0) {
-        // remove PSRAM pins from the list
-        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 16-17, 12, 13, 15");
+        // remove SPI0/1 PSRAM pins GPIO16 (CS) and GPIO17 (CLK) from the list
+        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 16-17, 12, 13, 15, 20, 24, 28-31");
     } else {
-        valid_system_gpios_ = string_range_to_vector("0-39", "12, 13, 15");
+        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 12, 13, 15, 20, 24, 28-31");
     }
 #elif defined(EMSESP_STANDALONE)
     valid_system_gpios_ = string_range_to_vector("0-39");
