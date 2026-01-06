@@ -64,17 +64,17 @@
 class NetworkSettings {
   public:
     // core wifi configuration
-    String  ssid;
-    String  bssid;
-    String  password;
-    String  hostname;
-    bool    staticIPConfig;
-    bool    bandwidth20;
-    uint8_t tx_power;
-    bool    nosleep;
-    bool    enableMDNS;
-    bool    enableCORS;
-    String  CORSOrigin;
+    String  ssid           = FACTORY_WIFI_SSID;
+    String  bssid          = "";
+    String  password       = FACTORY_WIFI_PASSWORD;
+    String  hostname       = FACTORY_WIFI_HOSTNAME;
+    bool    staticIPConfig = false;
+    bool    bandwidth20    = false;
+    uint8_t tx_power       = 0;
+    bool    nosleep        = true;
+    bool    enableMDNS     = true;
+    bool    enableCORS     = false;
+    String  CORSOrigin     = "*";
 
     // optional configuration for static IP address
     IPAddress localIP;

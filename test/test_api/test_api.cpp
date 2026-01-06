@@ -203,17 +203,40 @@ void capture(const char * url = nullptr) {
     }
 
     if (url) {
-        // call API, find and replace all double quotes with escaped quotes
-        std::string escaped_response = call_url(url);
+        // call API, store the response in a string
+        std::string response = call_url(url);
 
-        size_t pos = 0;
-        while ((pos = escaped_response.find("\"", pos)) != std::string::npos) {
-            escaped_response.replace(pos, 1, "\\\"");
-            pos += 2;
+        // escape all special characters for C++ string literal
+        std::string escaped_response;
+        escaped_response.reserve(response.length() * 2); // pre-allocate for efficiency
+
+        for (char c : response) {
+            switch (c) {
+            case '\n':
+                escaped_response += "\\n";
+                break;
+            case '\r':
+                escaped_response += "\\r";
+                break;
+            case '\t':
+                escaped_response += "\\t";
+                break;
+            case '\\':
+                escaped_response += "\\\\";
+                break;
+            case '\"':
+                escaped_response += "\\\"";
+                break;
+            default:
+                escaped_response += c;
+                break;
+            }
         }
 
         Serial.printf("void test_%d() {\n", count++);
-        Serial.printf("    auto expected_response = \"%s\";\n", escaped_response.c_str());
+        Serial.print("    auto expected_response = \"");
+        Serial.print(escaped_response.c_str());
+        Serial.println("\";");
         Serial.printf("    TEST_ASSERT_EQUAL_STRING(expected_response, call_url(\"%s\"));\n", url);
         Serial.println("}");
         Serial.println();
