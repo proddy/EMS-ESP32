@@ -2696,6 +2696,9 @@ bool System::uploadFirmwareURL(const char * url) {
     // we're about to start the upload, set the status so the Web System Monitor spots it
     EMSESP::system_.systemStatus(SYSTEM_STATUS::SYSTEM_STATUS_UPLOADING);
 
+    // set a callback so we can monitor progress in the WebUI
+    Update.onProgress([](size_t progress, size_t total) { EMSESP::system_.systemStatus(SYSTEM_STATUS::SYSTEM_STATUS_UPLOADING + (progress * 100 / total)); });
+
     // get tcp stream and send it to Updater
     WiFiClient * stream = http.getStreamPtr();
     if (Update.writeStream(*stream) != firmware_size) {
@@ -2784,10 +2787,15 @@ bool System::command_read(const char * value, const int8_t id) {
 }
 
 // set the system status code - SYSTEM_STATUS in system.h
+// this is also used in the SystemMonitor.tsx WebUI to show the progress of the firmware upload, start at 100
 void System::systemStatus(uint8_t status_code) {
     if (systemStatus_ != status_code) {
         systemStatus_ = status_code;
-        LOG_DEBUG("Setting System status code %d", status_code);
+#ifdef EMSESP_DEBUG
+        if (status_code < SYSTEM_STATUS::SYSTEM_STATUS_UPLOADING) {
+            LOG_DEBUG("Setting System status code %d", status_code);
+        }
+#endif
     }
 }
 
