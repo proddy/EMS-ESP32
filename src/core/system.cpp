@@ -2881,6 +2881,7 @@ void System::set_valid_system_gpios() {
     // get free gpios based on board/platform type
 #if CONFIG_IDF_TARGET_ESP32C3
     // https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-reference/peripherals/gpio.html
+    // excluded:
     // GPIO2, GPIO8 - GPIO9 = strapping pins
     // GPIO12 - GPIO17 = used for SPI flash and PSRAM
     // GPIO18 - GPIO19 = USB-JTAG
@@ -2891,6 +2892,7 @@ void System::set_valid_system_gpios() {
 
 #elif CONFIG_IDF_TARGET_ESP32S2
     // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-reference/peripherals/gpio.html
+    // excluded:
     // GPIO26 - GPIO32 = SPI flash and PSRAM
     // GPIO45 - GPIO46 = strapping pins
     // GPIO39 - GPIO42 = USB-JTAG
@@ -2900,6 +2902,7 @@ void System::set_valid_system_gpios() {
 
 #elif CONFIG_IDF_TARGET_ESP32S3
     // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/peripherals/gpio.html
+    // excluded:
     // GPIO3, GPIO45 - GPIO46 = strapping pins
     // GPIO26 - GPIO32 = SPI flash and PSRAM and not recommended
     // GPIO33 - GPIO37 = Octal flash/PSRAM
@@ -2913,8 +2916,9 @@ void System::set_valid_system_gpios() {
 
 #elif CONFIG_IDF_TARGET_ESP32
     // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html
+    // excluded:
     // GPIO6 - GPIO11, GPIO16 - GPIO17 = used for SPI flash and PSRAM
-    // GPIO12 - GPIO15 = USB-JTAG (12 and 15 are also strapping pins) but we allow GPIO14 (see below)
+    // GPIO12 - GPIO15 = USB-JTAG (but we allow GPIO14 for BBQKees) and GPIO12 & GPIO13 also reserved for BBQKees E32V2.2
     // GPIO20, GPIO24, GPIO28 - GPIO31 = don't exist
     //
     // notes on what is allowed:
@@ -2927,7 +2931,7 @@ void System::set_valid_system_gpios() {
     // GPIO39 = used on BBQKees boards for core_voltage (E32V2.2) (note may conflict with WiFI on other boards)
     if (ESP.getPsramSize() > 0) {
         // remove SPI0/1 PSRAM pins GPIO16 (CS) and GPIO17 (CLK) from the list
-        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 16-17, 12, 13, 15, 20, 24, 28-31");
+        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 12, 13, 15, 16, 17, 20, 24, 28-31");
     } else {
         valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 12, 13, 15, 20, 24, 28-31");
     }
