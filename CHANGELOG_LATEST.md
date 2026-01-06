@@ -16,8 +16,9 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - Junkers wwcharge offset [#2860](https://github.com/emsesp/EMS-ESP32/issues/2860)
 - fixed minflowtemp [#2890](https://github.com/emsesp/EMS-ESP32/issues/2890)
 - don't add HA uom/classes for bool values [#2885](https://github.com/emsesp/EMS-ESP32/issues/2885)
+- fixed missing progress bar on web firmware uploads
 
 ## Changed
 
 - snapshot gpios stored in temporary ram
-- GPIOs stored along with the name
+- GPIOs stored along with the name and reported in log if conflicting
