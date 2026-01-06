@@ -39,9 +39,8 @@ const LayoutMenuItemComponent = ({
         left: 0,
         top: 0,
         bottom: 0,
-        width: selected ? '4px' : '0px',
+        width: selected ? '3px' : '0px',
         backgroundColor: '#90caf9',
-        borderRadius: '0 2px 2px 0',
         transition: 'width 0.05s cubic-bezier(0.55, 0.085, 0.68, 0.53)'
       }
     }),
