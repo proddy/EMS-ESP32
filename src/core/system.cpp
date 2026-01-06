@@ -1497,7 +1497,15 @@ bool System::check_upgrade() {
         });
     } else if (this_version < settings_version) {
         // downgrading
-        LOG_NOTICE("Downgrading to version %d.%d.%d%s", this_version.major(), this_version.minor(), this_version.patch(), this_version_type.c_str());
+        LOG_NOTICE("Downgrading from version %d.%d.%d%s to version %d.%d.%d%s",
+                   settings_version.major(),
+                   settings_version.minor(),
+                   settings_version.patch(),
+                   settings_version_type.c_str(),
+                   this_version.major(),
+                   this_version.minor(),
+                   this_version.patch(),
+                   this_version_type.c_str());
     } else {
         save_version = false; // same version, do nothing
     }
@@ -2896,9 +2904,10 @@ void System::set_valid_system_gpios() {
     // GPIO26 - GPIO32 = SPI flash and PSRAM
     // GPIO45 - GPIO46 = strapping pins
     // GPIO39 - GPIO42 = USB-JTAG
+    // GPIO22 - GPIO25 = don't exist
     //
     // notes on what is allowed:
-    valid_system_gpios_ = string_range_to_vector("0-46", "26-32, 45-46, 39-42");
+    valid_system_gpios_ = string_range_to_vector("0-46", "26-32, 45-46, 39-42, 22-25");
 
 #elif CONFIG_IDF_TARGET_ESP32S3
     // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/peripherals/gpio.html
@@ -2907,12 +2916,13 @@ void System::set_valid_system_gpios() {
     // GPIO26 - GPIO32 = SPI flash and PSRAM and not recommended
     // GPIO33 - GPIO37 = Octal flash/PSRAM
     // GPIO19 - GPIO20 = USB-JTAG
+    // GPIO22 - GPIO25 = don't exist
     //
     // notes on what is allowed:
     // GPIO11 - GPIO19 = ADC analog input only pins
     // GPIO47 - GPIO48 = valid on a Wemos S3
     // GPIO8 = used by Liligo S3 board profile for Rx
-    valid_system_gpios_ = string_range_to_vector("0-48", "3, 45-46, 26-32, 33-37, 19-20");
+    valid_system_gpios_ = string_range_to_vector("0-48", "3, 45-46, 26-32, 33-37, 19-20, 22-25");
 
 #elif CONFIG_IDF_TARGET_ESP32
     // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html
