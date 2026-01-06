@@ -443,7 +443,7 @@ const SystemStatus = () => {
     renderRestartDialog
   ]);
 
-  return <SectionContent>{restarting ? <SystemMonitor /> : content}</SectionContent>;
+  return restarting ? <SystemMonitor /> : <SectionContent>{content}</SectionContent>;
 };
 
 export default SystemStatus;
