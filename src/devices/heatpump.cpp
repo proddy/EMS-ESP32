@@ -38,6 +38,7 @@ Heatpump::Heatpump(uint8_t device_type, uint8_t device_id, uint8_t product_id, c
     register_telegram_type(0x99A, "HPStarts", false, MAKE_PF_CB(process_HpStarts));
     register_telegram_type(0x12E, "HPEnergy1", false, MAKE_PF_CB(process_HpEnergy1));
     register_telegram_type(0x13B, "HPEnergy2", false, MAKE_PF_CB(process_HpEnergy2));
+    register_telegram_type(0x4AA, "HPPower", false, MAKE_PF_CB(process_HpPower));
 
     // device values
     register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &airHumidity_, DeviceValueType::UINT8, FL_(airHumidity), DeviceValueUOM::PERCENT);
@@ -69,6 +70,9 @@ Heatpump::Heatpump(uint8_t device_type, uint8_t device_id, uint8_t product_id, c
 
     register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &heatingPumpMod_, DeviceValueType::UINT8, FL_(heatingPumpMod), DeviceValueUOM::PERCENT);
     register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &hpCompSpd_, DeviceValueType::UINT8, FL_(hpCompSpd), DeviceValueUOM::PERCENT);
+    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &hpActivity_, DeviceValueType::ENUM, FL_(enum_hpactivity1), FL_(hpActivity), DeviceValueUOM::NONE);
+    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &hpPower_, DeviceValueType::UINT16, FL_(hpPower), DeviceValueUOM::W);
+    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &hpCurrPower_, DeviceValueType::UINT16, FL_(hpCurrPower), DeviceValueUOM::W);
 
     register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
                           &controlStrategy_,
@@ -256,6 +260,7 @@ void Heatpump::process_HPSettings(std::shared_ptr<const Telegram> telegram) {
 //                     data: 00 2B 00 03 04 13 00 00 00 00 00 02 02 02 (offset 24)
 void Heatpump::process_HPComp(std::shared_ptr<const Telegram> telegram) {
     has_update(telegram, hpCompSpd_, 15);
+    has_update(telegram, hpPower_, 17); // https://github.com/emsesp/EMS-ESP32/issues/2883
 }
 
 // 0x999 HPFunctionTest
@@ -290,6 +295,7 @@ void Heatpump::process_HpMeters(std::shared_ptr<const Telegram> telegram) {
 
 // Broadcast (0x099A), data: 05 00 00 00 00 00 00 37 00 00 1D 00 00 52 00 00 13 01 00 01 7C
 void Heatpump::process_HpStarts(std::shared_ptr<const Telegram> telegram) {
+    has_update(telegram, hpActivity_, 2); // https://github.com/emsesp/EMS-ESP32/issues/2883
     has_update(telegram, heatStartsHp_, 11, 3);
     has_update(telegram, wwStartsHp_, 14, 3);
 }
@@ -308,6 +314,11 @@ void Heatpump::process_HpEnergy2(std::shared_ptr<const Telegram> telegram) {
     has_update(telegram, elGenDhw_, 7);
 }
 
+// 0x04AA power, Broadcast (0x04AA), data: 00 00
+// see https://github.com/emsesp/EMS-ESP32/issues/2883
+void Heatpump::process_HpPower(std::shared_ptr<const Telegram> telegram) {
+    has_update(telegram, hpCurrPower_, 0);
+}
 
 /*
  * Broadcast (0x099A), data: 05 00 00 00 00 00 00 37 00 00 1D 00 00 52 00 00 13 01 00 01 7C
@@ -329,8 +340,6 @@ void Heatpump::process_HpEnergy2(std::shared_ptr<const Telegram> telegram) {
  * Broadcast (0x09A6), data: 05 01 00 01 F4 1F 01 1F 01 01 03 00 3F 00 00 00 19 64 00 3C 00 01 01 19
                        data: 02 EC 01 19 00 (offset 24)
  * Broadcast (0x09A8), data: 01 18 01 00 01 17 00 06 00 00 86 06 00 2E 07 D0 00 00 00 45 00 04
- 
- * Broadcast (0x04AA), data: 00 00
  
 */
 
