@@ -136,9 +136,16 @@ const createManualChunks = (detailed = false) => {
       return 'vendor';
     }
     if (detailed) {
-      if (id.includes('components/')) return 'components';
-      if (id.includes('app/')) return 'app';
-      if (id.includes('utils/')) return 'utils';
+      // Group circularly dependent modules together to avoid circular chunk warnings
+      // components, app, and utils are tightly coupled, so combine them
+      if (
+        id.includes('components/') ||
+        id.includes('app/') ||
+        id.includes('utils/')
+      ) {
+        return 'app';
+      }
+      // Keep api separate as it's typically more independent
       if (id.includes('api/')) return 'api';
     }
     return undefined;

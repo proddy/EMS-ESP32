@@ -70,6 +70,10 @@ class FSPersistence {
 
         // failed to open file, return false
         if (!settingsFile || !jsonObject.size()) {
+#if defined(EMSESP_DEBUG)
+            Serial.printf("Failed to write file %s", _filePath);
+            Serial.println();
+#endif
             return false;
         }
 

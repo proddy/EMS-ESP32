@@ -97,7 +97,7 @@ void WebLogService::show(Shell & shell) {
     }
 
     shell.println();
-    shell.printfln("Recent Log (level %s, max %d messages):", uuid::log::format_level_uppercase(level_), maximum_log_messages_);
+    shell.printfln("Recent Log:");
     shell.println();
 
     for (const auto & message : log_messages_) {

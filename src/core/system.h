@@ -159,7 +159,6 @@ class System {
     static void extractSettings(const char * filename, const char * section, JsonObject output);
     static bool saveSettings(const char * filename, const char * section, JsonObject input);
 
-    // GPIOs
     static bool                 add_gpio(uint8_t pin, const char * source_name);
     static std::vector<uint8_t> available_gpios();
     static bool                 load_board_profile(std::vector<int8_t> & data, const std::string & board_profile);
@@ -434,11 +433,15 @@ class System {
     void led_monitor();
     void system_check();
 
-    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>> string_range_to_vector(const std::string & range);
+    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>> string_range_to_vector(const std::string & range, const std::string & exclude = "");
 
     // GPIOs
-    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>> valid_system_gpios_; // list of valid GPIOs for the ESP32 board that can be used
-    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>> used_gpios_;         // list of GPIOs used by the application
+    struct GpioUsage {
+        uint8_t     pin;
+        std::string source;
+    };
+    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>>     valid_system_gpios_; // list of valid GPIOs for the ESP32 board that can be used
+    static std::vector<GpioUsage, AllocatorPSRAM<GpioUsage>> used_gpios_;         // list of GPIOs used by the application
 
     int8_t wifi_quality(int8_t dBm);
 

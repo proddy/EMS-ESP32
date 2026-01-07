@@ -221,13 +221,13 @@ void RxService::add(uint8_t * data, uint8_t length) {
         LOG_TRACE("Rx: %s", Helpers::data_to_hex(data, length).c_str());
     }
 
-    LOG_DEBUG("New Rx telegram, message length %d", message_length);
-
-    // if we don't have a type_id exit,
-    // do not exit on empty message, it is checked for toggle fetch
+    // if we don't have a type_id exit
+    // do not exit on empty message, it is checked later for toggle fetch
     if (type_id == 0) {
         return;
     }
+
+    LOG_DEBUG("New Rx telegram, message length %d", message_length);
 
     // create the telegram
     auto telegram = std::make_shared<Telegram>(operation, src, dest, type_id, offset, message_data, message_length);

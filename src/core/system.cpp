@@ -105,8 +105,8 @@ uint32_t System::led_flash_duration_   = 0;
 bool     System::led_flash_timer_      = false;
 
 // GPIOs
-std::vector<uint8_t, AllocatorPSRAM<uint8_t>> System::valid_system_gpios_;
-std::vector<uint8_t, AllocatorPSRAM<uint8_t>> System::used_gpios_;
+std::vector<uint8_t, AllocatorPSRAM<uint8_t>>                     System::valid_system_gpios_;
+std::vector<System::GpioUsage, AllocatorPSRAM<System::GpioUsage>> System::used_gpios_;
 
 // find the index of the language
 // 0 = EN, 1 = DE, etc...
@@ -316,11 +316,9 @@ void System::get_partition_info() {
 
     auto current_partition = (const char *)esp_ota_get_running_partition()->label;
 
-    // update the current version and partition name in NVS if not already set (saves on flash wearing)
-    if (EMSESP::nvs_.getString(current_partition) != EMSESP_APP_VERSION || emsesp::EMSESP::nvs_.getBool(emsesp::EMSESP_NVS_BOOT_NEW_FIRMWARE, false)) {
-        if (EMSESP::nvs_.getBool(emsesp::EMSESP_NVS_BOOT_NEW_FIRMWARE, false)) {
-            EMSESP::nvs_.putBool(emsesp::EMSESP_NVS_BOOT_NEW_FIRMWARE, false);
-        }
+    // update the current version and partition name in NVS if not already set
+    if (EMSESP::nvs_.getString(current_partition) != EMSESP_APP_VERSION || emsesp::EMSESP::nvs_.getBool(emsesp::EMSESP_NVS_BOOT_NEW_FIRMWARE, true)) {
+        EMSESP::nvs_.putBool(emsesp::EMSESP_NVS_BOOT_NEW_FIRMWARE, false);
         EMSESP::nvs_.putString(current_partition, EMSESP_APP_VERSION);
         char c[20];
         snprintf(c, sizeof(c), "d_%s", current_partition);
@@ -1216,16 +1214,16 @@ void System::show_system(uuid::console::Shell & shell) {
     // GPIOs
     shell.println(" GPIOs:");
     shell.printf("  in use:");
-    for (const auto & gpio : used_gpios_) {
-        shell.printf(" %d", gpio);
+    for (const auto & usage : used_gpios_) {
+        shell.printf(" %d(%s)", usage.pin, usage.source.c_str());
     }
-    shell.printfln(" (total %d)", used_gpios_.size());
+    shell.printfln(" [total %d]", used_gpios_.size());
     auto available = available_gpios();
     shell.printf("  available:");
     for (const auto & gpio : available) {
         shell.printf(" %d", gpio);
     }
-    shell.printfln(" (total %d)", available.size());
+    shell.printfln(" [total %d]", available.size());
     // List all partitions and their version info
     shell.println(" Partitions:");
     for (const auto & partition : partition_info_) {
@@ -1410,7 +1408,7 @@ bool System::check_upgrade() {
     // see if we're missing a version, will be < 3.5.0b13 from Dec 23 2022
     missing_version = (settingsVersion.empty() || (settingsVersion.length() < 5));
     if (missing_version) {
-        LOG_WARNING("No version information found");
+        LOG_WARNING("No version information found. Assuming version 3.5.0");
         settingsVersion = "3.5.0"; // this was the last stable version without version info
     }
 
@@ -1422,7 +1420,7 @@ bool System::check_upgrade() {
     bool        save_version          = true;
     bool        reboot_required       = false;
 
-    LOG_DEBUG("Checking for version upgrades (settings file is v%d.%d.%d%s)",
+    LOG_DEBUG("Checking for version upgrades from v%d.%d.%d%s",
               settings_version.major(),
               settings_version.minor(),
               settings_version.patch(),
@@ -1432,7 +1430,7 @@ bool System::check_upgrade() {
     if (this_version > settings_version) {
         // we need to do an upgrade
         if (missing_version) {
-            LOG_NOTICE("Upgrading to version %d.%d.%d%s", this_version.major(), this_version.minor(), this_version.patch(), this_version_type);
+            LOG_NOTICE("Upgrading to version %d.%d.%d%s", this_version.major(), this_version.minor(), this_version.patch(), this_version_type.c_str());
         } else {
             LOG_NOTICE("Upgrading from version %d.%d.%d%s to %d.%d.%d%s",
                        settings_version.major(),
@@ -1499,7 +1497,15 @@ bool System::check_upgrade() {
         });
     } else if (this_version < settings_version) {
         // downgrading
-        LOG_NOTICE("Downgrading to version %d.%d.%d%s", this_version.major(), this_version.minor(), this_version.patch(), this_version_type.c_str());
+        LOG_NOTICE("Downgrading from version %d.%d.%d%s to version %d.%d.%d%s",
+                   settings_version.major(),
+                   settings_version.minor(),
+                   settings_version.patch(),
+                   settings_version_type.c_str(),
+                   this_version.major(),
+                   this_version.minor(),
+                   this_version.patch(),
+                   this_version_type.c_str());
     } else {
         save_version = false; // same version, do nothing
     }
@@ -2031,8 +2037,9 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
 #else
     node["version"] = EMSESP_APP_VERSION;
 #endif
-    node["uptime"]    = uuid::log::format_timestamp_ms(uuid::get_uptime_ms(), 3);
-    node["uptimeSec"] = uuid::get_uptime_sec();
+    node["uptime"]      = uuid::log::format_timestamp_ms(uuid::get_uptime_ms(), 3);
+    node["uptimeSec"]   = uuid::get_uptime_sec();
+    node["resetReason"] = EMSESP::system_.reset_reason(0) + " / " + EMSESP::system_.reset_reason(1);
 #ifndef EMSESP_STANDALONE
     node["platform"]        = EMSESP_PLATFORM;
     node["cpuType"]         = ESP.getChipModel();
@@ -2045,10 +2052,7 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
     node["freeApp"]         = EMSESP::system_.appFree();                            // kilobytes
     node["partition"]       = (const char *)esp_ota_get_running_partition()->label; // active partition
     node["flash_chip_size"] = ESP.getFlashChipSize() / 1024;                        // kilobytes
-#endif
-    node["resetReason"] = EMSESP::system_.reset_reason(0) + " / " + EMSESP::system_.reset_reason(1);
-#ifndef EMSESP_STANDALONE
-    node["psram"] = (EMSESP::system_.PSram() > 0); // make boolean
+    node["psram"]           = (EMSESP::system_.PSram() > 0);                        // make boolean
     if (EMSESP::system_.PSram()) {
         node["psramSize"] = EMSESP::system_.PSram();
         node["freePsram"] = ESP.getFreePsram() / 1024;
@@ -2057,9 +2061,27 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
     node["temperature"] = EMSESP::system_.temperature();
 #endif
-
-    node["txpause"] = EMSbus::tx_mode() == EMS_TXMODE_OFF;
 #endif
+    node["txpause"] = EMSbus::tx_mode() == EMS_TXMODE_OFF;
+
+    // GPIO information
+    std::string gpios_in_use_str;
+    for (const auto & usage : EMSESP::system_.used_gpios_) {
+        if (!gpios_in_use_str.empty()) {
+            gpios_in_use_str += ", ";
+        }
+        gpios_in_use_str += Helpers::itoa(usage.pin);
+    }
+    node["gpios_in_use"] = gpios_in_use_str;
+
+    std::string gpios_available_str;
+    for (const auto & gpio : EMSESP::system_.available_gpios()) {
+        if (!gpios_available_str.empty()) {
+            gpios_available_str += ", ";
+        }
+        gpios_available_str += Helpers::itoa(gpio);
+    }
+    node["gpios_available"] = gpios_available_str;
 
     // Network Status
     node = output["network"].to<JsonObject>();
@@ -2448,15 +2470,15 @@ bool System::command_txpause(const char * value, const int8_t id) {
 
 // format command - factory reset, removing all config files
 bool System::command_format(const char * value, const int8_t id) {
-#if !defined(EMSESP_STANDALONE) && !defined(EMSESP_DEBUG)
-    // don't really format the filesystem in debug or standalone mode
+#if !defined(EMSESP_STANDALONE) && !defined(EMSESP_TEST)
+    // don't really format the filesystem in test or standalone mode
     if (LittleFS.format()) {
         LOG_INFO("Filesystem formatted successfully. All config files removed.");
     } else {
         LOG_ERROR("Format failed");
     }
 #else
-    LOG_INFO("Format command not available in standalone or debug mode");
+    LOG_ERROR("Format command not available in standalone or test mode");
 #endif
 
     // restart will be handled by the main loop
@@ -2553,21 +2575,6 @@ bool System::ntp_connected() {
 // see if its a BBQKees Gateway by checking the nvs values
 String System::getBBQKeesGatewayDetails(uint8_t detail) {
 #ifndef EMSESP_STANDALONE
-    /*
-    if (!EMSESP::nvs_.isKey("mfg")) {
-        return "";
-    }
-
-    // mfg can be either "BBQKees" or "BBQKees Electronics"
-    auto mfg = EMSESP::nvs_.getString("mfg");
-    if (mfg) {
-        if (!mfg.startsWith("BBQKees")) {
-            return "";
-        }
-    }
-
-    return "BBQKees Gateway Model " + EMSESP::nvs_.getString("model") + " v" + EMSESP::nvs_.getString("hwrevision") + "/" + EMSESP::nvs_.getString("batch");
-*/
     union {
         struct {
             uint32_t no : 4;
@@ -2580,14 +2587,17 @@ String System::getBBQKeesGatewayDetails(uint8_t detail) {
         };
         uint32_t reg;
     } gw;
+
     for (uint8_t reg = 0; reg < 8; reg++) {
         gw.reg = esp_efuse_read_reg(EFUSE_BLK3, reg);
         if (reg == 7 || esp_efuse_read_reg(EFUSE_BLK3, reg + 1) == 0)
             break;
     }
+
     const char * mfg[]   = {"unknown", "BBQKees Electronics", "", "", "", "", "", ""};
     const char * model[] = {"unknown", "S3", "E32V2", "E32V2.2", "S32", "E32", "", "", ""};
     const char * board[] = {"CUSTOM", "S32S3", "E32V2", "E32V2_2", "S32", "E32", "", "", ""};
+
     switch (detail) {
     case FUSE_VALUE::MFG:
         return gw.mfg < 2 ? String(mfg[gw.mfg]) : "unknown";
@@ -2605,9 +2615,11 @@ String System::getBBQKeesGatewayDetails(uint8_t detail) {
     default:
         break;
     }
+
     if (!gw.reg || gw.mfg > 1 || gw.model > 5) {
         return "";
     }
+
     return String(mfg[gw.mfg]) + " " + String(model[gw.model]) + " rev." + String(gw.rev_major) + "." + String(gw.rev_minor) + "/" + String(2000 + gw.year)
            + (gw.month < 10 ? "0" : "") + String(gw.month) + String(gw.no);
 #else
@@ -2683,6 +2695,9 @@ bool System::uploadFirmwareURL(const char * url) {
 
     // we're about to start the upload, set the status so the Web System Monitor spots it
     EMSESP::system_.systemStatus(SYSTEM_STATUS::SYSTEM_STATUS_UPLOADING);
+
+    // set a callback so we can monitor progress in the WebUI
+    Update.onProgress([](size_t progress, size_t total) { EMSESP::system_.systemStatus(SYSTEM_STATUS::SYSTEM_STATUS_UPLOADING + (progress * 100 / total)); });
 
     // get tcp stream and send it to Updater
     WiFiClient * stream = http.getStreamPtr();
@@ -2772,10 +2787,15 @@ bool System::command_read(const char * value, const int8_t id) {
 }
 
 // set the system status code - SYSTEM_STATUS in system.h
+// this is also used in the SystemMonitor.tsx WebUI to show the progress of the firmware upload, start at 100
 void System::systemStatus(uint8_t status_code) {
     if (systemStatus_ != status_code) {
         systemStatus_ = status_code;
-        LOG_DEBUG("Setting System status code %d", status_code);
+#ifdef EMSESP_DEBUG
+        if (status_code < SYSTEM_STATUS::SYSTEM_STATUS_UPLOADING) {
+            LOG_DEBUG("Setting System status code %d", status_code);
+        }
+#endif
     }
 }
 
@@ -2783,8 +2803,11 @@ uint8_t System::systemStatus() {
     return systemStatus_;
 }
 
-// takes a string range like "6-11, 1, 23, 24-48" which has optional ranges and single values and converts to a vector of ints
-std::vector<uint8_t, AllocatorPSRAM<uint8_t>> System::string_range_to_vector(const std::string & range) {
+// takes two arguments:
+//  the first is the full range of pins to consider
+//  the second is a string range of GPIOs to exclude, like "6-11, 1, 23, 24-48"
+// returns a vector array of GPIOs that are valid for use
+std::vector<uint8_t, AllocatorPSRAM<uint8_t>> System::string_range_to_vector(const std::string & range, const std::string & exclude) {
     std::vector<uint8_t, AllocatorPSRAM<uint8_t>> gpios;
     std::string::size_type                        pos  = 0;
     std::string::size_type                        prev = 0;
@@ -2816,41 +2839,122 @@ std::vector<uint8_t, AllocatorPSRAM<uint8_t>> System::string_range_to_vector(con
     // handle the last part
     process_part(range.substr(prev));
 
+    // if exclude list is provided, parse it and remove excluded GPIOs
+    if (!exclude.empty()) {
+        std::vector<uint8_t, AllocatorPSRAM<uint8_t>> exclude_gpios;
+        pos  = 0;
+        prev = 0;
+
+        auto process_exclude = [&exclude_gpios](std::string part) {
+            // trim whitespace
+            part.erase(0, part.find_first_not_of(" \t"));
+            part.erase(part.find_last_not_of(" \t") + 1);
+
+            // check if it's a range (contains '-')
+            std::string::size_type dash_pos = part.find('-');
+            if (dash_pos != std::string::npos) {
+                // it's a range like "6-11"
+                int start = std::stoi(part.substr(0, dash_pos));
+                int end   = std::stoi(part.substr(dash_pos + 1));
+                for (int i = start; i <= end; i++) {
+                    exclude_gpios.push_back(static_cast<uint8_t>(i));
+                }
+            } else {
+                exclude_gpios.push_back(static_cast<uint8_t>(std::stoi(part)));
+            }
+        };
+
+        while ((pos = exclude.find(',', prev)) != std::string::npos) {
+            process_exclude(exclude.substr(prev, pos - prev));
+            prev = pos + 1;
+        }
+
+        // handle the last part
+        process_exclude(exclude.substr(prev));
+
+        // remove excluded GPIOs from the main list
+        gpios.erase(std::remove_if(gpios.begin(),
+                                   gpios.end(),
+                                   [&exclude_gpios](uint8_t gpio) { return std::find(exclude_gpios.begin(), exclude_gpios.end(), gpio) != exclude_gpios.end(); }),
+                    gpios.end());
+    }
+
     return gpios;
 }
 
 // initialize a list of valid GPIOs based on the ESP32 board
-// note: we always allow 0, which is used to indicate Dallas or LED is disabled
+// string_to_vector() take two strings, the first is the range of GPIOs to use, the second is a list of GPIOs to exclude
+// notes:
+//   we always allow 0 (which is usually a strapping pin), because it's used to indicate whether EMS-ESP Dallas or the LED is disabled
+//   we allow UART0, 1 and 2 as they are configurable
+//   strapping pins are disabled as they can affect boot behaviour
+//   we accept GPIOs that are fixed on BBQKees boards
+//
 void System::set_valid_system_gpios() {
     valid_system_gpios_.clear(); // reset system list
     used_gpios_.clear();         // reset used list
 
     // get free gpios based on board/platform type
 #if CONFIG_IDF_TARGET_ESP32C3
-    // https://www.wemos.cc/en/latest/c3/c3_mini.html
-    valid_system_gpios_ = string_range_to_vector("0-10"); // UART0=20,21
+    // https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-reference/peripherals/gpio.html
+    // excluded:
+    // GPIO2, GPIO8 - GPIO9 = strapping pins
+    // GPIO12 - GPIO17 = used for SPI flash and PSRAM
+    // GPIO18 - GPIO19 = USB-JTAG
+    //
+    // notes on what is allowed:
+    // GPIO10 = button on BOARD_C3_MINI_V1
+    valid_system_gpios_ = string_range_to_vector("0-21", "2, 8-9, 12-17, 18-19");
+
 #elif CONFIG_IDF_TARGET_ESP32S2
-    // 43 and 44 are UART0 pins
-    // 38 and 39 are strapping pins, input only
-    valid_system_gpios_ = string_range_to_vector("0-14, 19, 20, 21, 33-37, 45, 46");
+    // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-reference/peripherals/gpio.html
+    // excluded:
+    // GPIO26 - GPIO32 = SPI flash and PSRAM
+    // GPIO45 - GPIO46 = strapping pins
+    // GPIO39 - GPIO42 = USB-JTAG
+    // GPIO22 - GPIO25 = don't exist
+    //
+    // notes on what is allowed:
+    valid_system_gpios_ = string_range_to_vector("0-46", "26-32, 45-46, 39-42, 22-25");
+
 #elif CONFIG_IDF_TARGET_ESP32S3
-    // 43 and 44 are UART0 pins
-    // 33-37 for Octal SPI (SPIIO4 through SPIIO7 and SPIDQS)
-    // 38 and 39 are input only
-    // 45 and 36 are strapping pins, input only
-    // 47 and 48 are valid on a Wemos S3 (https://github.com/emsesp/EMS-ESP32/issues/2874)
-    valid_system_gpios_ = string_range_to_vector("0-14, 17, 18, 21, 33-39, 45-48");
+    // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/peripherals/gpio.html
+    // excluded:
+    // GPIO3, GPIO45 - GPIO46 = strapping pins
+    // GPIO26 - GPIO32 = SPI flash and PSRAM and not recommended
+    // GPIO33 - GPIO37 = Octal flash/PSRAM
+    // GPIO19 - GPIO20 = USB-JTAG
+    // GPIO22 - GPIO25 = don't exist
+    //
+    // notes on what is allowed:
+    // GPIO11 - GPIO19 = ADC analog input only pins
+    // GPIO47 - GPIO48 = valid on a Wemos S3
+    // GPIO8 = used by Liligo S3 board profile for Rx
+    valid_system_gpios_ = string_range_to_vector("0-48", "3, 45-46, 26-32, 33-37, 19-20, 22-25");
+
 #elif CONFIG_IDF_TARGET_ESP32
-    // 1 and 3 are UART0 pins, but used for some eth-boards (BBQKees-E32, OlimexPOE)
-    // 32-39 is ADC1, input only
+    // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html
+    // excluded:
+    // GPIO6 - GPIO11, GPIO16 - GPIO17 = used for SPI flash and PSRAM
+    // GPIO12 - GPIO15 = USB-JTAG (but we allow GPIO14 for BBQKees) and GPIO12 & GPIO13 also reserved for BBQKees E32V2.2
+    // GPIO20, GPIO24, GPIO28 - GPIO31 = don't exist
+    //
+    // notes on what is allowed:
+    // GPIO34, GPIO35, GPIO37 = input only
+    // GPIO2, GPIO4, GPIO5, GPIO14 = used on BBQKees boards for either LED, Dallas or Rx
+    // GPIO23 and GPIO18 are used by Ethernet
+    // GPIO25 - GPIO37 = ADC2
+    // GPIO32 - GPIO39 = ADC1
+    // GPIO36 = used on BBQKees boards for supply_voltage (E32V2.2) (note may conflict with WiFI on other boards)
+    // GPIO39 = used on BBQKees boards for core_voltage (E32V2.2) (note may conflict with WiFI on other boards)
     if (ESP.getPsramSize() > 0) {
-        // if psram is enabled remove pins 16 and 17 from the list
-        valid_system_gpios_ = string_range_to_vector("0-5, 12-15, 18-19, 23, 25-27, 32-39");
+        // remove SPI0/1 PSRAM pins GPIO16 (CS) and GPIO17 (CLK) from the list
+        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 12, 13, 15, 16, 17, 20, 24, 28-31");
     } else {
-        valid_system_gpios_ = string_range_to_vector("0-5, 12-19, 23, 25-27, 32-39");
+        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 12, 13, 15, 20, 24, 28-31");
     }
 #elif defined(EMSESP_STANDALONE)
-    valid_system_gpios_ = string_range_to_vector("0-5, 12-19, 23, 25-27, 32-39");
+    valid_system_gpios_ = string_range_to_vector("0-39");
 #endif
 }
 
@@ -2860,8 +2964,9 @@ bool System::add_gpio(uint8_t pin, const char * source_name) {
     // check if this is a valid user GPIO
     if (std::find(valid_system_gpios_.begin(), valid_system_gpios_.end(), pin) != valid_system_gpios_.end()) {
         // It's valid now check if it's already in the used list
-        if (std::find(used_gpios_.begin(), used_gpios_.end(), pin) != used_gpios_.end()) {
-            LOG_WARNING("GPIO %d for %s is already in use", pin, source_name);
+        auto it = std::find_if(used_gpios_.begin(), used_gpios_.end(), [pin](const GpioUsage & usage) { return usage.pin == pin; });
+        if (it != used_gpios_.end()) {
+            LOG_WARNING("GPIO %d for %s is already in use by %s", pin, source_name, it->source.c_str());
             return false; // Pin is already used
         }
     } else {
@@ -2874,24 +2979,24 @@ bool System::add_gpio(uint8_t pin, const char * source_name) {
     remove_gpio(pin);
 
     LOG_DEBUG("Adding GPIO %d for %s to used gpio list", pin, source_name);
-    used_gpios_.push_back(pin); // add to used list
+    used_gpios_.push_back({pin, source_name}); // add to used list
 
     return true;
 }
 
 // remove a gpio from both valid and used lists
 void System::remove_gpio(uint8_t pin, bool also_system) {
-    auto it = std::find(used_gpios_.begin(), used_gpios_.end(), pin);
+    auto it = std::find_if(used_gpios_.begin(), used_gpios_.end(), [pin](const GpioUsage & usage) { return usage.pin == pin; });
     if (it != used_gpios_.end()) {
         LOG_DEBUG("GPIO %d removed from used gpio list", pin);
         used_gpios_.erase(it);
     }
 
     if (also_system) {
-        it = std::find(valid_system_gpios_.begin(), valid_system_gpios_.end(), pin);
-        if (it != valid_system_gpios_.end()) {
+        auto it_sys = std::find(valid_system_gpios_.begin(), valid_system_gpios_.end(), pin);
+        if (it_sys != valid_system_gpios_.end()) {
             LOG_DEBUG("GPIO %d removed from valid gpio list", pin);
-            valid_system_gpios_.erase(it);
+            valid_system_gpios_.erase(it_sys);
         }
     }
 }
@@ -2900,7 +3005,7 @@ void System::remove_gpio(uint8_t pin, bool also_system) {
 std::vector<uint8_t> System::available_gpios() {
     std::vector<uint8_t> gpios;
     for (const auto & gpio : valid_system_gpios_) {
-        if (std::find(used_gpios_.begin(), used_gpios_.end(), gpio) == used_gpios_.end()) {
+        if (std::find_if(used_gpios_.begin(), used_gpios_.end(), [gpio](const GpioUsage & usage) { return usage.pin == gpio; }) == used_gpios_.end()) {
             gpios.push_back(gpio); // didn't find it in used_gpios_, so it's available
         }
     }
@@ -2909,8 +3014,8 @@ std::vector<uint8_t> System::available_gpios() {
 
 // make a snapshot of the current GPIOs
 void System::make_snapshot_gpios(std::vector<int8_t> & u_gpios, std::vector<int8_t> & s_gpios) {
-    for (const auto & gpio : used_gpios_) {
-        u_gpios.push_back(gpio);
+    for (const auto & usage : used_gpios_) {
+        u_gpios.push_back(usage.pin);
     }
     for (const auto & gpio : valid_system_gpios_) {
         s_gpios.push_back(gpio);
@@ -2921,7 +3026,7 @@ void System::make_snapshot_gpios(std::vector<int8_t> & u_gpios, std::vector<int8
 void System::restore_snapshot_gpios(std::vector<int8_t> & u_gpios, std::vector<int8_t> & s_gpios) {
     used_gpios_.clear();
     for (const auto & gpio : u_gpios) {
-        used_gpios_.push_back(gpio);
+        used_gpios_.push_back({static_cast<uint8_t>(gpio), "restored"});
     }
 
     valid_system_gpios_.clear();

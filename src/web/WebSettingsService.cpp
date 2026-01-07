@@ -96,9 +96,7 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     std::vector<int8_t> system_gpios;
     EMSESP::system_.make_snapshot_gpios(used_gpios, system_gpios);
 
-    reset_flags();
-
-    settings.version       = root["version"] | EMSESP_DEFAULT_VERSION; // save the version, we use it later in System::check_upgrade()
+    settings.version       = root["version"] | EMSESP_APP_VERSION; // save the version, we use it later in System::check_upgrade()
     settings.board_profile = root["board_profile"] | EMSESP_DEFAULT_BOARD_PROFILE;
 
     // get current values that are related to the board profile
@@ -113,10 +111,13 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     settings.eth_clock_mode = root["eth_clock_mode"];
     settings.led_type       = root["led_type"]; // 1 = RGB-LED
 
+    reset_flags();
+
     // see if the user has changed the board profile
     // this will set: led_gpio, dallas_gpio, rx_gpio, tx_gpio, pbutton_gpio, phy_type, eth_power, eth_phy_addr, eth_clock_mode, led_type
     // this will always run when EMS-ESP starts since original_settings{} is empty
-    if (original_settings.board_profile != settings.board_profile) {
+    if (original_settings.board_profile != settings.board_profile || original_settings.board_profile == "default"
+        || original_settings.board_profile.length() == 0) {
         set_board_profile(settings);
         add_flags(ChangeFlags::RESTART);
     }
@@ -306,10 +307,10 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
 
     // save the settings if changed from the webUI
     // if we encountered an invalid GPIO, rollback changes and don't save settings, and report the error to WebUI
+    // without a restart
     if (!have_valid_gpios) {
         // replace settings with original settings
-        settings = original_settings; // the original settings are still valid
-        // restore the GPIOs from the snapshot
+        settings = original_settings;
         EMSESP::system_.restore_snapshot_gpios(used_gpios, system_gpios);
 
         // report the error to WebUI
@@ -320,7 +321,8 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     // save the setting internally, for reference later
     EMSESP::system_.store_settings(settings);
 
-    if (has_flags(WebSettings::ChangeFlags::RESTART)) {
+    // and finally always write to the settings file
+    if (has_flags(ChangeFlags::RESTART)) {
         return StateUpdateResult::CHANGED_RESTART;
     }
 
