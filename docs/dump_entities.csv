@@ -5609,36 +5609,39 @@ device name,device type,product id,shortname,fullname,type [options...] \| (min/
 "HP Module",heatpump,252,hpph1,high pressure side temperature (PH1),int16 (>=-3199<=3199),C,false,sensor.heatpump_high_pressure_side_temperature_(PH1),sensor.heatpump_hpph1,9,0,1/10,13,1
 "HP Module",heatpump,252,heatingpumpmod,heating pump modulation,uint8 (>=0<=100),%,false,sensor.heatpump_heating_pump_modulation,sensor.heatpump_heatingpumpmod,9,0,1,14,1
 "HP Module",heatpump,252,hpcompspd,compressor speed,uint8 (>=0<=100),%,false,sensor.heatpump_compressor_speed,sensor.heatpump_hpcompspd,9,0,1,15,1
-"HP Module",heatpump,252,hybridstrategy,hybrid control strategy,enum [cost optimized\|co2 optimized\|outside temperature alt.\|outside temperature parallel\|heatpump preferred\|boiler only], ,true,select.heatpump_hybrid_control_strategy,select.heatpump_hybridstrategy,9,0,1,16,1
-"HP Module",heatpump,252,lownoisemode,low noise mode,enum [off\|reduced output\|switch off hp\|perm. reduced], ,true,select.heatpump_low_noise_mode,select.heatpump_lownoisemode,9,0,1,17,1
-"HP Module",heatpump,252,lownoisestart,low noise starttime,uint8 (>=0<=23),hours,true,number.heatpump_low_noise_starttime,number.heatpump_lownoisestart,9,0,1,18,1
-"HP Module",heatpump,252,lownoisestop,low noise stoptime,uint8 (>=0<=23),hours,true,number.heatpump_low_noise_stoptime,number.heatpump_lownoisestop,9,0,1,19,1
+"HP Module",heatpump,252,hpactivity,compressor activity,enum [off\|heating\|hot water\|defrost\|compressor alarm], ,false,sensor.heatpump_compressor_activity,sensor.heatpump_hpactivity,9,0,1,16,1
+"HP Module",heatpump,252,hppower,compressor power output,uint16 (>=0<=31999),W,false,sensor.heatpump_compressor_power_output,sensor.heatpump_hppower,9,0,1,17,1
+"HP Module",heatpump,252,hpcurrpower,compressor current power,uint16 (>=0<=31999),W,false,sensor.heatpump_compressor_current_power,sensor.heatpump_hpcurrpower,9,0,1,18,1
+"HP Module",heatpump,252,hybridstrategy,hybrid control strategy,enum [cost optimized\|co2 optimized\|outside temperature alt.\|outside temperature parallel\|heatpump preferred\|boiler only], ,true,select.heatpump_hybrid_control_strategy,select.heatpump_hybridstrategy,9,0,1,19,1
+"HP Module",heatpump,252,lownoisemode,low noise mode,enum [off\|reduced output\|switch off hp\|perm. reduced], ,true,select.heatpump_low_noise_mode,select.heatpump_lownoisemode,9,0,1,20,1
+"HP Module",heatpump,252,lownoisestart,low noise starttime,uint8 (>=0<=23),hours,true,number.heatpump_low_noise_starttime,number.heatpump_lownoisestart,9,0,1,21,1
+"HP Module",heatpump,252,lownoisestop,low noise stoptime,uint8 (>=0<=23),hours,true,number.heatpump_low_noise_stoptime,number.heatpump_lownoisestop,9,0,1,22,1
 "HP Module",heatpump,252,dhw.hybriddhw,hybrid DHW,enum [eco\|high comfort], ,true,select.heatpump_dhw_hybrid_DHW,select.heatpump_dhw_hybriddhw,9,9,1,0,1
-"HP Module",heatpump,252,energypricegas,energy price gas,uint8 (>=0<=254),ct/kWh,true,number.heatpump_energy_price_gas,number.heatpump_energypricegas,9,0,1,20,1
-"HP Module",heatpump,252,energypriceel,energy price electric,uint8 (>=0<=254),ct/kWh,true,number.heatpump_energy_price_electric,number.heatpump_energypriceel,9,0,1,21,1
-"HP Module",heatpump,252,energyfeedpv,feed in PV,uint8 (>=0<=254),ct/kWh,true,number.heatpump_feed_in_PV,number.heatpump_energyfeedpv,9,0,1,22,1
-"HP Module",heatpump,252,switchovertemp,outside switchover temperature,int8 (>=-126<=126),C,true,number.heatpump_outside_switchover_temperature,number.heatpump_switchovertemp,9,0,1,23,1
-"HP Module",heatpump,252,airpurgemode,air purge mode,boolean, ,true,switch.heatpump_air_purge_mode,switch.heatpump_airpurgemode,9,0,1,24,1
-"HP Module",heatpump,252,heatpumpoutput,heatpump output,uint8 (>=0<=100),%,true,number.heatpump_heatpump_output,number.heatpump_heatpumpoutput,9,0,1,25,1
-"HP Module",heatpump,252,coolingcircuit,cooling circuit,boolean, ,true,switch.heatpump_cooling_circuit,switch.heatpump_coolingcircuit,9,0,1,26,1
-"HP Module",heatpump,252,compstartmod,compressor start modulation,uint8 (>=0<=100),%,true,number.heatpump_compressor_start_modulation,number.heatpump_compstartmod,9,0,1,27,1
-"HP Module",heatpump,252,heatdrainpan,heat drain pan,boolean, ,true,switch.heatpump_heat_drain_pan,switch.heatpump_heatdrainpan,9,0,1,28,1
-"HP Module",heatpump,252,heatcable,heating cable,boolean, ,true,switch.heatpump_heating_cable,switch.heatpump_heatcable,9,0,1,29,1
-"HP Module",heatpump,252,nrgtotal,total energy,uint24 (>=0<=167772),kWh,false,sensor.heatpump_total_energy,sensor.heatpump_nrgtotal,9,0,1/100,30,2
+"HP Module",heatpump,252,energypricegas,energy price gas,uint8 (>=0<=254),ct/kWh,true,number.heatpump_energy_price_gas,number.heatpump_energypricegas,9,0,1,23,1
+"HP Module",heatpump,252,energypriceel,energy price electric,uint8 (>=0<=254),ct/kWh,true,number.heatpump_energy_price_electric,number.heatpump_energypriceel,9,0,1,24,1
+"HP Module",heatpump,252,energyfeedpv,feed in PV,uint8 (>=0<=254),ct/kWh,true,number.heatpump_feed_in_PV,number.heatpump_energyfeedpv,9,0,1,25,1
+"HP Module",heatpump,252,switchovertemp,outside switchover temperature,int8 (>=-126<=126),C,true,number.heatpump_outside_switchover_temperature,number.heatpump_switchovertemp,9,0,1,26,1
+"HP Module",heatpump,252,airpurgemode,air purge mode,boolean, ,true,switch.heatpump_air_purge_mode,switch.heatpump_airpurgemode,9,0,1,27,1
+"HP Module",heatpump,252,heatpumpoutput,heatpump output,uint8 (>=0<=100),%,true,number.heatpump_heatpump_output,number.heatpump_heatpumpoutput,9,0,1,28,1
+"HP Module",heatpump,252,coolingcircuit,cooling circuit,boolean, ,true,switch.heatpump_cooling_circuit,switch.heatpump_coolingcircuit,9,0,1,29,1
+"HP Module",heatpump,252,compstartmod,compressor start modulation,uint8 (>=0<=100),%,true,number.heatpump_compressor_start_modulation,number.heatpump_compstartmod,9,0,1,30,1
+"HP Module",heatpump,252,heatdrainpan,heat drain pan,boolean, ,true,switch.heatpump_heat_drain_pan,switch.heatpump_heatdrainpan,9,0,1,31,1
+"HP Module",heatpump,252,heatcable,heating cable,boolean, ,true,switch.heatpump_heating_cable,switch.heatpump_heatcable,9,0,1,32,1
+"HP Module",heatpump,252,nrgtotal,total energy,uint24 (>=0<=167772),kWh,false,sensor.heatpump_total_energy,sensor.heatpump_nrgtotal,9,0,1/100,33,2
 "HP Module",heatpump,252,dhw.nrg,energy,uint24 (>=0<=167772),kWh,false,sensor.heatpump_dhw_energy,sensor.heatpump_dhw_nrg,9,9,1/100,1,2
-"HP Module",heatpump,252,nrgheat,energy heating,uint24 (>=0<=167772),kWh,false,sensor.heatpump_energy_heating,sensor.heatpump_nrgheat,9,0,1/100,32,2
-"HP Module",heatpump,252,metertotal,meter total,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_total,sensor.heatpump_metertotal,9,0,1/100,34,2
-"HP Module",heatpump,252,metercomp,meter compressor,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_compressor,sensor.heatpump_metercomp,9,0,1/100,36,2
-"HP Module",heatpump,252,metereheat,meter e-heater,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_e-heater,sensor.heatpump_metereheat,9,0,1/100,38,2
-"HP Module",heatpump,252,meterheat,meter heating,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_heating,sensor.heatpump_meterheat,9,0,1/100,40,2
+"HP Module",heatpump,252,nrgheat,energy heating,uint24 (>=0<=167772),kWh,false,sensor.heatpump_energy_heating,sensor.heatpump_nrgheat,9,0,1/100,35,2
+"HP Module",heatpump,252,metertotal,meter total,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_total,sensor.heatpump_metertotal,9,0,1/100,37,2
+"HP Module",heatpump,252,metercomp,meter compressor,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_compressor,sensor.heatpump_metercomp,9,0,1/100,39,2
+"HP Module",heatpump,252,metereheat,meter e-heater,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_e-heater,sensor.heatpump_metereheat,9,0,1/100,41,2
+"HP Module",heatpump,252,meterheat,meter heating,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_heating,sensor.heatpump_meterheat,9,0,1/100,43,2
 "HP Module",heatpump,252,dhw.meter,meter,uint24 (>=0<=167772),kWh,false,sensor.heatpump_dhw_meter,sensor.heatpump_dhw_meter,9,9,1/100,3,2
-"HP Module",heatpump,252,heatingstarts,heating control starts,uint24 (>=0<=16777214), ,false,sensor.heatpump_heating_control_starts,sensor.heatpump_heatingstarts,9,0,1,42,2
+"HP Module",heatpump,252,heatingstarts,heating control starts,uint24 (>=0<=16777214), ,false,sensor.heatpump_heating_control_starts,sensor.heatpump_heatingstarts,9,0,1,45,2
 "HP Module",heatpump,252,dhw.startshp,starts hp,uint24 (>=0<=16777214), ,false,sensor.heatpump_dhw_starts_hp,sensor.heatpump_dhw_startshp,9,9,1,5,2
-"HP Module",heatpump,252,fuelheat,fuel consumption heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_fuel_consumption_heating,sensor.heatpump_fuelheat,9,0,1/10,44,2
+"HP Module",heatpump,252,fuelheat,fuel consumption heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_fuel_consumption_heating,sensor.heatpump_fuelheat,9,0,1/10,47,2
 "HP Module",heatpump,252,dhw.fueldhw,fuel consumption,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_dhw_fuel_consumption,sensor.heatpump_dhw_fueldhw,9,9,1/10,7,2
-"HP Module",heatpump,252,elheat,el. consumption heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_el._consumption_heating,sensor.heatpump_elheat,9,0,1/10,46,2
+"HP Module",heatpump,252,elheat,el. consumption heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_el._consumption_heating,sensor.heatpump_elheat,9,0,1/10,49,2
 "HP Module",heatpump,252,dhw.eldhw,el. consumption,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_dhw_el._consumption,sensor.heatpump_dhw_eldhw,9,9,1/10,9,2
-"HP Module",heatpump,252,elgenheat,el. generation heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_el._generation_heating,sensor.heatpump_elgenheat,9,0,1/10,48,2
+"HP Module",heatpump,252,elgenheat,el. generation heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_el._generation_heating,sensor.heatpump_elgenheat,9,0,1/10,51,2
 "HP Module",heatpump,252,dhw.elgendhw,el generation,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_dhw_el_generation,sensor.heatpump_dhw_elgendhw,9,9,1/10,11,2
 "Hybrid Manager HM200",heatpump,248,airhumidity,relative air humidity,uint8 (>=0<=100),%,false,sensor.heatpump_relative_air_humidity,sensor.heatpump_airhumidity,9,0,1,0,1
 "Hybrid Manager HM200",heatpump,248,dewtemperature,dew point temperature,uint8 (>=0<=254),C,false,sensor.heatpump_dew_point_temperature,sensor.heatpump_dewtemperature,9,0,1,1,1
@@ -5656,36 +5659,39 @@ device name,device type,product id,shortname,fullname,type [options...] \| (min/
 "Hybrid Manager HM200",heatpump,248,hpph1,high pressure side temperature (PH1),int16 (>=-3199<=3199),C,false,sensor.heatpump_high_pressure_side_temperature_(PH1),sensor.heatpump_hpph1,9,0,1/10,13,1
 "Hybrid Manager HM200",heatpump,248,heatingpumpmod,heating pump modulation,uint8 (>=0<=100),%,false,sensor.heatpump_heating_pump_modulation,sensor.heatpump_heatingpumpmod,9,0,1,14,1
 "Hybrid Manager HM200",heatpump,248,hpcompspd,compressor speed,uint8 (>=0<=100),%,false,sensor.heatpump_compressor_speed,sensor.heatpump_hpcompspd,9,0,1,15,1
-"Hybrid Manager HM200",heatpump,248,hybridstrategy,hybrid control strategy,enum [cost optimized\|co2 optimized\|outside temperature alt.\|outside temperature parallel\|heatpump preferred\|boiler only], ,true,select.heatpump_hybrid_control_strategy,select.heatpump_hybridstrategy,9,0,1,16,1
-"Hybrid Manager HM200",heatpump,248,lownoisemode,low noise mode,enum [off\|reduced output\|switch off hp\|perm. reduced], ,true,select.heatpump_low_noise_mode,select.heatpump_lownoisemode,9,0,1,17,1
-"Hybrid Manager HM200",heatpump,248,lownoisestart,low noise starttime,uint8 (>=0<=23),hours,true,number.heatpump_low_noise_starttime,number.heatpump_lownoisestart,9,0,1,18,1
-"Hybrid Manager HM200",heatpump,248,lownoisestop,low noise stoptime,uint8 (>=0<=23),hours,true,number.heatpump_low_noise_stoptime,number.heatpump_lownoisestop,9,0,1,19,1
+"Hybrid Manager HM200",heatpump,248,hpactivity,compressor activity,enum [off\|heating\|hot water\|defrost\|compressor alarm], ,false,sensor.heatpump_compressor_activity,sensor.heatpump_hpactivity,9,0,1,16,1
+"Hybrid Manager HM200",heatpump,248,hppower,compressor power output,uint16 (>=0<=31999),W,false,sensor.heatpump_compressor_power_output,sensor.heatpump_hppower,9,0,1,17,1
+"Hybrid Manager HM200",heatpump,248,hpcurrpower,compressor current power,uint16 (>=0<=31999),W,false,sensor.heatpump_compressor_current_power,sensor.heatpump_hpcurrpower,9,0,1,18,1
+"Hybrid Manager HM200",heatpump,248,hybridstrategy,hybrid control strategy,enum [cost optimized\|co2 optimized\|outside temperature alt.\|outside temperature parallel\|heatpump preferred\|boiler only], ,true,select.heatpump_hybrid_control_strategy,select.heatpump_hybridstrategy,9,0,1,19,1
+"Hybrid Manager HM200",heatpump,248,lownoisemode,low noise mode,enum [off\|reduced output\|switch off hp\|perm. reduced], ,true,select.heatpump_low_noise_mode,select.heatpump_lownoisemode,9,0,1,20,1
+"Hybrid Manager HM200",heatpump,248,lownoisestart,low noise starttime,uint8 (>=0<=23),hours,true,number.heatpump_low_noise_starttime,number.heatpump_lownoisestart,9,0,1,21,1
+"Hybrid Manager HM200",heatpump,248,lownoisestop,low noise stoptime,uint8 (>=0<=23),hours,true,number.heatpump_low_noise_stoptime,number.heatpump_lownoisestop,9,0,1,22,1
 "Hybrid Manager HM200",heatpump,248,dhw.hybriddhw,hybrid DHW,enum [eco\|high comfort], ,true,select.heatpump_dhw_hybrid_DHW,select.heatpump_dhw_hybriddhw,9,9,1,0,1
-"Hybrid Manager HM200",heatpump,248,energypricegas,energy price gas,uint8 (>=0<=254),ct/kWh,true,number.heatpump_energy_price_gas,number.heatpump_energypricegas,9,0,1,20,1
-"Hybrid Manager HM200",heatpump,248,energypriceel,energy price electric,uint8 (>=0<=254),ct/kWh,true,number.heatpump_energy_price_electric,number.heatpump_energypriceel,9,0,1,21,1
-"Hybrid Manager HM200",heatpump,248,energyfeedpv,feed in PV,uint8 (>=0<=254),ct/kWh,true,number.heatpump_feed_in_PV,number.heatpump_energyfeedpv,9,0,1,22,1
-"Hybrid Manager HM200",heatpump,248,switchovertemp,outside switchover temperature,int8 (>=-126<=126),C,true,number.heatpump_outside_switchover_temperature,number.heatpump_switchovertemp,9,0,1,23,1
-"Hybrid Manager HM200",heatpump,248,airpurgemode,air purge mode,boolean, ,true,switch.heatpump_air_purge_mode,switch.heatpump_airpurgemode,9,0,1,24,1
-"Hybrid Manager HM200",heatpump,248,heatpumpoutput,heatpump output,uint8 (>=0<=100),%,true,number.heatpump_heatpump_output,number.heatpump_heatpumpoutput,9,0,1,25,1
-"Hybrid Manager HM200",heatpump,248,coolingcircuit,cooling circuit,boolean, ,true,switch.heatpump_cooling_circuit,switch.heatpump_coolingcircuit,9,0,1,26,1
-"Hybrid Manager HM200",heatpump,248,compstartmod,compressor start modulation,uint8 (>=0<=100),%,true,number.heatpump_compressor_start_modulation,number.heatpump_compstartmod,9,0,1,27,1
-"Hybrid Manager HM200",heatpump,248,heatdrainpan,heat drain pan,boolean, ,true,switch.heatpump_heat_drain_pan,switch.heatpump_heatdrainpan,9,0,1,28,1
-"Hybrid Manager HM200",heatpump,248,heatcable,heating cable,boolean, ,true,switch.heatpump_heating_cable,switch.heatpump_heatcable,9,0,1,29,1
-"Hybrid Manager HM200",heatpump,248,nrgtotal,total energy,uint24 (>=0<=167772),kWh,false,sensor.heatpump_total_energy,sensor.heatpump_nrgtotal,9,0,1/100,30,2
+"Hybrid Manager HM200",heatpump,248,energypricegas,energy price gas,uint8 (>=0<=254),ct/kWh,true,number.heatpump_energy_price_gas,number.heatpump_energypricegas,9,0,1,23,1
+"Hybrid Manager HM200",heatpump,248,energypriceel,energy price electric,uint8 (>=0<=254),ct/kWh,true,number.heatpump_energy_price_electric,number.heatpump_energypriceel,9,0,1,24,1
+"Hybrid Manager HM200",heatpump,248,energyfeedpv,feed in PV,uint8 (>=0<=254),ct/kWh,true,number.heatpump_feed_in_PV,number.heatpump_energyfeedpv,9,0,1,25,1
+"Hybrid Manager HM200",heatpump,248,switchovertemp,outside switchover temperature,int8 (>=-126<=126),C,true,number.heatpump_outside_switchover_temperature,number.heatpump_switchovertemp,9,0,1,26,1
+"Hybrid Manager HM200",heatpump,248,airpurgemode,air purge mode,boolean, ,true,switch.heatpump_air_purge_mode,switch.heatpump_airpurgemode,9,0,1,27,1
+"Hybrid Manager HM200",heatpump,248,heatpumpoutput,heatpump output,uint8 (>=0<=100),%,true,number.heatpump_heatpump_output,number.heatpump_heatpumpoutput,9,0,1,28,1
+"Hybrid Manager HM200",heatpump,248,coolingcircuit,cooling circuit,boolean, ,true,switch.heatpump_cooling_circuit,switch.heatpump_coolingcircuit,9,0,1,29,1
+"Hybrid Manager HM200",heatpump,248,compstartmod,compressor start modulation,uint8 (>=0<=100),%,true,number.heatpump_compressor_start_modulation,number.heatpump_compstartmod,9,0,1,30,1
+"Hybrid Manager HM200",heatpump,248,heatdrainpan,heat drain pan,boolean, ,true,switch.heatpump_heat_drain_pan,switch.heatpump_heatdrainpan,9,0,1,31,1
+"Hybrid Manager HM200",heatpump,248,heatcable,heating cable,boolean, ,true,switch.heatpump_heating_cable,switch.heatpump_heatcable,9,0,1,32,1
+"Hybrid Manager HM200",heatpump,248,nrgtotal,total energy,uint24 (>=0<=167772),kWh,false,sensor.heatpump_total_energy,sensor.heatpump_nrgtotal,9,0,1/100,33,2
 "Hybrid Manager HM200",heatpump,248,dhw.nrg,energy,uint24 (>=0<=167772),kWh,false,sensor.heatpump_dhw_energy,sensor.heatpump_dhw_nrg,9,9,1/100,1,2
-"Hybrid Manager HM200",heatpump,248,nrgheat,energy heating,uint24 (>=0<=167772),kWh,false,sensor.heatpump_energy_heating,sensor.heatpump_nrgheat,9,0,1/100,32,2
-"Hybrid Manager HM200",heatpump,248,metertotal,meter total,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_total,sensor.heatpump_metertotal,9,0,1/100,34,2
-"Hybrid Manager HM200",heatpump,248,metercomp,meter compressor,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_compressor,sensor.heatpump_metercomp,9,0,1/100,36,2
-"Hybrid Manager HM200",heatpump,248,metereheat,meter e-heater,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_e-heater,sensor.heatpump_metereheat,9,0,1/100,38,2
-"Hybrid Manager HM200",heatpump,248,meterheat,meter heating,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_heating,sensor.heatpump_meterheat,9,0,1/100,40,2
+"Hybrid Manager HM200",heatpump,248,nrgheat,energy heating,uint24 (>=0<=167772),kWh,false,sensor.heatpump_energy_heating,sensor.heatpump_nrgheat,9,0,1/100,35,2
+"Hybrid Manager HM200",heatpump,248,metertotal,meter total,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_total,sensor.heatpump_metertotal,9,0,1/100,37,2
+"Hybrid Manager HM200",heatpump,248,metercomp,meter compressor,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_compressor,sensor.heatpump_metercomp,9,0,1/100,39,2
+"Hybrid Manager HM200",heatpump,248,metereheat,meter e-heater,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_e-heater,sensor.heatpump_metereheat,9,0,1/100,41,2
+"Hybrid Manager HM200",heatpump,248,meterheat,meter heating,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_heating,sensor.heatpump_meterheat,9,0,1/100,43,2
 "Hybrid Manager HM200",heatpump,248,dhw.meter,meter,uint24 (>=0<=167772),kWh,false,sensor.heatpump_dhw_meter,sensor.heatpump_dhw_meter,9,9,1/100,3,2
-"Hybrid Manager HM200",heatpump,248,heatingstarts,heating control starts,uint24 (>=0<=16777214), ,false,sensor.heatpump_heating_control_starts,sensor.heatpump_heatingstarts,9,0,1,42,2
+"Hybrid Manager HM200",heatpump,248,heatingstarts,heating control starts,uint24 (>=0<=16777214), ,false,sensor.heatpump_heating_control_starts,sensor.heatpump_heatingstarts,9,0,1,45,2
 "Hybrid Manager HM200",heatpump,248,dhw.startshp,starts hp,uint24 (>=0<=16777214), ,false,sensor.heatpump_dhw_starts_hp,sensor.heatpump_dhw_startshp,9,9,1,5,2
-"Hybrid Manager HM200",heatpump,248,fuelheat,fuel consumption heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_fuel_consumption_heating,sensor.heatpump_fuelheat,9,0,1/10,44,2
+"Hybrid Manager HM200",heatpump,248,fuelheat,fuel consumption heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_fuel_consumption_heating,sensor.heatpump_fuelheat,9,0,1/10,47,2
 "Hybrid Manager HM200",heatpump,248,dhw.fueldhw,fuel consumption,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_dhw_fuel_consumption,sensor.heatpump_dhw_fueldhw,9,9,1/10,7,2
-"Hybrid Manager HM200",heatpump,248,elheat,el. consumption heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_el._consumption_heating,sensor.heatpump_elheat,9,0,1/10,46,2
+"Hybrid Manager HM200",heatpump,248,elheat,el. consumption heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_el._consumption_heating,sensor.heatpump_elheat,9,0,1/10,49,2
 "Hybrid Manager HM200",heatpump,248,dhw.eldhw,el. consumption,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_dhw_el._consumption,sensor.heatpump_dhw_eldhw,9,9,1/10,9,2
-"Hybrid Manager HM200",heatpump,248,elgenheat,el. generation heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_el._generation_heating,sensor.heatpump_elgenheat,9,0,1/10,48,2
+"Hybrid Manager HM200",heatpump,248,elgenheat,el. generation heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_el._generation_heating,sensor.heatpump_elgenheat,9,0,1/10,51,2
 "Hybrid Manager HM200",heatpump,248,dhw.elgendhw,el generation,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_dhw_el_generation,sensor.heatpump_dhw_elgendhw,9,9,1/10,11,2
 "CSH5800iG",heatpump,16,airhumidity,relative air humidity,uint8 (>=0<=100),%,false,sensor.heatpump_relative_air_humidity,sensor.heatpump_airhumidity,9,0,1,0,1
 "CSH5800iG",heatpump,16,dewtemperature,dew point temperature,uint8 (>=0<=254),C,false,sensor.heatpump_dew_point_temperature,sensor.heatpump_dewtemperature,9,0,1,1,1
@@ -5703,36 +5709,39 @@ device name,device type,product id,shortname,fullname,type [options...] \| (min/
 "CSH5800iG",heatpump,16,hpph1,high pressure side temperature (PH1),int16 (>=-3199<=3199),C,false,sensor.heatpump_high_pressure_side_temperature_(PH1),sensor.heatpump_hpph1,9,0,1/10,13,1
 "CSH5800iG",heatpump,16,heatingpumpmod,heating pump modulation,uint8 (>=0<=100),%,false,sensor.heatpump_heating_pump_modulation,sensor.heatpump_heatingpumpmod,9,0,1,14,1
 "CSH5800iG",heatpump,16,hpcompspd,compressor speed,uint8 (>=0<=100),%,false,sensor.heatpump_compressor_speed,sensor.heatpump_hpcompspd,9,0,1,15,1
-"CSH5800iG",heatpump,16,hybridstrategy,hybrid control strategy,enum [cost optimized\|co2 optimized\|outside temperature alt.\|outside temperature parallel\|heatpump preferred\|boiler only], ,true,select.heatpump_hybrid_control_strategy,select.heatpump_hybridstrategy,9,0,1,16,1
-"CSH5800iG",heatpump,16,lownoisemode,low noise mode,enum [off\|reduced output\|switch off hp\|perm. reduced], ,true,select.heatpump_low_noise_mode,select.heatpump_lownoisemode,9,0,1,17,1
-"CSH5800iG",heatpump,16,lownoisestart,low noise starttime,uint8 (>=0<=23),hours,true,number.heatpump_low_noise_starttime,number.heatpump_lownoisestart,9,0,1,18,1
-"CSH5800iG",heatpump,16,lownoisestop,low noise stoptime,uint8 (>=0<=23),hours,true,number.heatpump_low_noise_stoptime,number.heatpump_lownoisestop,9,0,1,19,1
+"CSH5800iG",heatpump,16,hpactivity,compressor activity,enum [off\|heating\|hot water\|defrost\|compressor alarm], ,false,sensor.heatpump_compressor_activity,sensor.heatpump_hpactivity,9,0,1,16,1
+"CSH5800iG",heatpump,16,hppower,compressor power output,uint16 (>=0<=31999),W,false,sensor.heatpump_compressor_power_output,sensor.heatpump_hppower,9,0,1,17,1
+"CSH5800iG",heatpump,16,hpcurrpower,compressor current power,uint16 (>=0<=31999),W,false,sensor.heatpump_compressor_current_power,sensor.heatpump_hpcurrpower,9,0,1,18,1
+"CSH5800iG",heatpump,16,hybridstrategy,hybrid control strategy,enum [cost optimized\|co2 optimized\|outside temperature alt.\|outside temperature parallel\|heatpump preferred\|boiler only], ,true,select.heatpump_hybrid_control_strategy,select.heatpump_hybridstrategy,9,0,1,19,1
+"CSH5800iG",heatpump,16,lownoisemode,low noise mode,enum [off\|reduced output\|switch off hp\|perm. reduced], ,true,select.heatpump_low_noise_mode,select.heatpump_lownoisemode,9,0,1,20,1
+"CSH5800iG",heatpump,16,lownoisestart,low noise starttime,uint8 (>=0<=23),hours,true,number.heatpump_low_noise_starttime,number.heatpump_lownoisestart,9,0,1,21,1
+"CSH5800iG",heatpump,16,lownoisestop,low noise stoptime,uint8 (>=0<=23),hours,true,number.heatpump_low_noise_stoptime,number.heatpump_lownoisestop,9,0,1,22,1
 "CSH5800iG",heatpump,16,dhw.hybriddhw,hybrid DHW,enum [eco\|high comfort], ,true,select.heatpump_dhw_hybrid_DHW,select.heatpump_dhw_hybriddhw,9,9,1,0,1
-"CSH5800iG",heatpump,16,energypricegas,energy price gas,uint8 (>=0<=254),ct/kWh,true,number.heatpump_energy_price_gas,number.heatpump_energypricegas,9,0,1,20,1
-"CSH5800iG",heatpump,16,energypriceel,energy price electric,uint8 (>=0<=254),ct/kWh,true,number.heatpump_energy_price_electric,number.heatpump_energypriceel,9,0,1,21,1
-"CSH5800iG",heatpump,16,energyfeedpv,feed in PV,uint8 (>=0<=254),ct/kWh,true,number.heatpump_feed_in_PV,number.heatpump_energyfeedpv,9,0,1,22,1
-"CSH5800iG",heatpump,16,switchovertemp,outside switchover temperature,int8 (>=-126<=126),C,true,number.heatpump_outside_switchover_temperature,number.heatpump_switchovertemp,9,0,1,23,1
-"CSH5800iG",heatpump,16,airpurgemode,air purge mode,boolean, ,true,switch.heatpump_air_purge_mode,switch.heatpump_airpurgemode,9,0,1,24,1
-"CSH5800iG",heatpump,16,heatpumpoutput,heatpump output,uint8 (>=0<=100),%,true,number.heatpump_heatpump_output,number.heatpump_heatpumpoutput,9,0,1,25,1
-"CSH5800iG",heatpump,16,coolingcircuit,cooling circuit,boolean, ,true,switch.heatpump_cooling_circuit,switch.heatpump_coolingcircuit,9,0,1,26,1
-"CSH5800iG",heatpump,16,compstartmod,compressor start modulation,uint8 (>=0<=100),%,true,number.heatpump_compressor_start_modulation,number.heatpump_compstartmod,9,0,1,27,1
-"CSH5800iG",heatpump,16,heatdrainpan,heat drain pan,boolean, ,true,switch.heatpump_heat_drain_pan,switch.heatpump_heatdrainpan,9,0,1,28,1
-"CSH5800iG",heatpump,16,heatcable,heating cable,boolean, ,true,switch.heatpump_heating_cable,switch.heatpump_heatcable,9,0,1,29,1
-"CSH5800iG",heatpump,16,nrgtotal,total energy,uint24 (>=0<=167772),kWh,false,sensor.heatpump_total_energy,sensor.heatpump_nrgtotal,9,0,1/100,30,2
+"CSH5800iG",heatpump,16,energypricegas,energy price gas,uint8 (>=0<=254),ct/kWh,true,number.heatpump_energy_price_gas,number.heatpump_energypricegas,9,0,1,23,1
+"CSH5800iG",heatpump,16,energypriceel,energy price electric,uint8 (>=0<=254),ct/kWh,true,number.heatpump_energy_price_electric,number.heatpump_energypriceel,9,0,1,24,1
+"CSH5800iG",heatpump,16,energyfeedpv,feed in PV,uint8 (>=0<=254),ct/kWh,true,number.heatpump_feed_in_PV,number.heatpump_energyfeedpv,9,0,1,25,1
+"CSH5800iG",heatpump,16,switchovertemp,outside switchover temperature,int8 (>=-126<=126),C,true,number.heatpump_outside_switchover_temperature,number.heatpump_switchovertemp,9,0,1,26,1
+"CSH5800iG",heatpump,16,airpurgemode,air purge mode,boolean, ,true,switch.heatpump_air_purge_mode,switch.heatpump_airpurgemode,9,0,1,27,1
+"CSH5800iG",heatpump,16,heatpumpoutput,heatpump output,uint8 (>=0<=100),%,true,number.heatpump_heatpump_output,number.heatpump_heatpumpoutput,9,0,1,28,1
+"CSH5800iG",heatpump,16,coolingcircuit,cooling circuit,boolean, ,true,switch.heatpump_cooling_circuit,switch.heatpump_coolingcircuit,9,0,1,29,1
+"CSH5800iG",heatpump,16,compstartmod,compressor start modulation,uint8 (>=0<=100),%,true,number.heatpump_compressor_start_modulation,number.heatpump_compstartmod,9,0,1,30,1
+"CSH5800iG",heatpump,16,heatdrainpan,heat drain pan,boolean, ,true,switch.heatpump_heat_drain_pan,switch.heatpump_heatdrainpan,9,0,1,31,1
+"CSH5800iG",heatpump,16,heatcable,heating cable,boolean, ,true,switch.heatpump_heating_cable,switch.heatpump_heatcable,9,0,1,32,1
+"CSH5800iG",heatpump,16,nrgtotal,total energy,uint24 (>=0<=167772),kWh,false,sensor.heatpump_total_energy,sensor.heatpump_nrgtotal,9,0,1/100,33,2
 "CSH5800iG",heatpump,16,dhw.nrg,energy,uint24 (>=0<=167772),kWh,false,sensor.heatpump_dhw_energy,sensor.heatpump_dhw_nrg,9,9,1/100,1,2
-"CSH5800iG",heatpump,16,nrgheat,energy heating,uint24 (>=0<=167772),kWh,false,sensor.heatpump_energy_heating,sensor.heatpump_nrgheat,9,0,1/100,32,2
-"CSH5800iG",heatpump,16,metertotal,meter total,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_total,sensor.heatpump_metertotal,9,0,1/100,34,2
-"CSH5800iG",heatpump,16,metercomp,meter compressor,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_compressor,sensor.heatpump_metercomp,9,0,1/100,36,2
-"CSH5800iG",heatpump,16,metereheat,meter e-heater,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_e-heater,sensor.heatpump_metereheat,9,0,1/100,38,2
-"CSH5800iG",heatpump,16,meterheat,meter heating,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_heating,sensor.heatpump_meterheat,9,0,1/100,40,2
+"CSH5800iG",heatpump,16,nrgheat,energy heating,uint24 (>=0<=167772),kWh,false,sensor.heatpump_energy_heating,sensor.heatpump_nrgheat,9,0,1/100,35,2
+"CSH5800iG",heatpump,16,metertotal,meter total,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_total,sensor.heatpump_metertotal,9,0,1/100,37,2
+"CSH5800iG",heatpump,16,metercomp,meter compressor,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_compressor,sensor.heatpump_metercomp,9,0,1/100,39,2
+"CSH5800iG",heatpump,16,metereheat,meter e-heater,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_e-heater,sensor.heatpump_metereheat,9,0,1/100,41,2
+"CSH5800iG",heatpump,16,meterheat,meter heating,uint24 (>=0<=167772),kWh,false,sensor.heatpump_meter_heating,sensor.heatpump_meterheat,9,0,1/100,43,2
 "CSH5800iG",heatpump,16,dhw.meter,meter,uint24 (>=0<=167772),kWh,false,sensor.heatpump_dhw_meter,sensor.heatpump_dhw_meter,9,9,1/100,3,2
-"CSH5800iG",heatpump,16,heatingstarts,heating control starts,uint24 (>=0<=16777214), ,false,sensor.heatpump_heating_control_starts,sensor.heatpump_heatingstarts,9,0,1,42,2
+"CSH5800iG",heatpump,16,heatingstarts,heating control starts,uint24 (>=0<=16777214), ,false,sensor.heatpump_heating_control_starts,sensor.heatpump_heatingstarts,9,0,1,45,2
 "CSH5800iG",heatpump,16,dhw.startshp,starts hp,uint24 (>=0<=16777214), ,false,sensor.heatpump_dhw_starts_hp,sensor.heatpump_dhw_startshp,9,9,1,5,2
-"CSH5800iG",heatpump,16,fuelheat,fuel consumption heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_fuel_consumption_heating,sensor.heatpump_fuelheat,9,0,1/10,44,2
+"CSH5800iG",heatpump,16,fuelheat,fuel consumption heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_fuel_consumption_heating,sensor.heatpump_fuelheat,9,0,1/10,47,2
 "CSH5800iG",heatpump,16,dhw.fueldhw,fuel consumption,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_dhw_fuel_consumption,sensor.heatpump_dhw_fueldhw,9,9,1/10,7,2
-"CSH5800iG",heatpump,16,elheat,el. consumption heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_el._consumption_heating,sensor.heatpump_elheat,9,0,1/10,46,2
+"CSH5800iG",heatpump,16,elheat,el. consumption heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_el._consumption_heating,sensor.heatpump_elheat,9,0,1/10,49,2
 "CSH5800iG",heatpump,16,dhw.eldhw,el. consumption,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_dhw_el._consumption,sensor.heatpump_dhw_eldhw,9,9,1/10,9,2
-"CSH5800iG",heatpump,16,elgenheat,el. generation heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_el._generation_heating,sensor.heatpump_elgenheat,9,0,1/10,48,2
+"CSH5800iG",heatpump,16,elgenheat,el. generation heating,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_el._generation_heating,sensor.heatpump_elgenheat,9,0,1/10,51,2
 "CSH5800iG",heatpump,16,dhw.elgendhw,el generation,uint32 (>=0<=1677721),kWh,false,sensor.heatpump_dhw_el_generation,sensor.heatpump_dhw_elgendhw,9,9,1/10,11,2
 "WM10",switch,71,activated,activated,boolean, ,false,binary_sensor.switch_activated,binary_sensor.switch_activated,11,0,1,0,1
 "WM10",switch,71,flowtemphc,flow temperature (TC1),uint16 (>=0<=3199),C,false,sensor.switch_flow_temperature_(TC1),sensor.switch_flowtemphc,11,0,1/10,1,1
