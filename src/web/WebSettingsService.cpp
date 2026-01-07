@@ -422,7 +422,7 @@ void WebSettings::set_board_profile(WebSettings & settings) {
     // Note 2: The board profile is dynamically changed for the session, but the value in the settings file on the FS remains untouched
     if (EMSESP::system_.getBBQKeesGatewayDetails(FUSE_VALUE::MFG).startsWith("BBQKees")) {
         String bbq_board = EMSESP::system_.getBBQKeesGatewayDetails(FUSE_VALUE::BOARD);
-        if (!bbq_board.isEmpty()) {
+        if (!bbq_board.isEmpty() && settings.board_profile != "CUSTOM") {
 #if defined(EMSESP_DEBUG)
             EMSESP::logger().info("Overriding board profile with fuse value %s", bbq_board.c_str());
 #endif
