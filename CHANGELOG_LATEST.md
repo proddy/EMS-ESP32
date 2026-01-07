@@ -7,6 +7,7 @@ For more details go to [emsesp.org](https://emsesp.org/).
 ## Added
 
 - update time saved in nvs
+- heatpump entities [#2883](https://github.com/emsesp/EMS-ESP32/issues/2883)
 
 ## Fixed
 
@@ -22,3 +23,5 @@ For more details go to [emsesp.org](https://emsesp.org/).
 
 - snapshot gpios stored in temporary ram
 - GPIOs stored along with the name and reported in log if conflicting
+- free GPIOs depend on board profile [#2901](https://github.com/emsesp/EMS-ESP32/issues/2901)
+- prefer PSram for mqtt queue [#2889](https://github.com/emsesp/EMS-ESP32/issues/2889)
