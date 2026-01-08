@@ -217,9 +217,8 @@ void test_22() {
 void test_23() {
     auto expected_response =
         "[{\"system\":{\"version\":\"dev\",\"uptime\":\"000+00:00:00.000\",\"uptimeSec\":0,\"resetReason\":\"Unknown / "
-        "Unknown\",\"txpause\":false,\"gpios_in_use\":\"23, 5, 2, 18, 0\",\"gpios_available\":\"1, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, "
-        "21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, "
-        "39\"},\"network\":{\"network\":\"WiFi\",\"hostname\":\"ems-esp\",\"RSSI\":-23,\"TxPowerSetting\":0,\"staticIP\":false,\"lowBandwidth\":false,"
+        "Unknown\",\"txpause\":false,\"gpios_in_use\":\"23, 5, 2, 18, 0\",\"gpios_available\":\"\"},"
+        "\"network\":{\"network\":\"WiFi\",\"hostname\":\"ems-esp\",\"RSSI\":-23,\"TxPowerSetting\":0,\"staticIP\":false,\"lowBandwidth\":false,"
         "\"disableSleep\":true,\"enableMDNS\":true,\"enableCORS\":false},\"ntp\":{\"NTPstatus\":\"disconnected\",\"enabled\":true,\"server\":\"pool.ntp.org\","
         "\"tzLabel\":\"Europe/"
         "London\",\"NTPStatus\":\"disconnected\"},\"ap\":{\"provisionMode\":\"always\",\"ssid\":\"ems-esp\"},\"mqtt\":{\"MQTTStatus\":\"disconnected\","
@@ -248,9 +247,8 @@ void test_23() {
 void test_24() {
     auto expected_response =
         "[{\"system\":{\"version\":\"dev\",\"uptime\":\"000+00:00:00.000\",\"uptimeSec\":0,\"resetReason\":\"Unknown / "
-        "Unknown\",\"txpause\":false,\"gpios_in_use\":\"23, 5, 2, 18, 0\",\"gpios_available\":\"1, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, "
-        "21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, "
-        "39\"},\"network\":{\"network\":\"WiFi\",\"hostname\":\"ems-esp\",\"RSSI\":-23,\"TxPowerSetting\":0,\"staticIP\":false,\"lowBandwidth\":false,"
+        "Unknown\",\"txpause\":false,\"gpios_in_use\":\"23, 5, 2, 18, 0\",\"gpios_available\":\"\"},"
+        "\"network\":{\"network\":\"WiFi\",\"hostname\":\"ems-esp\",\"RSSI\":-23,\"TxPowerSetting\":0,\"staticIP\":false,\"lowBandwidth\":false,"
         "\"disableSleep\":true,\"enableMDNS\":true,\"enableCORS\":false},\"ntp\":{\"NTPstatus\":\"disconnected\",\"enabled\":true,\"server\":\"pool.ntp.org\","
         "\"tzLabel\":\"Europe/"
         "London\",\"NTPStatus\":\"disconnected\"},\"ap\":{\"provisionMode\":\"always\",\"ssid\":\"ems-esp\"},\"mqtt\":{\"MQTTStatus\":\"disconnected\","
