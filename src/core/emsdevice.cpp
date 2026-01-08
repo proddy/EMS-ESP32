@@ -547,39 +547,55 @@ void EMSdevice::add_device_value(int8_t                tag,              // to b
                                  int16_t               min,              // min allowed value
                                  uint32_t              max               // max allowed value
 ) {
-    // initialize the device value depending on it's type
-
-    if (type == DeviceValueType::STRING) {
-        *(char *)(value_p) = {'\0'}; // this is important for string functions like strlen() to work later
-    } else if (type == DeviceValueType::INT8) {
-        *(int8_t *)(value_p) = System::test_set_all_active() ? EMS_VALUE_DEFAULT_INT8_DUMMY : EMS_VALUE_DEFAULT_INT8;
-    } else if (type == DeviceValueType::UINT8) {
-        *(uint8_t *)(value_p) = System::test_set_all_active() ? EMS_VALUE_DEFAULT_UINT8_DUMMY : EMS_VALUE_DEFAULT_UINT8;
-    } else if (type == DeviceValueType::INT16) {
-        *(int16_t *)(value_p) = System::test_set_all_active() ? EMS_VALUE_DEFAULT_INT16_DUMMY : EMS_VALUE_DEFAULT_INT16;
-    } else if (type == DeviceValueType::UINT16) {
-        *(uint16_t *)(value_p) = System::test_set_all_active() ? EMS_VALUE_DEFAULT_UINT16_DUMMY : EMS_VALUE_DEFAULT_UINT16;
-    } else if ((type == DeviceValueType::UINT24) || (type == DeviceValueType::TIME) || (type == DeviceValueType::UINT32)) {
-        *(uint32_t *)(value_p) = System::test_set_all_active() ? EMS_VALUE_DEFAULT_UINT24_DUMMY : EMS_VALUE_DEFAULT_UINT24;
-    } else if (type == DeviceValueType::BOOL) {
-        *(int8_t *)(value_p) = System::test_set_all_active() ? EMS_VALUE_DEFAULT_BOOL_DUMMY : EMS_VALUE_DEFAULT_BOOL; // bool is uint8_t, but other initial value
-    } else if (type == DeviceValueType::ENUM) {
-        *(uint8_t *)(value_p) = System::test_set_all_active() ? EMS_VALUE_DEFAULT_ENUM_DUMMY : EMS_VALUE_DEFAULT_ENUM; // enums behave as uint8_t
-    } else if (type == DeviceValueType::CMD) {
-        if (uom == DeviceValueUOM::NONE) {
-            *(uint8_t *)(value_p) = System::test_set_all_active() ? EMS_VALUE_DEFAULT_ENUM_DUMMY : EMS_VALUE_DEFAULT_ENUM; // enums behave as uint8_t
-        } else if (uom == DeviceValueUOM::DEGREES) {
-            *(int16_t *)(value_p) = System::test_set_all_active() ? EMS_VALUE_DEFAULT_INT16_DUMMY : EMS_VALUE_DEFAULT_INT16;
-        } else if (uom == DeviceValueUOM::PERCENT) {
-            *(uint8_t *)(value_p) = System::test_set_all_active() ? EMS_VALUE_DEFAULT_UINT8_DUMMY : EMS_VALUE_DEFAULT_UINT8;
-        }
-    }
-
     uint8_t state           = DeviceValueState::DV_DEFAULT; // determine state
     auto    custom_fullname = std::string("");              // custom fullname
     auto    short_name      = name[0];                      // entity name
     bool    has_cmd         = (f != nullptr);               // is it a command?
     bool    ignore          = false;                        // ignore this entity?
+
+    // check test mode, which populates all device values with some dummy date
+    bool test_active = System::test_set_all_active();
+
+    // if writable and in test mode, set to max value directly; otherwise set to default/dummy
+    bool use_max = test_active && has_cmd;
+
+    switch (type) {
+    case DeviceValueType::STRING:
+        *(char *)(value_p) = {'\0'}; // this is important for string functions like strlen() to work later
+        break;
+    case DeviceValueType::INT8:
+        *(int8_t *)(value_p) = use_max ? static_cast<int8_t>(max) : (test_active ? EMS_VALUE_DEFAULT_INT8_DUMMY : EMS_VALUE_DEFAULT_INT8);
+        break;
+    case DeviceValueType::UINT8:
+        *(uint8_t *)(value_p) = use_max ? static_cast<uint8_t>(max) : (test_active ? EMS_VALUE_DEFAULT_UINT8_DUMMY : EMS_VALUE_DEFAULT_UINT8);
+        break;
+    case DeviceValueType::INT16:
+        *(int16_t *)(value_p) = use_max ? static_cast<int16_t>(max) : (test_active ? EMS_VALUE_DEFAULT_INT16_DUMMY : EMS_VALUE_DEFAULT_INT16);
+        break;
+    case DeviceValueType::UINT16:
+        *(uint16_t *)(value_p) = use_max ? static_cast<uint16_t>(max) : (test_active ? EMS_VALUE_DEFAULT_UINT16_DUMMY : EMS_VALUE_DEFAULT_UINT16);
+        break;
+    case DeviceValueType::UINT24:
+    case DeviceValueType::TIME:
+    case DeviceValueType::UINT32:
+        *(uint32_t *)(value_p) = use_max ? static_cast<uint32_t>(max) : (test_active ? EMS_VALUE_DEFAULT_UINT24_DUMMY : EMS_VALUE_DEFAULT_UINT24);
+        break;
+    case DeviceValueType::BOOL:
+        *(int8_t *)(value_p) = use_max ? static_cast<int8_t>(max ? 1 : 0) : (test_active ? EMS_VALUE_DEFAULT_BOOL_DUMMY : EMS_VALUE_DEFAULT_BOOL);
+        break;
+    case DeviceValueType::ENUM:
+        *(uint8_t *)(value_p) = use_max ? static_cast<uint8_t>(max) : (test_active ? EMS_VALUE_DEFAULT_ENUM_DUMMY : EMS_VALUE_DEFAULT_ENUM);
+        break;
+    case DeviceValueType::CMD:
+        if (uom == DeviceValueUOM::NONE) {
+            *(uint8_t *)(value_p) = use_max ? static_cast<uint8_t>(max) : (test_active ? EMS_VALUE_DEFAULT_ENUM_DUMMY : EMS_VALUE_DEFAULT_ENUM);
+        } else if (uom == DeviceValueUOM::DEGREES) {
+            *(int16_t *)(value_p) = use_max ? static_cast<int16_t>(max) : (test_active ? EMS_VALUE_DEFAULT_INT16_DUMMY : EMS_VALUE_DEFAULT_INT16);
+        } else if (uom == DeviceValueUOM::PERCENT) {
+            *(uint8_t *)(value_p) = use_max ? static_cast<uint8_t>(max) : (test_active ? EMS_VALUE_DEFAULT_UINT8_DUMMY : EMS_VALUE_DEFAULT_UINT8);
+        }
+        break;
+    }
 
     // get fullname, getting translation if it exists
     const char * const * fullname;
@@ -1295,11 +1311,21 @@ void EMSdevice::getCustomizationEntities(std::vector<std::string> & entity_ids) 
 // dumps all entity values in native English
 // the code is intended to run only once standalone, outside the ESP32 so not optimized for memory efficiency
 // pipe symbols (|) are escaped so they can be converted to Markdown in the Wiki
-// format is: device name,device type,product id,shortname,fullname,type [options...] \\| (min/max),uom,writeable,discovery entityid v3.4, discovery entityid
+// format is: device name,device type,product id,shortname,fullname,type [options...] [(min/max)],uom,writeable,discovery entityid v3.4, discovery entityid
 #if defined(EMSESP_STANDALONE)
 void EMSdevice::dump_devicevalue_info() {
     for (auto & dv : devicevalues_) {
         if (dv.fullname != nullptr) {
+            // for debugging, finding max values
+            /*
+            if (dv.has_cmd) {
+                if (dv.max - dv.min > 400) {
+                    Serial.printf("shortname:%s, min:%d, max:%d\n", dv.short_name, dv.min, dv.max);
+                }
+            }
+            continue;
+            */
+
             Serial.print('\"');
             Serial.print(default_name());
             Serial.print('\"');
@@ -1323,7 +1349,7 @@ void EMSdevice::dump_devicevalue_info() {
             Serial.print(dv.fullname[0]);
             Serial.print(',');
 
-            // per type
+            // type [options...] [(min/max)]
             switch (dv.type) {
             case DeviceValueType::ENUM:
             case DeviceValueType::CMD:
@@ -1383,14 +1409,12 @@ void EMSdevice::dump_devicevalue_info() {
                 break;
             }
 
-            // min/max range
-            int16_t  dv_set_min;
-            uint32_t dv_set_max;
-            if (dv.get_min_max(dv_set_min, dv_set_max)) {
+            // min/max range, if writeable
+            if (dv.has_cmd) {
                 Serial.print(" (>=");
-                Serial.print(dv_set_min);
+                Serial.print(dv.min);
                 Serial.print("<=");
-                Serial.print(dv_set_max);
+                Serial.print(dv.max);
                 Serial.print(")");
             }
             Serial.print(",");
