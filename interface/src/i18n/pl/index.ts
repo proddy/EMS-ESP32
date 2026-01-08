@@ -219,6 +219,7 @@ const pl: BaseTranslation = {
   MQTT_PUBLISH_TEXT_3: 'Włącz opcję "MQTT discovery"',
   MQTT_PUBLISH_TEXT_4: 'Prefiks dla "MQTT discovery"',
   MQTT_PUBLISH_TEXT_5: 'Typ "MQTT discovery"',
+  MQTT_PUBLISH_TEXT_6: 'Number mode',
   MQTT_PUBLISH_INTERVALS: 'Interwały publikowania',
   MQTT_INT_BOILER: 'Kotły i pompy ciepła',
   MQTT_INT_THERMOSTATS: 'Termostaty',
