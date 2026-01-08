@@ -489,17 +489,25 @@ const ApplicationSettings = () => {
           name="board_profile"
           label={LL.BOARD_PROFILE()}
           value={data.board_profile}
-          disabled={processingBoard || hardwareData.model.startsWith('BBQKees')}
+          disabled={processingBoard}
           variant="outlined"
           onChange={changeBoardProfile}
           margin="normal"
           select
         >
-          {boardProfileItems}
+          {hardwareData.model.startsWith('BBQKees') ? (
+            <MenuItem key={hardwareData.board} value={hardwareData.board}>
+              {BOARD_PROFILES[hardwareData.board as BoardProfileKey]}
+            </MenuItem>
+          ) : (
+            boardProfileItems
+          )}
           <Divider />
-          <MenuItem key={'CUSTOM'} value={'CUSTOM'}>
-            {LL.CUSTOM()}&hellip;
-          </MenuItem>
+          {(data.board_profile === 'CUSTOM' || data.developer_mode) && (
+            <MenuItem key={'CUSTOM'} value={'CUSTOM'}>
+              {LL.CUSTOM()}&hellip;
+            </MenuItem>
+          )}
         </TextField>
         {data.board_profile === 'CUSTOM' && (
           <>

@@ -2400,12 +2400,16 @@ bool System::load_board_profile(std::vector<int8_t> & data, const std::string & 
         return false; // unknown, return false
     } else if (board_profile == "S32") {
         data = {2, 18, 23, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // BBQKees Gateway S32
+        valid_system_gpios_ = {0, 2, 5, 18, 23};
     } else if (board_profile == "E32") {
         data = {2, 4, 5, 17, 33, PHY_type::PHY_TYPE_LAN8720, 16, 1, 0, 0}; // BBQKees Gateway E32
+        valid_system_gpios_ = {0, 2, 4, 5, 16, 17, 33};
     } else if (board_profile == "E32V2") {
         data = {2, 14, 4, 5, 34, PHY_type::PHY_TYPE_LAN8720, 15, 0, 1, 0}; // BBQKees Gateway E32 V2
+        valid_system_gpios_ = {0, 2, 4, 5, 14, 15, 34};
     } else if (board_profile == "E32V2_2") {
         data = {32, 14, 4, 5, 34, PHY_type::PHY_TYPE_LAN8720, 15, 0, 1, 1}; // BBQKees Gateway E32 V2.2, rgb led
+        valid_system_gpios_ = {0, 2, 4, 5, 14, 15, 32, 34, 36, 39}; // system analogs 36, 39, led 2
     } else if (board_profile == "MH-ET") {
         data = {2, 18, 23, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // MH-ET Live D1 Mini
     } else if (board_profile == "NODEMCU") {
@@ -2428,6 +2432,7 @@ bool System::load_board_profile(std::vector<int8_t> & data, const std::string & 
         data = {17, 18, 8, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // Liligo S3
     } else if (board_profile == "S32S3") {
         data = {2, 18, 5, 17, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // BBQKees Gateway S3
+        valid_system_gpios_ = {0, 2, 5, 17, 18};
     } else {
         return false; // unknown, return false
     }
@@ -2956,6 +2961,7 @@ void System::set_valid_system_gpios() {
 #elif defined(EMSESP_STANDALONE)
     valid_system_gpios_ = string_range_to_vector("0-39");
 #endif
+    valid_system_gpios_.shrink_to_fit();
 }
 
 // check if a pin is valid ESP32 pin and if not already used, add to the used gpio list

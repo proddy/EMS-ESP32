@@ -56,8 +56,7 @@ void IRAM_ATTR AnalogSensor::freqIrq2() {
 #endif
 
 void AnalogSensor::start(const bool factory_settings) {
-    // if (factory_settings && EMSESP::nvs_.getString("boot").equals("E32V2_2")) {
-    if (factory_settings && analogReadMilliVolts(39) > 700) { // core voltage > 2.6V
+    if (factory_settings && EMSESP::system_.board_profile() == "E32V2_2") {
         EMSESP::webCustomizationService.update([&](WebCustomization & settings) {
             auto newSensor = AnalogCustomization();
             strcpy(newSensor.name, "core_voltage");
@@ -73,6 +72,13 @@ void AnalogSensor::start(const bool factory_settings) {
             newSensor.gpio      = 36;
             newSensor.factor    = 0.017; // Divider 24k - 1,5k
             newSensor.is_system = true;
+            settings.analogCustomizations.push_back(newSensor);
+
+            strcpy(newSensor.name, "led");
+            newSensor.gpio   = 2;
+            newSensor.type   = AnalogType::DIGITAL_OUT;
+            newSensor.uom    = DeviceValueUOM::NONE; // unchanged after restart
+            newSensor.factor = 1;                    // active high
             settings.analogCustomizations.push_back(newSensor);
 
             return StateUpdateResult::CHANGED; // persist the change

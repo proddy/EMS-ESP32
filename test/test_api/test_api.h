@@ -217,9 +217,8 @@ void test_22() {
 void test_23() {
     auto expected_response =
         "[{\"system\":{\"version\":\"dev\",\"uptime\":\"000+00:00:00.000\",\"uptimeSec\":0,\"resetReason\":\"Unknown / "
-        "Unknown\",\"txpause\":false,\"gpios_in_use\":\"23, 5, 2, 18, 0\",\"gpios_available\":\"1, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, "
-        "21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, "
-        "39\"},\"network\":{\"network\":\"WiFi\",\"hostname\":\"ems-esp\",\"RSSI\":-23,\"TxPowerSetting\":0,\"staticIP\":false,\"lowBandwidth\":false,"
+        "Unknown\",\"txpause\":false,\"gpios_in_use\":\"23, 5, 2, 18, 0\",\"gpios_available\":\"\"},"
+        "\"network\":{\"network\":\"WiFi\",\"hostname\":\"ems-esp\",\"RSSI\":-23,\"TxPowerSetting\":0,\"staticIP\":false,\"lowBandwidth\":false,"
         "\"disableSleep\":true,\"enableMDNS\":true,\"enableCORS\":false},\"ntp\":{\"NTPstatus\":\"disconnected\",\"enabled\":true,\"server\":\"pool.ntp.org\","
         "\"tzLabel\":\"Europe/"
         "London\",\"NTPStatus\":\"disconnected\"},\"ap\":{\"provisionMode\":\"always\",\"ssid\":\"ems-esp\"},\"mqtt\":{\"MQTTStatus\":\"disconnected\","
@@ -248,9 +247,8 @@ void test_23() {
 void test_24() {
     auto expected_response =
         "[{\"system\":{\"version\":\"dev\",\"uptime\":\"000+00:00:00.000\",\"uptimeSec\":0,\"resetReason\":\"Unknown / "
-        "Unknown\",\"txpause\":false,\"gpios_in_use\":\"23, 5, 2, 18, 0\",\"gpios_available\":\"1, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, "
-        "21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, "
-        "39\"},\"network\":{\"network\":\"WiFi\",\"hostname\":\"ems-esp\",\"RSSI\":-23,\"TxPowerSetting\":0,\"staticIP\":false,\"lowBandwidth\":false,"
+        "Unknown\",\"txpause\":false,\"gpios_in_use\":\"23, 5, 2, 18, 0\",\"gpios_available\":\"\"},"
+        "\"network\":{\"network\":\"WiFi\",\"hostname\":\"ems-esp\",\"RSSI\":-23,\"TxPowerSetting\":0,\"staticIP\":false,\"lowBandwidth\":false,"
         "\"disableSleep\":true,\"enableMDNS\":true,\"enableCORS\":false},\"ntp\":{\"NTPstatus\":\"disconnected\",\"enabled\":true,\"server\":\"pool.ntp.org\","
         "\"tzLabel\":\"Europe/"
         "London\",\"NTPStatus\":\"disconnected\"},\"ap\":{\"provisionMode\":\"always\",\"ssid\":\"ems-esp\"},\"mqtt\":{\"MQTTStatus\":\"disconnected\","
@@ -280,9 +278,8 @@ void test_25() {
     auto expected_response =
         "[{\"api_data\":\"# HELP emsesp_system_uptimesec uptimeSec\\n# TYPE emsesp_system_uptimesec gauge\\nemsesp_system_uptimesec 0\\n# HELP "
         "emsesp_system_txpause txpause\\n# TYPE emsesp_system_txpause gauge\\nemsesp_system_txpause 0\\n# HELP emsesp_system_info info\\n# TYPE "
-        "emsesp_system_info gauge\\nemsesp_system_info{version=\\\"dev\\\", resetreason=\\\"Unknown / Unknown\\\", gpios_in_use=\\\"23, 5, 2, 18, 0\\\", "
-        "gpios_available=\\\"1, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, "
-        "39\\\"} 1\\n# HELP emsesp_network_rssi RSSI\\n# TYPE emsesp_network_rssi gauge\\nemsesp_network_rssi -23\\n# HELP emsesp_network_txpowersetting "
+        "emsesp_system_info gauge\\nemsesp_system_info{version=\\\"dev\\\", resetreason=\\\"Unknown / Unknown\\\", gpios_in_use=\\\"23, 5, 2, 18, 0"
+        "\\\"} 1\\n# HELP emsesp_network_rssi RSSI\\n# TYPE emsesp_network_rssi gauge\\nemsesp_network_rssi -23\\n# HELP emsesp_network_txpowersetting "
         "TxPowerSetting\\n# TYPE emsesp_network_txpowersetting gauge\\nemsesp_network_txpowersetting 0\\n# HELP emsesp_network_staticip staticIP\\n# TYPE "
         "emsesp_network_staticip gauge\\nemsesp_network_staticip 0\\n# HELP emsesp_network_lowbandwidth lowBandwidth\\n# TYPE emsesp_network_lowbandwidth "
         "gauge\\nemsesp_network_lowbandwidth 0\\n# HELP emsesp_network_disablesleep disableSleep\\n# TYPE emsesp_network_disablesleep "
