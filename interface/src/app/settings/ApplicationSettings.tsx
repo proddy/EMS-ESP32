@@ -503,9 +503,11 @@ const ApplicationSettings = () => {
             boardProfileItems
           )}
           <Divider />
-          <MenuItem key={'CUSTOM'} value={'CUSTOM'}>
-            {LL.CUSTOM()}&hellip;
-          </MenuItem>
+          {(data.board_profile === 'CUSTOM' || data.developer_mode) && (
+            <MenuItem key={'CUSTOM'} value={'CUSTOM'}>
+              {LL.CUSTOM()}&hellip;
+            </MenuItem>
+          )}
         </TextField>
         {data.board_profile === 'CUSTOM' && (
           <>
