@@ -411,6 +411,20 @@ const MqttSettings = () => {
                   </MenuItem>
                 </TextField>
               </Grid>
+              <Grid>
+                <TextField
+                  name="ha_number_mode"
+                  label={LL.MQTT_PUBLISH_TEXT_6()}
+                  value={data.ha_number_mode}
+                  variant="outlined"
+                  onChange={updateFormValue}
+                  margin="normal"
+                  select
+                >
+                  <MenuItem value={0}>Box</MenuItem>
+                  <MenuItem value={1}>Slider</MenuItem>
+                </TextField>
+              </Grid>
             </Grid>
           )}
         </Grid>

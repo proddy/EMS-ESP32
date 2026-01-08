@@ -219,6 +219,7 @@ const fr: Translation = {
   MQTT_PUBLISH_TEXT_3: 'Activer la découverte MQTT',
   MQTT_PUBLISH_TEXT_4: 'Préfixe pour les topics découverte',
   MQTT_PUBLISH_TEXT_5: 'Type de découverte',
+  MQTT_PUBLISH_TEXT_6: 'Number mode',
   MQTT_PUBLISH_INTERVALS: 'Intervalles de publication',
   MQTT_INT_BOILER: 'Chaudières et pompes à chaleur',
   MQTT_INT_THERMOSTATS: 'Thermostats',

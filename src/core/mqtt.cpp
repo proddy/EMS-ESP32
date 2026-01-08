@@ -43,6 +43,7 @@ bool        Mqtt::ha_enabled_;
 uint8_t     Mqtt::nested_format_;
 std::string Mqtt::discovery_prefix_;
 uint8_t     Mqtt::discovery_type_;
+uint8_t     Mqtt::ha_number_mode_;
 bool        Mqtt::send_response_;
 bool        Mqtt::publish_single_;
 bool        Mqtt::publish_single2cmd_;
@@ -343,6 +344,7 @@ void Mqtt::load_settings() {
         discovery_prefix_   = mqttSettings.discovery_prefix.c_str();
         entity_format_      = mqttSettings.entity_format;
         discovery_type_     = mqttSettings.discovery_type;
+        ha_number_mode_     = mqttSettings.ha_number_mode;
 
         // convert to milliseconds
         publish_time_boiler_     = mqttSettings.publish_time_boiler * 1000;
@@ -1024,8 +1026,12 @@ bool Mqtt::publish_ha_sensor_config(uint8_t               type,        // EMSdev
                 snprintf(sample_val, sizeof(sample_val), "'%s'", Helpers::translated_word(options[0]));
             }
         } else if (type != DeviceValueType::STRING && type != DeviceValueType::BOOL) {
-            // For numeric's add the range
-            doc["mode"] = "box"; // auto, slider or box
+            // For numeric's add the range and mode
+            if (ha_number_mode_ == 1 && (dv_set_max - dv_set_min) <= 100) {
+                doc["mode"] = "slider";
+            } else {
+                doc["mode"] = "box"; // auto, slider or box
+            }
             if (num_op > 0) {
                 doc["step"] = 1.0 / num_op;
             } else if (num_op < 0) {
