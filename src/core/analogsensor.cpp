@@ -67,12 +67,14 @@ void AnalogSensor::start(const bool factory_settings) {
             newSensor.type      = AnalogType::ADC;
             newSensor.is_system = true;
             settings.analogCustomizations.push_back(newSensor);
+            EMSESP::system_.add_gpio(newSensor.gpio, newSensor.name);
 
             strcpy(newSensor.name, "supply_voltage");
             newSensor.gpio      = 36;
             newSensor.factor    = 0.017; // Divider 24k - 1,5k
             newSensor.is_system = true;
             settings.analogCustomizations.push_back(newSensor);
+            EMSESP::system_.add_gpio(newSensor.gpio, newSensor.name);
 
             strcpy(newSensor.name, "led");
             newSensor.gpio   = 2;
@@ -80,6 +82,7 @@ void AnalogSensor::start(const bool factory_settings) {
             newSensor.uom    = DeviceValueUOM::NONE; // unchanged after restart
             newSensor.factor = 1;                    // active high
             settings.analogCustomizations.push_back(newSensor);
+            EMSESP::system_.add_gpio(newSensor.gpio, newSensor.name);
 
             return StateUpdateResult::CHANGED; // persist the change
         });
