@@ -278,8 +278,7 @@ void test_25() {
     auto expected_response =
         "[{\"api_data\":\"# HELP emsesp_system_uptimesec uptimeSec\\n# TYPE emsesp_system_uptimesec gauge\\nemsesp_system_uptimesec 0\\n# HELP "
         "emsesp_system_txpause txpause\\n# TYPE emsesp_system_txpause gauge\\nemsesp_system_txpause 0\\n# HELP emsesp_system_info info\\n# TYPE "
-        "emsesp_system_info gauge\\nemsesp_system_info{version=\\\"dev\\\", resetreason=\\\"Unknown / Unknown\\\", gpios_in_use=\\\"23, 5, 2, 18, 0\\\", "
-        "gpios_available=\\\""
+        "emsesp_system_info gauge\\nemsesp_system_info{version=\\\"dev\\\", resetreason=\\\"Unknown / Unknown\\\", gpios_in_use=\\\"23, 5, 2, 18, 0"
         "\\\"} 1\\n# HELP emsesp_network_rssi RSSI\\n# TYPE emsesp_network_rssi gauge\\nemsesp_network_rssi -23\\n# HELP emsesp_network_txpowersetting "
         "TxPowerSetting\\n# TYPE emsesp_network_txpowersetting gauge\\nemsesp_network_txpowersetting 0\\n# HELP emsesp_network_staticip staticIP\\n# TYPE "
         "emsesp_network_staticip gauge\\nemsesp_network_staticip 0\\n# HELP emsesp_network_lowbandwidth lowBandwidth\\n# TYPE emsesp_network_lowbandwidth "
