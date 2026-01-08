@@ -88,6 +88,8 @@ class Helpers {
 #ifdef EMSESP_STANDALONE
     static char * ultostr(char * ptr, uint32_t value, const uint8_t base);
 #endif
+  private:
+    static char * remove_trailing_zero(char * result);
 };
 
 } // namespace emsesp

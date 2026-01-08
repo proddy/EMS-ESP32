@@ -207,6 +207,18 @@ char * Helpers::render_boolean(char * result, const bool value, const bool dashb
     return result;
 }
 
+char * Helpers::remove_trailing_zero(char * result) {
+    if (strchr(result, '.')) {
+        while (result[strlen(result) - 1] == '0') {
+            result[strlen(result) - 1] = '\0';
+        }
+        if (result[strlen(result) - 1] == '.') {
+            result[strlen(result) - 1] = '\0';
+        }
+    }
+    return result;
+}
+
 // convert unsigned int (single byte) to text value and returns it
 // format: 255(0xFF)=boolean, 0=no formatting, otherwise divide by format
 char * Helpers::render_value(char * result, uint8_t value, int8_t format, const uint8_t fahrenheit) {
@@ -240,14 +252,11 @@ char * Helpers::render_value(char * result, uint8_t value, int8_t format, const 
         strlcpy(result, itoa(new_value >> 1, s2, 10), 5);
         strlcat(result, ".", 5);
         strlcat(result, ((new_value & 0x01) ? "5" : "0"), 7);
-        return result;
     } else if (format == 4) {
         strlcpy(result, itoa(new_value >> 2, s2, 10), 5);
         strlcat(result, ".", 5);
         new_value = (new_value & 0x03) * 25;
         strlcat(result, itoa(new_value, s2, 10), 7);
-        return result;
-
     } else if (format > 0) {
         strlcpy(result, itoa(new_value / format, s2, 10), 5);
         strlcat(result, ".", 5);
@@ -256,7 +265,7 @@ char * Helpers::render_value(char * result, uint8_t value, int8_t format, const 
         strlcpy(result, itoa(new_value * format * -1, s2, 10), 5);
     }
 
-    return result;
+    return remove_trailing_zero(result);
 }
 
 // float: convert float to char
@@ -297,7 +306,7 @@ char * Helpers::render_value(char * result, const double value, const int8_t for
     }
     itoa(decimal, result, 10);
 
-    return ret;
+    return remove_trailing_zero(ret);
 }
 
 // int32: convert signed 32bit to text string and returns string
@@ -335,7 +344,7 @@ char * Helpers::render_value(char * result, const int32_t value, const int8_t fo
         strlcat(result, itoa(new_value * format * -1, s, 10), sizeof(s));
     }
 
-    return result;
+    return remove_trailing_zero(result);
 }
 
 // int16: convert short (two bytes) to text string and prints it
@@ -397,7 +406,7 @@ char * Helpers::render_value(char * result, const uint32_t value, const int8_t f
     }
 #endif
 
-    return result;
+    return remove_trailing_zero(result);
 }
 
 // convert special Latin1 characters to UTF8
