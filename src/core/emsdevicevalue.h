@@ -76,7 +76,7 @@ class DeviceValue {
         MBAR,        // 24 - mbar - atmospheric pressure
         LH,          // 25 - l/h - volume flow rate
         CTKWH,       // 26 - ct/kWh - monetary
-        HZ,          // 27 - Hz - frequency
+        HERTZ,       // 27 - Hz - frequency
         CONNECTIVITY // 28 - used in HA - connectivity
     };
 
