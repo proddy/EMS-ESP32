@@ -1268,7 +1268,7 @@ void Mqtt::add_ha_classes(JsonObject doc, const uint8_t device_type, const uint8
         doc[sc_ha] = sc_ha_total_increasing;
         doc[dc_ha] = "monetary";
         break;
-    case DeviceValueUOM::HZ:
+    case DeviceValueUOM::HERTZ:
         doc[sc_ha] = sc_ha_measurement;
         doc[dc_ha] = "frequency";
         break;

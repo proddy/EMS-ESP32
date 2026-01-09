@@ -196,7 +196,7 @@ export enum DeviceValueUOM {
   MBAR,
   LH,
   CTKWH,
-  HZ
+  HERTZ
 }
 
 export const DeviceValueUOM_s = [

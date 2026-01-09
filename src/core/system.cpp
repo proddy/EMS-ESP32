@@ -2442,10 +2442,14 @@ bool System::load_board_profile(std::vector<int8_t> & data, const std::string & 
 #else
         data = {7, 1, 4, 5, 9, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 1}; // Lolin C3 Mini with RGB Led
 #endif
+        // https://www.wemos.cc/en/latest/c3/c3_mini.html
+        valid_system_gpios_ = {0, 1, 3, 4, 5, 6, 7, 9, 10, 20, 21};
     } else if (board_profile == "S2MINI") {
         data = {15, 7, 11, 12, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // Lolin S2 Mini
+        // https://www.wemos.cc/en/latest/s2/s2_mini.html
     } else if (board_profile == "S3MINI") {
         data = {17, 18, 8, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // Liligo S3
+        // https://lilygo.cc/products/t7-s3
     } else if (board_profile == "S32S3") {
         data                = {2, 18, 5, 17, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // BBQKees Gateway S3
         valid_system_gpios_ = {0, 2, 5, 17, 18};
@@ -2924,8 +2928,9 @@ void System::set_valid_system_gpios() {
     // GPIO18 - GPIO19 = USB-JTAG
     //
     // notes on what is allowed:
-    // GPIO10 = button on BOARD_C3_MINI_V1
-    valid_system_gpios_ = string_range_to_vector("0-21", "2, 8-9, 12-17, 18-19");
+    // GPIO09 = button on BOARD_C3_MINI_V1
+    // GPIO20 - GPIO21 = UART0, , no chip connected because native USB
+    valid_system_gpios_ = string_range_to_vector("0-21", "2, 8, 12-17, 18-19");
 
 #elif CONFIG_IDF_TARGET_ESP32S2
     // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-reference/peripherals/gpio.html
@@ -2934,9 +2939,11 @@ void System::set_valid_system_gpios() {
     // GPIO45 - GPIO46 = strapping pins
     // GPIO39 - GPIO42 = USB-JTAG
     // GPIO22 - GPIO25 = don't exist
+    // GPIO19 - GPIO20 = USB
     //
     // notes on what is allowed:
-    valid_system_gpios_ = string_range_to_vector("0-46", "26-32, 45-46, 39-42, 22-25");
+    // GPIO43, GPIO44 = UART0, no chip connected because native USB
+    valid_system_gpios_ = string_range_to_vector("0-46", "19, 20, 26-32, 45-46, 39-42, 22-25");
 
 #elif CONFIG_IDF_TARGET_ESP32S3
     // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/peripherals/gpio.html

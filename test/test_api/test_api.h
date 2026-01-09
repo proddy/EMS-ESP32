@@ -5,10 +5,10 @@ void test_1() {
         "[{\"reset\":\"\",\"chimneysweeper\":\"\",\"heatingoff\":\"off\",\"heatingactive\":\"off\",\"tapwateractive\":\"on\",\"selflowtemp\":0,\"curflowtemp\":"
         "60.2,\"rettemp\":48.1,\"syspress\":1.4,\"burngas\":\"on\",\"burngas2\":\"off\",\"flamecurr\":37.4,\"fanwork\":\"on\",\"ignwork\":\"off\","
         "\"oilpreheat\":\"off\",\"heatingpump\":\"on\",\"selburnpow\":115,\"curburnpow\":61,\"ubauptime\":3940268,\"servicecode\":\"=H\",\"servicecodenumber\":"
-        "201,\"nompower\":0,\"nrgtotal\":0.0,\"nrgheat\":0.0,\"dhw\":{\"seltemp\":52,\"comfort\":\"hot\",\"flowtempoffset\":40,\"chargeoptimization\":\"off\","
+        "201,\"nompower\":0,\"nrgtotal\":0,\"nrgheat\":0,\"dhw\":{\"seltemp\":52,\"comfort\":\"hot\",\"flowtempoffset\":40,\"chargeoptimization\":\"off\","
         "\"circpump\":\"off\",\"chargetype\":\"3-way "
         "valve\",\"hyston\":-5,\"disinfectiontemp\":70,\"circmode\":\"off\",\"circ\":\"off\",\"storagetemp1\":53.8,\"activated\":\"on\",\"3wayvalve\":\"on\","
-        "\"chargepump\":\"off\",\"nrg\":0.0}}]";
+        "\"chargepump\":\"off\",\"nrg\":0}}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler"));
 }
 
@@ -42,10 +42,10 @@ void test_3() {
         "[{\"reset\":\"\",\"chimneysweeper\":\"\",\"heatingoff\":\"off\",\"heatingactive\":\"off\",\"tapwateractive\":\"on\",\"selflowtemp\":0,\"curflowtemp\":"
         "60.2,\"rettemp\":48.1,\"syspress\":1.4,\"burngas\":\"on\",\"burngas2\":\"off\",\"flamecurr\":37.4,\"fanwork\":\"on\",\"ignwork\":\"off\","
         "\"oilpreheat\":\"off\",\"heatingpump\":\"on\",\"selburnpow\":115,\"curburnpow\":61,\"ubauptime\":3940268,\"servicecode\":\"=H\",\"servicecodenumber\":"
-        "201,\"nompower\":0,\"nrgtotal\":0.0,\"nrgheat\":0.0,\"dhw\":{\"seltemp\":52,\"comfort\":\"hot\",\"flowtempoffset\":40,\"chargeoptimization\":\"off\","
+        "201,\"nompower\":0,\"nrgtotal\":0,\"nrgheat\":0,\"dhw\":{\"seltemp\":52,\"comfort\":\"hot\",\"flowtempoffset\":40,\"chargeoptimization\":\"off\","
         "\"circpump\":\"off\",\"chargetype\":\"3-way "
         "valve\",\"hyston\":-5,\"disinfectiontemp\":70,\"circmode\":\"off\",\"circ\":\"off\",\"storagetemp1\":53.8,\"activated\":\"on\",\"3wayvalve\":\"on\","
-        "\"chargepump\":\"off\",\"nrg\":0.0}}]";
+        "\"chargepump\":\"off\",\"nrg\":0}}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler/values"));
 }
 
@@ -62,7 +62,7 @@ void test_4() {
         "type (chargetype)\":\"3-way valve\",\"dhw hysteresis on temperature (hyston)\":-5,\"dhw disinfection temperature (disinfectiontemp)\":70,\"dhw "
         "circulation pump mode (circmode)\":\"off\",\"dhw circulation active (circ)\":\"off\",\"dhw storage intern temperature (storagetemp1)\":53.8,\"dhw "
         "activated (activated)\":\"on\",\"dhw 3-way valve active (3wayvalve)\":\"on\",\"dhw charge pump (chargepump)\":\"off\",\"nominal Power "
-        "(nompower)\":0,\"total energy (nrgtotal)\":0.0,\"energy heating (nrgheat)\":0.0,\"dhw energy (nrg)\":0.0}]";
+        "(nompower)\":0,\"total energy (nrgtotal)\":0,\"energy heating (nrgheat)\":0,\"dhw energy (nrg)\":0}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler/info"));
 }
 
@@ -150,7 +150,7 @@ void test_12() {
 void test_13() {
     auto expected_response = "[{\"hc1\":{\"seltemp\":20.5,\"currtemp\":22.8,\"haclimate\":\"roomTemp\",\"modetype\":\"heat\",\"remotetemp\":null},\"hc2\":{"
                              "\"seltemp\":20.6,\"currtemp\":22.9,\"haclimate\":\"roomTemp\",\"modetype\":\"eco\",\"remotetemp\":null},\"hc3\":{\"seltemp\":20."
-                             "7,\"currtemp\":23.0,\"haclimate\":\"roomTemp\",\"modetype\":\"nofrost\",\"remotetemp\":null},\"dhw\":{}}]";
+                             "7,\"currtemp\":23,\"haclimate\":\"roomTemp\",\"modetype\":\"nofrost\",\"remotetemp\":null},\"dhw\":{}}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/thermostat"));
 }
 
@@ -187,12 +187,12 @@ void test_17() {
 }
 
 void test_18() {
-    auto expected_response = "[{\"test_custom\":0.00,\"test_read_only\":70.00,\"test_ram\":\"14\",\"test_seltemp\":\"14\"}]";
+    auto expected_response = "[{\"test_custom\":0,\"test_read_only\":70,\"test_ram\":\"14\",\"test_seltemp\":\"14\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/custom"));
 }
 
 void test_19() {
-    auto expected_response = "[{\"test_custom\":0.00,\"test_read_only\":70.00,\"test_ram\":\"14\",\"test_seltemp\":\"14\"}]";
+    auto expected_response = "[{\"test_custom\":0,\"test_read_only\":70,\"test_ram\":\"14\",\"test_seltemp\":\"14\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/custom/info"));
 }
 
@@ -210,7 +210,7 @@ void test_21() {
 void test_22() {
     auto expected_response = "[{\"name\":\"test_custom\",\"fullname\":\"test_custom\",\"storage\":\"ems\",\"type\":\"number\",\"readable\":true,\"writeable\":"
                              "true,\"visible\":true,\"device_id\":\"0x08\",\"type_id\":\"0x18\",\"offset\":0,\"factor\":1,\"ent_cat\":\"diagnostic\",\"uom\":"
-                             "\"°C\",\"state_class\":\"measurement\",\"device_class\":\"temperature\",\"value\":0.00}]";
+                             "\"°C\",\"state_class\":\"measurement\",\"device_class\":\"temperature\",\"value\":0}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/custom/test_custom"));
 }
 
