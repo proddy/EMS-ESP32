@@ -8,6 +8,7 @@ For more details go to [emsesp.org](https://emsesp.org/).
 
 - update time saved in nvs
 - heatpump entities [#2883](https://github.com/emsesp/EMS-ESP32/issues/2883)
+- HA number mode selectable box/slider (slider for max range 100) [#2900](https://github.com/emsesp/EMS-ESP32/discussions/2900)
 
 ## Fixed
 
@@ -25,3 +26,6 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - GPIOs stored along with the name and reported in log if conflicting
 - free GPIOs depend on board profile [#2901](https://github.com/emsesp/EMS-ESP32/issues/2901)
 - prefer PSram for mqtt queue [#2889](https://github.com/emsesp/EMS-ESP32/issues/2889)
+- day schedule defult to all days, no day selected is not allowed
+- board profile `CUSTOM` can only be selected in developer mode
+- mqtt sends round values without decimals (`28` instead of `28.0`)
