@@ -93,6 +93,7 @@ class MqttSettings {
     uint8_t  nested_format           = EMSESP_DEFAULT_NESTED_FORMAT;
     String   discovery_prefix        = EMSESP_DEFAULT_DISCOVERY_PREFIX;
     uint8_t  discovery_type          = EMSESP_DEFAULT_DISCOVERY_TYPE;
+    uint8_t  ha_number_mode          = EMSESP_DEFAULT_HA_NUMBER_MODE;
     bool     publish_single          = EMSESP_DEFAULT_PUBLISH_SINGLE;
     bool     publish_single2cmd      = EMSESP_DEFAULT_PUBLISH_SINGLE2CMD;
     bool     send_response           = EMSESP_DEFAULT_SEND_RESPONSE;

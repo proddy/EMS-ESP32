@@ -219,6 +219,7 @@ const it: Translation = {
   MQTT_PUBLISH_TEXT_3: 'Abilita rilevamento MQTT (Home Assistant, Domoticz)',
   MQTT_PUBLISH_TEXT_4: 'Prefisso per gli argomenti di scoperta',
   MQTT_PUBLISH_TEXT_5: 'Discovery type',
+  MQTT_PUBLISH_TEXT_6: 'Number mode',
   MQTT_PUBLISH_INTERVALS: 'Pubblica intervalli',
   MQTT_INT_BOILER: 'Caldaie e Pompe di Calore',
   MQTT_INT_THERMOSTATS: 'Termostati',

@@ -36,6 +36,7 @@ class DummySettings {
     uint8_t  nested_format      = 1; // 1=nested 2=single
     String   discovery_prefix   = "homeassistant";
     uint8_t  discovery_type     = 0; // HA
+    uint8_t  ha_number_mode     = 0; // box
     bool     ha_enabled         = true;
     String   base               = "ems-esp";
     bool     publish_single     = false;

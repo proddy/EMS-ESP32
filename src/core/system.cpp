@@ -2412,14 +2412,30 @@ bool System::load_board_profile(std::vector<int8_t> & data, const std::string & 
         valid_system_gpios_ = {0, 2, 4, 5, 14, 15, 32, 34, 36, 39}; // system analogs 36, 39, led 2
     } else if (board_profile == "MH-ET") {
         data = {2, 18, 23, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // MH-ET Live D1 Mini
+        // allow only pins that are marked as `can always be used`
+        valid_system_gpios_ = {0, 2, 5, 18, 23, 12 ,13, 14, 15, 16, 17, 26, 27, 33};
+        // can always be used: 12, 13 ,14, 15, 16, 17, 26, 27, 33
+        // can be used if no other function 2, 4, 5, 9, 10, 18, 19, 21, 22, 23, 25, 34, 35, 36, 39
     } else if (board_profile == "NODEMCU") {
         data = {2, 18, 23, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // NodeMCU 32S
+        // https://blog.berrybase.de/esp32-node-mcu-module-anfaenger-guide/
+        // all available pins, exclude uart0
+        valid_system_gpios_ = {0, 2, 5, 18, 23, 4, 12, 13, 14, 15, 16, 17, 21, 22, 25, 26, 27, 32, 33, 34, 35, 36, 39};
     } else if (board_profile == "LOLIN") {
         data = {2, 18, 17, 16, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // Lolin D32
+        // https://www.wemos.cc/en/latest/d32/d32.html
+        valid_system_gpios_ = {2, 18, 17, 16, 0, 4, 5, 12, 13, 14, 15, 21, 22, 25, 26, 27, 32, 33, 34, 35, 36, 39};
     } else if (board_profile == "OLIMEX") {
         data = {0, 0, 36, 4, 34, PHY_type::PHY_TYPE_LAN8720, -1, 0, 0, 0}; // Olimex ESP32-EVB (uses U1TXD/U1RXD/BUTTON, no LED or Temperature sensor)
+        // https://github.com/OLIMEX/ESP32-EVB/blob/master/HARDWARE/REV-K1/ESP32-EVB_Rev_K1.pdf
+        // uart0 = 1, 3; CAN = 5, 35; relais = 32, 33; ir = 12(tx), 39(rx); SD-card = 2, 14, 15, button = 34
+        // relais and ir can be configured as analog sensor
+        valid_system_gpios_ = {4, 34, 36, 12, 13, 21, 22, 25, 26, 27, 32, 33, 39};
     } else if (board_profile == "OLIMEXPOE") {
         data = {0, 0, 36, 4, 34, PHY_type::PHY_TYPE_LAN8720, 12, 0, 3, 0}; // Olimex ESP32-POE
+        // https://github.com/OLIMEX/ESP32-POE/blob/master/HARDWARE/ESP32-PoE-hardware-revision-L1/ESP32-PoE_Rev_L1.pdf
+        // uart0 = 1, 3; SD-card = 2, 14, 15; button = 34;
+        valid_system_gpios_ = {4, 34, 36, 12, 13, 21, 22, 25, 26, 27, 32, 33, 39};
     } else if (board_profile == "C3MINI") {
 #if defined(BOARD_C3_MINI_V1)
         data = {7, 1, 4, 5, 9, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // Lolin C3 Mini V1
@@ -2940,23 +2956,34 @@ void System::set_valid_system_gpios() {
 #elif CONFIG_IDF_TARGET_ESP32
     // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html
     // excluded:
-    // GPIO6 - GPIO11, GPIO16 - GPIO17 = used for SPI flash and PSRAM
-    // GPIO12 - GPIO15 = USB-JTAG (but we allow GPIO14 for BBQKees) and GPIO12 & GPIO13 also reserved for BBQKees E32V2.2
+    // GPIO6 - GPIO11, GPIO16 - GPIO17 = used for SPI flash and PSRAM (dio mode only GPIO06-GPIO08, GPIO11)
     // GPIO20, GPIO24, GPIO28 - GPIO31 = don't exist
+    // GPIO01, GPIO03 = UART0, normal connected to UART/USB chip
     //
-    // notes on what is allowed:
-    // GPIO34, GPIO35, GPIO37 = input only
+    // notes on known boards:
+    // boards have valid gpios depending on pinout and internal used gpios, see: `load_board_profile()`
+    //
+    // notes on BBQKees boards:
+    // *** We block all free GPIOS in load_board_profile() ***
     // GPIO2, GPIO4, GPIO5, GPIO14 = used on BBQKees boards for either LED, Dallas or Rx
-    // GPIO23 and GPIO18 are used by Ethernet
-    // GPIO25 - GPIO37 = ADC2
-    // GPIO32 - GPIO39 = ADC1
-    // GPIO36 = used on BBQKees boards for supply_voltage (E32V2.2) (note may conflict with WiFI on other boards)
-    // GPIO39 = used on BBQKees boards for core_voltage (E32V2.2) (note may conflict with WiFI on other boards)
+    // GPIO12, GPIO13, GPIO35 = BBQKees E32V2_2 internal system pins
+    // GPIO33 = BBQKees E32V_2 unused internal NTC system sensor
+    // GPIO36 = used on BBQKees boards for supply_voltage (E32V2.2)
+    // GPIO39 = used on BBQKees boards for core_voltage (E32V2.2)
+    //
+    // notes on what is allowed with special functions:
+    // GPIO01, GPIO03 = UART0, not always connected to uart/usb chip
+    // GPIO12 - GPIO15 = JTAG, normally not used
+    // GPIO00, GPIO05, GPIO12, GPIO15 = strapping pins, can be used with care
+    // GPIO34, GPIO35, GPIO37 = input only
+    // GPIO23 and GPIO18 are used by Ethernet, excuded later by eth config
+    // GPIO00, GPIO02, GPIO04, GPIO12 - GPIO15, GPIO25 - GPIO27 = ADC2 (10 ch), used by WiFI-driver
+    // GPIO32 - GPIO39 = ADC1 (8 ch), can always be used
     if (ESP.getPsramSize() > 0) {
         // remove SPI0/1 PSRAM pins GPIO16 (CS) and GPIO17 (CLK) from the list
-        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 12, 13, 15, 16, 17, 20, 24, 28-31");
+        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 16, 17, 20, 24, 28-31");
     } else {
-        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 12, 13, 15, 20, 24, 28-31");
+        valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 20, 24, 28-31");
     }
 #elif defined(EMSESP_STANDALONE)
     valid_system_gpios_ = string_range_to_vector("0-39");

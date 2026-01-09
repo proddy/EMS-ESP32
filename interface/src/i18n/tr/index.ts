@@ -219,6 +219,7 @@ const tr: Translation = {
   MQTT_PUBLISH_TEXT_3: 'MQTT keşfi etkinleştir (Home Assistant, Domoticz)',
   MQTT_PUBLISH_TEXT_4: 'Keşif konuları için ön ek',
   MQTT_PUBLISH_TEXT_5: 'Domoticz Format',
+  MQTT_PUBLISH_TEXT_6: 'Number mode',
   MQTT_PUBLISH_INTERVALS: 'Yayınlama aralıkları',
   MQTT_INT_BOILER: 'Kazanlar ve Isı Pompaları',
   MQTT_INT_THERMOSTATS: 'Termostatlar',
