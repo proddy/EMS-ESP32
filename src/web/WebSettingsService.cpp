@@ -133,6 +133,13 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
         // remove the ethernet pins from valid list, regardless of whether the GPIOs are valid or not
         EMSESP::system_.remove_gpio(23, true); // MDC
         EMSESP::system_.remove_gpio(18, true); // MDIO
+        EMSESP::system_.remove_gpio(19, true); // TXD0
+        EMSESP::system_.remove_gpio(22, true); // TXD1
+        EMSESP::system_.remove_gpio(21, true); // TXEN
+        EMSESP::system_.remove_gpio(25, true); // RXD0
+        EMSESP::system_.remove_gpio(26, true); // RXD1
+        EMSESP::system_.remove_gpio(27, true); // CRS
+
         if (settings.eth_clock_mode < 2) {
             EMSESP::system_.remove_gpio(0, true); // ETH.clock input
         } else if (settings.eth_clock_mode == 2) {
