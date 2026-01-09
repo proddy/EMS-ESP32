@@ -1446,3 +1446,5 @@ vchip
 SPIIO
 SPIDQS
 txpause
+relais
+pinout

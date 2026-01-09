@@ -1424,11 +1424,13 @@ bool Mqtt::publish_ha_climate_config(const DeviceValue & dv, const bool has_room
     doc["mode_cmd_t"] = mode_cmd_s;
 
     // add hvac_action - https://github.com/emsesp/EMS-ESP32/discussions/2562
-    doc["act_t"]   = "~/boiler_data";
-    doc["act_tpl"] = "{% if value_json.hpactivity=='cooling'%}cooling{%elif value_json.heatingactive=='on'%}heating{%else%}idle{%endif%}";
+    doc["act_t"] = "~/boiler_data";
+    char on_string[12];
+    doc["act_tpl"] = "{% if value_json.hpactivity=='cooling'%}cooling{%elif value_json.heatingactive=='" + std::string(Helpers::render_boolean(on_string, true))
+                     + "'%}heating{%else%}idle{%endif%}"; // uses boolean translation for on/true
 
     // map EMS modes to HA climate modes
-    // EMS modes: auto, manual, heat, off, night, day, nofrost, eco, comfort, cool)
+    // EMS modes: auto, manual, heat, off, night, day, nofrost, eco, comfort, cool
     // HA supports: auto, off, cool, heat, dry, fan_only
     bool found_auto = false;
     bool found_heat = false;
