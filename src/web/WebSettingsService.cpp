@@ -141,11 +141,6 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
             EMSESP::system_.remove_gpio(17, true); // ETH.clock output
         }
     }
-#if CONFIG_IDF_TARGET_ESP32
-    // Uart0 pins not allowed for all other gpio
-    EMSESP::system_.remove_gpio(1, true);
-    EMSESP::system_.remove_gpio(3, true);
-#endif
 
     // free old gpios from used list to allow remapping
     EMSESP::system_.remove_gpio(original_settings.led_gpio);
