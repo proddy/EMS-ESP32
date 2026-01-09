@@ -130,7 +130,9 @@ let system_status = {
   // partitions: [],
   developer_mode: true,
   model: '',
+  board: '',
   // model: 'BBQKees Electronics EMS Gateway E32 V2 (E32 V2.0 P3/2024011)',
+  // board: 'E32V2',
   // status: 0,
   status: 3
 };
