@@ -33,7 +33,8 @@ import type { ScheduleItem } from './types';
 
 // Constants
 const FLAG_MASK_127 = 127;
-const SCHEDULE_TYPE_THRESHOLD = 128;
+const SCHEDULE_TYPE_THRESHOLD = 127;
+const FLAG_ALL_DAYS = 127;
 const DEFAULT_TIME = '00:00';
 const TYPOGRAPHY_FONT_SIZE = 10;
 
@@ -104,7 +105,7 @@ const SchedulerDialog = ({
       // 130 is on condition
       // 132 is immediate
       setScheduleType(
-        selectedItem.flags < SCHEDULE_TYPE_THRESHOLD
+        selectedItem.flags <= SCHEDULE_TYPE_THRESHOLD
           ? ScheduleFlag.SCHEDULE_DAY
           : selectedItem.flags
       );
@@ -181,7 +182,7 @@ const SchedulerDialog = ({
         setScheduleType(flag);
         // wipe the time field when changing the schedule type
         // set the flags based on type
-        const newFlags = flag === ScheduleFlag.SCHEDULE_DAY ? 0 : flag;
+        const newFlags = flag === ScheduleFlag.SCHEDULE_DAY ? FLAG_ALL_DAYS : flag;
         setEditItem((prev) => ({ ...prev, time: '', flags: newFlags }));
       }
     },
@@ -190,7 +191,7 @@ const SchedulerDialog = ({
 
   const handleDOWChange = useCallback(
     (_event: React.SyntheticEvent<HTMLElement>, flags: string[]) => {
-      const newFlags = getFlagDOWnumber(flags);
+      const newFlags = getFlagDOWnumber(flags) === 0 ? FLAG_ALL_DAYS : getFlagDOWnumber(flags);
       setEditItem((prev) => ({ ...prev, flags: newFlags }));
     },
     [getFlagDOWnumber]

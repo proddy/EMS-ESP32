@@ -41,6 +41,7 @@ const MIN_ID = -100;
 const MAX_ID = 100;
 const ICON_SIZE = 16;
 const SCHEDULE_FLAG_THRESHOLD = 127;
+const FLAG_ALL_DAYS = 127;
 const REFERENCE_YEAR = 2017;
 const REFERENCE_MONTH = '01';
 const LOG_2 = Math.log(2);
@@ -51,7 +52,7 @@ const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 7] as const;
 const DEFAULT_SCHEDULE_ITEM: Omit<ScheduleItem, 'id' | 'o_id'> = {
   active: false,
   deleted: false,
-  flags: ScheduleFlag.SCHEDULE_DAY,
+  flags: FLAG_ALL_DAYS,
   time: '',
   cmd: '',
   value: '',
