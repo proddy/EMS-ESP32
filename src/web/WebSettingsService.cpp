@@ -308,9 +308,9 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     }
 
     // save the settings if changed from the webUI
-    // if we encountered an invalid GPIO, rollback changes and don't save settings, and report the error to WebUI
+    // if we encountered an invalid GPIO on same boardprofile, rollback changes and don't save settings, and report the error to WebUI
     // without a restart
-    if (!have_valid_gpios) {
+    if (!have_valid_gpios && original_settings.board_profile == settings.board_profile) {
         // replace settings with original settings
         settings = original_settings;
         EMSESP::system_.restore_snapshot_gpios(used_gpios, system_gpios);
