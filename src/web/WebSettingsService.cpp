@@ -113,6 +113,13 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
 
     reset_flags();
 
+    // before loading new board profile free old gpios from used list to allow remapping
+    EMSESP::system_.remove_gpio(original_settings.led_gpio);
+    EMSESP::system_.remove_gpio(original_settings.dallas_gpio);
+    EMSESP::system_.remove_gpio(original_settings.pbutton_gpio);
+    EMSESP::system_.remove_gpio(original_settings.rx_gpio);
+    EMSESP::system_.remove_gpio(original_settings.tx_gpio);
+
     // see if the user has changed the board profile
     // this will set: led_gpio, dallas_gpio, rx_gpio, tx_gpio, pbutton_gpio, phy_type, eth_power, eth_phy_addr, eth_clock_mode, led_type
     // this will always run when EMS-ESP starts since original_settings{} is empty
@@ -148,13 +155,6 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
             EMSESP::system_.remove_gpio(17, true); // ETH.clock output
         }
     }
-
-    // free old gpios from used list to allow remapping
-    EMSESP::system_.remove_gpio(original_settings.led_gpio);
-    EMSESP::system_.remove_gpio(original_settings.dallas_gpio);
-    EMSESP::system_.remove_gpio(original_settings.pbutton_gpio);
-    EMSESP::system_.remove_gpio(original_settings.rx_gpio);
-    EMSESP::system_.remove_gpio(original_settings.tx_gpio);
 
     // if any of the GPIOs have changed and re-validate them
     bool have_valid_gpios = true;
@@ -308,9 +308,9 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     }
 
     // save the settings if changed from the webUI
-    // if we encountered an invalid GPIO on same boardprofile, rollback changes and don't save settings,
+    // if we encountered an invalid GPIO, rollback changes and don't save settings,
     // and report the error to WebUI without a restart
-    if (!have_valid_gpios && original_settings.board_profile == settings.board_profile) {
+    if (!have_valid_gpios) {
         // replace settings with original settings
         settings = original_settings;
         EMSESP::system_.restore_snapshot_gpios(used_gpios, system_gpios);

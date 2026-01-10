@@ -2447,9 +2447,11 @@ bool System::load_board_profile(std::vector<int8_t> & data, const std::string & 
     } else if (board_profile == "S2MINI") {
         data = {15, 7, 11, 12, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // Lolin S2 Mini
         // https://www.wemos.cc/en/latest/s2/s2_mini.html
+        set_valid_system_gpios();
     } else if (board_profile == "S3MINI") {
         data = {17, 18, 8, 5, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // Liligo S3
         // https://lilygo.cc/products/t7-s3
+        set_valid_system_gpios();
     } else if (board_profile == "S32S3") {
         data                = {2, 18, 5, 17, 0, PHY_type::PHY_TYPE_NONE, 0, 0, 0, 0}; // BBQKees Gateway S3
         valid_system_gpios_ = {0, 2, 5, 17, 18};
