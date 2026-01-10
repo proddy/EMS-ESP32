@@ -1,4 +1,4 @@
-import { type FC, memo, useMemo } from 'react';
+import { type FC, type PropsWithChildren, memo, useMemo } from 'react';
 
 import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -12,6 +12,7 @@ type MessageBoxLevel = 'warning' | 'success' | 'info' | 'error';
 export interface MessageBoxProps extends BoxProps {
   level: MessageBoxLevel;
   message?: string;
+  children?: React.ReactNode;
 }
 
 const LEVEL_ICONS: Record<MessageBoxLevel, React.ComponentType<SvgIconProps>> = {
@@ -28,7 +29,7 @@ const LEVEL_PALETTE_PATHS: Record<MessageBoxLevel, string> = {
   error: 'error.dark'
 };
 
-const MessageBox: FC<MessageBoxProps> = ({
+const MessageBox: FC<PropsWithChildren<MessageBoxProps>> = ({
   level,
   message,
   sx,
