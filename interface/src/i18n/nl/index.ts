@@ -219,7 +219,7 @@ const nl: Translation = {
   MQTT_PUBLISH_TEXT_3: 'Activeer MQTT Discovery',
   MQTT_PUBLISH_TEXT_4: 'Prefix voor de Discovery topics',
   MQTT_PUBLISH_TEXT_5: 'Discovery type',
-  MQTT_PUBLISH_TEXT_6: 'Number mode',
+  MQTT_INPUT_NUMBER_FORMAT: 'Getalformaat',
   MQTT_PUBLISH_INTERVALS: 'Publicatie intervallen',
   MQTT_INT_BOILER: 'CV ketels en warmtepompen',
   MQTT_INT_THERMOSTATS: 'Thermostaten',

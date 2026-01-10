@@ -219,7 +219,7 @@ const cz: Translation = {
   MQTT_PUBLISH_TEXT_3: 'Povolit MQTT Discovery',
   MQTT_PUBLISH_TEXT_4: 'Prefix pro Discovery témata',
   MQTT_PUBLISH_TEXT_5: 'Typ Discovery',
-  MQTT_PUBLISH_TEXT_6: 'Number mode',
+  MQTT_INPUT_NUMBER_FORMAT: 'Formát čísla',
   MQTT_PUBLISH_INTERVALS: 'Intervaly publikování',
   MQTT_INT_BOILER: 'Kotle a tepelná čerpadla',
   MQTT_INT_THERMOSTATS: 'Termostaty',

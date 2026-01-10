@@ -219,7 +219,7 @@ const sv: Translation = {
   MQTT_PUBLISH_TEXT_3: 'Aktivera MQTT Discovery',
   MQTT_PUBLISH_TEXT_4: 'Prefix för Discovery topics',
   MQTT_PUBLISH_TEXT_5: 'Discoverytyp',
-  MQTT_PUBLISH_TEXT_6: 'Number mode',
+  MQTT_INPUT_NUMBER_FORMAT: 'Nummerformat',
   MQTT_PUBLISH_INTERVALS: 'Publiceringsintervall',
   MQTT_INT_BOILER: 'Värmepump/panna',
   MQTT_INT_THERMOSTATS: 'Termostater',
