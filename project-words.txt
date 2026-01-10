@@ -1448,3 +1448,4 @@ SPIDQS
 txpause
 relais
 pinout
+TXEN
