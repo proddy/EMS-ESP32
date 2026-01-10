@@ -84,9 +84,7 @@ If you like **EMS-ESP**, please give it a ✨ on GitHub, or even better fork it 
 
 ## 📦&nbsp; **Building**
 
-To build the web interface only, run `platformio run -e build_webUI`. This will install the necessary dependencies and build the web interface and also create the embedded code used need to build the firmware. You can run the web interface locally by going to the `interface` directory and running `pnpm standalone`.
-
-To build the firmware, run `platformio run`. This will build the firmware for all ESP32 modules and place the binaries in the `build/firmware` folder. If you want to configure the build for a single platform create a local `pio_local.ni` file in the root directory (see example in `pio_local.ini_example`).
+See the [Building Guide](https://emsesp.org/Building) section of the documentation for instructions on how to build EMS-ESP.
 
 ## 📢&nbsp; **Libraries used**
 
