@@ -219,7 +219,7 @@ const no: Translation = {
   MQTT_PUBLISH_TEXT_3: 'Aktiver MQTT Discovery',
   MQTT_PUBLISH_TEXT_4: 'Prefiks for Discovery topics',
   MQTT_PUBLISH_TEXT_5: 'Discovery type',
-  MQTT_PUBLISH_TEXT_6: 'Number mode',
+  MQTT_INPUT_NUMBER_FORMAT: 'Nummerformat',
   MQTT_PUBLISH_INTERVALS: 'Publiseringsintervall',
   MQTT_INT_BOILER: 'Fyr/Varmepumpe',
   MQTT_INT_THERMOSTATS: 'Termostat',

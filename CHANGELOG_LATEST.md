@@ -8,7 +8,7 @@ For more details go to [emsesp.org](https://emsesp.org/).
 
 - update time saved in nvs
 - heatpump entities [#2883](https://github.com/emsesp/EMS-ESP32/issues/2883)
-- HA number mode selectable box/slider (slider for max range 100) [#2900](https://github.com/emsesp/EMS-ESP32/discussions/2900)
+- HA input number format (mode) selectable box/slider (slider for max range 100) [#2900](https://github.com/emsesp/EMS-ESP32/discussions/2900)
 
 ## Fixed
 

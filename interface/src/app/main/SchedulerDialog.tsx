@@ -191,7 +191,8 @@ const SchedulerDialog = ({
 
   const handleDOWChange = useCallback(
     (_event: React.SyntheticEvent<HTMLElement>, flags: string[]) => {
-      const newFlags = getFlagDOWnumber(flags) === 0 ? FLAG_ALL_DAYS : getFlagDOWnumber(flags);
+      const newFlags =
+        getFlagDOWnumber(flags) === 0 ? FLAG_ALL_DAYS : getFlagDOWnumber(flags);
       setEditItem((prev) => ({ ...prev, flags: newFlags }));
     },
     [getFlagDOWnumber]

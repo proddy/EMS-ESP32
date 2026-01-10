@@ -245,6 +245,7 @@ MAKE_NOTRANSLATION(tag_device_data, "")
 
 // Unit Of Measurement mapping - maps to DeviceValueUOM_s in emsdevice.cpp
 // Translating hours/minute/seconds are done in emsdevice.cpp (uom_to_string())
+// to keep to some form of consistency, all UOMs follow Home Assistant naming conventions - https://developers.home-assistant.io/docs/core/entity/sensor/#available-device-classes
 MAKE_WORD_CUSTOM(uom_blank, " ")
 MAKE_WORD_CUSTOM(uom_percent, "%")
 MAKE_WORD_CUSTOM(uom_degrees, "°C")
