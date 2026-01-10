@@ -40,12 +40,23 @@ import { BOARD_PROFILES } from '../main/types';
 import type { APIcall, BoardProfileKey, Settings } from '../main/types';
 import { createSettingsValidator } from '../main/validators';
 
-export function boardProfileSelectItems() {
-  return Object.keys(BOARD_PROFILES).map((code) => (
+export function boardProfileSelectItems(boardProfile?: string, developerMode?: boolean, LL?: any) {
+  const items = Object.keys(BOARD_PROFILES).map((code) => (
     <MenuItem key={code} value={code}>
       {BOARD_PROFILES[code as BoardProfileKey]}
     </MenuItem>
   ));
+
+  if (boardProfile === 'CUSTOM' || developerMode) {
+    items.push(<Divider />);
+    items.push(
+      <MenuItem key="CUSTOM" value="CUSTOM">
+        {LL?.CUSTOM()}
+      </MenuItem>
+    );
+  }
+
+  return items;
 }
 
 const ApplicationSettings = () => {
@@ -181,7 +192,10 @@ const ApplicationSettings = () => {
   }, [validateAndSubmit, doRestart]);
 
   // Memoize board profile select items to prevent recreation
-  const boardProfileItems = useMemo(() => boardProfileSelectItems(), []);
+  const boardProfileItems = useMemo(
+    () => boardProfileSelectItems(data?.board_profile, data?.developer_mode, LL),
+    [data?.board_profile, data?.developer_mode, LL]
+  );
 
   const content = () => {
     if (!data || !hardwareData) {
@@ -501,12 +515,6 @@ const ApplicationSettings = () => {
             </MenuItem>
           ) : (
             boardProfileItems
-          )}
-          <Divider />
-          {(data.board_profile === 'CUSTOM' || data.developer_mode) && (
-            <MenuItem key={'CUSTOM'} value={'CUSTOM'}>
-              {LL.CUSTOM()}&hellip;
-            </MenuItem>
           )}
         </TextField>
         {data.board_profile === 'CUSTOM' && (
