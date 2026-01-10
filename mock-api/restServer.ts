@@ -586,6 +586,7 @@ let mqtt_settings = {
   keep_alive: 60,
   clean_session: true,
   entity_format: 1,
+  ha_number_mode: 0,
   publish_time_boiler: 10,
   publish_time_thermostat: 10,
   publish_time_solar: 10,
