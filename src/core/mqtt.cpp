@@ -1167,6 +1167,8 @@ void Mqtt::add_ha_classes(JsonObject doc, const uint8_t device_type, const uint8
         doc[uom_ha] = "L/min";
     } else if (uom == DeviceValueUOM::LH) {
         doc[uom_ha] = "L/h";
+    } else if (uom == DeviceValueUOM::L) {
+        doc[uom_ha] = "L";
     } else if (uom != DeviceValueUOM::NONE) {
         doc[uom_ha] = EMSdevice::uom_to_string(uom); // use default
     } else if (discovery_type() != discoveryType::HOMEASSISTANT) {
