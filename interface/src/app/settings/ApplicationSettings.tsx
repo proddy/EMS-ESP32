@@ -502,7 +502,7 @@ const ApplicationSettings = () => {
           ) : (
             boardProfileItems
           )}
-          <Divider />
+          {(data.board_profile === 'CUSTOM' || data.developer_mode) && <Divider />}
           {(data.board_profile === 'CUSTOM' || data.developer_mode) && (
             <MenuItem key={'CUSTOM'} value={'CUSTOM'}>
               {LL.CUSTOM()}&hellip;
