@@ -219,6 +219,7 @@ const sk: Translation = {
   MQTT_PUBLISH_TEXT_3: 'Povolenie zisťovania MQTT',
   MQTT_PUBLISH_TEXT_4: 'Predpona tém Discovery',
   MQTT_PUBLISH_TEXT_5: 'Typ zistenia',
+  MQTT_INPUT_NUMBER_FORMAT: 'Formát čísla',
   MQTT_PUBLISH_INTERVALS: 'Intervaly zverejňovania',
   MQTT_INT_BOILER: 'Kotly a tepelné čerpadlá',
   MQTT_INT_THERMOSTATS: 'Termostaty',

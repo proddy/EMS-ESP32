@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,8 +48,6 @@ void WebStatusService::systemStatus(AsyncWebServerRequest * request) {
 
     auto *     response = new AsyncJsonResponse(false);
     JsonObject root     = response->getRoot();
-
-    root["emsesp_version"] = EMSESP_APP_VERSION;
 
     //
     // System Status
@@ -130,6 +128,7 @@ void WebStatusService::systemStatus(AsyncWebServerRequest * request) {
         root["free_psram"] = ESP.getFreePsram() / 1024;
     }
     root["model"] = EMSESP::system_.getBBQKeesGatewayDetails();
+    root["board"] = EMSESP::system_.getBBQKeesGatewayDetails(FUSE_VALUE::BOARD);
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
     root["temperature"] = (int)Helpers::transformNumFloat(EMSESP::system_.temperature(), 0, EMSESP::system_.fahrenheit() ? 2 : 0); // only 2 decimal places
 #endif

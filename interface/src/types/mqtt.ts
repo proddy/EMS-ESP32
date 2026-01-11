@@ -49,4 +49,5 @@ export interface MqttSettingsType {
   publish_single2cmd: boolean;
   discovery_prefix: string;
   discovery_type: number;
+  ha_number_mode: number;
 }

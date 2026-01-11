@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -245,6 +245,7 @@ MAKE_NOTRANSLATION(tag_device_data, "")
 
 // Unit Of Measurement mapping - maps to DeviceValueUOM_s in emsdevice.cpp
 // Translating hours/minute/seconds are done in emsdevice.cpp (uom_to_string())
+// to keep to some form of consistency, all UOMs follow Home Assistant naming conventions - https://developers.home-assistant.io/docs/core/entity/sensor/#available-device-classes
 MAKE_WORD_CUSTOM(uom_blank, " ")
 MAKE_WORD_CUSTOM(uom_percent, "%")
 MAKE_WORD_CUSTOM(uom_degrees, "°C")
@@ -381,6 +382,7 @@ MAKE_ENUM(enum_lowNoiseMode, FL_(off), FL_(reduced_output), FL_(switchoff), FL_(
 
 // heat pump
 MAKE_ENUM(enum_hpactivity, FL_(off), FL_(heating), FL_(cooling), FL_(hot_water), FL_(pool), FL_(pool_heating), FL_(defrost), FL_(compressor_alarm)) // BV name COMPRESSOR_E21_STATUS
+MAKE_ENUM(enum_hpactivity1, FL_(off), FL_(heating), FL_(hot_water), FL_(defrost), FL_(compressor_alarm))
 MAKE_ENUM(enum_silentMode, FL_(off), FL_(auto), FL_(on))
 MAKE_ENUM(enum_4way, FL_(cool_defrost), FL_(heat_ww))
 MAKE_ENUM(enum_auxHeaterSource, FL_(not_installed), FL_(el_heater), FL_(exclusive), FL_(parallel), FL_(hybrid))

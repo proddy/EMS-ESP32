@@ -788,10 +788,12 @@ const Customizations = () => {
     </>
   );
 
-  return (
+  return restarting ? (
+    <SystemMonitor />
+  ) : (
     <SectionContent>
       {blocker ? <BlockNavigation blocker={blocker} /> : null}
-      {restarting ? <SystemMonitor /> : renderContent()}
+      {renderContent()}
       {selectedDeviceEntity && (
         <SettingsCustomizationsDialog
           open={dialogOpen}

@@ -56,8 +56,7 @@ void IRAM_ATTR AnalogSensor::freqIrq2() {
 #endif
 
 void AnalogSensor::start(const bool factory_settings) {
-    // if (factory_settings && EMSESP::nvs_.getString("boot").equals("E32V2_2")) {
-    if (factory_settings && analogReadMilliVolts(39) > 700) { // core voltage > 2.6V
+    if (factory_settings && EMSESP::system_.board_profile() == "E32V2_2") {
         EMSESP::webCustomizationService.update([&](WebCustomization & settings) {
             auto newSensor = AnalogCustomization();
             strcpy(newSensor.name, "core_voltage");
@@ -68,12 +67,22 @@ void AnalogSensor::start(const bool factory_settings) {
             newSensor.type      = AnalogType::ADC;
             newSensor.is_system = true;
             settings.analogCustomizations.push_back(newSensor);
+            EMSESP::system_.add_gpio(newSensor.gpio, newSensor.name);
 
             strcpy(newSensor.name, "supply_voltage");
             newSensor.gpio      = 36;
             newSensor.factor    = 0.017; // Divider 24k - 1,5k
             newSensor.is_system = true;
             settings.analogCustomizations.push_back(newSensor);
+            EMSESP::system_.add_gpio(newSensor.gpio, newSensor.name);
+
+            strcpy(newSensor.name, "led");
+            newSensor.gpio   = 2;
+            newSensor.type   = AnalogType::DIGITAL_OUT;
+            newSensor.uom    = DeviceValueUOM::NONE; // unchanged after restart
+            newSensor.factor = 1;                    // active high
+            settings.analogCustomizations.push_back(newSensor);
+            EMSESP::system_.add_gpio(newSensor.gpio, newSensor.name);
 
             return StateUpdateResult::CHANGED; // persist the change
         });
@@ -576,7 +585,7 @@ bool AnalogSensor::update(uint8_t gpio, const char * org_name, double offset, do
             newSensor.is_system = is_system;
             settings.analogCustomizations.push_back(newSensor);
             // check the gpio again and add to used list
-            if (EMSESP::system_.add_gpio(gpio, "Analog Sensor")) {
+            if (EMSESP::system_.add_gpio(gpio, name)) {
                 LOG_DEBUG("Adding customization for analog sensor GPIO %02d", gpio);
                 return StateUpdateResult::CHANGED; // persist the change
             } else {

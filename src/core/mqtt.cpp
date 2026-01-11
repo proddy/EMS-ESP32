@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ bool        Mqtt::ha_enabled_;
 uint8_t     Mqtt::nested_format_;
 std::string Mqtt::discovery_prefix_;
 uint8_t     Mqtt::discovery_type_;
+uint8_t     Mqtt::ha_number_mode_;
 bool        Mqtt::send_response_;
 bool        Mqtt::publish_single_;
 bool        Mqtt::publish_single2cmd_;
@@ -343,6 +344,7 @@ void Mqtt::load_settings() {
         discovery_prefix_   = mqttSettings.discovery_prefix.c_str();
         entity_format_      = mqttSettings.entity_format;
         discovery_type_     = mqttSettings.discovery_type;
+        ha_number_mode_     = mqttSettings.ha_number_mode;
 
         // convert to milliseconds
         publish_time_boiler_     = mqttSettings.publish_time_boiler * 1000;
@@ -562,8 +564,8 @@ void Mqtt::ha_status() {
 // Note we don't use camelCase as it would change the HA entity_id and impact historic data
 #ifndef EMSESP_STANDALONE
     if (!EMSESP::system_.ethernet_connected() || WiFi.isConnected()) {
-        publish_system_ha_sensor_config(DeviceValueType::INT8, "WiFi RSSI", "rssi", DeviceValueUOM::DBM);
-        publish_system_ha_sensor_config(DeviceValueType::INT8, "WiFi strength", "wifistrength", DeviceValueUOM::PERCENT);
+        publish_system_ha_sensor_config(DeviceValueType::INT8, "RSSI", "rssi", DeviceValueUOM::DBM);
+        publish_system_ha_sensor_config(DeviceValueType::INT8, "Signal", "wifistrength", DeviceValueUOM::PERCENT);
     }
 #endif
 
@@ -1024,8 +1026,12 @@ bool Mqtt::publish_ha_sensor_config(uint8_t               type,        // EMSdev
                 snprintf(sample_val, sizeof(sample_val), "'%s'", Helpers::translated_word(options[0]));
             }
         } else if (type != DeviceValueType::STRING && type != DeviceValueType::BOOL) {
-            // For numeric's add the range
-            doc["mode"] = "box"; // auto, slider or box
+            // For numeric's add the range and mode
+            if (ha_number_mode_ == 1 && (dv_set_max - dv_set_min) <= 100) {
+                doc["mode"] = "slider";
+            } else {
+                doc["mode"] = "box"; // auto, slider or box
+            }
             if (num_op > 0) {
                 doc["step"] = 1.0 / num_op;
             } else if (num_op < 0) {
@@ -1132,6 +1138,9 @@ void Mqtt::add_ha_classes(JsonObject doc, const uint8_t device_type, const uint8
     if (device_type == EMSdevice::DeviceType::SYSTEM) {
         doc["ent_cat"] = "diagnostic"; // instead of 'config'
     }
+    if (type == DeviceValueType::BOOL) {
+        return;
+    }
 
     // For display_only, we don't use the aliases, also we don't display the icon
     const char * dc_ha  = display_only ? "device_class" : "dev_cla"; // device class, dev_cla
@@ -1146,24 +1155,24 @@ void Mqtt::add_ha_classes(JsonObject doc, const uint8_t device_type, const uint8
 
     // set uom, unless boolean - as HA is fussy with the naming and is case sensitive
     // map too HA uom specific codes from https://github.com/home-assistant/core/blob/dev/homeassistant/const.py
-    if (type != DeviceValueType::BOOL) {
-        if (uom == DeviceValueUOM::HOURS) {
-            doc[uom_ha] = "h";
-        } else if (uom == DeviceValueUOM::MINUTES) {
-            doc[uom_ha] = "min";
-        } else if (uom == DeviceValueUOM::SECONDS) {
-            doc[uom_ha] = "s";
-        } else if (uom == DeviceValueUOM::KB) {
-            doc[uom_ha] = "kB";
-        } else if (uom == DeviceValueUOM::LMIN) {
-            doc[uom_ha] = "L/min";
-        } else if (uom == DeviceValueUOM::LH) {
-            doc[uom_ha] = "L/h";
-        } else if (uom != DeviceValueUOM::NONE) {
-            doc[uom_ha] = EMSdevice::uom_to_string(uom); // use default
-        } else if (discovery_type() != discoveryType::HOMEASSISTANT) {
-            doc[uom_ha] = " "; // Domoticz uses " " for a no-uom
-        }
+    if (uom == DeviceValueUOM::HOURS) {
+        doc[uom_ha] = "h";
+    } else if (uom == DeviceValueUOM::MINUTES) {
+        doc[uom_ha] = "min";
+    } else if (uom == DeviceValueUOM::SECONDS) {
+        doc[uom_ha] = "s";
+    } else if (uom == DeviceValueUOM::KB) {
+        doc[uom_ha] = "kB";
+    } else if (uom == DeviceValueUOM::LMIN) {
+        doc[uom_ha] = "L/min";
+    } else if (uom == DeviceValueUOM::LH) {
+        doc[uom_ha] = "L/h";
+    } else if (uom == DeviceValueUOM::L) {
+        doc[uom_ha] = "L";
+    } else if (uom != DeviceValueUOM::NONE) {
+        doc[uom_ha] = EMSdevice::uom_to_string(uom); // use default
+    } else if (discovery_type() != discoveryType::HOMEASSISTANT) {
+        doc[uom_ha] = " "; // Domoticz uses " " for a no-uom
     }
 
     // set state and device class - always
@@ -1261,7 +1270,7 @@ void Mqtt::add_ha_classes(JsonObject doc, const uint8_t device_type, const uint8
         doc[sc_ha] = sc_ha_total_increasing;
         doc[dc_ha] = "monetary";
         break;
-    case DeviceValueUOM::HZ:
+    case DeviceValueUOM::HERTZ:
         doc[sc_ha] = sc_ha_measurement;
         doc[dc_ha] = "frequency";
         break;
@@ -1280,9 +1289,8 @@ void Mqtt::add_ha_classes(JsonObject doc, const uint8_t device_type, const uint8
         // DeviceValueUOM::NONE:
         // DeviceValueUOM::KMIN:
         // for device entities which have numerical values, with no UOM
-        if ((type != DeviceValueType::STRING)
-            && (type == DeviceValueType::INT8 || type == DeviceValueType::UINT8 || type == DeviceValueType::INT16 || type == DeviceValueType::UINT16
-                || type == DeviceValueType::UINT24 || type == DeviceValueType::UINT32)) {
+        if (type == DeviceValueType::INT8 || type == DeviceValueType::UINT8 || type == DeviceValueType::INT16 || type == DeviceValueType::UINT16
+            || type == DeviceValueType::UINT24 || type == DeviceValueType::UINT32) {
             if (display_only) {
                 doc[ic_ha] = F_(iconnum); // set icon
             }
@@ -1418,11 +1426,13 @@ bool Mqtt::publish_ha_climate_config(const DeviceValue & dv, const bool has_room
     doc["mode_cmd_t"] = mode_cmd_s;
 
     // add hvac_action - https://github.com/emsesp/EMS-ESP32/discussions/2562
-    doc["act_t"]   = "~/boiler_data";
-    doc["act_tpl"] = "{% if value_json.hpactivity=='cooling'%}cooling{%elif value_json.heatingactive=='on'%}heating{%else%}idle{%endif%}";
+    doc["act_t"] = "~/boiler_data";
+    char on_string[12];
+    doc["act_tpl"] = "{% if value_json.hpactivity=='cooling'%}cooling{%elif value_json.heatingactive=='" + std::string(Helpers::render_boolean(on_string, true))
+                     + "'%}heating{%else%}idle{%endif%}"; // uses boolean translation for on/true
 
     // map EMS modes to HA climate modes
-    // EMS modes: auto, manual, heat, off, night, day, nofrost, eco, comfort, cool)
+    // EMS modes: auto, manual, heat, off, night, day, nofrost, eco, comfort, cool
     // HA supports: auto, off, cool, heat, dry, fan_only
     bool found_auto = false;
     bool found_heat = false;

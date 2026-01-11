@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,7 +52,8 @@ void EMSuart::uart_event_task(void * pvParameters) {
                     uart_read_bytes(EMSUART_NUM, telegram, length, portMAX_DELAY);
                     EMSESP::incoming_telegram(telegram, (uint8_t)(length - 1));
                 } else { // flush buffer up to break
-                    uart_flush_input(EMSUART_NUM);
+                    uint8_t buf[UART_FIFO_LEN];
+                    uart_read_bytes(EMSUART_NUM, buf, length, portMAX_DELAY);
                 }
                 length = 0;
             } else if (event.type == UART_BUFFER_FULL) {

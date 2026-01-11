@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -159,13 +159,11 @@ class System {
     static void extractSettings(const char * filename, const char * section, JsonObject output);
     static bool saveSettings(const char * filename, const char * section, JsonObject input);
 
-    // GPIOs
     static bool                 add_gpio(uint8_t pin, const char * source_name);
     static std::vector<uint8_t> available_gpios();
     static bool                 load_board_profile(std::vector<int8_t> & data, const std::string & board_profile);
-    static void                 make_snapshot_gpios();
-    static void                 restore_snapshot_gpios();
-    static void                 clear_snapshot_gpios();
+    static void                 make_snapshot_gpios(std::vector<int8_t> & u_gpios, std::vector<int8_t> & s_gpios);
+    static void                 restore_snapshot_gpios(std::vector<int8_t> & u_gpios, std::vector<int8_t> & s_gpios);
 
     static bool readCommand(const char * data);
 
@@ -392,7 +390,7 @@ class System {
 
     uint8_t systemStatus_; // uses SYSTEM_STATUS enum
 
-    void set_partition_install_date(bool override = false);
+    void set_partition_install_date();
 
     // button
     static PButton            myPButton_; // PButton instance
@@ -435,13 +433,15 @@ class System {
     void led_monitor();
     void system_check();
 
-    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>> string_range_to_vector(const std::string & range);
+    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>> string_range_to_vector(const std::string & range, const std::string & exclude = "");
 
     // GPIOs
-    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>> valid_system_gpios_;          // list of valid GPIOs for the ESP32 board that can be used
-    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>> used_gpios_;                  // list of GPIOs used by the application
-    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>> snapshot_used_gpios_;         // snapshot of the used GPIOs
-    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>> snapshot_valid_system_gpios_; // snapshot of the valid GPIOs
+    struct GpioUsage {
+        uint8_t     pin;
+        std::string source;
+    };
+    static std::vector<uint8_t, AllocatorPSRAM<uint8_t>>     valid_system_gpios_; // list of valid GPIOs for the ESP32 board that can be used
+    static std::vector<GpioUsage, AllocatorPSRAM<GpioUsage>> used_gpios_;         // list of GPIOs used by the application
 
     int8_t wifi_quality(int8_t dBm);
 

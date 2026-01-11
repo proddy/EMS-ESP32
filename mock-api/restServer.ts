@@ -130,7 +130,9 @@ let system_status = {
   // partitions: [],
   developer_mode: true,
   model: '',
+  board: '',
   // model: 'BBQKees Electronics EMS Gateway E32 V2 (E32 V2.0 P3/2024011)',
+  // board: 'E32V2',
   // status: 0,
   status: 3
 };
@@ -584,6 +586,7 @@ let mqtt_settings = {
   keep_alive: 60,
   clean_session: true,
   entity_format: 1,
+  ha_number_mode: 0,
   publish_time_boiler: 10,
   publish_time_thermostat: 10,
   publish_time_solar: 10,

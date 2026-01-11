@@ -182,7 +182,7 @@ const Settings = () => {
     restarting
   ]);
 
-  return <SectionContent>{restarting ? <SystemMonitor /> : content}</SectionContent>;
+  return restarting ? <SystemMonitor /> : <SectionContent>{content}</SectionContent>;
 };
 
 export default Settings;

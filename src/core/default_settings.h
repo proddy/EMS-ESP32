@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,10 +23,6 @@
 
 #ifndef EMSESP_DEFAULT_LOCALE
 #define EMSESP_DEFAULT_LOCALE EMSESP_LOCALE_EN // English
-#endif
-
-#ifndef EMSESP_DEFAULT_VERSION
-#define EMSESP_DEFAULT_VERSION ""
 #endif
 
 #ifndef EMSESP_DEFAULT_TX_MODE
@@ -212,6 +208,10 @@
 
 #ifndef EMSESP_DEFAULT_DISCOVERY_TYPE
 #define EMSESP_DEFAULT_DISCOVERY_TYPE 0 // HA
+#endif
+
+#ifndef EMSESP_DEFAULT_HA_NUMBER_MODE
+#define EMSESP_DEFAULT_HA_NUMBER_MODE 0 // BOX
 #endif
 
 #ifndef EMSESP_DEFAULT_PUBLISH_SINGLE

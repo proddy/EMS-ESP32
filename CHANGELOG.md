@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.8.0]
+## [3.8.0] 31 December 2025
 
 ## Added
 
@@ -26,8 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - FW200 display options [#2610](https://github.com/emsesp/EMS-ESP32/discussions/2610)
 - CR11 mode settings OFF/MANUAL depends on selTemp [#2437](https://github.com/emsesp/EMS-ESP32/issues/2437)
 - implemented eFuse settings for BBQKees boards to store model type and ESP chipset
-- Analogsensors for pulse output [#2624](https://github.com/emsesp/EMS-ESP32/discussions/2624)
-- Analogsensors frequency input [#2631](https://github.com/emsesp/EMS-ESP32/discussions/2631)
+- analogsensors for pulse output [#2624](https://github.com/emsesp/EMS-ESP32/discussions/2624)
+- analogsensors frequency input [#2631](https://github.com/emsesp/EMS-ESP32/discussions/2631)
 - SRC plus thermostats [#2636](https://github.com/emsesp/EMS-ESP32/issues/2636)
 - Greenstar 2000 [#2645](https://github.com/emsesp/EMS-ESP32/issues/2645)
 - RC3xx `dhw modetype` [#2659](https://github.com/emsesp/EMS-ESP32/discussions/2659)
@@ -89,7 +89,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - removed unused last topic/payload echo-check
 - added Home Assistant device details to MQTT Discovery for all devices
 - device_class and state_class changes for HA MQTT Discovery [#2825](https://github.com/emsesp/EMS-ESP32/issues/2825)
-
 
 ## [3.7.2] 22 March 2025
 

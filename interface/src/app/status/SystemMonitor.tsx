@@ -103,8 +103,8 @@ const SystemMonitor = () => {
         height: '100vh',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        backdropFilter: 'blur(8px)'
+        justifyContent: 'center'
+        // backdropFilter: 'blur(8px)'
       }}
     >
       <Box

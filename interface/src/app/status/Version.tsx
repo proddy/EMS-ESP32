@@ -868,7 +868,7 @@ const Version = () => {
     installPartitionFirmware
   ]);
 
-  return <SectionContent>{restarting ? <SystemMonitor /> : content}</SectionContent>;
+  return restarting ? <SystemMonitor /> : <SectionContent>{content}</SectionContent>;
 };
 
 export default memo(Version);

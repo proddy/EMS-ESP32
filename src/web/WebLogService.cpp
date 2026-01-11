@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@ void WebLogService::show(Shell & shell) {
     }
 
     shell.println();
-    shell.printfln("Recent Log (level %s, max %d messages):", uuid::log::format_level_uppercase(level_), maximum_log_messages_);
+    shell.printfln("Recent Log:");
     shell.println();
 
     for (const auto & message : log_messages_) {

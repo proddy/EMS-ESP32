@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ DeviceValue::DeviceValue(uint8_t               device_type,
 }
 
 // mapping of UOM, to match order in DeviceValueUOM enum emsdevicevalue.h
-// also maps to DeviceValueUOM in interface/src/project/types.ts for the Web UI
+// also maps to DeviceValueUOM in interface/src/app/main/types.ts for the Web UI
 // must be an int of 4 bytes, 32bit aligned
 const char * DeviceValue::DeviceValueUOM_s[] = {
 

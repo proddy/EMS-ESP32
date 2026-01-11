@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -341,6 +341,7 @@ class Mqtt {
     static uint8_t     entity_format_;
     static std::string discovery_prefix_;
     static uint8_t     discovery_type_;
+    static uint8_t     ha_number_mode_;
     static bool        publish_single_;
     static bool        publish_single2cmd_;
     static bool        send_response_;

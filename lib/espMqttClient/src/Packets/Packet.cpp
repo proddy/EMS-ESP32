@@ -321,7 +321,14 @@ bool Packet::_allocate(size_t remainingLength, bool check) {
   #if EMC_USE_MEMPOOL
   _data = reinterpret_cast<uint8_t*>(_memPool.malloc(_size));
   #else
-  _data = reinterpret_cast<uint8_t*>(malloc(_size));
+#ifdef EMSESP_STANDALONE
+    _data = reinterpret_cast<uint8_t*>(malloc(_size));
+#else
+  _data = reinterpret_cast<uint8_t*>(ps_malloc(_size));
+  if (!_data) {
+    _data = reinterpret_cast<uint8_t*>(malloc(_size));
+  }
+#endif
   #endif
   if (!_data) {
     _size = 0;

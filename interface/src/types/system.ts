@@ -50,6 +50,7 @@ export interface SystemStatus {
   free_psram?: number;
   free_caps: number;
   model: string;
+  board: string;
   has_loader: boolean;
   has_partition: boolean;
   partitions: {

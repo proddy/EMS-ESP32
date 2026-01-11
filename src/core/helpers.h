@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,6 +88,8 @@ class Helpers {
 #ifdef EMSESP_STANDALONE
     static char * ultostr(char * ptr, uint32_t value, const uint8_t base);
 #endif
+  private:
+    static char * remove_trailing_zero(char * result);
 };
 
 } // namespace emsesp

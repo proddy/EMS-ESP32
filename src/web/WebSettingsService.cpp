@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -92,11 +92,11 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     const WebSettings original_settings(settings);
 
     // make a snapshot of the current GPIOs
-    EMSESP::system_.make_snapshot_gpios();
+    std::vector<int8_t> used_gpios;
+    std::vector<int8_t> system_gpios;
+    EMSESP::system_.make_snapshot_gpios(used_gpios, system_gpios);
 
-    reset_flags();
-
-    settings.version       = root["version"] | EMSESP_DEFAULT_VERSION; // save the version, we use it later in System::check_upgrade()
+    settings.version       = root["version"] | EMSESP_APP_VERSION; // save the version, we use it later in System::check_upgrade()
     settings.board_profile = root["board_profile"] | EMSESP_DEFAULT_BOARD_PROFILE;
 
     // get current values that are related to the board profile
@@ -111,17 +111,20 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     settings.eth_clock_mode = root["eth_clock_mode"];
     settings.led_type       = root["led_type"]; // 1 = RGB-LED
 
-#if defined(EMSESP_DEBUG)
-    EMSESP::logger().debug("NVS boot value=[%s], current board_profile=[%s], new board_profile=[%s]",
-                           EMSESP::nvs_.getString("boot").c_str(),
-                           original_settings.board_profile.c_str(),
-                           settings.board_profile.c_str());
-#endif
+    reset_flags();
+
+    // before loading new board profile free old gpios from used list to allow remapping
+    EMSESP::system_.remove_gpio(original_settings.led_gpio);
+    EMSESP::system_.remove_gpio(original_settings.dallas_gpio);
+    EMSESP::system_.remove_gpio(original_settings.pbutton_gpio);
+    EMSESP::system_.remove_gpio(original_settings.rx_gpio);
+    EMSESP::system_.remove_gpio(original_settings.tx_gpio);
 
     // see if the user has changed the board profile
     // this will set: led_gpio, dallas_gpio, rx_gpio, tx_gpio, pbutton_gpio, phy_type, eth_power, eth_phy_addr, eth_clock_mode, led_type
     // this will always run when EMS-ESP starts since original_settings{} is empty
-    if (original_settings.board_profile != settings.board_profile) {
+    if (original_settings.board_profile != settings.board_profile || original_settings.board_profile == "default"
+        || original_settings.board_profile.length() == 0) {
         set_board_profile(settings);
         add_flags(ChangeFlags::RESTART);
     }
@@ -137,6 +140,13 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
         // remove the ethernet pins from valid list, regardless of whether the GPIOs are valid or not
         EMSESP::system_.remove_gpio(23, true); // MDC
         EMSESP::system_.remove_gpio(18, true); // MDIO
+        EMSESP::system_.remove_gpio(19, true); // TXD0
+        EMSESP::system_.remove_gpio(22, true); // TXD1
+        EMSESP::system_.remove_gpio(21, true); // TXEN
+        EMSESP::system_.remove_gpio(25, true); // RXD0
+        EMSESP::system_.remove_gpio(26, true); // RXD1
+        EMSESP::system_.remove_gpio(27, true); // CRS
+
         if (settings.eth_clock_mode < 2) {
             EMSESP::system_.remove_gpio(0, true); // ETH.clock input
         } else if (settings.eth_clock_mode == 2) {
@@ -145,18 +155,6 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
             EMSESP::system_.remove_gpio(17, true); // ETH.clock output
         }
     }
-#if CONFIG_IDF_TARGET_ESP32
-    // Uart0 pins not allowed for all other gpio
-    EMSESP::system_.remove_gpio(1, true);
-    EMSESP::system_.remove_gpio(3, true);
-#endif
-
-    // free old gpios from used list to allow remapping
-    EMSESP::system_.remove_gpio(original_settings.led_gpio);
-    EMSESP::system_.remove_gpio(original_settings.dallas_gpio);
-    EMSESP::system_.remove_gpio(original_settings.pbutton_gpio);
-    EMSESP::system_.remove_gpio(original_settings.rx_gpio);
-    EMSESP::system_.remove_gpio(original_settings.tx_gpio);
 
     // if any of the GPIOs have changed and re-validate them
     bool have_valid_gpios = true;
@@ -310,25 +308,23 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     }
 
     // save the settings if changed from the webUI
-    // if we encountered an invalid GPIO, rollback changes and don't save settings, and report the error to WebUI
+    // if we encountered an invalid GPIO, rollback changes and don't save settings,
+    // and report the error to WebUI without a restart
     if (!have_valid_gpios) {
         // replace settings with original settings
-        settings = original_settings; // the original settings are still valid
-        // restore the GPIOs from the snapshot
-        EMSESP::system_.restore_snapshot_gpios();
+        settings = original_settings;
+        EMSESP::system_.restore_snapshot_gpios(used_gpios, system_gpios);
 
         // report the error to WebUI
         EMSESP::system_.systemStatus(SYSTEM_STATUS::SYSTEM_STATUS_INVALID_GPIO);
         return StateUpdateResult::ERROR; // don't save the settings if the GPIOs are invalid
     }
 
-    // clean up snapshot of the GPIOs
-    EMSESP::system_.clear_snapshot_gpios();
-
     // save the setting internally, for reference later
     EMSESP::system_.store_settings(settings);
 
-    if (has_flags(WebSettings::ChangeFlags::RESTART)) {
+    // and finally always write to the settings file
+    if (has_flags(ChangeFlags::RESTART)) {
         return StateUpdateResult::CHANGED_RESTART;
     }
 
@@ -428,7 +424,7 @@ void WebSettings::set_board_profile(WebSettings & settings) {
     // Note 2: The board profile is dynamically changed for the session, but the value in the settings file on the FS remains untouched
     if (EMSESP::system_.getBBQKeesGatewayDetails(FUSE_VALUE::MFG).startsWith("BBQKees")) {
         String bbq_board = EMSESP::system_.getBBQKeesGatewayDetails(FUSE_VALUE::BOARD);
-        if (!bbq_board.isEmpty()) {
+        if (!bbq_board.isEmpty() && settings.board_profile != "CUSTOM") {
 #if defined(EMSESP_DEBUG)
             EMSESP::logger().info("Overriding board profile with fuse value %s", bbq_board.c_str());
 #endif
@@ -440,6 +436,7 @@ void WebSettings::set_board_profile(WebSettings & settings) {
     // as it's already set
     if (settings.board_profile == "CUSTOM") {
         EMSESP::logger().info("Using CUSTOM board profile");
+        EMSESP::system_.set_valid_system_gpios();
         return;
     }
 

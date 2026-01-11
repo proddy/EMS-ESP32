@@ -1,9 +1,9 @@
-import { memo } from 'react';
+import { type FC, type PropsWithChildren, memo } from 'react';
 
 import { Box } from '@mui/material';
 import type { BoxProps } from '@mui/material';
 
-const ButtonRow = memo<BoxProps>(({ children, ...rest }) => (
+const ButtonRow: FC<PropsWithChildren<BoxProps>> = memo(({ children, ...rest }) => (
   <Box
     sx={{
       '& button, & a, & .MuiCard-root': {
