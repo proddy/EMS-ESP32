@@ -78,7 +78,7 @@ For a live demo go to [demo.emsesp.org](https://demo.emsesp.org). Pick a languag
 
 ## 💖&nbsp; **Contributors**
 
-EMS-ESP is a project created by [proddy](https://github.com/proddy) and owned and maintained by both [proddy](https://github.com/proddy) and [MichaelDvP](https://github.com/MichaelDvP) with support from [BBQKees Electronics](https://bbqkees-electronics.nl).
+EMS-ESP is a project originally created by [proddy](https://github.com/proddy) and maintained by the ems-esp community.
 
 If you like **EMS-ESP**, please give it a ✨ on GitHub, or even better fork it and contribute. You can also offer a small donation. This is an open-source project maintained by volunteers, and your support is greatly appreciated.
 

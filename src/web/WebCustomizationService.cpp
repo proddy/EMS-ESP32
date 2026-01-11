@@ -1,6 +1,6 @@
 /*
  * EMS-ESP - https://github.com/emsesp/EMS-ESP
- * Copyright 2020-2025  emsesp.org - proddy, MichaelDvP
+ * Copyright 2020-2025  emsesp.org
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -122,9 +122,7 @@ StateUpdateResult WebCustomization::update(JsonObject root, WebCustomization & c
             // if the gpio is invalid skip the sensor
             auto analog_sensor_name = analogJson["name"].as<const char *>();
             if (!EMSESP::system_.add_gpio(analogJson["gpio"].as<uint8_t>(), analog_sensor_name)) {
-                EMSESP::logger().warning("Analog sensor: Invalid GPIO %d for %s. Skipping.",
-                                         analogJson["gpio"].as<uint8_t>(),
-                                         analog_sensor_name);
+                EMSESP::logger().warning("Analog sensor: Invalid GPIO %d for %s. Skipping.", analogJson["gpio"].as<uint8_t>(), analog_sensor_name);
                 continue;
             }
             auto analog = AnalogCustomization();
