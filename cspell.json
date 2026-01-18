@@ -9,6 +9,7 @@
       }
     ],
     "dictionaries": ["project-words"],
+    "caseSensitive": false,
     "ignorePaths": [
     "node_modules", 
     "compile_commands.json", 
