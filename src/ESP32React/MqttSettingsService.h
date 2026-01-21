@@ -125,11 +125,11 @@ class MqttSettingsService : public StatefulService<MqttSettings> {
     FSPersistence<MqttSettings> _fsPersistence;
 
     // variable to help manage connection
-    bool          _reconfigureMqtt;
-    unsigned long _disconnectedAt;
+    volatile bool          _reconfigureMqtt;
+    volatile unsigned long _disconnectedAt;
 
     // connection status
-    espMqttClientTypes::DisconnectReason _disconnectReason;
+    volatile espMqttClientTypes::DisconnectReason _disconnectReason;
 
     // the MQTT client instance
     MqttClient * _mqttClient;
