@@ -1720,8 +1720,8 @@ void EMSdevice::get_value_json(JsonObject json, DeviceValue & dv) {
 
 // generate Prometheus metrics format from device values
 std::string EMSdevice::get_metrics_prometheus(const int8_t tag) {
-    std::string                           result;
-    std::unordered_map<std::string, bool> seen_metrics;
+    std::string                 result;
+    std::map<std::string, bool> seen_metrics;
 
     // Helper function to check if a device value type is supported for Prometheus metrics
     auto is_supported_type = [](uint8_t type) -> bool {

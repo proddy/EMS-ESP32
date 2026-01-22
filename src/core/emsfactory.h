@@ -20,7 +20,7 @@
 #define EMSESP_EMSFACTORY_H_
 
 #include <memory> // for unique_ptr
-#include <unordered_map>
+#include <map>
 
 // Forward declaration
 namespace emsesp {
@@ -45,7 +45,7 @@ class EMSFactory {
         reg[device_type] = factory;
     }
 
-    using FactoryMap = std::unordered_map<uint8_t, EMSFactory *>;
+    using FactoryMap = std::map<uint8_t, EMSFactory *>;
 
     // returns all registered classes (really only for debugging)
     static auto device_handlers() -> const FactoryMap & {
@@ -76,7 +76,7 @@ class EMSFactory {
     static auto makeRaw(const uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, const char * name, uint8_t flags, uint8_t brand)
         -> EMSdevice * {
         auto & reg = EMSFactory::getRegister();
-        auto  it   = reg.find(device_type);
+        auto   it  = reg.find(device_type);
         if (it != reg.end()) {
             return it->second->construct(device_type, device_id, product_id, version, name, flags, brand);
         }
