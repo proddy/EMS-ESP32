@@ -344,8 +344,12 @@ bool isnum(const std::string & s) {
 std::string commands(std::string & expr, bool quotes) {
     auto expr_new = Helpers::toLower(expr);
     for (uint8_t device = 0; device < EMSdevice::DeviceType::UNKNOWN; device++) {
-        std::string d = (std::string)EMSdevice::device_type_2_device_name(device) + "/";
-        auto        f = expr_new.find(d);
+        // Optimized: build string with reserve to avoid temporary allocations
+        std::string d;
+        d.reserve(32); // typical device name length + "/"
+        d = EMSdevice::device_type_2_device_name(device);
+        d += "/";
+        auto f = expr_new.find(d);
         while (f != std::string::npos) {
             // entity names are alphanumeric or _
             auto e = expr_new.find_first_not_of("/._abcdefghijklmnopqrstuvwxyz0123456789", f);
@@ -367,9 +371,11 @@ std::string commands(std::string & expr, bool quotes) {
             JsonDocument doc_in;
             JsonObject   output = doc_out.to<JsonObject>();
             JsonObject   input  = doc_in.to<JsonObject>();
-            std::string  cmd_s  = "api/" + std::string(cmd);
+            // Optimized: use stack buffer for small strings to avoid heap allocation
+            char cmd_s[COMMAND_MAX_LENGTH + 5]; // "api/" prefix + cmd
+            snprintf(cmd_s, sizeof(cmd_s), "api/%s", cmd);
 
-            auto return_code = Command::process(cmd_s.c_str(), true, input, output);
+            auto return_code = Command::process(cmd_s, true, input, output);
             // check for no value (entity is valid but has no value set)
             if (return_code != CommandRet::OK && return_code != CommandRet::NO_VALUE) {
                 return expr = "";
@@ -725,7 +731,7 @@ std::string compute(const std::string & expr) {
                 // if there is data, force a POST
                 if (value.length() || Helpers::toLower(method) == "post") {
                     if (value.find_first_of('{') != std::string::npos) {
-                        http.addHeader("Content-Type", "application/json"); // auto-set to JSON
+                        http.addHeader(asyncsrv::T_Content_Type, asyncsrv::T_application_json, false); // auto-set to JSON
                     }
                     httpResult = http.POST(value.c_str());
                 } else {

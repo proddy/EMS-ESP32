@@ -248,18 +248,24 @@ void WebSchedulerService::publish(const bool force) {
                 snprintf(val_obj, sizeof(val_obj), "value_json['%s']", scheduleItem.name);
                 snprintf(val_cond, sizeof(val_cond), "%s is defined", val_obj);
 
+                // Optimized: use stack buffer instead of string concatenation to avoid heap allocations
+                char val_tpl[150];
                 if (Mqtt::discovery_type() == Mqtt::discoveryType::HOMEASSISTANT) {
-                    config["val_tpl"] = (std::string) "{{" + val_obj + " if " + val_cond + "}}";
+                    snprintf(val_tpl, sizeof(val_tpl), "{{%s if %s}}", val_obj, val_cond);
                 } else {
-                    config["val_tpl"] = (std::string) "{{" + val_obj + "}}"; // omit value conditional Jinja2 template code
+                    snprintf(val_tpl, sizeof(val_tpl), "{{%s}}", val_obj); // omit value conditional Jinja2 template code
                 }
+                config["val_tpl"] = val_tpl;
 
                 char uniq_s[70];
                 snprintf(uniq_s, sizeof(uniq_s), "%s_%s", F_(scheduler), scheduleItem.name);
 
                 config["uniq_id"]    = uniq_s;
                 config["name"]       = (const char *)scheduleItem.name;
-                config["def_ent_id"] = std::string("switch.") + uniq_s;
+                // Optimized: use stack buffer instead of string concatenation
+                char def_ent_id[80];
+                snprintf(def_ent_id, sizeof(def_ent_id), "switch.%s", uniq_s);
+                config["def_ent_id"] = def_ent_id;
 
                 char topic[Mqtt::MQTT_TOPIC_MAX_SIZE];
                 char command_topic[Mqtt::MQTT_TOPIC_MAX_SIZE];
@@ -331,7 +337,7 @@ bool WebSchedulerService::command(const char * name, const std::string & command
             int httpResult = 0;
             if (value.length() || method == "post") { // we have all lowercase
                 if (value.find_first_of('{') != std::string::npos) {
-                    http.addHeader("Content-Type", "application/json"); // auto-set to JSON
+                    http.addHeader(asyncsrv::T_Content_Type, asyncsrv::T_application_json, false); // auto-set to JSON
                 }
                 httpResult = http.POST(value.c_str());
             } else {
