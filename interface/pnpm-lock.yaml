@@ -63,8 +63,8 @@ importers:
         specifier: ^5.5.0
         version: 5.5.0(react@19.2.3)
       react-router:
-        specifier: ^7.12.0
-        version: 7.12.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: ^7.13.0
+        version: 7.13.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react-toastify:
         specifier: ^11.0.5
         version: 11.0.5(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -127,8 +127,8 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1(vite@7.3.1(@types/node@25.0.10)(terser@5.46.0))
       vite-tsconfig-paths:
-        specifier: ^6.0.4
-        version: 6.0.4(typescript@5.9.3)(vite@7.3.1(@types/node@25.0.10)(terser@5.46.0))
+        specifier: ^6.0.5
+        version: 6.0.5(typescript@5.9.3)(vite@7.3.1(@types/node@25.0.10)(terser@5.46.0))
 
 packages:
 
@@ -2540,8 +2540,8 @@ packages:
   react-is@19.2.3:
     resolution: {integrity: sha512-qJNJfu81ByyabuG7hPFEbXqNcWSU3+eVus+KJs+0ncpGfMyYdvSmxiJxbWR65lYi1I+/0HBcliO029gc4F+PnA==}
 
-  react-router@7.12.0:
-    resolution: {integrity: sha512-kTPDYPFzDVGIIGNLS5VJykK0HfHLY5MF3b+xj0/tTyNYL1gF1qs7u67Z9jEhQk2sQ98SUaHxlG31g1JtF7IfVw==}
+  react-router@7.13.0:
+    resolution: {integrity: sha512-PZgus8ETambRT17BUm/LL8lX3Of+oiLaPuVTRH3l1eLvSPpKO3AvhAEb5N7ihAFZQrYDqkvvWfFh9p0z9VsjLw==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       react: '>=18'
@@ -3003,13 +3003,10 @@ packages:
     peerDependencies:
       vite: 5.x || 6.x || 7.x
 
-  vite-tsconfig-paths@6.0.4:
-    resolution: {integrity: sha512-iIsEJ+ek5KqRTK17pmxtgIxXtqr3qDdE6OxrP9mVeGhVDNXRJTKN/l9oMbujTQNzMLe6XZ8qmpztfbkPu2TiFQ==}
+  vite-tsconfig-paths@6.0.5:
+    resolution: {integrity: sha512-f/WvY6ekHykUF1rWJUAbCU7iS/5QYDIugwpqJA+ttwKbxSbzNlqlE8vZSrsnxNQciUW+z6lvhlXMaEyZn9MSig==}
     peerDependencies:
       vite: '*'
-    peerDependenciesMeta:
-      vite:
-        optional: true
 
   vite@7.3.1:
     resolution: {integrity: sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==}
@@ -5549,7 +5546,7 @@ snapshots:
 
   react-is@19.2.3: {}
 
-  react-router@7.12.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+  react-router@7.13.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
       cookie: 1.1.1
       react: 19.2.3
@@ -6029,12 +6026,11 @@ snapshots:
       stack-trace: 1.0.0-pre2
       vite: 7.3.1(@types/node@25.0.10)(terser@5.46.0)
 
-  vite-tsconfig-paths@6.0.4(typescript@5.9.3)(vite@7.3.1(@types/node@25.0.10)(terser@5.46.0)):
+  vite-tsconfig-paths@6.0.5(typescript@5.9.3)(vite@7.3.1(@types/node@25.0.10)(terser@5.46.0)):
     dependencies:
       debug: 4.4.3
       globrex: 0.1.2
       tsconfck: 3.1.6(typescript@5.9.3)
-    optionalDependencies:
       vite: 7.3.1(@types/node@25.0.10)(terser@5.46.0)
     transitivePeerDependencies:
       - supports-color
