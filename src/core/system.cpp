@@ -501,7 +501,7 @@ void System::syslog_init() {
 #ifndef EMSESP_STANDALONE
     if (syslog_enabled_) {
         // start & configure syslog
-        syslog_.maximum_log_messages(10);
+        syslog_.maximum_log_messages(psram_ ? 250 : 10);
         syslog_.log_level((uuid::log::Level)syslog_level_);
         syslog_.mark_interval(syslog_mark_interval_);
         syslog_.destination(syslog_host_.c_str(), syslog_port_);

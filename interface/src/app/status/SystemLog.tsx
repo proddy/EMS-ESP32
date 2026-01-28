@@ -38,7 +38,7 @@ import type { LogEntry, LogSettings } from 'types';
 import { LogLevel } from 'types';
 import { updateValueDirty, useRest } from 'utils';
 
-const MAX_LOG_ENTRIES = 1000; // Limit log entries to prevent memory issues
+const MAX_LOG_ENTRIES = 10000; // Limit log entries to prevent memory issues
 
 const TextColors: Record<LogLevel, string> = {
   [LogLevel.ERROR]: '#ff0000', // red
@@ -308,6 +308,8 @@ const SystemLog = () => {
                 <MenuItem value={50}>50</MenuItem>
                 <MenuItem value={75}>75</MenuItem>
                 <MenuItem value={100}>100</MenuItem>
+                <MenuItem value={500}>500</MenuItem>
+                <MenuItem value={1000}>1000</MenuItem>
               </TextField>
             </Grid>
           )}

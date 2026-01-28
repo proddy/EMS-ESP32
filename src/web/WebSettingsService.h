@@ -67,9 +67,9 @@ class WebSettings {
     uint8_t  bool_dashboard;
     uint8_t  enum_format;
 
-    int8_t  weblog_level;
-    uint8_t weblog_buffer;
-    bool    weblog_compact;
+    int8_t   weblog_level;
+    uint16_t weblog_buffer;
+    bool     weblog_compact;
 
     bool fahrenheit;
 
