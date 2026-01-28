@@ -2159,8 +2159,8 @@ void EMSdevice::mqtt_ha_entity_config_create() {
             if (dv.tag >= DeviceValueTAG::TAG_SRC1 && dv.tag <= DeviceValueTAG::TAG_SRC16 && !strcmp(dv.short_name, FL_(selRoomTemp)[0])) {
                 const char * icon = nullptr;
                 for (auto & d : devicevalues_) {
-                    if (d.tag == dv.tag && !strcmp(d.short_name, FL_(icon)[0]) && *(uint8_t *)(d.value_p != 0)) {
-                        icon = d.options[*(uint8_t *)(d.value_p)][0];
+                    if (d.tag == dv.tag && !strcmp(d.short_name, FL_(icon)[0]) && *(uint8_t *)d.value_p != 0) {
+                        icon = d.options[*(uint8_t *)d.value_p][0];
                         break;
                     }
                 }
