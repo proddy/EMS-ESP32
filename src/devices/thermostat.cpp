@@ -476,7 +476,8 @@ void Thermostat::add_ha_climate(std::shared_ptr<HeatingCircuit> hc) const {
         return;
     }
 
-    if (Helpers::hasValue(hc->selTemp) && is_readable(&hc->selTemp)) {
+    // create climate only if we have modes
+    if (Helpers::hasValue(hc->mode) && Helpers::hasValue(hc->selTemp) && is_readable(&hc->selTemp)) {
         if (Helpers::hasValue(hc->roomTemp) && is_readable(&hc->roomTemp)) {
             hc->climate = 1; // use roomTemp as we have a sensor
         } else {

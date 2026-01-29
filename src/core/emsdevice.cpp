@@ -2106,9 +2106,8 @@ bool EMSdevice::generate_values(JsonObject output, const int8_t tag_filter, cons
 // create the Home Assistant configs for each device value / entity
 // this is called when an MQTT publish is done via an EMS Device in emsesp.cpp::publish_device_values()
 void EMSdevice::mqtt_ha_entity_config_create() {
-    bool                  create_device_config = !ha_config_done(); // do we need to create the main Discovery device config with this entity?
-    uint16_t              count                = 0;
-    const char * const ** mode_options         = nullptr;
+    bool     create_device_config = !ha_config_done(); // do we need to create the main Discovery device config with this entity?
+    uint16_t count                = 0;
 
     // check the state of each of the device values
     // create the discovery topic if if hasn't already been created, not a command (like reset) and is active and visible
@@ -2121,15 +2120,13 @@ void EMSdevice::mqtt_ha_entity_config_create() {
             bool   needs_update       = !has_config_created || (haclimate_value == 1 ? has_climate_no_rt : !has_climate_no_rt);
 
             if (needs_update) {
-                // if it's a thermostat go fetch the list of modes
-                if (device_type() == EMSdevice::DeviceType::THERMOSTAT) {
-                    for (auto & dv : devicevalues_) {
-                        // make sure it's a type DeviceValueType::ENUM
-                        if ((dv.type == DeviceValueType::ENUM) && !strcmp(dv.short_name, FL_(mode)[0])) {
-                            // get options
-                            mode_options = dv.options;
-                            break;
-                        }
+                const char * const ** mode_options = nullptr;
+                for (auto & d : devicevalues_) {
+                    // make sure mode in same circuit is DeviceValueType::ENUM
+                    if ((d.tag == dv.tag) && (d.type == DeviceValueType::ENUM) && !strcmp(d.short_name, FL_(mode)[0]) && (d.options_size > 0)) {
+                        // get options
+                        mode_options = d.options;
+                        break;
                     }
                 }
 
@@ -2155,21 +2152,22 @@ void EMSdevice::mqtt_ha_entity_config_create() {
                 count++;
             }
 
-            // SRC thermostats mapped to connect/src1/...
-            /* removed climate for testing
-            if (dv.tag >= DeviceValueTAG::TAG_SRC1 && dv.tag <= DeviceValueTAG::TAG_SRC16 && !strcmp(dv.short_name, FL_(selRoomTemp)[0])) {
+            // SRC thermostats mapped to connect/src1/... always contains mode, seltemp, currtemp
+            if (dv.tag >= DeviceValueTAG::TAG_SRC1 && dv.tag <= DeviceValueTAG::TAG_SRC16 && !strcmp(dv.short_name, FL_(mode)[0])) {
+                // add icon if we have one
                 const char * icon = nullptr;
                 for (auto & d : devicevalues_) {
-                    if (d.tag == dv.tag && !strcmp(d.short_name, FL_(icon)[0]) && *(uint8_t *)d.value_p != 0) {
-                        icon = d.options[*(uint8_t *)d.value_p][0];
+                    if (d.tag == dv.tag && !strcmp(d.short_name, FL_(icon)[0]) && (dv.type == DeviceValueType::ENUM)) {
+                        uint8_t val = *(uint8_t *)(d.value_p);
+                        if (val != 0 && val < d.options_size) {
+                            icon = d.options[val][0];
+                        }
                         break;
                     }
                 }
-                // add all modes - auto, heat, off, cool
-                // https://github.com/emsesp/EMS-ESP32/issues/2636
-                Mqtt::publish_ha_climate_config(dv, true, nullptr, false, icon);
+                Mqtt::publish_ha_climate_config(dv, true, dv.options, false, icon);
+                count++;
             }
-            */
 
 #ifndef EMSESP_STANDALONE
             // always create minimum one config
