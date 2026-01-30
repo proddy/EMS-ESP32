@@ -1,5 +1,5 @@
-#ifndef APSettingsConfig_h
-#define APSettingsConfig_h
+#ifndef APSettingsService_h
+#define APSettingsService_h
 
 #include "HttpEndpoint.h"
 #include "FSPersistence.h"
@@ -70,9 +70,9 @@ class APSettings {
     IPAddress subnetMask;
 
     bool operator==(const APSettings & settings) const {
-        return provisionMode == settings.provisionMode && ssid == settings.ssid && password == settings.password && channel == settings.channel
-               && ssidHidden == settings.ssidHidden && maxClients == settings.maxClients && localIP == settings.localIP && gatewayIP == settings.gatewayIP
-               && subnetMask == settings.subnetMask;
+        return provisionMode == settings.provisionMode && channel == settings.channel && ssidHidden == settings.ssidHidden
+               && maxClients == settings.maxClients && localIP == settings.localIP && gatewayIP == settings.gatewayIP
+               && subnetMask == settings.subnetMask && ssid == settings.ssid && password == settings.password;
     }
 
     static void              read(const APSettings & settings, JsonObject root);
@@ -96,8 +96,8 @@ class APSettingsService : public StatefulService<APSettings> {
 
     // for the management delay loop
     volatile unsigned long _lastManaged;
-    volatile boolean       _reconfigureAp;
-    uint8_t                _connected;
+    volatile bool          _reconfigureAp;
+    volatile uint8_t       _connected;
 
     void reconfigureAP();
     void manageAP();

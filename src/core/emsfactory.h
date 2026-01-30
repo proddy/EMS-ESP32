@@ -19,14 +19,15 @@
 #ifndef EMSESP_EMSFACTORY_H_
 #define EMSESP_EMSFACTORY_H_
 
-#include <map>
 #include <memory> // for unique_ptr
+#include <map>
 
-#include "emsdevice.h"
+// Forward declaration
+namespace emsesp {
+class EMSdevice;
+}
 
 // Macro for class registration
-// Anonymous namespace is used to make the definitions here private to the current
-// compilation unit (current file). It is equivalent to the old C static keyword.
 #define REGISTER_FACTORY(derivedClass, device_type)                                                                                                            \
     namespace {                                                                                                                                                \
     auto registry_##derivedClass = ConcreteEMSFactory<derivedClass>(device_type);                                                                              \
@@ -34,30 +35,29 @@
 
 namespace emsesp {
 
-class EMSdevice; // forward declaration, for gcc linking
-
 class EMSFactory {
   public:
     virtual ~EMSFactory() = default;
 
-    // Register factory object of derived class
-    // using the device_type as the unique identifier
-    static auto registerFactory(const uint8_t device_type, EMSFactory * factory) -> void {
-        auto & reg       = EMSFactory::getRegister();
-        reg[device_type] = factory;
-    }
-
     using FactoryMap = std::map<uint8_t, EMSFactory *>;
 
+    // Register factory object of derived class using the device_type as the unique identifier
+    static inline auto registerFactory(const uint8_t device_type, EMSFactory * factory) -> void {
+        getRegister()[device_type] = factory;
+    }
+
     // returns all registered classes (really only for debugging)
-    static auto device_handlers() -> FactoryMap {
-        return EMSFactory::getRegister();
+    static inline auto device_handlers() -> const FactoryMap & {
+        return getRegister();
     }
 
     // Construct derived class returning an unique ptr
     static auto add(const uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, const char * default_name, uint8_t flags, uint8_t brand)
         -> std::unique_ptr<EMSdevice> {
-        return std::unique_ptr<EMSdevice>(EMSFactory::makeRaw(device_type, device_id, product_id, version, default_name, flags, brand));
+        if (auto * ptr = makeRaw(device_type, device_id, product_id, version, default_name, flags, brand)) {
+            return std::unique_ptr<EMSdevice>(ptr);
+        }
+        return nullptr;
     }
 
     virtual auto construct(uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, const char * name, uint8_t flags, uint8_t brand) const
@@ -65,7 +65,7 @@ class EMSFactory {
 
   private:
     // Force global variable to be initialized, thus it avoids the "initialization order fiasco"
-    static auto getRegister() -> FactoryMap & {
+    static inline auto getRegister() -> FactoryMap & {
         static FactoryMap classRegister{};
         return classRegister;
     }
@@ -74,11 +74,9 @@ class EMSFactory {
     // find which EMS device it is and use that class
     static auto makeRaw(const uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, const char * name, uint8_t flags, uint8_t brand)
         -> EMSdevice * {
-        auto it = EMSFactory::getRegister().find(device_type);
-        if (it != EMSFactory::getRegister().end()) {
-            return it->second->construct(device_type, device_id, product_id, version, name, flags, brand);
-        }
-        return nullptr;
+        const auto & reg = getRegister();
+        const auto   it  = reg.find(device_type);
+        return (it != reg.end()) ? it->second->construct(device_type, device_id, product_id, version, name, flags, brand) : nullptr;
     }
 };
 
@@ -86,7 +84,7 @@ template <typename DerivedClass>
 class ConcreteEMSFactory : EMSFactory {
   public:
     // Register this global object on the EMSFactory register
-    ConcreteEMSFactory(const uint8_t device_type) {
+    explicit ConcreteEMSFactory(const uint8_t device_type) {
         EMSFactory::registerFactory(device_type, this);
     }
 

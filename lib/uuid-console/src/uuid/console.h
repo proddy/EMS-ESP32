@@ -34,6 +34,7 @@
 #include <string>
 #include <vector>
 
+#include <esp32-psram.h>
 #include <uuid/common.h>
 #include <uuid/log.h>
 
@@ -1645,22 +1646,22 @@ class Shell : public std::enable_shared_from_this<Shell>, public uuid::log::Hand
     uint8_t     cursor_  = 0; /*!< cursor position from end of line */
     uint8_t     esc_     = 0; /*!< esc sequence running */
 
-    Stream &                  stream_;    /*!< Stream used for the input/output of this shell. @since 3.0.0 */
-    std::shared_ptr<Commands> commands_;  /*!< Commands available for execution in this shell. @since 0.1.0 */
-    std::deque<unsigned int>  context_;   /*!< Context stack for this shell. Affects which commands are available. Should never be empty. @since 0.1.0 */
-    unsigned int              flags_ = 0; /*!< Current flags for this shell. Affects which commands are available. @since 0.1.0 */
+    Stream &                  stream_;                               /*!< Stream used for the input/output of this shell. @since 3.0.0 */
+    std::shared_ptr<Commands> commands_;                             /*!< Commands available for execution in this shell. @since 0.1.0 */
+    std::deque<unsigned int, AllocatorPSRAM<unsigned int>> context_; /*!< Context stack for this shell. Affects which commands are available. Should never be empty. @since 0.1.0 */
+    unsigned int flags_ = 0;                                         /*!< Current flags for this shell. Affects which commands are available. @since 0.1.0 */
 #if UUID_CONSOLE_THREAD_SAFE
     mutable std::mutex mutex_; /*!< Mutex for queued log messages. @since 1.0.0 */
 #endif
-    unsigned long               log_message_id_ = 0;                      /*!< The next identifier to use for queued log messages. @since 0.1.0 */
-    std::list<QueuedLogMessage> log_messages_;                            /*!< Queued log messages, in the order they were received. @since 0.1.0 */
-    size_t                      maximum_log_messages_ = MAX_LOG_MESSAGES; /*!< Maximum command line length in bytes. @since 0.6.0 */
-    std::string                 line_buffer_; /*!< Command line buffer. Limited to maximum_command_line_length() bytes. @since 0.1.0 */
-    size_t                      maximum_command_line_length_ = MAX_COMMAND_LINE_LENGTH; /*!< Maximum command line length in bytes. @since 0.6.0 */
-    unsigned char               previous_  = 0; /*!< Previous character that was entered on the command line. Used to detect CRLF line endings. @since 0.1.0 */
-    Mode                        mode_      = Mode::NORMAL; /*!< Current execution mode. @since 0.1.0 */
-    std::unique_ptr<ModeData>   mode_data_ = nullptr;      /*!< Data associated with the current execution mode. @since 0.1.0 */
-    bool                        stopped_   = false;        /*!< Indicates that the shell has been stopped. @since 0.1.0 */
+    unsigned long                                                 log_message_id_ = 0; /*!< The next identifier to use for queued log messages. @since 0.1.0 */
+    std::list<QueuedLogMessage, AllocatorPSRAM<QueuedLogMessage>> log_messages_; /*!< Queued log messages, in the order they were received. @since 0.1.0 */
+    size_t                    maximum_log_messages_ = MAX_LOG_MESSAGES;          /*!< Maximum command line length in bytes. @since 0.6.0 */
+    std::string               line_buffer_; /*!< Command line buffer. Limited to maximum_command_line_length() bytes. @since 0.1.0 */
+    size_t                    maximum_command_line_length_ = MAX_COMMAND_LINE_LENGTH; /*!< Maximum command line length in bytes. @since 0.6.0 */
+    unsigned char             previous_  = 0; /*!< Previous character that was entered on the command line. Used to detect CRLF line endings. @since 0.1.0 */
+    Mode                      mode_      = Mode::NORMAL; /*!< Current execution mode. @since 0.1.0 */
+    std::unique_ptr<ModeData> mode_data_ = nullptr;      /*!< Data associated with the current execution mode. @since 0.1.0 */
+    bool                      stopped_   = false;        /*!< Indicates that the shell has been stopped. @since 0.1.0 */
     bool prompt_displayed_ = false; /*!< Indicates that a command prompt has been displayed, so that the output of invoke_command() is correct. @since 0.1.0 */
     uint64_t idle_time_    = 0;     /*!< Time the shell became idle. @since 0.7.0 */
     uint64_t idle_timeout_ = 0;     /*!< Idle timeout (in milliseconds). @since 0.7.0 */
@@ -1786,7 +1787,7 @@ class CommandLine {
 	 * @return A reference to the parameters.
 	 * @since 0.6.0
 	 */
-    inline std::vector<std::string> & operator*() {
+    inline std::vector<std::string, AllocatorPSRAM<std::string>> & operator*() {
         return parameters_;
     }
     /**
@@ -1795,7 +1796,7 @@ class CommandLine {
 	 * @return A reference to the parameters.
 	 * @since 0.6.0
 	 */
-    inline const std::vector<std::string> & operator*() const {
+    inline const std::vector<std::string, AllocatorPSRAM<std::string>> & operator*() const {
         return parameters_;
     }
     /**
@@ -1804,7 +1805,7 @@ class CommandLine {
 	 * @return A pointer to the parameters.
 	 * @since 0.4.0
 	 */
-    inline std::vector<std::string> * operator->() {
+    inline std::vector<std::string, AllocatorPSRAM<std::string>> * operator->() {
         return &parameters_;
     }
     /**
@@ -1813,7 +1814,7 @@ class CommandLine {
 	 * @return A pointer to the parameters.
 	 * @since 0.4.0
 	 */
-    inline const std::vector<std::string> * operator->() const {
+    inline const std::vector<std::string, AllocatorPSRAM<std::string>> * operator->() const {
         return &parameters_;
     }
 
@@ -1843,8 +1844,8 @@ class CommandLine {
     bool trailing_space = false; /*!< Command line has a trailing space. @since 0.4.0 */
 
   private:
-    std::vector<std::string> parameters_;                                             /*!< Separate command line parameters. @since 0.4.0 */
-    size_t                   escape_parameters_ = std::numeric_limits<size_t>::max(); /*!< Number of initial arguments to escape in output. @since 0.5.0 */
+    std::vector<std::string, AllocatorPSRAM<std::string>> parameters_; /*!< Separate command line parameters. @since 0.4.0 */
+    size_t escape_parameters_ = std::numeric_limits<size_t>::max();    /*!< Number of initial arguments to escape in output. @since 0.5.0 */
 };
 
 /**

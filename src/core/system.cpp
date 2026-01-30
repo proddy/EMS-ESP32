@@ -1761,8 +1761,8 @@ void System::get_value_json(JsonObject output, const std::string & circuit, cons
 
 // generate Prometheus metrics format from system values
 std::string System::get_metrics_prometheus() {
-    std::string                           result;
-    std::unordered_map<std::string, bool> seen_metrics;
+    std::string                 result;
+    std::map<std::string, bool> seen_metrics;
 
     result.reserve(16000);
 

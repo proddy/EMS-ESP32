@@ -28,6 +28,7 @@
 #include <memory>
 #include <string>
 
+#include <esp32-psram.h>
 #include <uuid/log.h>
 
 #ifndef UUID_LOG_THREAD_SAFE
@@ -321,7 +322,7 @@ class SyslogService : public uuid::log::Handler {
 #endif
     size_t                      maximum_log_messages_ = MAX_LOG_MESSAGES; /*!< Maximum number of log messages to buffer before they are output. @since 1.0.0 */
     unsigned long               log_message_id_       = 0;                /*!< The next identifier to use for queued log messages. @since 1.0.0 */
-    std::list<QueuedLogMessage> log_messages_;                            /*!< Queued log messages, in the order they were received. @since 1.0.0 */
+    std::list<QueuedLogMessage, AllocatorPSRAM<QueuedLogMessage>> log_messages_;                            /*!< Queued log messages, in the order they were received. @since 1.0.0 */
     uint64_t                    mark_interval_ = 0;                       /*!< Mark interval in milliseconds. @since 2.0.0 */
     uint64_t                    last_message_  = 0;                       /*!< Last message/mark time. @since 2.0.0 */
 

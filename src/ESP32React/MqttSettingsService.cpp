@@ -255,7 +255,7 @@ void MqttSettings::read(MqttSettings & settings, JsonObject root) {
 }
 
 StateUpdateResult MqttSettings::update(JsonObject root, MqttSettings & settings) {
-    MqttSettings newSettings = {};
+    MqttSettings newSettings;
     bool         changed     = false;
 
 #ifndef TASMOTA_SDK

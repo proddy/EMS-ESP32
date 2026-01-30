@@ -247,16 +247,16 @@ class Thermostat : public EMSdevice {
     }
 
     // each thermostat has a list of heating controller type IDs for reading and writing
-    std::vector<uint16_t> monitor_typeids;
-    std::vector<uint16_t> set_typeids;
-    std::vector<uint16_t> set2_typeids;
-    std::vector<uint16_t> timer_typeids;
-    std::vector<uint16_t> timer2_typeids;
-    std::vector<uint16_t> summer_typeids;
-    std::vector<uint16_t> summer2_typeids;
-    std::vector<uint16_t> curve_typeids;
-    std::vector<uint16_t> hp_typeids;
-    std::vector<uint16_t> hpmode_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> monitor_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> set_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> set2_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> timer_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> timer2_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> summer_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> summer2_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> curve_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> hp_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> hpmode_typeids;
 
     // standard for all thermostats
     char     status_[20];    // online or offline
@@ -308,8 +308,8 @@ class Thermostat : public EMSdevice {
     uint8_t pvRaiseHeat_;
     uint8_t pvLowerCool_;
 
-    std::vector<std::shared_ptr<HeatingCircuit>> heating_circuits_; // each thermostat can have multiple heating circuits
-    std::vector<std::shared_ptr<DhwCircuit>>     dhw_circuits_;     // each thermostat can have multiple dhw circuits
+    std::vector<std::shared_ptr<HeatingCircuit>, AllocatorPSRAM<std::shared_ptr<HeatingCircuit>>> heating_circuits_; // each thermostat can have multiple heating circuits
+    std::vector<std::shared_ptr<DhwCircuit>, AllocatorPSRAM<std::shared_ptr<DhwCircuit>>> dhw_circuits_; // each thermostat can have multiple dhw circuits
 
     // Generic Types
     static constexpr uint16_t EMS_TYPE_RCTime        = 0x06; // time

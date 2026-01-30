@@ -33,6 +33,7 @@
 #include <string>
 #include <vector>
 
+#include <esp32-psram.h>
 #include <uuid/console.h>
 
 namespace uuid {
@@ -203,7 +204,7 @@ class TelnetStream : public ::Stream {
 	 * @return The number of bytes that were output.
 	 * @since 0.1.0
 	 */
-    size_t raw_write(const std::vector<unsigned char> & data);
+    size_t raw_write(const std::vector<unsigned char, AllocatorPSRAM<unsigned char>> & data);
     /**
 	 * Write an array of bytes directly to the output stream.
 	 *
@@ -222,7 +223,7 @@ class TelnetStream : public ::Stream {
     unsigned char     previous_in_     = 0;     /*!< Previous character that was received. Used to detect CR NUL. @since 0.1.0 */
     unsigned char     previous_out_    = 0;     /*!< Previous character that was sent. Used to insert NUL after CR without LF. @since 0.1.0 */
     int               peek_            = -1;    /*!< Previously read data cached by peek(). @since 0.1.0 */
-    std::vector<char> output_buffer_;           /*!< Buffer data to be output until a read function is called. @since 0.1.0 */
+    std::vector<char, AllocatorPSRAM<char>> output_buffer_;           /*!< Buffer data to be output until a read function is called. @since 0.1.0 */
 };
 
 /**
@@ -425,7 +426,7 @@ class TelnetService {
 
     WiFiServer             server_;                                       /*!< TCP server. @since 0.1.0 */
     size_t                 maximum_connections_ = MAX_CONNECTIONS;        /*!< Maximum number of concurrent open connections. @since 0.1.0 */
-    std::list<Connection>  connections_;                                  /*!< Open connections. @since 0.1.0 */
+    std::list<Connection, AllocatorPSRAM<Connection>>  connections_;                                  /*!< Open connections. @since 0.1.0 */
     shell_factory_function shell_factory_;                                /*!< Function to create a shell. @since 0.1.0 */
     unsigned long          initial_idle_timeout_ = DEFAULT_IDLE_TIMEOUT;  /*!< Initial idle timeout (in seconds). @since 0.1.0 */
     unsigned long          write_timeout_        = DEFAULT_WRITE_TIMEOUT; /*!< Write timeout (in milliseconds). @since 0.1.0 */

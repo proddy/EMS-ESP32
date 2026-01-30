@@ -496,7 +496,15 @@ void WebSettings::set_board_profile(WebSettings & settings) {
         System::load_board_profile(data, settings.board_profile.c_str());
     }
 
-    EMSESP::logger().info("Loaded board profile %s", settings.board_profile.c_str());
+// log board profile and PSRAM info
+#ifndef EMSESP_STANDALONE
+    uint32_t psram_size = ESP.getPsramSize() / 1024; // in KB
+    if (psram_size > 0) {
+        EMSESP::logger().info("Loaded board profile %s, PSRAM: %lu KB", settings.board_profile.c_str(), psram_size);
+    } else {
+        EMSESP::logger().info("Loaded board profile %s, PSRAM: not available", settings.board_profile.c_str());
+    }
+#endif
 
     // apply the new board profile settings
     // 0=led, 1=dallas, 2=rx, 3=tx, 4=button, 5=phy_type, 6=eth_power, 7=eth_phy_addr, 8=eth_clock_mode, 9=led_type

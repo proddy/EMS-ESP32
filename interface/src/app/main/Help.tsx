@@ -120,7 +120,7 @@ const HelpComponent = () => {
         label: () => LL.HELP_INFORMATION_1()
       },
       {
-        href: 'https://discord.gg/3J3GgnzpyT',
+        href: 'https://discord.gg/GP9DPSgeJq',
         icon: <CommentIcon />,
         label: () => LL.HELP_INFORMATION_2()
       },

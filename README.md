@@ -18,7 +18,7 @@
   <a href="https://emsesp.org">
     <img src="https://img.shields.io/badge/Documentation-0077b5?style=for-the-badge&logo=googledocs&logoColor=white" alt="Guides" />
   </a>
-  <a href="https://discord.gg/3J3GgnzpyT">
+  <a href="https://discord.gg/GP9DPSgeJq">
     <img src="https://img.shields.io/badge/Discord-7289da?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" />
   </a>
   <a href="https://github.com/emsesp/EMS-ESP32/blob/main/CHANGELOG.md">
@@ -32,7 +32,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=emsesp_EMS-ESP32&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=emsesp_EMS-ESP32)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/9441142f49424ef891e8f5251866ee6b)](https://app.codacy.com/gh/emsesp/EMS-ESP32/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![downloads](https://img.shields.io/github/downloads/emsesp/EMS-ESP32/total.svg)](https://github.com/emsesp/EMS-ESP32/releases)
-[![chat](https://img.shields.io/discord/816637840644505620.svg?style=flat-square&color=blueviolet)](https://discord.gg/3J3GgnzpyT)
+[![chat](https://img.shields.io/discord/816637840644505620.svg?style=flat-square&color=blueviolet)](https://discord.gg/GP9DPSgeJq)
 
 [![GitHub stars](https://img.shields.io/github/stars/emsesp/EMS-ESP32.svg?style=social&label=Star)](https://github.com/emsesp/EMS-ESP32/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/emsesp/EMS-ESP32.svg?style=social&label=Fork)](https://github.com/emsesp/EMS-ESP32/network)
@@ -40,7 +40,8 @@
 
 **EMS-ESP** is an open-source firmware for the Espressif ESP32 microcontroller to communicate with **EMS** (Energy Management System) compatible equipment from manufacturers such as Bosch, Buderus, Nefit, Junkers, Worcester, Sieger, elm.leblanc and iVT.
 
-It requires a small circuit to interface with the EMS bus which can be purchased from <https://bbqkees-electronics.nl> or custom built.
+It requires a small circuit to interface with the EMS bus which can be purchased from <https://bbqkees-electronics.nl>. These gateways are tested thoroughly and certified to work with EMS-ESP.
+
 
 ## 📦&nbsp; **Key Features**
 
@@ -64,17 +65,17 @@ Head over to the [Installation Guide](https://emsesp.org/Installing) section of 
 
 ## 📋&nbsp; **Documentation**
 
-Visit [emsesp.org](https://emsesp.org) for more details on how to install and configure EMS-ESP. There is also a collection of Frequently Asked Questions and Troubleshooting tips with example customizations from the community.
+Visit [emsesp.org](https://emsesp.org) for more details on how to setup and configure EMS-ESP. You'll also find more a collection of example configuarations, Frequently Asked Questions and Troubleshooting tips.
 
 ## 💬&nbsp; **Getting Support**
 
-To chat with the community reach out on our [Discord Server](https://discord.gg/3J3GgnzpyT).
+To chat with the community reach out on our [Discord Server](https://discord.gg/GP9DPSgeJq).
 
-If you find an issue or have a request, see [how to request support](https://emsesp.org/Support/) on how to submit a bug report or feature request.
+If you find an issue or have a request, see the [Getting Support](https://emsesp.org/Support/) section of the documentation. Note if you are using a non-BBQKees EMS gateway, you may need to contact the manufacturer for support.
 
 ## 🎥&nbsp; **Live Demo**
 
-For a live demo go to [demo.emsesp.org](https://demo.emsesp.org). Pick a language from the sign on page and log in with any username or password. Note not all features are operational as it's based on static data.
+To see a live demo go to [demo.emsesp.org](https://demo.emsesp.org). Pick a language and use any username and password to log in. Note whast you're seeing is static example data so not all features are operational.
 
 ## 💖&nbsp; **Contributors**
 
@@ -84,7 +85,7 @@ If you like **EMS-ESP**, please give it a ✨ on GitHub, or even better fork it 
 
 ## 📦&nbsp; **Building**
 
-See the [Building Guide](https://emsesp.org/Building) section of the documentation for instructions on how to build EMS-ESP.
+See the [Building the firmware](https://emsesp.org/Building) guide in the documentation for instructions on how to build EMS-ESP from this source code.
 
 ## 📢&nbsp; **Libraries used**
 

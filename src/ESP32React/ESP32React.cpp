@@ -2,6 +2,8 @@
 
 #include "WWWData.h" // include auto-generated static web resources
 
+static constexpr const char CACHE_CONTROL[] = "public,max-age=60";
+
 ESP32React::ESP32React(AsyncWebServer * server, FS * fs)
     : _securitySettingsService(server, fs)
     , _networkSettingsService(server, fs, &_securitySettingsService)
@@ -22,21 +24,18 @@ ESP32React::ESP32React(AsyncWebServer * server, FS * fs)
     ArRequestHandlerFunction indexHtmlHandler = nullptr;
 
     WWWData::registerRoutes([server, &indexHtmlHandler](const char * uri, const String & contentType, const uint8_t * content, size_t len, const String & hash) {
-        ArRequestHandlerFunction requestHandler = [contentType, content, len, hash](AsyncWebServerRequest * request) {
-            AsyncWebServerResponse * response;
+        String etag = "\"" + hash + "\""; // RFC9110: ETag must be enclosed in double quotes
 
-            // Check if the client already has the same version and respond with a 304 (Not modified)
-            if (request->header("If-None-Match").equals(hash)) {
-                response = request->beginResponse(304);
-            } else {
-                response = request->beginResponse(200, contentType, content, len);
-                response->addHeader("Content-Encoding", "gzip"); // not br for brotlin only works over HTTPS
+        ArRequestHandlerFunction requestHandler = [contentType, content, len, etag](AsyncWebServerRequest * request) {
+            if (request->header(asyncsrv::T_INM) == etag) {
+                request->send(304);
+                return;
             }
 
-            // always send these headers - see https://datatracker.ietf.org/doc/html/rfc7232#section-4.1
-            response->addHeader("ETag", hash);
-            response->addHeader("Cache-Control", "no-cache"); // Requires revalidation before using cached content (ETags enable 304 responses)
-
+            AsyncWebServerResponse * response = request->beginResponse(200, contentType, content, len);
+            response->addHeader(asyncsrv::T_Content_Encoding, asyncsrv::T_gzip, false);
+            response->addHeader(asyncsrv::T_ETag, etag, false);
+            response->addHeader(asyncsrv::T_Cache_Control, CACHE_CONTROL, false);
             request->send(response);
         };
 
@@ -69,11 +68,11 @@ void ESP32React::begin() {
     _networkSettingsService.read([&](NetworkSettings & networkSettings) {
         DefaultHeaders & defaultHeaders = DefaultHeaders::Instance();
         if (networkSettings.enableCORS) {
-            defaultHeaders.addHeader("Access-Control-Allow-Origin", networkSettings.CORSOrigin);
-            defaultHeaders.addHeader("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization");
-            defaultHeaders.addHeader("Access-Control-Allow-Credentials", "true");
+            defaultHeaders.addHeader(asyncsrv::T_CORS_ACAO, networkSettings.CORSOrigin);
+            defaultHeaders.addHeader(asyncsrv::T_CORS_ACAH, "Accept, Content-Type, Authorization");
+            defaultHeaders.addHeader(asyncsrv::T_CORS_ACAC, "true");
         }
-        defaultHeaders.addHeader("Server", networkSettings.hostname);
+        defaultHeaders.addHeader(asyncsrv::T_Server, networkSettings.hostname);
     });
     _apSettingsService.begin();
     _ntpSettingsService.begin();

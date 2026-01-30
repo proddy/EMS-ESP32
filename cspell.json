@@ -9,6 +9,7 @@
       }
     ],
     "dictionaries": ["project-words"],
+    "caseSensitive": false,
     "ignorePaths": [
     "node_modules", 
     "compile_commands.json", 
@@ -36,6 +37,7 @@
     "pnpm-*.yaml",
     "vite.config.ts",
     "lib/esp32-psram/**",
-    "test/test_api/test_api.h"
+    "test/test_api/test_api.h",
+    "lib_standalone/**"
   ]
   }
