@@ -213,12 +213,13 @@ Boiler::Boiler(uint8_t device_type, int8_t device_id, uint8_t product_id, const 
         register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &fanWork_, DeviceValueType::BOOL, FL_(fanWork), DeviceValueUOM::NONE);
         register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &ignWork_, DeviceValueType::BOOL, FL_(ignWork), DeviceValueUOM::NONE);
         register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &oilPreHeat_, DeviceValueType::BOOL, FL_(oilPreHeat), DeviceValueUOM::NONE);
-        register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
-                              &burnMinPower_,
-                              DeviceValueType::UINT8,
-                              FL_(burnMinPower),
-                              DeviceValueUOM::PERCENT,
-                              MAKE_CF_CB(set_min_power));
+        // remove burnMinPower, #2918
+        // register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
+        //                      &burnMinPower_,
+        //                       DeviceValueType::UINT8,
+        //                       FL_(burnMinPower),
+        //                       DeviceValueUOM::PERCENT,
+        //                       MAKE_CF_CB(set_min_power));
         register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
                               &burnMaxPower_,
                               DeviceValueType::UINT8,
@@ -1290,7 +1291,7 @@ void Boiler::process_UBAFactory(std::shared_ptr<const Telegram> telegram) {
         has_update(nomPower_, nomPower);
     }
     if (min <= max) {
-        set_minmax(&burnMinPower_, 0, max);
+        // set_minmax(&burnMinPower_, 0, max); // removed #2918
         set_minmax(&burnMaxPower_, min, max);
         set_minmax(&wwMaxPower_, min, max);
         set_minmax(&selBurnPow_, 0, max);
@@ -1376,7 +1377,7 @@ void Boiler::process_UBAParameters(std::shared_ptr<const Telegram> telegram) {
     has_update(telegram, heatingActivated_, 0);
     has_update(telegram, heatingTemp_, 1);
     has_update(telegram, burnMaxPower_, 2);
-    has_update(telegram, burnMinPower_, 3);
+    // has_update(telegram, burnMinPower_, 3); // removed #2918
     has_update(telegram, boilHystOff_, 4);
     has_update(telegram, boilHystOn_, 5);
     has_update(telegram, burnMinPeriod_, 6);
@@ -1595,7 +1596,7 @@ void Boiler::process_UBAParametersPlus(std::shared_ptr<const Telegram> telegram)
     has_update(telegram, heatingActivated_, 0);
     has_update(telegram, heatingTemp_, 1);
     has_update(telegram, burnMaxPower_, 4);
-    has_update(telegram, burnMinPower_, 5);
+    // has_update(telegram, burnMinPower_, 5); // removed #2918
     has_update(telegram, boilHystOff_, 8);
     has_update(telegram, boilHystOn_, 9);
     has_update(telegram, burnMinPeriod_, 10);
