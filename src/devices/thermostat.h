@@ -90,8 +90,8 @@ class Thermostat : public EMSdevice {
         uint8_t switchProgMode;
         int8_t  redThreshold;
         // BC400
-        uint8_t comfortPointTemp;
-        uint8_t comfortPointOffset;
+        int8_t  comfortPointTemp;   // -5-15° C - in BC400
+        uint8_t comfortPointOffset; // 0-10° K - in BC400
         // RC 10
         uint8_t  reducehours;   // night reduce duration
         uint16_t reduceminutes; // remaining minutes to night->day

@@ -57,8 +57,8 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
 
     // RC10
     if (model == EMSdevice::EMS_DEVICE_FLAG_RC10) {
-        monitor_typeids = {0xB1};
-        set_typeids     = {0xB0};
+        monitor_typeids   = {0xB1};
+        set_typeids       = {0xB0};
         const size_t size = monitor_typeids.size();
         for (uint8_t i = 0; i < size; i++) {
             register_telegram_type(monitor_typeids[i], "RC10Monitor", false, MAKE_PF_CB(process_RC10Monitor));
@@ -67,10 +67,10 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
 
         // RC35
     } else if ((model == EMSdevice::EMS_DEVICE_FLAG_RC35) || (model == EMSdevice::EMS_DEVICE_FLAG_RC30_N)) {
-        monitor_typeids = {0x3E, 0x48, 0x52, 0x5C};
-        set_typeids     = {0x3D, 0x47, 0x51, 0x5B};
-        timer_typeids   = {0x3F, 0x49, 0x53, 0x5D};
-        timer2_typeids  = {0x42, 0x4C, 0x56, 0x60};
+        monitor_typeids   = {0x3E, 0x48, 0x52, 0x5C};
+        set_typeids       = {0x3D, 0x47, 0x51, 0x5B};
+        timer_typeids     = {0x3F, 0x49, 0x53, 0x5D};
+        timer2_typeids    = {0x42, 0x4C, 0x56, 0x60};
         const size_t size = monitor_typeids.size();
         for (uint8_t i = 0; i < size; i++) {
             register_telegram_type(monitor_typeids[i], "RC35Monitor", false, MAKE_PF_CB(process_RC35Monitor));
@@ -86,10 +86,10 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
         // RC20
     } else if (model == EMSdevice::EMS_DEVICE_FLAG_RC20) {
         if (device_id == 0x17) { // master
-            monitor_typeids = {0x91};
-            set_typeids     = {0xA8};
-            curve_typeids   = {0x90};
-            timer_typeids   = {0x8F};
+            monitor_typeids   = {0x91};
+            set_typeids       = {0xA8};
+            curve_typeids     = {0x90};
+            timer_typeids     = {0x8F};
             const size_t size = monitor_typeids.size();
             for (uint8_t i = 0; i < size; i++) {
                 register_telegram_type(monitor_typeids[i], "RC20Monitor", false, MAKE_PF_CB(process_RC20Monitor));
@@ -104,8 +104,8 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
         // RC20 newer
     } else if ((model == EMSdevice::EMS_DEVICE_FLAG_RC20_N) || (model == EMSdevice::EMS_DEVICE_FLAG_RC25)) {
         if (device_id == 0x17) { // master
-            monitor_typeids = {0xAE};
-            set_typeids     = {0xAD};
+            monitor_typeids   = {0xAE};
+            set_typeids       = {0xAD};
             const size_t size = monitor_typeids.size();
             for (uint8_t i = 0; i < size; i++) {
                 register_telegram_type(monitor_typeids[i], "RC20Monitor", false, MAKE_PF_CB(process_RC20Monitor_2));
@@ -117,10 +117,10 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
         }
         // RC30
     } else if (model == EMSdevice::EMS_DEVICE_FLAG_RC30) {
-        monitor_typeids = {0x41};
-        set_typeids     = {0xA7};
-        curve_typeids   = {0x40};
-        timer_typeids   = {0x3F};
+        monitor_typeids   = {0x41};
+        set_typeids       = {0xA7};
+        curve_typeids     = {0x40};
+        timer_typeids     = {0x3F};
         const size_t size = monitor_typeids.size();
         for (uint8_t i = 0; i < size; i++) {
             register_telegram_type(monitor_typeids[i], "RC30Monitor", false, MAKE_PF_CB(process_RC30Monitor));
@@ -163,12 +163,12 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
         set_typeids     = {0x02B9, 0x02BA, 0x02BB, 0x02BC, 0x02BD, 0x02BE, 0x02BF, 0x02C0};
         // 0x2CC is setting command to boiler, 0x2CD..0x2D4 is setting command to mixers, not a thermostat value, but also stored in thermostat
         // set2_typeids    = {0x02CC, 0x02CE, 0x02D0, 0x02D2}; // max. 4 heating circuits supported ny RC310
-        set2_typeids    = {0x0421, 0x0422, 0x0423, 0x0424};
-        summer_typeids  = {0x02AF, 0x02B0, 0x02B1, 0x02B2, 0x02B3, 0x02B4, 0x02B5, 0x02B6};
-        curve_typeids   = {0x029B, 0x029C, 0x029D, 0x029E, 0x029F, 0x02A0, 0x02A1, 0x02A2};
-        summer2_typeids = {0x0471, 0x0472, 0x0473, 0x0474, 0x0475, 0x0476, 0x0477, 0x0478};
-        hp_typeids      = {0x0467, 0x0468, 0x0469, 0x046A};
-        hpmode_typeids  = {0x0291, 0x0292, 0x0293, 0x0294};
+        set2_typeids              = {0x0421, 0x0422, 0x0423, 0x0424};
+        summer_typeids            = {0x02AF, 0x02B0, 0x02B1, 0x02B2, 0x02B3, 0x02B4, 0x02B5, 0x02B6};
+        curve_typeids             = {0x029B, 0x029C, 0x029D, 0x029E, 0x029F, 0x02A0, 0x02A1, 0x02A2};
+        summer2_typeids           = {0x0471, 0x0472, 0x0473, 0x0474, 0x0475, 0x0476, 0x0477, 0x0478};
+        hp_typeids                = {0x0467, 0x0468, 0x0469, 0x046A};
+        hpmode_typeids            = {0x0291, 0x0292, 0x0293, 0x0294};
         const size_t monitor_size = monitor_typeids.size();
         for (uint8_t i = 0; i < monitor_size; i++) {
             register_telegram_type(monitor_typeids[i], "RC300Monitor", false, MAKE_PF_CB(process_RC300Monitor));
@@ -217,7 +217,7 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
             // return;                   // no values to add
         }
 
-        monitor_typeids = {0x016F, 0x0170, 0x0171, 0x0172};
+        monitor_typeids           = {0x016F, 0x0170, 0x0171, 0x0172};
         const size_t junkers_size = monitor_typeids.size();
         for (uint8_t i = 0; i < junkers_size; i++) {
             register_telegram_type(monitor_typeids[i], "JunkersMonitor", false, MAKE_PF_CB(process_JunkersMonitor));
@@ -4929,13 +4929,10 @@ void Thermostat::register_device_values_hc(std::shared_ptr<Thermostat::HeatingCi
         register_device_value(
             tag, &hc->cooltemp, DeviceValueType::INT8, DeviceValueNumOp::DV_NUMOP_DIV2, FL_(cooltemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_cooltemp), -1, 30);
         register_device_value(tag, &hc->fastHeatup, DeviceValueType::UINT8, FL_(fastheatup), DeviceValueUOM::PERCENT, MAKE_CF_CB(set_fastheatup));
-        register_device_value(tag,
-                              &hc->comfortPointOffset,
-                              DeviceValueType::UINT8,
-                              FL_(comfortPointOffset),
-                              DeviceValueUOM::DEGREES_R,
-                              MAKE_CF_CB(set_comfortPointOffset));
-        register_device_value(tag, &hc->comfortPointTemp, DeviceValueType::UINT8, FL_(comfortPointTemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_comfortPointTemp));
+        register_device_value(
+            tag, &hc->comfortPointOffset, DeviceValueType::UINT8, FL_(comfortPointOffset), DeviceValueUOM::DEGREES_R, MAKE_CF_CB(set_comfortPointOffset), 0, 10);
+        register_device_value(
+            tag, &hc->comfortPointTemp, DeviceValueType::INT8, FL_(comfortPointTemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_comfortPointTemp), -5, 15);
         register_device_value(tag,
                               &hc->switchonoptimization,
                               DeviceValueType::BOOL,
