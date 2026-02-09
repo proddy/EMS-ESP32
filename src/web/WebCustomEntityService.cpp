@@ -137,8 +137,6 @@ StateUpdateResult WebCustomEntity::update(JsonObject root, WebCustomEntity & web
                 snprintf(key, sizeof(key), "c:%s", entityItem.name);
                 if (EMSESP::nvs_.isKey(key)) {
                     entityItem.data = EMSESP::nvs_.getString(key).c_str();
-                } else {
-                    EMSESP::nvs_.putString(key, entityItem.data.c_str());
                 }
             }
             webCustomEntity.customEntityItems.push_back(entityItem); // add to list
@@ -174,13 +172,16 @@ bool WebCustomEntityService::command_setvalue(const char * value, const int8_t i
 
     for (CustomEntityItem & entityItem : *customEntityItems_) {
         if (Helpers::toLower(entityItem.name) == Helpers::toLower(name)) {
+            if (entityItem.data == value) {
+                return true; // no change
+            }
             if (entityItem.ram == 1) {
                 entityItem.data = value;
             } else if (entityItem.ram == 2) { // NVS
                 entityItem.data = value;
                 char key[sizeof(entityItem.name) + 2];
                 snprintf(key, sizeof(key), "c:%s", entityItem.name);
-                if (EMSESP::nvs_.getString(key) != entityItem.data.c_str()) {
+                if (!EMSESP::nvs_.isKey(key) || EMSESP::nvs_.getString(key) != entityItem.data.c_str()) {
                     EMSESP::nvs_.putString(key, entityItem.data.c_str());
                 }
             } else if (entityItem.value_type == DeviceValueType::STRING) {

@@ -647,6 +647,7 @@ Boiler::Boiler(uint8_t device_type, int8_t device_id, uint8_t product_id, const 
                               DeviceValueUOM::DEGREES,
                               MAKE_CF_CB(set_pool_temp));
         // register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &hp4wayValve_, DeviceValueType::ENUM, FL_(enum_4way), FL_(hp4wayValve), DeviceValueUOM::NONE);
+        register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &hp4wayValve_, DeviceValueType::BOOL, FL_(hp4wayValve), DeviceValueUOM::NONE);
         register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &hpInput[0].state, DeviceValueType::BOOL, FL_(hpInput1), DeviceValueUOM::NONE);
         register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
                               &hpInput[0].option,
@@ -1731,7 +1732,9 @@ void Boiler::process_HpPower(std::shared_ptr<const Telegram> telegram) {
     has_bitupdate(telegram, hp3wayValve_, 0, 6);
     // has_bitupdate(telegram, heating_, 0, 0); // heating on? https://github.com/emsesp/EMS-ESP32/discussions/1898
     has_bitupdate(telegram, hpSwitchValve_, 0, 4);
-
+    if (coolingType_ == 3) {
+        has_bitupdate(telegram, hp4wayValve_, 0, 3); // https://github.com/emsesp/EMS-ESP32/issues/2844#issuecomment-3869770845
+    }
     has_bitupdate(telegram, elHeatStep1_, 3, 0);
     has_bitupdate(telegram, elHeatStep2_, 3, 1);
     has_bitupdate(telegram, elHeatStep3_, 3, 2);
@@ -1831,6 +1834,8 @@ void Boiler::process_HpInConfig(std::shared_ptr<const Telegram> telegram) {
 
 // Boiler(0x08) -W-> Me(0x0B), HpHeaterConfig(0x0485)
 void Boiler::process_HpCooling(std::shared_ptr<const Telegram> telegram) {
+    // coolingtype to set 4wayvalve (0x48D), type not published yet, https://github.com/emsesp/EMS-ESP32/issues/2844#issuecomment-3869770845
+    has_update(telegram, coolingType_, 0); // none = 0, passive cooling box = 1, active cooling box = 2, 4-way valve = 3, active and passive cooling box = 4.
     has_update(telegram, pvCooling_, 21);
 }
 

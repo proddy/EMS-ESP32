@@ -270,6 +270,7 @@ class Boiler : public EMSdevice {
     uint8_t powerReduction_;
 
     uint8_t  pvCooling_;
+    uint8_t  coolingType_;
     uint8_t  auxHeatMode_;
     uint8_t  auxMaxLimit_;
     uint8_t  auxLimitStart_;
