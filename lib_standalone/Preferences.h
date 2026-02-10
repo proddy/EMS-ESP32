@@ -67,6 +67,9 @@ class Preferences {
     size_t putString(const char * key, String value) {
         return 0;
     }
+    bool isKey(const char * key) {
+        return true;
+    }
 
     // unused....
 
@@ -84,7 +87,6 @@ class Preferences {
     // size_t         putBool(const char * key, bool value);
 
     // size_t         putBytes(const char * key, const void * value, size_t len);
-    // bool           isKey(const char * key);
     // PreferenceType getType(const char * key);
     // int8_t         getChar(const char * key, int8_t defaultValue = 0);
     // int16_t        getShort(const char * key, int16_t defaultValue = 0);

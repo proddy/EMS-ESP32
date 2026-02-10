@@ -73,6 +73,11 @@ void WebScheduler::read(WebScheduler & webScheduler, JsonObject root) {
 StateUpdateResult WebScheduler::update(JsonObject root, WebScheduler & webScheduler) {
     // reset the list
     Command::erase_device_commands(EMSdevice::DeviceType::SCHEDULER);
+    for (ScheduleItem & scheduleItem : webScheduler.scheduleItems) {
+        char key[sizeof(scheduleItem.name) + 2];
+        snprintf(key, sizeof(key), "s:%s", scheduleItem.name);
+        EMSESP::nvs_.remove(key);
+    }
     webScheduler.scheduleItems.clear();
     EMSESP::webSchedulerService.ha_reset();
 
@@ -95,6 +100,11 @@ StateUpdateResult WebScheduler::update(JsonObject root, WebScheduler & webSchedu
 
         webScheduler.scheduleItems.push_back(si); // add to list
         if (webScheduler.scheduleItems.back().name[0] != '\0') {
+            char key[sizeof(webScheduler.scheduleItems.back().name) + 2];
+            snprintf(key, sizeof(key), "s:%s", webScheduler.scheduleItems.back().name);
+            if (EMSESP::nvs_.isKey(key)) {
+                webScheduler.scheduleItems.back().active = EMSESP::nvs_.getBool(key);
+            }
             Command::add(
                 EMSdevice::DeviceType::SCHEDULER,
                 webScheduler.scheduleItems.back().name,
@@ -127,7 +137,21 @@ bool WebSchedulerService::command_setvalue(const char * value, const int8_t id, 
             if (EMSESP::mqtt_.get_publish_onchange(0)) {
                 publish();
             }
-
+            // save new state to nvs #2946
+            char key[sizeof(scheduleItem.name) + 2];
+            snprintf(key, sizeof(key), "s:%s", scheduleItem.name);
+            EMSESP::nvs_.putBool(key, scheduleItem.active);
+            /* save to filesystem
+            EMSESP::webSchedulerService.update([&](WebScheduler & webSchedule) {
+                for (auto si : webSchedule.scheduleItems) {
+                    if (!strcmp(si.name, scheduleItem.name)) {
+                        si.active = scheduleItem.active;
+                        break;
+                    }
+                }
+                return StateUpdateResult::CHANGED;
+            });
+            */
             return true;
         }
     }
@@ -260,8 +284,8 @@ void WebSchedulerService::publish(const bool force) {
                 char uniq_s[70];
                 snprintf(uniq_s, sizeof(uniq_s), "%s_%s", F_(scheduler), scheduleItem.name);
 
-                config["uniq_id"]    = uniq_s;
-                config["name"]       = (const char *)scheduleItem.name;
+                config["uniq_id"] = uniq_s;
+                config["name"]    = (const char *)scheduleItem.name;
                 // Optimized: use stack buffer instead of string concatenation
                 char def_ent_id[80];
                 snprintf(def_ent_id, sizeof(def_ent_id), "switch.%s", uniq_s);

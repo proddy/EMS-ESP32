@@ -74,6 +74,11 @@ StateUpdateResult WebCustomEntity::update(JsonObject root, WebCustomEntity & web
         if (entityItem.raw) {
             delete[] entityItem.raw;
         }
+        if (entityItem.ram == 2) { // NVS
+            char key[sizeof(entityItem.name) + 2];
+            snprintf(key, sizeof(key), "c:%s", entityItem.name);
+            EMSESP::nvs_.remove(key);
+        }
         if (entityItem.ram) { // save name/value pairs for change checking
             doc[entityItem.name] = entityItem.value;
         }
@@ -95,9 +100,9 @@ StateUpdateResult WebCustomEntity::update(JsonObject root, WebCustomEntity & web
             entityItem.value_type = ei["value_type"];
             entityItem.writeable  = ei["writeable"];
             entityItem.hide       = ei["hide"] | false;
-            entityItem.data       = ei["value"].as<std::string>();
+            entityItem.data       = ei["value"].as<std::string>().c_str();
             strlcpy(entityItem.name, ei["name"].as<const char *>(), sizeof(entityItem.name));
-            if (entityItem.ram == 1) {
+            if (entityItem.ram > 0) {
                 entityItem.device_id  = 0;
                 entityItem.type_id    = 0;
                 entityItem.value_type = DeviceValueType::STRING;
@@ -127,7 +132,13 @@ StateUpdateResult WebCustomEntity::update(JsonObject root, WebCustomEntity & web
             if (entityItem.factor == 0) {
                 entityItem.factor = 1;
             }
-
+            if (entityItem.ram == 2) { // NVS
+                char key[sizeof(entityItem.name) + 2];
+                snprintf(key, sizeof(key), "c:%s", entityItem.name);
+                if (EMSESP::nvs_.isKey(key)) {
+                    entityItem.data = EMSESP::nvs_.getString(key).c_str();
+                }
+            }
             webCustomEntity.customEntityItems.push_back(entityItem); // add to list
 
             if (entityItem.writeable && entityItem.name[0] != '\0') {
@@ -161,8 +172,18 @@ bool WebCustomEntityService::command_setvalue(const char * value, const int8_t i
 
     for (CustomEntityItem & entityItem : *customEntityItems_) {
         if (Helpers::toLower(entityItem.name) == Helpers::toLower(name)) {
+            if (entityItem.data == value) {
+                return true; // no change
+            }
             if (entityItem.ram == 1) {
                 entityItem.data = value;
+            } else if (entityItem.ram == 2) { // NVS
+                entityItem.data = value;
+                char key[sizeof(entityItem.name) + 2];
+                snprintf(key, sizeof(key), "c:%s", entityItem.name);
+                if (!EMSESP::nvs_.isKey(key) || EMSESP::nvs_.getString(key) != entityItem.data.c_str()) {
+                    EMSESP::nvs_.putString(key, entityItem.data.c_str());
+                }
             } else if (entityItem.value_type == DeviceValueType::STRING) {
                 auto      telegram = strdup(value);
                 uint8_t   length   = strlen(telegram) / 3 + 1;
@@ -337,7 +358,7 @@ bool WebCustomEntityService::get_value_info(JsonObject output, const char * cmd)
 void WebCustomEntityService::get_value_json(JsonObject output, CustomEntityItem const & entity) {
     output["name"]      = (const char *)entity.name;
     output["fullname"]  = (const char *)entity.name;
-    output["storage"]   = entity.ram ? "ram" : "ems";
+    output["storage"]   = entity.ram == 1 ? "ram" : entity.ram == 2 ? "nvs" : "ems";
     output["type"]      = entity.value_type == DeviceValueType::BOOL ? "boolean" : entity.value_type == DeviceValueType::STRING ? "string" : F_(number);
     output["readable"]  = true;
     output["writeable"] = entity.writeable;

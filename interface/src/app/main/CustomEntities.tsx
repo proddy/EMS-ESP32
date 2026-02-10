@@ -310,13 +310,15 @@ const CustomEntities = () => {
                       />
                     )}
                   </Cell>
+                  <Cell>{ei.ram > 0 ? '' : showHex(ei.device_id as number, 2)}</Cell>
+                  <Cell>{ei.ram > 0 ? '' : showHex(ei.type_id as number, 3)}</Cell>
+                  <Cell>{ei.ram > 0 ? '' : ei.offset}</Cell>
                   <Cell>
-                    {ei.ram === 1 ? '' : showHex(ei.device_id as number, 2)}
-                  </Cell>
-                  <Cell>{ei.ram === 1 ? '' : showHex(ei.type_id as number, 3)}</Cell>
-                  <Cell>{ei.ram === 1 ? '' : ei.offset}</Cell>
-                  <Cell>
-                    {ei.ram === 1 ? 'RAM' : DeviceValueTypeNames[ei.value_type]}
+                    {ei.ram === 1
+                      ? 'RAM'
+                      : ei.ram === 2
+                        ? 'NVS'
+                        : DeviceValueTypeNames[ei.value_type]}
                   </Cell>
                   <Cell>{formatValue(ei.value, ei.uom)}</Cell>
                 </Row>

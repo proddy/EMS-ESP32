@@ -205,9 +205,10 @@ const CustomEntitiesDialog = ({
             >
               <MenuItem value={0}>EMS-{LL.VALUE(1)}</MenuItem>
               <MenuItem value={1}>RAM-{LL.VALUE(1)}</MenuItem>
+              <MenuItem value={2}>NVS-{LL.VALUE(1)}</MenuItem>
             </TextField>
           </Grid>
-          {editItem.ram === 1 && (
+          {editItem.ram > 0 && (
             <>
               <Grid>
                 <TextField
