@@ -1,0 +1,10 @@
+{
+    "name": "mbedtls_ssl",
+    "version": "3.6.5",
+    "description": "mbedtls SSL/TLS module compiled from source (Tasmota platform strips this from libmbedtls.a)",
+    "platforms": ["espressif32"],
+    "build": {
+        "extraScript": "configure.py",
+        "libArchive": false
+    }
+}

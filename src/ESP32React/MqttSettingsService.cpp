@@ -41,7 +41,7 @@ void MqttSettingsService::startClient() {
         delete _mqttClient;
         _mqttClient = nullptr;
     }
-#ifndef TASMOTA_SDK
+#ifndef NO_TLS_SUPPORT
     if (_state.enableTLS) {
         isSecure = true;
         if (emsesp::EMSESP::system_.PSram() == 0) {
@@ -182,7 +182,7 @@ bool MqttSettingsService::configureMqtt() {
         }
 
         _reconfigureMqtt = false;
-#ifndef TASMOTA_SDK
+#ifndef NO_TLS_SUPPORT
         if (_state.enableTLS) {
             if (_state.rootCA == "insecure") {
                 emsesp::EMSESP::logger().debug("Start insecure MQTT");
@@ -219,7 +219,7 @@ bool MqttSettingsService::configureMqtt() {
 }
 
 void MqttSettings::read(MqttSettings & settings, JsonObject root) {
-#ifndef TASMOTA_SDK
+#ifndef NO_TLS_SUPPORT
     root["enableTLS"] = settings.enableTLS;
     root["rootCA"]    = settings.rootCA;
 #endif
@@ -258,7 +258,7 @@ StateUpdateResult MqttSettings::update(JsonObject root, MqttSettings & settings)
     MqttSettings newSettings;
     bool         changed     = false;
 
-#ifndef TASMOTA_SDK
+#ifndef NO_TLS_SUPPORT
     newSettings.enableTLS = root["enableTLS"];
     newSettings.rootCA    = root["rootCA"] | "";
 #else
@@ -385,7 +385,7 @@ StateUpdateResult MqttSettings::update(JsonObject root, MqttSettings & settings)
         emsesp::EMSESP::mqtt_.set_publish_time_heartbeat(newSettings.publish_time_heartbeat);
     }
 
-#ifndef TASMOTA_SDK
+#ifndef NO_TLS_SUPPORT
     // strip down to certificate only
     newSettings.rootCA.replace("\r", "");
     newSettings.rootCA.replace("\n", "");

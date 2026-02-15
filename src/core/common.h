@@ -86,6 +86,6 @@ using string_vector = std::vector<const char *>;
 
 // Translation count - dynamically calculated at compile-time
 enum { EMSESP_TRANSLATION_COUNT_END = __COUNTER__ };
-static constexpr uint16_t EMSESP_TRANSLATION_COUNT = EMSESP_TRANSLATION_COUNT_END - EMSESP_TRANSLATION_COUNT_START - 1;
+static constexpr uint16_t EMSESP_TRANSLATION_COUNT = static_cast<int>(EMSESP_TRANSLATION_COUNT_END) - static_cast<int>(EMSESP_TRANSLATION_COUNT_START) - 1;
 
 #endif

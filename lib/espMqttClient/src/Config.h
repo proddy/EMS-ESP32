@@ -66,14 +66,10 @@ the LICENSE file.
 #endif
 
 #if EMC_USE_MEMPOOL
-  #ifndef EMC_NUM_POOL_ELEMENTS
-    #define EMC_NUM_POOL_ELEMENTS 32
-  #endif
-  #ifndef EMC_SIZE_POOL_ELEMENTS
-    #define EMC_SIZE_POOL_ELEMENTS 128
-  #endif
+#ifndef EMC_NUM_POOL_ELEMENTS
+#define EMC_NUM_POOL_ELEMENTS 32
 #endif
-
-#ifndef  TASMOTA_SDK
-#define EMC_CLIENT_SECURE
+#ifndef EMC_SIZE_POOL_ELEMENTS
+#define EMC_SIZE_POOL_ELEMENTS 128
+#endif
 #endif

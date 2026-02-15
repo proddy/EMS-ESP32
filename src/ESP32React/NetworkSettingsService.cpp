@@ -67,19 +67,15 @@ void NetworkSettingsService::loop() {
 void NetworkSettingsService::manageSTA() {
     // Abort if already connected, or if we have no SSID
     if (WiFi.isConnected() || _state.ssid.length() == 0) {
-#if ESP_IDF_VERSION_MAJOR >= 5
         if (_state.ssid.length() == 0) {
             ETH.enableIPv6(true);
         }
-#endif
         return;
     }
 
     // Connect or reconnect as required
     if ((WiFi.getMode() & WIFI_STA) == 0) {
-#if ESP_IDF_VERSION_MAJOR >= 5
         WiFi.enableIPv6(true);
-#endif
         if (_state.staticIPConfig) {
             WiFi.config(_state.localIP, _state.gatewayIP, _state.subnetMask, _state.dnsIP1, _state.dnsIP2); // configure for static IP
         }
@@ -305,7 +301,7 @@ void NetworkSettingsService::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) 
         break;
 
     case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-        connectcount_++; // count the number of WiFi reconnects
+        connectcount_ = connectcount_ + 1; // count the number of WiFi reconnects
         emsesp::EMSESP::logger().warning("WiFi disconnected (#%d). Reason: %s (%d)",
                                          connectcount_,
                                          disconnectReason(info.wifi_sta_disconnected.reason),
@@ -360,25 +356,15 @@ void NetworkSettingsService::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) 
         if (_state.tx_power == 0) {
             setWiFiPowerOnRSSI();
         }
-#if ESP_IDF_VERSION_MAJOR < 5
-        WiFi.enableIpV6(); // force ipv6
-#endif
         break;
 
     case ARDUINO_EVENT_ETH_CONNECTED:
-#if ESP_IDF_VERSION_MAJOR < 5
-        ETH.enableIpV6(); // force ipv6
-#endif
         break;
 
         // IPv6 specific - WiFi/Eth
     case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
     case ARDUINO_EVENT_ETH_GOT_IP6: {
-#if !TASMOTA_SDK && ESP_IDF_VERSION_MAJOR < 5
-        auto ip6 = IPv6Address((uint8_t *)info.got_ip6.ip6_info.ip.addr).toString();
-#else
-        auto ip6 = IPAddress(IPv6, (uint8_t *)info.got_ip6.ip6_info.ip.addr, 0).toString();
-#endif
+        auto         ip6  = IPAddress(IPv6, (uint8_t *)info.got_ip6.ip6_info.ip.addr, 0).toString();
         const char * link = event == ARDUINO_EVENT_ETH_GOT_IP6 ? "Eth" : "WiFi";
         if (ip6.startsWith("fe80")) {
             emsesp::EMSESP::logger().info("IPv6 (%s) local: %s", link, ip6.c_str());

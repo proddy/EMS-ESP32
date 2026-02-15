@@ -37,11 +37,7 @@
 #include <uuid/log.h>
 #include <PButton.h>
 
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-#define EMSESP_RGB_WRITE neopixelWrite
-#else
 #define EMSESP_RGB_WRITE rgbLedWrite
-#endif
 
 #if CONFIG_IDF_TARGET_ESP32
 // there is no official API available on the original ESP32
@@ -49,11 +45,7 @@ extern "C" {
 uint8_t temprature_sens_read();
 }
 #elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
-#if ESP_IDF_VERSION_MAJOR < 5
-#include "driver/temp_sensor.h"
-#else
 #include "driver/temperature_sensor.h"
-#endif
 #endif
 
 using uuid::console::Shell;
@@ -501,9 +493,7 @@ class System {
     uint32_t appfree_;
 
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
-#if ESP_IDF_VERSION_MAJOR >= 5
     temperature_sensor_handle_t temperature_handle_ = NULL;
-#endif
 #endif
     float temperature_ = 0;
 };

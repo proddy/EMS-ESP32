@@ -458,23 +458,14 @@ void WebSettings::set_board_profile(WebSettings & settings) {
 #if CONFIG_IDF_TARGET_ESP32
         // check for no PSRAM, could be a E32 or S32?
         if (!ESP.getPsramSize()) {
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-            if (ETH.begin(1, 16, 23, 18, ETH_PHY_LAN8720, ETH_CLOCK_GPIO0_IN)) {
-#else
             if (ETH.begin(ETH_PHY_LAN8720, 1, 23, 18, 16, ETH_CLOCK_GPIO0_IN)) {
-#endif
                 settings.board_profile = "E32"; // Ethernet without PSRAM
             } else {
                 settings.board_profile = "S32"; // ESP32 standard WiFi without PSRAM
             }
         } else {
-// check for boards with PSRAM, could be a E32V2 otherwise default back to the S32
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-            if (ETH.begin(0, 15, 23, 18, ETH_PHY_LAN8720, ETH_CLOCK_GPIO0_OUT)) {
-#else
+            // check for boards with PSRAM, could be a E32V2 otherwise default back to the S32
             if (ETH.begin(ETH_PHY_LAN8720, 0, 23, 18, 15, ETH_CLOCK_GPIO0_OUT)) {
-#endif
-
                 if (analogReadMilliVolts(39) > 700) {   // core voltage > 2.6V
                     settings.board_profile = "E32V2_2"; // Ethernet, PSRAM, internal sensors
                 } else {
