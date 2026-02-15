@@ -12,7 +12,9 @@
 // Include all library components
 #include "esp32-psram/AllocatorPSRAM.h"   // PSRAM-backed vector
 #include "esp32-psram/VectorPSRAM.h"   // PSRAM-backed vector
-#include "esp32-psram/VectorHIMEM.h"   // HIMEM-backed vector
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32-psram/VectorHIMEM.h"   // HIMEM-backed vector (ESP32 only)
+#endif
 // #include "esp32-psram/InMemoryFile.h"    // File interface using vectors
 // #include "esp32-psram/PSRAM.h"         // PSRAM file system
 // #include "esp32-psram/HIMEM.h"         // HIMEM file system

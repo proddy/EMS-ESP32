@@ -238,7 +238,9 @@ using RingBufferStreamPSRAM = RingBufferStream<VectorPSRAM<uint8_t>>;
 /**
  * @brief Type alias for a RingBufferStream that uses HIMEM-backed vector storage
  */
+#if CONFIG_IDF_TARGET_ESP32
 using RingBufferStreamHIMEM = RingBufferStream<VectorHIMEM<uint8_t>>;
+#endif
 
 /**
  * @brief Type alias for a RingBufferStream that uses std::vector storage
