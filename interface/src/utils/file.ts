@@ -23,6 +23,6 @@ export const saveFile = (
     }, 100);
   } catch (error) {
     console.error('Failed to save file:', error);
-    throw new Error(`Unable to save file: ${filename}${extension}`);
+    throw new Error(`Unable to save file: ${filename}${extension}`, { cause: error });
   }
 };

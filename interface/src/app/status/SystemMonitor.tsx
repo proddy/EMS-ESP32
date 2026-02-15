@@ -60,18 +60,16 @@ const SystemMonitor = () => {
   const { statusMessage, isUploading, progressValue } = useMemo(() => {
     const status = data?.status;
 
-    let message = '';
-    if (status && status >= SystemStatusCodes.SYSTEM_STATUS_UPLOADING) {
-      message = LL.WAIT_FIRMWARE();
-    } else if (status === SystemStatusCodes.SYSTEM_STATUS_PENDING_RESTART) {
-      message = LL.APPLICATION_RESTARTING();
-    } else if (status === SystemStatusCodes.SYSTEM_STATUS_NORMAL) {
-      message = LL.RESTARTING_PRE();
-    } else if (status === SystemStatusCodes.SYSTEM_STATUS_ERROR_UPLOAD) {
-      message = 'Upload Failed';
-    } else {
-      message = LL.RESTARTING_POST();
-    }
+    const message =
+      status && status >= SystemStatusCodes.SYSTEM_STATUS_UPLOADING
+        ? LL.WAIT_FIRMWARE()
+        : status === SystemStatusCodes.SYSTEM_STATUS_PENDING_RESTART
+          ? LL.APPLICATION_RESTARTING()
+          : status === SystemStatusCodes.SYSTEM_STATUS_NORMAL
+            ? LL.RESTARTING_PRE()
+            : status === SystemStatusCodes.SYSTEM_STATUS_ERROR_UPLOAD
+              ? 'Upload Failed'
+              : LL.RESTARTING_POST();
 
     const uploading =
       status !== undefined && status >= SystemStatusCodes.SYSTEM_STATUS_UPLOADING;
