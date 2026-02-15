@@ -8,7 +8,8 @@ the LICENSE file.
 
 #pragma once
 
-#include <IPAddress.h>
+#ifndef NO_TLS_SUPPORT
+
 #include "esp_tls.h"
 #include "Transport.h"
 
@@ -44,3 +45,5 @@ class ClientSecureSync : public Transport {
 };
 
 } // namespace espMqttClientInternals
+
+#endif

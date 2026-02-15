@@ -6,6 +6,8 @@ For a copy, see <https://opensource.org/licenses/MIT> or
 the LICENSE file.
 */
 
+#ifndef NO_TLS_SUPPORT
+
 #include "ClientSecureSync.h"
 #include "mbedtls_ssl.h" // triggers compilation of mbedtls SSL module (stripped from Tasmota libmbedtls.a)
 
@@ -157,3 +159,4 @@ void ClientSecureSync::setInsecure() {
 
 } // namespace espMqttClientInternals
 
+#endif
