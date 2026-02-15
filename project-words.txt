@@ -1324,3 +1324,4 @@ zyxwvutsrqponmlkjihgfedcba
 ACAO
 ACAH
 ACAC
+coolingtype
