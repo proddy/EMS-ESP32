@@ -129,15 +129,20 @@ void Connect::process_roomThermostat(std::shared_ptr<const Telegram> telegram) {
     }
     has_update(telegram, rc->temp_, 0);
     has_update(telegram, rc->humidity_, 2); // could show -3 if not set
-    has_update(telegram, rc->seltemp_, 3);
+    // make sure we have read mode and icon, needed for ha climate
+    if (!Mqtt::ha_enabled() || (Helpers::hasValue(rc->mode_) && Helpers::hasValue(rc->icon_))) {
+        has_update(telegram, rc->seltemp_, 3);
+    }
 
     // calculate dew temperature
-    const float k2 = 17.62;
-    const float k3 = 243.12;
-    const float t  = (float)rc->temp_ / 10;
-    const float h  = (float)rc->humidity_ / 100;
-    int16_t     dt = (10 * k3 * (((k2 * t) / (k3 + t)) + log(h)) / (((k2 * k3) / (k3 + t)) - log(h)));
-    has_update(rc->dewtemp_, dt);
+    if (rc->humidity_ >= 0 && rc->humidity_ <= 100) {
+        const float k2 = 17.62;
+        const float k3 = 243.12;
+        const float t  = (float)rc->temp_ / 10;
+        const float h  = (float)rc->humidity_ / 100;
+        int16_t     dt = (10 * k3 * (((k2 * t) / (k3 + t)) + log(h)) / (((k2 * k3) / (k3 + t)) - log(h)));
+        has_update(rc->dewtemp_, dt);
+    }
 }
 
 // gateway(0x48) W gateway(0x50), ?(0x0B42), data: 01 // icon in offset 0
