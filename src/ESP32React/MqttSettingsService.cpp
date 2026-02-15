@@ -316,6 +316,10 @@ StateUpdateResult MqttSettings::update(JsonObject root, MqttSettings & settings)
         changed = true;
     }
 
+    if (newSettings.ha_number_mode != settings.ha_number_mode) {
+        changed = true;
+    }
+
     if (newSettings.entity_format != settings.entity_format) {
         changed = true;
     }
