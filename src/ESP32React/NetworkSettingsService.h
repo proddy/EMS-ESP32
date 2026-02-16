@@ -107,7 +107,7 @@ class NetworkSettingsService : public StatefulService<NetworkSettings> {
 
     volatile uint16_t connectcount_ = 0; // number of wifi reconnects
 
-    void         WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
+    void         WiFiEvent(arduino_event_id_t event, arduino_event_info_t info);
     void         mDNS_start() const;
     const char * disconnectReason(uint8_t code);
     void         reconfigureWiFiConnection();
