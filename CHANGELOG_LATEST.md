@@ -8,10 +8,11 @@ For more details go to [emsesp.org](https://emsesp.org/).
 
 - comfortpoint for BC400 [#2935](https://github.com/emsesp/EMS-ESP32/issues/2935)
 - customize device brand [#2784](https://github.com/emsesp/EMS-ESP32/issues/2784)
+- set model for ems-esp devices temperature, analog, etc. [#2958](https://github.com/emsesp/EMS-ESP32/discussions/2958)
 
 ## Fixed
 
-- SRC climate creation [#2936](https://github.com/emsesp/EMS-ESP32/issues/2936)
+- SRC climate creation [#2936](https://github.com/emsesp/EMS-ESP32/issues/2936) and [#2960](https://github.com/emsesp/EMS-ESP32/issues/2960)
 
 ## Changed
 
