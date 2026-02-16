@@ -104,7 +104,6 @@ class APSettingsService : public StatefulService<APSettings> {
     void startAP();
     void stopAP();
     void handleDNS();
-    void WiFiEvent(WiFiEvent_t event);
 };
 
 #endif
