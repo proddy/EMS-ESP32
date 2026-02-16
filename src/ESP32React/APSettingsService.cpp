@@ -10,7 +10,6 @@ APSettingsService::APSettingsService(AsyncWebServer * server, FS * fs, SecurityM
     , _reconfigureAp(false)
     , _connected(0) {
     addUpdateHandler([this] { reconfigureAP(); }, false);
-    WiFi.onEvent([this](WiFiEvent_t event, WiFiEventInfo_t info) { WiFiEvent(event); });
 }
 
 void APSettingsService::begin() {
@@ -19,39 +18,27 @@ void APSettingsService::begin() {
     // reconfigureAP();
 }
 
-// wait 10 sec on STA disconnect before starting AP
-void APSettingsService::WiFiEvent(WiFiEvent_t event) {
-    const uint8_t was_connected = _connected;
-    switch (event) {
-    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-        _connected &= ~1U;
-        break;
-    case ARDUINO_EVENT_ETH_DISCONNECTED:
-        _connected &= ~2U;
-        break;
-    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-    case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
-        _connected |= 1U;
-        break;
-    case ARDUINO_EVENT_ETH_GOT_IP:
-    case ARDUINO_EVENT_ETH_GOT_IP6:
-        _connected |= 2U;
-        break;
-    default:
-        return;
-    }
-    // wait 10 sec before starting AP
-    if (was_connected && !_connected) {
-        _lastManaged = uuid::get_uptime();
-    }
-}
-
 void APSettingsService::reconfigureAP() {
     _lastManaged   = uuid::get_uptime() - MANAGE_NETWORK_DELAY;
     _reconfigureAp = true;
 }
 
 void APSettingsService::loop() {
+    const uint8_t was_connected = _connected;
+    if (WiFi.isConnected()) {
+        _connected |= 1U;
+    } else {
+        _connected &= ~1U;
+    }
+    if (ETH.connected()) {
+        _connected |= 2U;
+    } else {
+        _connected &= ~2U;
+    }
+    // wait 10 sec before starting AP
+    if (was_connected && !_connected) {
+        _lastManaged = uuid::get_uptime();
+    }
     const unsigned long currentMillis = uuid::get_uptime();
     if ((currentMillis - _lastManaged) >= MANAGE_NETWORK_DELAY) {
         _lastManaged = currentMillis;

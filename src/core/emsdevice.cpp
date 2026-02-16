@@ -2135,7 +2135,7 @@ void EMSdevice::mqtt_ha_entity_config_create() {
 
             if (needs_update) {
                 const char * const ** mode_options = nullptr;
-                for (auto & d : devicevalues_) {
+                for (const auto & d : devicevalues_) {
                     // make sure mode in same circuit is DeviceValueType::ENUM
                     if ((d.tag == dv.tag) && (d.type == DeviceValueType::ENUM) && !strcmp(d.short_name, FL_(mode)[0]) && (d.options_size > 0)) {
                         // get options
@@ -2167,19 +2167,25 @@ void EMSdevice::mqtt_ha_entity_config_create() {
             }
 
             // SRC thermostats mapped to connect/src1/... always contains mode, seltemp, currtemp
-            if (dv.tag >= DeviceValueTAG::TAG_SRC1 && dv.tag <= DeviceValueTAG::TAG_SRC16 && !strcmp(dv.short_name, FL_(mode)[0])) {
-                // add icon if we have one
-                const char * icon = nullptr;
-                for (auto & d : devicevalues_) {
-                    if (d.tag == dv.tag && !strcmp(d.short_name, FL_(icon)[0]) && (dv.type == DeviceValueType::ENUM)) {
+            if (dv.tag >= DeviceValueTAG::TAG_SRC1 && dv.tag <= DeviceValueTAG::TAG_SRC16 && !strcmp(dv.short_name, FL_(seltemp)[0])) {
+                // add modes and icon if we have one
+                const char *          icon         = nullptr;
+                const char * const ** mode_options = nullptr;
+                for (const auto & d : devicevalues_) {
+                    if ((d.tag != dv.tag) || (d.type != DeviceValueType::ENUM)) {
+                        continue;
+                    }
+                    if (!strcmp(d.short_name, FL_(mode)[0]) && (d.options_size > 0)) {
+                        mode_options = d.options;
+                    }
+                    if (!strcmp(d.short_name, FL_(icon)[0])) {
                         uint8_t val = *(uint8_t *)(d.value_p);
                         if (val != 0 && val < d.options_size) {
                             icon = d.options[val][0];
                         }
-                        break;
                     }
                 }
-                Mqtt::publish_ha_climate_config(dv, true, dv.options, false, icon);
+                Mqtt::publish_ha_climate_config(dv, true, mode_options, false, icon);
                 count++;
             }
 

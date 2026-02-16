@@ -9,7 +9,6 @@ MqttSettingsService::MqttSettingsService(AsyncWebServer * server, FS * fs, Secur
     , _disconnectedAt(0)
     , _disconnectReason(espMqttClientTypes::DisconnectReason::TCP_DISCONNECTED)
     , _mqttClient(nullptr) {
-    WiFi.onEvent([this](WiFiEvent_t event, WiFiEventInfo_t info) { WiFiEvent(event); });
     addUpdateHandler([this] { onConfigUpdated(); }, false);
 }
 
@@ -29,6 +28,7 @@ MqttSettingsService::~MqttSettingsService() {
 void MqttSettingsService::begin() {
     _fsPersistence.readFromFS();
     startClient();
+    _reconfigureMqtt = true;
 }
 
 void MqttSettingsService::startClient() {
@@ -79,6 +79,10 @@ void MqttSettingsService::startClient() {
 }
 
 void MqttSettingsService::loop() {
+    if (_state.enabled && _mqttClient && _mqttClient->connected() && !emsesp::EMSESP::system_.network_connected()) {
+        // emsesp::EMSESP::logger().info("Network connection dropped, stopping MQTT client");
+        _mqttClient->disconnect(true);
+    }
     if (_reconfigureMqtt || (_disconnectedAt && static_cast<uint32_t>(uuid::get_uptime() - _disconnectedAt) >= MQTT_RECONNECTION_DELAY)) {
         // reconfigure MQTT client
         _disconnectedAt  = configureMqtt() ? 0 : uuid::get_uptime();
@@ -140,28 +144,6 @@ void MqttSettingsService::onConfigUpdated() {
 
     startClient();
     emsesp::EMSESP::mqtt_.start(); // reload EMS-ESP MQTT settings
-}
-
-void MqttSettingsService::WiFiEvent(WiFiEvent_t event) {
-    switch (event) {
-    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-    case ARDUINO_EVENT_ETH_GOT_IP:
-    case ARDUINO_EVENT_ETH_GOT_IP6:
-    case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
-        if (_state.enabled && !_mqttClient->connected()) {
-            onConfigUpdated();
-        }
-        break;
-    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-    case ARDUINO_EVENT_ETH_DISCONNECTED:
-        if (_state.enabled) {
-            _mqttClient->disconnect(true);
-        }
-        break;
-
-    default:
-        break;
-    }
 }
 
 bool MqttSettingsService::configureMqtt() {
@@ -256,7 +238,7 @@ void MqttSettings::read(MqttSettings & settings, JsonObject root) {
 
 StateUpdateResult MqttSettings::update(JsonObject root, MqttSettings & settings) {
     MqttSettings newSettings;
-    bool         changed     = false;
+    bool         changed = false;
 
 #ifndef NO_TLS_SUPPORT
     newSettings.enableTLS = root["enableTLS"];
@@ -313,6 +295,10 @@ StateUpdateResult MqttSettings::update(JsonObject root, MqttSettings & settings)
     }
 
     if (newSettings.discovery_type != settings.discovery_type) {
+        changed = true;
+    }
+
+    if (newSettings.ha_number_mode != settings.ha_number_mode) {
         changed = true;
     }
 

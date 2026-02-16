@@ -1545,9 +1545,7 @@ void Mqtt::add_ha_dev_section(JsonObject doc, const char * name, const bool crea
 
         // add mf (manufacturer/brand), mdl (model), sw (software version) and via_device
         dev_json["mf"] = brand != nullptr ? brand : "EMS-ESP";
-        if (model != nullptr) {
-            dev_json["mdl"] = model;
-        }
+        dev_json["mdl"] = model != nullptr ? model : "EMS-ESP";
         dev_json["sw"]         = version != nullptr ? version : "v" + std::string(EMSESP_APP_VERSION);
         dev_json["via_device"] = Mqtt::basename();
     }

@@ -84,4 +84,5 @@ void ESP32React::loop() {
     _networkSettingsService.loop();
     _apSettingsService.loop();
     _mqttSettingsService.loop();
+    _ntpSettingsService.loop();
 }

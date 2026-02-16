@@ -129,15 +129,20 @@ void Connect::process_roomThermostat(std::shared_ptr<const Telegram> telegram) {
     }
     has_update(telegram, rc->temp_, 0);
     has_update(telegram, rc->humidity_, 2); // could show -3 if not set
-    has_update(telegram, rc->seltemp_, 3);
+    // make sure we have read mode and icon, needed for ha climate
+    if (!Mqtt::ha_enabled() || (Helpers::hasValue(rc->mode_) && Helpers::hasValue(rc->icon_))) {
+        has_update(telegram, rc->seltemp_, 3);
+    }
 
     // calculate dew temperature
-    const float k2 = 17.62;
-    const float k3 = 243.12;
-    const float t  = (float)rc->temp_ / 10;
-    const float h  = (float)rc->humidity_ / 100;
-    int16_t     dt = (10 * k3 * (((k2 * t) / (k3 + t)) + log(h)) / (((k2 * k3) / (k3 + t)) - log(h)));
-    has_update(rc->dewtemp_, dt);
+    if (rc->humidity_ >= 0 && rc->humidity_ <= 100) {
+        const float k2 = 17.62;
+        const float k3 = 243.12;
+        const float t  = (float)rc->temp_ / 10;
+        const float h  = (float)rc->humidity_ / 100;
+        int16_t     dt = (10 * k3 * (((k2 * t) / (k3 + t)) + log(h)) / (((k2 * k3) / (k3 + t)) - log(h)));
+        has_update(rc->dewtemp_, dt);
+    }
 }
 
 // gateway(0x48) W gateway(0x50), ?(0x0B42), data: 01 // icon in offset 0
@@ -221,8 +226,9 @@ bool Connect::set_seltemp(const char * value, const int8_t id) {
     }
     float v;
     if (Helpers::value2float(value, v)) {
-        // write_command(0xBB5 + rc->room(), rc->mode_ == 2 ? 1 : 3, v == -1 ? 0xFF : uint8_t(v * 2));
-        write_command(0xBB5 + rc->room(), rc->mode_ == 0 ? 1 : 3, v == -1 ? 0xFF : uint8_t(v * 2));
+        // depends on mode, auto (2 for enum_mode2, 0 for enum_mode8) set in offset 1
+        write_command(0xBB5 + rc->room(), rc->mode_ == 2 ? 1 : 3, v == -1 ? 0xFF : uint8_t(v * 2));
+        // write_command(0xBB5 + rc->room(), rc->mode_ == 0 ? 1 : 3, v == -1 ? 0xFF : uint8_t(v * 2));
         return true;
     }
     return false;

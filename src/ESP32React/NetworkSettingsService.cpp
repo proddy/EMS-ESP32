@@ -9,7 +9,7 @@ NetworkSettingsService::NetworkSettingsService(AsyncWebServer * server, FS * fs,
     , _stopping(false) {
     addUpdateHandler([this] { reconfigureWiFiConnection(); }, false);
     // Eth is also bound to the WifiGeneric event handler
-    WiFi.onEvent([this](WiFiEvent_t event, WiFiEventInfo_t info) { WiFiEvent(event, info); });
+    // Network.onEvent([this](arduino_event_id_t event, arduino_event_info_t info) { WiFiEvent(event, info); });
 }
 
 static bool formatBssid(const String & bssid, uint8_t (&mac)[6]) {
@@ -62,14 +62,62 @@ void NetworkSettingsService::loop() {
         _lastConnectionAttempt = currentMillis;
         manageSTA();
     }
+    static uint8_t connect = 0;
+    enum uint8_t { CONNECT_IDLE = 0, CONNECT_WAIT_ETH, CONNECT_ETH_ACTIVE, CONNECT_WIFI_ACTIVE };
+    switch (connect) {
+    default:
+        connect = CONNECT_IDLE;
+        break;
+    case CONNECT_IDLE:
+        if (ETH.started() && _state.ssid.length() == 0) {
+            emsesp::EMSESP::logger().info("ETH started");
+            connect = CONNECT_WAIT_ETH;
+            ETH.enableIPv6(true);
+            if (_state.staticIPConfig) {
+                ETH.config(_state.localIP, _state.gatewayIP, _state.subnetMask, _state.dnsIP1, _state.dnsIP2);
+            }
+            ETH.setHostname(emsesp::EMSESP::system_.hostname().c_str());
+        }
+        if (WiFi.isConnected()) {
+            emsesp::EMSESP::logger().info("Wifi connected");
+            connect = CONNECT_WIFI_ACTIVE;
+            if (_state.tx_power == 0) {
+                setWiFiPowerOnRSSI();
+            }
+            mDNS_start();
+        }
+        break;
+    case CONNECT_WAIT_ETH:
+        if (ETH.connected()) {
+            emsesp::EMSESP::logger().info("ETH connected");
+            connect = CONNECT_ETH_ACTIVE;
+            emsesp::EMSESP::system_.ethernet_connected(true);
+            mDNS_start();
+        }
+        break;
+    case CONNECT_ETH_ACTIVE:
+        if (!ETH.connected()) {
+            emsesp::EMSESP::logger().info("ETH disconnected");
+            emsesp::EMSESP::system_.ethernet_connected(false);
+            connect = CONNECT_IDLE;
+        }
+        break;
+    case CONNECT_WIFI_ACTIVE:
+        if (!WiFi.isConnected()) {
+            emsesp::EMSESP::logger().info("WiFi disconnected");
+            connect = CONNECT_IDLE;
+            if (_stopping) {
+                _lastConnectionAttempt = 0;
+                _stopping              = false;
+            }
+        }
+        break;
+    }
 }
 
 void NetworkSettingsService::manageSTA() {
     // Abort if already connected, or if we have no SSID
     if (WiFi.isConnected() || _state.ssid.length() == 0) {
-        if (_state.ssid.length() == 0) {
-            ETH.enableIPv6(true);
-        }
         return;
     }
 
@@ -289,7 +337,7 @@ const char * NetworkSettingsService::disconnectReason(uint8_t code) {
 }
 
 // handles both WiFI and Ethernet
-void NetworkSettingsService::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
+void NetworkSettingsService::WiFiEvent(arduino_event_id_t event, arduino_event_info_t info) {
 #ifndef EMSESP_STANDALONE
 
     switch (event) {
