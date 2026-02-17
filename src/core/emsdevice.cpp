@@ -1282,7 +1282,7 @@ void EMSdevice::setCustomizationEntity(const std::string & entity_id) {
             // set the min / max
             dv.set_custom_minmax();
 
-            if (Mqtt::ha_enabled() && dv.short_name == FL_(seltemp)[0] && (min != dv.min || max != dv.max)) {
+            if (Mqtt::ha_enabled() && !strcmp(dv.short_name , FL_(selRoomTemp)[0]) && (min != dv.min || max != dv.max)) {
                 set_climate_minmax(dv.tag, dv.min, dv.max);
             }
 
@@ -2166,8 +2166,8 @@ void EMSdevice::mqtt_ha_entity_config_create() {
                 count++;
             }
 
-            // SRC thermostats mapped to connect/src1/... always contains mode, seltemp, currtemp
-            if (dv.tag >= DeviceValueTAG::TAG_SRC1 && dv.tag <= DeviceValueTAG::TAG_SRC16 && !strcmp(dv.short_name, FL_(seltemp)[0])) {
+            // SRC thermostats mapped to connect/src1/... always contains mode, selRoomTemp, currtemp
+            if (dv.tag >= DeviceValueTAG::TAG_SRC1 && dv.tag <= DeviceValueTAG::TAG_SRC16 && !strcmp(dv.short_name, FL_(selRoomTemp)[0])) {
                 // add modes and icon if we have one
                 const char *          icon         = nullptr;
                 const char * const ** mode_options = nullptr;
