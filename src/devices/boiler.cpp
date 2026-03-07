@@ -3005,25 +3005,26 @@ bool Boiler::set_reset(const char * value, const int8_t id) {
     }
 
     if (num == 0) {
-        return true; // dash
-    } else if (num == 1) {
-        // LOG_INFO("Reset boiler maintenance message");
+        return true;       // dash
+    } else if (num == 1) { // Reset boiler maintenance message;
         write_command(0x05, 8, 0xFF, 0x1C);
         return true;
-    } else if (num == 2) {
-        // LOG_INFO("Reset boiler error message");
-        write_command(0x05, 0, 0x5A); // error reset
+    } else if (num == 2) { // Reset boiler error message;
+        write_command(0x05, 0, 0x5A);
         return true;
-    } else if (num == 3) {
-        // LOG_INFO("Reset boiler history");
-        write_command(0x05, 42, 0x01); // clear history
+    } else if (num == 3) { // Reset boiler history
+        write_command(0x05, 42, 0x01);
         return true;
     } else if (num == 4) {
-        // LOG_INFO("Reset boiler message");
-        write_command(0x05, 8, 0xFF); // same as maintenance
+        write_command(0x05, 8, 0xFF); // reset messages, same as maintenance reset (1)
         return true;
-    } else if (num == 5) {
-        // LOG_INFO("Factory Reset");
+    } else if (num == 5) { // reset Heatpump errors
+        write_command(0x05, 50, 0xFF);
+        return true;
+    } else if (num == 6) { // reset burner starts
+        write_command(0x05, 2, 165);
+        return true;
+    } else if (num == 7) { // factory reset
         write_command(0x05, 6, 154);
         return true;
     }
