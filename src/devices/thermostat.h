@@ -65,6 +65,7 @@ class Thermostat : public EMSdevice {
         int16_t curroominfl;
         uint8_t flowtempoffset;
         uint8_t minflowtemp;
+        uint8_t minflowtemp2 = EMS_VALUE_UINT8_NOTSET;
         uint8_t maxflowtemp;
         uint8_t reducemode;
         uint8_t nofrostmode;
