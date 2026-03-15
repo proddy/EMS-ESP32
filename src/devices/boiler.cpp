@@ -65,6 +65,7 @@ Boiler::Boiler(uint8_t device_type, int8_t device_id, uint8_t product_id, const 
         register_telegram_type(0xE6, "UBAParametersPlus", true, MAKE_PF_CB(process_UBAParametersPlus));
         register_telegram_type(0xE9, "UBAMonitorWWPlus", false, MAKE_PF_CB(process_UBAMonitorWWPlus));
         register_telegram_type(0xEA, "UBAParameterWWPlus", true, MAKE_PF_CB(process_UBAParameterWWPlus));
+        register_telegram_type(0xEB, "PumpKick", true, MAKE_PF_CB(process_PumpKick));
         register_telegram_type(0x28, "WeatherComp", true, MAKE_PF_CB(process_WeatherComp));
         register_telegram_type(0x2E0, "UBASetPoints", false, MAKE_PF_CB(process_UBASetPoints2));
         register_telegram_type(0x2CC, "HPPressure", true, MAKE_PF_CB(process_HpPressure));
@@ -354,6 +355,24 @@ Boiler::Boiler(uint8_t device_type, int8_t device_id, uint8_t product_id, const 
     register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &pc1Flow_, DeviceValueType::INT16, FL_(pc1Flow), DeviceValueUOM::LH);
     register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &pc1On_, DeviceValueType::BOOL, FL_(pc1On), DeviceValueUOM::NONE);
     register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &pc1Rate_, DeviceValueType::UINT8, FL_(pc1Rate), DeviceValueUOM::PERCENT);
+
+    register_device_value(
+        DeviceValueTAG::TAG_DEVICE_DATA, &pumpKickHour_, DeviceValueType::UINT8, FL_(pumpKickHour), DeviceValueUOM::HOURS, MAKE_CF_CB(set_pumpKickHour), 0, 23);
+    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
+                          &pumpKickDay_,
+                          DeviceValueType::ENUM,
+                          FL_(enum_dayOfWeek),
+                          FL_(pumpKickDay),
+                          DeviceValueUOM::NONE,
+                          MAKE_CF_CB(set_pumpKickDay));
+    register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
+                          &pumpKickDelay_,
+                          DeviceValueType::UINT16,
+                          FL_(pumpKickDelay),
+                          DeviceValueUOM::MINUTES,
+                          MAKE_CF_CB(set_pumpKickDelay),
+                          0,
+                          32767);
 
     /*
     * Hybrid heatpump with telegram 0xBB is readable and writeable in boiler and thermostat
@@ -2246,6 +2265,13 @@ void Boiler::process_HpPowerLimit(std::shared_ptr<const Telegram> telegram) {
     has_update(telegram, hpPowerLimit_, 0);
 }
 
+// 0x0EB
+void Boiler::process_PumpKick(std::shared_ptr<const Telegram> telegram) {
+    has_update(telegram, pumpKickHour_, 0);
+    has_enumupdate(telegram, pumpKickDay_, 1, 1); // 1-mo, ...
+    has_update(telegram, pumpKickDelay_, 2);
+}
+
 // Boiler(0x08) -B-> All(0x00), ?(0x2E), data: 00 00 1C CE 00 00 05 E8 00 00 00 18 00 00 00 02
 void Boiler::process_Meters(std::shared_ptr<const Telegram> telegram) {
     has_update(telegram, gasMeterHeat_, 0);
@@ -2979,25 +3005,26 @@ bool Boiler::set_reset(const char * value, const int8_t id) {
     }
 
     if (num == 0) {
-        return true; // dash
-    } else if (num == 1) {
-        // LOG_INFO("Reset boiler maintenance message");
+        return true;       // dash
+    } else if (num == 1) { // Reset boiler maintenance message;
         write_command(0x05, 8, 0xFF, 0x1C);
         return true;
-    } else if (num == 2) {
-        // LOG_INFO("Reset boiler error message");
-        write_command(0x05, 0, 0x5A); // error reset
+    } else if (num == 2) { // Reset boiler error message;
+        write_command(0x05, 0, 0x5A);
         return true;
-    } else if (num == 3) {
-        // LOG_INFO("Reset boiler history");
-        write_command(0x05, 42, 0x01); // clear history
+    } else if (num == 3) { // Reset boiler history
+        write_command(0x05, 42, 0x01);
         return true;
     } else if (num == 4) {
-        // LOG_INFO("Reset boiler message");
-        write_command(0x05, 8, 0xFF); // same as maintenance
+        write_command(0x05, 8, 0xFF); // reset messages, same as maintenance reset (1)
         return true;
-    } else if (num == 5) {
-        // LOG_INFO("Factory Reset");
+    } else if (num == 5) { // reset Heatpump errors
+        write_command(0x05, 50, 0xFF);
+        return true;
+    } else if (num == 6) { // reset burner starts
+        write_command(0x05, 2, 165);
+        return true;
+    } else if (num == 7) { // factory reset
         write_command(0x05, 6, 154);
         return true;
     }
@@ -3623,6 +3650,34 @@ bool Boiler::set_shutdown(const char * value, const int8_t id) {
     bool b;
     if (Helpers::value2bool(value, b)) {
         write_command(0x484, 58, b ? 1 : 0, 0x484);
+        return true;
+    }
+    return false;
+}
+
+bool Boiler::set_pumpKickHour(const char * value, const int8_t id) {
+    int v;
+    if (Helpers::value2number(value, v, 0, 23)) {
+        write_command(0xEB, 0, v, 0xEB);
+        return true;
+    }
+    return false;
+}
+
+bool Boiler::set_pumpKickDay(const char * value, const int8_t id) {
+    uint8_t v;
+    if (Helpers::value2enum(value, v, FL_(enum_dayOfWeek))) {
+        write_command(0xEB, 1, v + 1, 0xEB);
+        return true;
+    }
+    return false;
+}
+
+bool Boiler::set_pumpKickDelay(const char * value, const int8_t id) {
+    int v;
+    if (Helpers::value2number(value, v, 0, 32767)) {
+        uint8_t data[2] = {(uint8_t)(v >> 8), (uint8_t)v};
+        write_command(0xEB, 2, data, 2, 0xEB);
         return true;
     }
     return false;

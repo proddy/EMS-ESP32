@@ -63,7 +63,7 @@ class EMSdevice {
     const char * device_type_2_device_name_translated(); // returns translated device type name
     bool         has_tags(const int8_t tag) const;
     bool         has_cmd(const char * cmd, const int8_t id) const;
-    const char * brand_to_char();
+    std::string  brand_to_char();
     std::string  to_string();
     std::string  to_string_short();
     std::string  to_string_version();

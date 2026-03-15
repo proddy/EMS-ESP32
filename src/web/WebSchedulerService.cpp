@@ -102,7 +102,7 @@ StateUpdateResult WebScheduler::update(JsonObject root, WebScheduler & webSchedu
         if (webScheduler.scheduleItems.back().name[0] != '\0') {
             char key[sizeof(webScheduler.scheduleItems.back().name) + 2];
             snprintf(key, sizeof(key), "s:%s", webScheduler.scheduleItems.back().name);
-            if (EMSESP::nvs_.isKey(key)) {
+            if (EMSESP::nvs_.isKey(key) && webScheduler.scheduleItems.back().flags != SCHEDULEFLAG_SCHEDULE_IMMEDIATE) {
                 webScheduler.scheduleItems.back().active = EMSESP::nvs_.getBool(key);
             }
             Command::add(
@@ -138,20 +138,11 @@ bool WebSchedulerService::command_setvalue(const char * value, const int8_t id, 
                 publish();
             }
             // save new state to nvs #2946
-            char key[sizeof(scheduleItem.name) + 2];
-            snprintf(key, sizeof(key), "s:%s", scheduleItem.name);
-            EMSESP::nvs_.putBool(key, scheduleItem.active);
-            /* save to filesystem
-            EMSESP::webSchedulerService.update([&](WebScheduler & webSchedule) {
-                for (auto si : webSchedule.scheduleItems) {
-                    if (!strcmp(si.name, scheduleItem.name)) {
-                        si.active = scheduleItem.active;
-                        break;
-                    }
-                }
-                return StateUpdateResult::CHANGED;
-            });
-            */
+            if (scheduleItem.flags != SCHEDULEFLAG_SCHEDULE_IMMEDIATE) {
+                char key[sizeof(scheduleItem.name) + 2];
+                snprintf(key, sizeof(key), "s:%s", scheduleItem.name);
+                EMSESP::nvs_.putBool(key, scheduleItem.active);
+            }
             return true;
         }
     }
@@ -184,6 +175,15 @@ bool WebSchedulerService::get_value_info(JsonObject output, const char * cmd) {
         return true;
     }
 
+    if (!strcmp(cmd, F_(metrics))) {
+        std::string metrics = get_metrics_prometheus();
+        if (!metrics.empty()) {
+            output["api_data"] = metrics;
+            return true;
+        }
+        return false;
+    }
+
     const char * attribute_s = Command::get_attribute(cmd);
     for (const ScheduleItem & scheduleItem : *scheduleItems_) {
         if (Helpers::toLower(scheduleItem.name) == cmd) {
@@ -193,6 +193,21 @@ bool WebSchedulerService::get_value_info(JsonObject output, const char * cmd) {
     }
 
     return false; // not found
+}
+
+// generate Prometheus metrics format from scheduler values
+std::string WebSchedulerService::get_metrics_prometheus() {
+    std::string result;
+    result.reserve(scheduleItems_->size() * 140);
+    for (const ScheduleItem & scheduleItem : *scheduleItems_) {
+        if (scheduleItem.name[0] == '\0') {
+            continue;
+        }
+        result += (std::string) "# HELP emsesp_" + scheduleItem.name + " " + scheduleItem.name + ", boolean, readable, visible, writable\n";
+        result += (std::string) "# TYPE emsesp_" + scheduleItem.name + " gauge\n";
+        result += (std::string) "emsesp_" + scheduleItem.name + " " + (scheduleItem.active ? "1\n" : "0\n");
+    }
+    return result;
 }
 
 // build the json for specific entity
@@ -483,6 +498,10 @@ void WebSchedulerService::loop() {
         if (scheduleItem.active && scheduleItem.flags == SCHEDULEFLAG_SCHEDULE_IMMEDIATE) {
             command(scheduleItem.name, scheduleItem.cmd.c_str(), compute(scheduleItem.value.c_str()));
             scheduleItem.active = false;
+            publish_single(scheduleItem.name, false);
+            if (EMSESP::mqtt_.get_publish_onchange(0)) {
+                publish();
+            }
         }
     }
 

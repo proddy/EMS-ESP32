@@ -96,6 +96,8 @@ class TemperatureSensor {
     bool updated_values();
     bool get_value_info(JsonObject output, const char * cmd, const int8_t id = -1);
 
+    std::string get_metrics_prometheus();
+
     // return back reference to the sensor list, used by other classes
     std::vector<Sensor, AllocatorPSRAM<Sensor>> sensors() const {
         return sensors_;

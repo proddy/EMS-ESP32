@@ -343,6 +343,15 @@ bool WebCustomEntityService::get_value_info(JsonObject output, const char * cmd)
         return true;
     }
 
+    if (!strcmp(cmd, F_(metrics))) {
+        std::string metrics = get_metrics_prometheus();
+        if (!metrics.empty()) {
+            output["api_data"] = metrics;
+            return true;
+        }
+        return false;
+    }
+
     // specific value info
     const char * attribute_s = Command::get_attribute(cmd);
     for (auto const & entity : *customEntityItems_) {
@@ -352,6 +361,54 @@ bool WebCustomEntityService::get_value_info(JsonObject output, const char * cmd)
         }
     }
     return false; // not found
+}
+
+// generate Prometheus metrics format from custom entities
+std::string WebCustomEntityService::get_metrics_prometheus() {
+    std::string result;
+    result.reserve(customEntityItems_->size() * 140);
+    char val[10];
+    for (CustomEntityItem & entity : *customEntityItems_) {
+        if (entity.hide || entity.name[0] == '\0') {
+            continue;
+        }
+        result += (std::string) "# HELP emsesp_" + entity.name + " " + entity.name;
+        if (entity.uom != 0) {
+            result += (std::string) ", " + EMSdevice::uom_to_string(entity.uom);
+        }
+        result += (std::string) ", readable, visible" + (entity.writeable ? ", writable\n" : "\n");
+        result += (std::string) "# TYPE emsesp_" + entity.name + " gauge\n";
+        result += (std::string) "emsesp_" + entity.name + " ";
+        switch (entity.value_type) {
+        case DeviceValueType::BOOL:
+            result += (std::string)(entity.value == 0 ? "0" : "1");
+            break;
+        case DeviceValueType::INT8:
+            result += (std::string)Helpers::render_value(val, entity.factor * (int8_t)entity.value, 2);
+            break;
+        case DeviceValueType::UINT8:
+            result += (std::string)Helpers::render_value(val, entity.factor * (uint8_t)entity.value, 2);
+            break;
+        case DeviceValueType::INT16:
+            result += (std::string)Helpers::render_value(val, entity.factor * (int16_t)entity.value, 2);
+            break;
+        case DeviceValueType::UINT16:
+            result += (std::string)Helpers::render_value(val, entity.factor * (uint16_t)entity.value, 2);
+            break;
+        case DeviceValueType::UINT24:
+        case DeviceValueType::TIME:
+        case DeviceValueType::UINT32:
+            result += (std::string)Helpers::render_value(val, entity.factor * entity.value, 2);
+            break;
+        default:
+            if (entity.data.length() > 0) {
+                result += entity.data;
+            }
+            break;
+        }
+        result += (std::string) "\n";
+    }
+    return result;
 }
 
 // build the json for specific entity
