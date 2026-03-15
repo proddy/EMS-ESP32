@@ -556,11 +556,6 @@ void System::store_settings(WebSettings & settings) {
     board_profile_  = settings.board_profile;
     telnet_enabled_ = settings.telnet_enabled;
 
-    modbus_enabled_     = settings.modbus_enabled;
-    modbus_port_        = settings.modbus_port;
-    modbus_max_clients_ = settings.modbus_max_clients;
-    modbus_timeout_     = settings.modbus_timeout;
-
     tx_mode_              = settings.tx_mode;
     syslog_enabled_       = settings.syslog_enabled;
     syslog_level_         = settings.syslog_level;
@@ -581,6 +576,24 @@ void System::store_settings(WebSettings & settings) {
 
     locale_         = settings.locale;
     developer_mode_ = settings.developer_mode;
+    // start services
+    if (settings.modbus_enabled) {
+        if (EMSESP::modbus_ == nullptr) {
+            EMSESP::modbus_ = new Modbus;
+            EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
+        } else if (settings.modbus_port != modbus_port_ || settings.modbus_max_clients != modbus_max_clients_ || settings.modbus_timeout != modbus_timeout_) {
+            EMSESP::modbus_->stop();
+            EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
+        }
+    } else if (EMSESP::modbus_ != nullptr) {
+        EMSESP::modbus_->stop();
+        delete EMSESP::modbus_;
+        EMSESP::modbus_ = nullptr;
+    }
+    modbus_enabled_     = settings.modbus_enabled;
+    modbus_port_        = settings.modbus_port;
+    modbus_max_clients_ = settings.modbus_max_clients;
+    modbus_timeout_     = settings.modbus_timeout;
 }
 
 // Starts up core services
@@ -2173,6 +2186,15 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
     }
 #endif
 
+    // Modbus Status
+    node            = output["Modbus"].to<JsonObject>();
+    node["enabled"] = EMSESP::system_.modbus_enabled_;
+    if (EMSESP::system_.modbus_enabled_) {
+        node["maxClients"] = EMSESP::system_.modbus_max_clients_;
+        node["port"]       = EMSESP::system_.modbus_port_;
+        node["timeout"]    = EMSESP::system_.modbus_timeout_;
+    }
+
     // Sensor Status
     node = output["sensor"].to<JsonObject>();
     if (EMSESP::sensor_enabled()) {
@@ -2180,6 +2202,9 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
         node["temperatureSensorReads"] = EMSESP::temperaturesensor_.reads();
         node["temperatureSensorFails"] = EMSESP::temperaturesensor_.fails();
     }
+
+    node            = output["Analog"].to<JsonObject>();
+    node["enabled"] = EMSESP::analog_enabled();
     if (EMSESP::analog_enabled()) {
         node["analogSensors"]     = EMSESP::analogsensor_.count_entities();
         node["analogSensorReads"] = EMSESP::analogsensor_.reads();

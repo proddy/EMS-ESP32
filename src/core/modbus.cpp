@@ -52,7 +52,7 @@ void Modbus::stop() {
 #ifndef EMSESP_STANDALONE
     modbusServer_->stop();
     //     virtual ~ModbusServerTCPasync() = default;
-    // delete modbusServer_;
+    delete modbusServer_;
     modbusServer_ = nullptr;
 #endif
 }

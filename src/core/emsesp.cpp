@@ -84,7 +84,7 @@ uuid::log::Logger EMSESP::logger() {
 RxService         EMSESP::rxservice_;         // incoming Telegram Rx handler
 TxService         EMSESP::txservice_;         // outgoing Telegram Tx handler
 Mqtt              EMSESP::mqtt_;              // mqtt handler
-Modbus *          EMSESP::modbus_;            // modbus handler
+Modbus *          EMSESP::modbus_ = nullptr;  // modbus handler
 System            EMSESP::system_;            // core system services
 TemperatureSensor EMSESP::temperaturesensor_; // Temperature sensors
 AnalogSensor      EMSESP::analogsensor_;      // Analog sensors
@@ -1793,12 +1793,6 @@ void EMSESP::start() {
         telnet_.initial_idle_timeout(3600);  // in sec, one hour idle timeout
         telnet_.default_write_timeout(1000); // in ms, socket timeout 1 second
 #endif
-    }
-
-    // start services
-    if (system_.modbus_enabled()) {
-        modbus_ = new Modbus;
-        modbus_->start(1, system_.modbus_port(), system_.modbus_max_clients(), system_.modbus_timeout() * 1000);
     }
 
     mqtt_.start();                              // mqtt init
