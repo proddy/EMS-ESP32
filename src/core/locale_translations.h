@@ -198,8 +198,8 @@ MAKE_WORD_TRANSLATION(error, "error", "Fehler", "error", "Fel", "błąd", "feil"
 MAKE_WORD_TRANSLATION(history, "history", "Fehlerspeicher", "geschiedenis", "historik", "historia", "historikk", "historique", "geçmiş", "storico", "história", "historie")
 MAKE_WORD_TRANSLATION(message, "message", "Meldung", "melding", "meddelande", "komunikat", "melding", "message", "mesajı", "messaggio", "správa", "zpráva")
 MAKE_WORD_TRANSLATION(hp_error, "hp error", "WP Fehler", "hp error", "hp Fel", "hp błąd", "hp feil", "hp erreur", "hp Hata", "hp errore", "hp error", "hp chyba")
-MAKE_WORD_TRANSLATION(factory, "factory", "werkseinst.", "", "", "", "", "", "", "", "", "")
-MAKE_WORD_TRANSLATION(burn_starts, "burner starts", "Brennerstarts", "", "", "", "", "", "", "", "", "")
+MAKE_WORD_TRANSLATION(factory, "factory", "werkseinst.", "", "", "", "", "", "", "", "nastavenie z výroby", "nastavení z výroby")
+MAKE_WORD_TRANSLATION(burn_starts, "burner starts", "Brennerstarts", "", "", "", "", "", "", "", "štarty horáka", "")
 MAKE_WORD_TRANSLATION(na, "n/a", "n/a", "n/a", "n/a", "nd.", "n/a", "n/c", "mevcut değil", "n/a", "n/a", "n/a")
 MAKE_WORD_TRANSLATION(inverted, "inverted", "invertiert", "omgekeerd", "inverterad", "odwrócony", "invertert", "inversé", "ters", "invertito", "invertovaný", "invertovaný")
 
