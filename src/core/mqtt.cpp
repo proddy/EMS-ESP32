@@ -1184,7 +1184,8 @@ void Mqtt::add_ha_classes(JsonObject doc, const uint8_t device_type, const uint8
         doc[sc_ha] = sc_ha_measurement;
         doc[dc_ha] = "temperature";
         // override uom if fahrenheit
-        doc[uom_ha] = EMSESP::system_.fahrenheit() ? DeviceValue::DeviceValueUOM_s[DeviceValueUOM::FAHRENHEIT] : DeviceValue::DeviceValueUOM_s[uom];
+        doc[uom_ha] = EMSESP::system_.fahrenheit() && uom != DeviceValueUOM::K ? DeviceValue::DeviceValueUOM_s[DeviceValueUOM::FAHRENHEIT]
+                                                                               : DeviceValue::DeviceValueUOM_s[uom];
         break;
     case DeviceValueUOM::PERCENT:
         if (display_only) {
