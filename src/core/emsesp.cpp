@@ -1307,9 +1307,16 @@ bool EMSESP::add_device(const uint8_t device_id, const uint8_t product_id, const
     // first check to see if we already have it, if so update the record
     for (auto it = emsdevices.begin(); it != emsdevices.end(); ++it) {
         if ((*it) && (*it)->is_device_id(device_id)) {
-            if (product_id == 0 || (*it)->product_id() != 0) { // update only with valid product_id
+            if (product_id == 0) { // no product-id, ignore
+                return false;
+            }
+            if ((*it)->product_id() == product_id) { // update version if we have valid product_id
+                if (!strcmp((*it)->version(), "00.00")) {
+                    (*it)->version(version);
+                }
                 return true;
             }
+            // product-id has changed for this device-id, delete and re-add
             (*it)->erase_device_values();
             emsdevices.erase(it); // erase the old device without product_id and re detect
             break;

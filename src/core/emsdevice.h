@@ -90,6 +90,10 @@ class EMSdevice {
         return version_;
     }
 
+    void version(const char * version) {
+        strlcpy(version_, version, sizeof(version_));
+    }
+
     uint8_t brand() const {
         return brand_;
     }
