@@ -12,6 +12,7 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - prometheus metrics for temperature/analog/scheduler/custom [#2962](https://github.com/emsesp/EMS-ESP32/issues/2962)
 - boiler pumpkick [#2965](https://github.com/emsesp/EMS-ESP32/discussions/2965)
 - heatpump reset [#2933](https://github.com/emsesp/EMS-ESP32/issues/2933)
+- e-mail notification using ReadyMail Client
 
 ## Fixed
 
@@ -27,3 +28,5 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - support `minflowtemp` and `baseflowtemp` [#2969](https://github.com/emsesp/EMS-ESP32/discussions/2969)
 - update version if it is 00.00 in first read [#2981](https://github.com/emsesp/EMS-ESP32/issues/2981)
 - device class for % values [#2980](https://github.com/emsesp/EMS-ESP32/issues/2980)
+- use tasmota core 2026.03.30
+- secure mqtt uses ESP_SSLClient

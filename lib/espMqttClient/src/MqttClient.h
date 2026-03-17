@@ -69,7 +69,17 @@ class MqttClient {
   const char* getClientId() const;
   size_t queueSize();  // No const because of mutex
   void loop();
-
+  uint32_t stack() {
+#ifndef EMSESP_STANDALONE
+   return uxTaskGetStackHighWaterMark(_taskHandle);
+#else
+    return 0;
+#endif
+  }
+  uint8_t core() {
+   return  _core;
+  }
+    
  protected:
   explicit MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority = 1, uint8_t core = 1);
   espMqttClientTypes::UseInternalTask _useInternalTask;
@@ -98,6 +108,7 @@ class MqttClient {
   uint8_t _willQos;
   bool _willRetain;
   uint32_t _timeout;
+  uint8_t _core;
 
   // state is protected to allow state changes by the transport system, defined in child classes
   // eg. to allow AsyncTCP

@@ -8,50 +8,6 @@ the LICENSE file.
 
 #include "espMqttClient.h"
 
-#if defined(ARDUINO_ARCH_ESP8266)
-espMqttClient::espMqttClient()
-    : MqttClientSetup(espMqttClientTypes::UseInternalTask::NO)
-    , _client() {
-    _transport = &_client;
-}
-
-espMqttClientSecure::espMqttClientSecure()
-    : MqttClientSetup(espMqttClientTypes::UseInternalTask::NO)
-    , _client() {
-    _transport = &_client;
-}
-
-espMqttClientSecure & espMqttClientSecure::setInsecure() {
-    _client.client.setInsecure();
-    return *this;
-}
-
-espMqttClientSecure & espMqttClientSecure::setFingerprint(const uint8_t fingerprint[20]) {
-    _client.client.setFingerprint(fingerprint);
-    return *this;
-}
-
-espMqttClientSecure & espMqttClientSecure::setTrustAnchors(const X509List * ta) {
-    _client.client.setTrustAnchors(ta);
-    return *this;
-}
-
-espMqttClientSecure & espMqttClientSecure::setClientRSACert(const X509List * cert, const PrivateKey * sk) {
-    _client.client.setClientRSACert(cert, sk);
-    return *this;
-}
-
-espMqttClientSecure & espMqttClientSecure::setClientECCert(const X509List * cert, const PrivateKey * sk, unsigned allowed_usages, unsigned cert_issuer_key_type) {
-    _client.client.setClientECCert(cert, sk, allowed_usages, cert_issuer_key_type);
-    return *this;
-}
-
-espMqttClientSecure & espMqttClientSecure::setCertStore(CertStoreBase * certStore) {
-    _client.client.setCertStore(certStore);
-    return *this;
-}
-#endif
-
 #if defined(ARDUINO_ARCH_ESP32)
 espMqttClient::espMqttClient(espMqttClientTypes::UseInternalTask useInternalTask)
     : MqttClientSetup(useInternalTask)
@@ -79,35 +35,34 @@ espMqttClientSecure::espMqttClientSecure(uint8_t priority, uint8_t core)
 
 espMqttClientSecure & espMqttClientSecure::setInsecure() {
 #ifndef NO_TLS_SUPPORT
-    _client.setInsecure();
+    _client.client.setInsecure();
 #endif
     return *this;
 }
 
 espMqttClientSecure & espMqttClientSecure::setCACert(const char * rootCA) {
 #ifndef NO_TLS_SUPPORT
-    _client.setCACert(rootCA);
+    _client.client.setCACert(rootCA);
 #endif
     return *this;
 }
 
 espMqttClientSecure & espMqttClientSecure::setCertificate(const char * clientCa) {
 #ifndef NO_TLS_SUPPORT
-    _client.setCertificate(clientCa);
+    _client.client.setCertificate(clientCa);
 #endif
     return *this;
 }
 
 espMqttClientSecure & espMqttClientSecure::setPrivateKey(const char * privateKey) {
 #ifndef NO_TLS_SUPPORT
-    _client.setPrivateKey(privateKey);
+    _client.client.setPrivateKey(privateKey);
 #endif
     return *this;
 }
 
 espMqttClientSecure & espMqttClientSecure::setPreSharedKey(const char * pskIdent, const char * psKey) {
 #ifndef NO_TLS_SUPPORT
-    _client.setPreSharedKey(pskIdent, psKey);
 #endif
     return *this;
 }
@@ -119,10 +74,5 @@ espMqttClient::espMqttClient()
     : MqttClientSetup(espMqttClientTypes::UseInternalTask::NO)
     , _client() {
     _transport = &_client;
-}
-#elif defined(_WIN32) || defined(__APPLE__)
-// Windows
-espMqttClient::espMqttClient()
-    : MqttClientSetup(espMqttClientTypes::UseInternalTask::NO) {
 }
 #endif

@@ -52,6 +52,15 @@
 #include <esp_mac.h>
 #endif
 
+#ifndef NO_TLS_SUPPORT
+#define ENABLE_SMTP
+#define USE_ESP_SSLCLIENT
+#define READYCLIENT_SSL_CLIENT ESP_SSLClient
+#define READYCLIENT_TYPE_1 // TYPE 1 when using ESP_SSLClient
+#include <ESP_SSLClient.h>
+#include <ReadyMail.h>
+#endif
+
 #ifndef EMSESP_STANDALONE
 #include "esp_efuse.h"
 #endif
@@ -122,6 +131,110 @@ uint8_t System::language_index() {
 // send raw to ems
 bool System::command_send(const char * value, const int8_t id) {
     return EMSESP::txservice_.send_raw(value); // ignore id
+}
+
+bool System::command_sendmail(const char * value, const int8_t id) {
+    bool     enabled = false;
+    bool     ssl, starttls;
+    uint16_t port;
+    String   server, login, pass, sender, recp, subject;
+    EMSESP::webSettingsService.read([&](WebSettings & settings) {
+        enabled  = settings.email_enabled;
+        ssl      = settings.email_ssl;
+        starttls = settings.email_starttls;
+        server   = settings.email_server;
+        port     = settings.email_port;
+        login    = settings.email_login;
+        pass     = settings.email_pass;
+        sender   = settings.email_sender;
+        recp     = settings.email_recp;
+        subject  = settings.email_subject;
+    });
+    if (!enabled) {
+        return false;
+    }
+    LOG_DEBUG("Command sendmail port %d%s called with '%s'", port, ssl ? " (SSL)" : starttls ? " (STARTTLS)" : "", value);
+    // LOG_DEBUG("Command sendmail port %d called with '%s'", port, value);
+    bool success = false;
+
+#ifndef NO_TLS_SUPPORT
+    WiFiClient *    basic_client;
+    ESP_SSLClient * ssl_client;
+    ReadyClient *   r_client; // rClient(ssl_client);
+    SMTPClient *    smtp;     // smtp(rClient);
+    basic_client = new WiFiClient;
+    ssl_client   = new ESP_SSLClient;
+    r_client     = new ReadyClient(*ssl_client);
+    smtp         = new SMTPClient(*r_client);
+
+    ssl_client->setClient(basic_client);
+    ssl_client->setInsecure();
+    ssl_client->setBufferSizes(1024, 1024);
+    r_client->addPort(port, starttls ? readymail_protocol_tls : ssl ? readymail_protocol_ssl : readymail_protocol_plain_text);
+
+    // smtp->connect(server, port, sendmailCallback);
+    smtp->connect(server, port);
+    if (!smtp->isConnected()) {
+        LOG_ERROR("Sendmail connection error");
+        delete smtp;
+        delete r_client;
+        delete ssl_client;
+        delete basic_client;
+        return false;
+    }
+
+    // LOG_INFO("autenticate %s:%s", login.c_str(), pass.c_str());
+    smtp->authenticate(login, pass, readymail_auth_password);
+    if (!smtp->isAuthenticated()) {
+        LOG_ERROR("Sendmail authenticate error");
+        delete smtp;
+        delete r_client;
+        delete ssl_client;
+        delete basic_client;
+        return false;
+    }
+    JsonDocument doc;
+    String       body = value;
+    if (body.length()) {
+        auto error = deserializeJson(doc, (const char *)value);
+        if (!error && doc.as<JsonObject>().size() >= 0) {
+            subject = doc["subject"] | subject;
+            recp    = doc["to"] | recp;
+            sender  = doc["from"] | sender;
+            body    = doc["body"] | body;
+        }
+    }
+
+    SMTPMessage & msg = smtp->getMessage();
+    msg.headers.add(rfc822_subject, subject);
+    msg.headers.add(rfc822_from, sender);
+    msg.headers.add(rfc822_to, recp);
+
+    // Use addCustom to add custom header e.g. Imprtance and Priority.
+    // msg.headers.addCustom("Importance", PRIORITY);
+    // msg.headers.addCustom("X-MSMail-Priority", PRIORITY);
+    // msg.headers.addCustom("X-Priority", PRIORITY_NUM);
+
+    msg.text.body(body);
+
+    // bodyText.replace("\r\n", "<br>\r\n");
+    // msg.html.body("<html><body><div style=\"color:#cc0066;\">" + bodyText + "</div></body></html>");
+    // msg.html.transferEncoding("base64");
+
+    // With embedFile function, the html message will send as attachment.
+    // if (EMBED_MESSAGE)
+    //    msg.html.embedFile(true, "msg.html", embed_message_type_attachment);
+
+    msg.timestamp = time(nullptr);
+
+    success = smtp->send(msg);
+
+    delete smtp;
+    delete r_client;
+    delete ssl_client;
+    delete basic_client;
+#endif
+    return success;
 }
 
 // return string of languages and count
@@ -1019,6 +1132,7 @@ void System::commands_init() {
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(read), System::command_read, FL_(read_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(send), System::command_send, FL_(send_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(fetch), System::command_fetch, FL_(fetch_cmd), CommandFlag::ADMIN_ONLY);
+    Command::add(EMSdevice::DeviceType::SYSTEM, F_(sendmail), System::command_sendmail, FL_(sendmail_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(restart), System::command_restart, FL_(restart_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(format), System::command_format, FL_(format_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(txpause), System::command_txpause, FL_(txpause_cmd), CommandFlag::ADMIN_ONLY);
