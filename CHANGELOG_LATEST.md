@@ -26,3 +26,4 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - translated modes `heat` and `eco` for HA-climate mode-str-tpl
 - support `minflowtemp` and `baseflowtemp` [#2969](https://github.com/emsesp/EMS-ESP32/discussions/2969)
 - update version if it is 00.00 in first read [#2981](https://github.com/emsesp/EMS-ESP32/issues/2981)
+- device class for % values [#2980](https://github.com/emsesp/EMS-ESP32/issues/2980)
