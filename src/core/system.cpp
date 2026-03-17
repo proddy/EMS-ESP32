@@ -20,6 +20,7 @@
 #include "emsesp.h" // for send_raw_telegram() command
 
 #ifndef EMSESP_STANDALONE
+#include "esp_image_format.h"
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
 #endif
@@ -183,7 +184,7 @@ bool System::command_sendmail(const char * value, const int8_t id) {
         return false;
     }
 
-    // LOG_INFO("autenticate %s:%s", login.c_str(), pass.c_str());
+    // LOG_INFO("authenticate %s:%s", login.c_str(), pass.c_str());
     smtp->authenticate(login, pass, readymail_auth_password);
     if (!smtp->isAuthenticated()) {
         LOG_ERROR("Sendmail authenticate error");
@@ -210,7 +211,7 @@ bool System::command_sendmail(const char * value, const int8_t id) {
     msg.headers.add(rfc822_from, sender);
     msg.headers.add(rfc822_to, recp);
 
-    // Use addCustom to add custom header e.g. Imprtance and Priority.
+    // Use addCustom to add custom header e.g. Importance and Priority.
     // msg.headers.addCustom("Importance", PRIORITY);
     // msg.headers.addCustom("X-MSMail-Priority", PRIORITY);
     // msg.headers.addCustom("X-Priority", PRIORITY_NUM);
@@ -469,7 +470,13 @@ void System::get_partition_info() {
             strftime(time_string, sizeof(time_string), "%FT%T", localtime(&d));
             p_info.install_date = d > 1500000000L ? time_string : "";
 
-            p_info.size = part->size / 1024; // set size in KB
+            esp_image_metadata_t meta     = {};
+            esp_partition_pos_t  part_pos = {.offset = part->address, .size = part->size};
+            if (esp_image_verify(ESP_IMAGE_VERIFY_SILENT, &part_pos, &meta) == ESP_OK) {
+                p_info.size = meta.image_len / 1024; // actual firmware size in KB
+            } else {
+                p_info.size = 0;
+            }
 
             partition_info_[part->label] = p_info;
         }
@@ -493,7 +500,7 @@ void System::set_partition_install_date() {
     snprintf(c, sizeof(c), "d_%s", current_partition);
     time_t d = EMSESP::nvs_.getULong(c, 0);
     if (d < 1500000000L) {
-        LOG_INFO("Firmware is fresh, setting the new install date in partition %s", current_partition);
+        LOG_DEBUG("Setting the install date in partition %s", current_partition);
         auto t = time(nullptr) - uuid::get_uptime_sec();
         EMSESP::nvs_.putULong(c, t);
     }
@@ -1336,7 +1343,7 @@ void System::show_system(uuid::console::Shell & shell) {
                        partition.first.c_str(),
                        partition.second.version.c_str(),
                        partition.second.size,
-                       partition.second.install_date.empty() ? "" : (std::string(", installed ") + partition.second.install_date).c_str(),
+                       partition.second.install_date.empty() ? "" : (std::string(", installed on ") + partition.second.install_date).c_str(),
                        (strcmp(esp_ota_get_running_partition()->label, partition.first.c_str()) == 0) ? "** active **" : "");
     }
 
