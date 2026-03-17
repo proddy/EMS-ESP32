@@ -274,7 +274,6 @@ const InstallDialog = memo(
     fetchDevVersion,
     latestVersion,
     latestDevVersion,
-    downloadOnly,
     platform,
     LL,
     onClose,
@@ -284,7 +283,6 @@ const InstallDialog = memo(
     fetchDevVersion: boolean;
     latestVersion?: VersionInfo;
     latestDevVersion?: VersionInfo;
-    downloadOnly: boolean;
     platform: string;
     LL: TranslationFunctions;
     onClose: () => void;
@@ -309,7 +307,7 @@ const InstallDialog = memo(
         <DialogContent dividers>
           <Typography mb={2}>
             {LL.INSTALL_VERSION(
-              downloadOnly ? LL.DOWNLOAD(1) : LL.INSTALL(),
+              LL.INSTALL(),
               fetchDevVersion ? latestDevVersion?.name : latestVersion?.name
             )}
           </Typography>
@@ -333,16 +331,14 @@ const InstallDialog = memo(
               {LL.DOWNLOAD(0)}
             </Link>
           </Button>
-          {!downloadOnly && (
-            <Button
-              startIcon={<WarningIcon color="warning" />}
-              variant="outlined"
-              onClick={() => onInstall(binURL)}
-              color="primary"
-            >
-              {LL.INSTALL()}
-            </Button>
-          )}
+          <Button
+            startIcon={<WarningIcon color="warning" />}
+            variant="outlined"
+            onClick={() => onInstall(binURL)}
+            color="primary"
+          >
+            {LL.INSTALL()}
+          </Button>
         </DialogActions>
       </Dialog>
     );
@@ -423,7 +419,6 @@ const Version = () => {
   const [stableUpgradeAvailable, setStableUpgradeAvailable] =
     useState<boolean>(false);
   const [internetLive, setInternetLive] = useState<boolean>(false);
-  const [downloadOnly, setDownloadOnly] = useState<boolean>(false);
   const [showVersionInfo, setShowVersionInfo] = useState<number>(0); // 1 = stable, 2 = dev, 3 = partition
   const [firmwareSize, setFirmwareSize] = useState<number>(0);
 
@@ -449,9 +444,6 @@ const Version = () => {
     error
   } = useRequest(SystemApi.readSystemStatus).onSuccess((event) => {
     const systemData = event.data as VersionData;
-    if (systemData.arduino_version.startsWith('Tasmota')) {
-      setDownloadOnly(true);
-    }
     setUsingDevVersion(systemData.emsesp_version.includes('dev'));
   });
 
@@ -815,7 +807,6 @@ const Version = () => {
                 fetchDevVersion={fetchDevVersion}
                 latestVersion={latestVersion}
                 latestDevVersion={latestDevVersion}
-                downloadOnly={downloadOnly}
                 platform={platform}
                 LL={LL}
                 onClose={closeInstallDialog}
@@ -851,7 +842,6 @@ const Version = () => {
     locale,
     openInstallDialog,
     fetchDevVersion,
-    downloadOnly,
     me.admin,
     showButtons,
     handleVersionInfoClose,
