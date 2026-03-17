@@ -63,7 +63,16 @@ void NetworkSettingsService::loop() {
         manageSTA();
     }
     static uint8_t connect = 0;
-    enum uint8_t { CONNECT_IDLE = 0, CONNECT_WAIT_ETH, CONNECT_ETH_ACTIVE, CONNECT_WIFI_ACTIVE };
+    enum uint8_t {
+        CONNECT_IDLE = 0,
+        CONNECT_WAIT_ETH,
+        CONNECT_WAIT_IP4,
+        CONNECT_WAIT_ETH_IP4,
+        CONNECT_WAIT_IP6,
+        CONNECT_WAIT_ETH_IP6,
+        CONNECT_ETH_ACTIVE,
+        CONNECT_WIFI_ACTIVE
+    };
     switch (connect) {
     default:
         connect = CONNECT_IDLE;
@@ -71,45 +80,86 @@ void NetworkSettingsService::loop() {
     case CONNECT_IDLE:
         if (ETH.started() && _state.ssid.length() == 0) {
             emsesp::EMSESP::logger().info("ETH started");
-            connect = CONNECT_WAIT_ETH;
             ETH.enableIPv6(true);
             if (_state.staticIPConfig) {
                 ETH.config(_state.localIP, _state.gatewayIP, _state.subnetMask, _state.dnsIP1, _state.dnsIP2);
             }
             ETH.setHostname(emsesp::EMSESP::system_.hostname().c_str());
+            connect = CONNECT_WAIT_ETH;
         }
         if (WiFi.isConnected()) {
             emsesp::EMSESP::logger().info("Wifi connected");
-            connect = CONNECT_WIFI_ACTIVE;
             if (_state.tx_power == 0) {
                 setWiFiPowerOnRSSI();
             }
             mDNS_start();
+            emsesp::EMSESP::system_.has_ipv6(true);
+            connect = CONNECT_WAIT_IP4;
         }
         break;
     case CONNECT_WAIT_ETH:
         if (ETH.connected()) {
             emsesp::EMSESP::logger().info("ETH connected");
-            connect = CONNECT_ETH_ACTIVE;
             emsesp::EMSESP::system_.ethernet_connected(true);
             mDNS_start();
+            emsesp::EMSESP::system_.has_ipv6(true);
+            connect = CONNECT_WAIT_ETH_IP4;
+        }
+        break;
+    case CONNECT_WAIT_ETH_IP4:
+        if (ETH.hasIP()) {
+            emsesp::EMSESP::logger().info("Eth IPv4: %s", ETH.localIP().toString().c_str());
+            connect = CONNECT_WAIT_ETH_IP6;
+        }
+        if (!ETH.connected()) {
+            connect = CONNECT_ETH_ACTIVE;
+        }
+        break;
+    case CONNECT_WAIT_ETH_IP6:
+        if (ETH.hasLinkLocalIPv6() && ETH.hasGlobalIPv6()) {
+            emsesp::EMSESP::system_.has_ipv6(true);
+            connect = CONNECT_ETH_ACTIVE;
+        }
+        if (!ETH.connected()) {
+            connect = CONNECT_ETH_ACTIVE;
         }
         break;
     case CONNECT_ETH_ACTIVE:
         if (!ETH.connected()) {
             emsesp::EMSESP::logger().info("ETH disconnected");
             emsesp::EMSESP::system_.ethernet_connected(false);
+            emsesp::EMSESP::system_.has_ipv6(false);
             connect = CONNECT_IDLE;
+        }
+        break;
+    case CONNECT_WAIT_IP4:
+        if (!WiFi.localIP().toString().isEmpty()) {
+            emsesp::EMSESP::logger().info("Wifi IPv4: %s", WiFi.localIP().toString().c_str());
+            connect = CONNECT_WAIT_IP6;
+        }
+        if (!WiFi.isConnected()) {
+            connect = CONNECT_ETH_ACTIVE;
+        }
+        break;
+    case CONNECT_WAIT_IP6:
+        if (WiFi.linkLocalIPv6().toString() != "::" && WiFi.globalIPv6().toString() != "::") {
+            emsesp::EMSESP::logger().info("Wifi IPv6: %s, %s", WiFi.linkLocalIPv6().toString().c_str(), WiFi.globalIPv6().toString().c_str());
+            emsesp::EMSESP::system_.has_ipv6(true);
+            connect = CONNECT_WIFI_ACTIVE;
+        }
+        if (!WiFi.isConnected()) {
+            connect = CONNECT_WIFI_ACTIVE;
         }
         break;
     case CONNECT_WIFI_ACTIVE:
         if (!WiFi.isConnected()) {
             emsesp::EMSESP::logger().info("WiFi disconnected");
-            connect = CONNECT_IDLE;
             if (_stopping) {
                 _lastConnectionAttempt = 0;
                 _stopping              = false;
             }
+            emsesp::EMSESP::system_.has_ipv6(false);
+            connect = CONNECT_IDLE;
         }
         break;
     }

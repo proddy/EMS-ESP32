@@ -400,6 +400,15 @@ bool TemperatureSensor::get_value_info(JsonObject output, const char * cmd, cons
         return true;
     }
 
+    if (!strcmp(cmd, F_(metrics))) {
+        std::string metrics = get_metrics_prometheus();
+        if (!metrics.empty()) {
+            output["api_data"] = metrics;
+            return true;
+        }
+        return false;
+    }
+
     // this is for a specific sensor
     const char * attribute_s = Command::get_attribute(cmd);
 
@@ -412,6 +421,21 @@ bool TemperatureSensor::get_value_info(JsonObject output, const char * cmd, cons
     }
 
     return false; // not found
+}
+
+// generate Prometheus metrics format from temperature values
+std::string TemperatureSensor::get_metrics_prometheus() {
+    std::string result;
+    result.reserve(sensors_.size() * 120);
+    char val[10];
+    for (auto & sensor : sensors_) {
+        result += (std::string) "# HELP emsesp_" + sensor.name() + " " + sensor.name() + ", "
+                  + EMSdevice::uom_to_string(EMSESP::system_.fahrenheit() ? DeviceValueUOM::FAHRENHEIT : DeviceValueUOM::DEGREES) + ", readable, visible\n";
+        result += (std::string) "# TYPE emsesp_" + sensor.name() + " gauge\n";
+        result +=
+            (std::string) "emsesp_" + sensor.name() + " " + Helpers::render_value(val, sensor.temperature_c, 10, EMSESP::system_.fahrenheit() ? 2 : 0) + "\n";
+    }
+    return result;
 }
 
 // note we don't add the device and state classes here, as we do in the custom entity service

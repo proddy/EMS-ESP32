@@ -62,7 +62,11 @@ MqttClient::MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint
   _xSemaphore = xSemaphoreCreateMutex();
   EMC_SEMAPHORE_GIVE();  // release before first use
   if (_useInternalTask == espMqttClientTypes::UseInternalTask::YES) {
-    xTaskCreatePinnedToCore((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, priority, &_taskHandle, core);
+    if (core > 1) {
+      xTaskCreate((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, priority, &_taskHandle);
+    } else {
+      xTaskCreatePinnedToCore((TaskFunction_t)_loop, "mqttclient", EMC_TASK_STACK_SIZE, this, priority, &_taskHandle, core);
+    }
   }
 #else
   (void) useInternalTask;
@@ -70,6 +74,7 @@ MqttClient::MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint
   (void) core;
 #endif
   _clientId = _generatedClientId;
+  _core = core;
 }
 
 MqttClient::~MqttClient() {

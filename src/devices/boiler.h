@@ -319,6 +319,9 @@ class Boiler : public EMSdevice {
     int16_t  pc1Flow_;
     uint8_t  pc1Rate_;
     uint8_t  pc1On_;
+    uint8_t  pumpKickHour_;  // hour
+    uint8_t  pumpKickDay_;   // day 1=mo
+    uint16_t pumpKickDelay_; // delay minutes after pump running
 
     // HIU
     // uint16_t cwFlowRate_;  // cold water flow rate *10
@@ -397,6 +400,7 @@ class Boiler : public EMSdevice {
     void process_HpFan(std::shared_ptr<const Telegram> telegram);
     void process_HpPower2(std::shared_ptr<const Telegram> telegram);
     void process_HpPowerLimit(std::shared_ptr<const Telegram> telegram);
+    void process_PumpKick(std::shared_ptr<const Telegram> telegram);
 
     void process_Meters(std::shared_ptr<const Telegram> telegram);
     void process_Energy(std::shared_ptr<const Telegram> telegram);
@@ -602,6 +606,10 @@ class Boiler : public EMSdevice {
     bool set_nrgHeat(const char * value, const int8_t id);
     bool set_nrgWw(const char * value, const int8_t id);
     bool set_nomPower(const char * value, const int8_t id);
+
+    bool set_pumpKickHour(const char * value, const int8_t id);
+    bool set_pumpKickDay(const char * value, const int8_t id);
+    bool set_pumpKickDelay(const char * value, const int8_t id);
 };
 
 } // namespace emsesp

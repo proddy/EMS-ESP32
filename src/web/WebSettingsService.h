@@ -26,6 +26,36 @@
 #define EMSESP_SETTINGS_SERVICE_PATH "/rest/settings"
 #define EMSESP_BOARD_PROFILE_SERVICE_PATH "/rest/boardProfile"
 
+#ifndef FACTORY_EMAIL_ENABLE
+#define FACTORY_EMAIL_ENABLE false
+#endif
+#ifndef FACTORY_EMAIL_SSL
+#define FACTORY_EMAIL_SSL false
+#endif
+#ifndef FACTORY_EMAIL_STARTTLS
+#define FACTORY_EMAIL_STARTTLS true
+#endif
+#ifndef FACTORY_EMAIL_PORT
+#define FACTORY_EMAIL_PORT 587
+#endif
+#ifndef FACTORY_EMAIL_SERVER
+#define FACTORY_EMAIL_SERVER "smtp.example.net"
+#endif
+#ifndef FACTORY_EMAIL_LOGIN
+#define FACTORY_EMAIL_LOGIN ""
+#endif
+#ifndef FACTORY_EMAIL_PASSWORD
+#define FACTORY_EMAIL_PASSWORD ""
+#endif
+#ifndef FACTORY_EMAIL_FROM
+#define FACTORY_EMAIL_FROM "ems-esp@example.net"
+#endif
+#ifndef FACTORY_EMAIL_TO
+#define FACTORY_EMAIL_TO ""
+#endif
+#ifndef FACTORY_EMAIL_SUBJECT
+#define FACTORY_EMAIL_SUBJECT "ems-esp notification"
+#endif
 namespace emsesp {
 
 class WebSettings {
@@ -77,6 +107,16 @@ class WebSettings {
     uint16_t modbus_port;
     uint8_t  modbus_max_clients;
     uint32_t modbus_timeout;
+    bool     email_enabled;
+    bool     email_ssl;
+    bool     email_starttls;
+    String   email_server;
+    uint16_t email_port;
+    String   email_login;
+    String   email_pass;
+    String   email_sender;
+    String   email_recp;
+    String   email_subject;
 
     uint8_t phy_type;
     int8_t  eth_power; // -1 means disabled

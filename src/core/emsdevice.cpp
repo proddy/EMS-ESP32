@@ -104,9 +104,9 @@ const char * EMSdevice::uom_to_string(uint8_t uom) {
     }
 }
 
-const char * EMSdevice::brand_to_char() {
+std::string EMSdevice::brand_to_char() {
     if (!custom_brand().empty()) {
-        return custom_brand().c_str();
+        return custom_brand();
     }
     switch (brand_) {
     case EMSdevice::Brand::BOSCH:
@@ -331,15 +331,15 @@ uint8_t EMSdevice::decode_brand(uint8_t value) {
 std::string EMSdevice::to_string() {
     // for devices that haven't been lookup yet, don't show all details
     if (product_id_ == 0) {
-        return std::string(name()) + " (DeviceID:" + Helpers::hextoa(device_id_) + ")";
+        return name() + " (DeviceID:" + Helpers::hextoa(device_id_) + ")";
     }
 
     if (brand_ == Brand::NO_BRAND && custom_brand().empty()) {
-        return std::string(name()) + " (DeviceID:" + Helpers::hextoa(device_id_) + ", ProductID:" + Helpers::itoa(product_id_) + ", Version:" + version_ + ")";
+        return name() + " (DeviceID:" + Helpers::hextoa(device_id_) + ", ProductID:" + Helpers::itoa(product_id_) + ", Version:" + version_ + ")";
     }
 
-    return std::string(brand_to_char()) + " " + name() + " (DeviceID:" + Helpers::hextoa(device_id_) + ", ProductID:" + Helpers::itoa(product_id_)
-           + ", Version:" + version_ + ")";
+    return brand_to_char() + " " + name() + " (DeviceID:" + Helpers::hextoa(device_id_) + ", ProductID:" + Helpers::itoa(product_id_) + ", Version:" + version_
+           + ")";
 }
 
 // returns string of EMS device version and productID
@@ -912,7 +912,7 @@ void EMSdevice::publish_value(void * value_p) const {
 // looks up the UOM for a given key from the device value table
 std::string EMSdevice::get_value_uom(const std::string & shortname) const {
     for (const auto & dv : devicevalues_) {
-        if ((!dv.has_state(DeviceValueState::DV_WEB_EXCLUDE)) && (dv.short_name == shortname)) {
+        if ((!dv.has_state(DeviceValueState::DV_WEB_EXCLUDE)) && !strcmp(dv.short_name, shortname.c_str())) {
             // ignore TIME since "minutes" is already added to the string value
             if ((dv.uom == DeviceValueUOM::NONE) || (dv.uom == DeviceValueUOM::MINUTES)) {
                 break;
@@ -1282,7 +1282,7 @@ void EMSdevice::setCustomizationEntity(const std::string & entity_id) {
             // set the min / max
             dv.set_custom_minmax();
 
-            if (Mqtt::ha_enabled() && dv.short_name == FL_(seltemp)[0] && (min != dv.min || max != dv.max)) {
+            if (Mqtt::ha_enabled() && dv.tag <= DeviceValueTAG::TAG_HC8 && !strcmp(dv.short_name, FL_(selRoomTemp)[0]) && (min != dv.min || max != dv.max)) {
                 set_climate_minmax(dv.tag, dv.min, dv.max);
             }
 
@@ -2160,14 +2160,14 @@ void EMSdevice::mqtt_ha_entity_config_create() {
         if (!dv.has_state(DeviceValueState::DV_HA_CONFIG_CREATED) && dv.has_state(DeviceValueState::DV_ACTIVE)
             && !dv.has_state(DeviceValueState::DV_API_MQTT_EXCLUDE)) {
             // create_device_config is only done once for the EMS device. It can added to any entity, so we take the first
-            if (Mqtt::publish_ha_sensor_config_dv(dv, name().c_str(), std::string(brand_to_char()).c_str(), to_string_version().c_str(), false, create_device_config)) {
+            if (Mqtt::publish_ha_sensor_config_dv(dv, name().c_str(), brand_to_char().c_str(), to_string_version().c_str(), false, create_device_config)) {
                 dv.add_state(DeviceValueState::DV_HA_CONFIG_CREATED);
                 create_device_config = false; // only create the main config once
                 count++;
             }
 
-            // SRC thermostats mapped to connect/src1/... always contains mode, seltemp, currtemp
-            if (dv.tag >= DeviceValueTAG::TAG_SRC1 && dv.tag <= DeviceValueTAG::TAG_SRC16 && !strcmp(dv.short_name, FL_(seltemp)[0])) {
+            // SRC thermostats mapped to connect/src1/... always contains mode, selRoomTemp, currtemp
+            if (dv.tag >= DeviceValueTAG::TAG_SRC1 && dv.tag <= DeviceValueTAG::TAG_SRC16 && !strcmp(dv.short_name, FL_(selRoomTemp)[0])) {
                 // add modes and icon if we have one
                 const char *          icon         = nullptr;
                 const char * const ** mode_options = nullptr;

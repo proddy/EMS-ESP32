@@ -31,7 +31,8 @@ void test_2() {
         "off\",\"heatingtemp\":\"heating temperature\",\"maintenance\":\"maintenance scheduled\",\"maintenancedate\":\"next maintenance "
         "date\",\"maintenancetime\":\"time to next maintenance\",\"nofrostmode\":\"nofrost mode\",\"nofrosttemp\":\"nofrost "
         "temperature\",\"nompower\":\"nominal Power\",\"nrgheat\":\"energy heating\",\"pumpcharacter\":\"boiler pump characteristic\",\"pumpdelay\":\"pump "
-        "delay\",\"pumpmode\":\"boiler pump mode\",\"pumpmodmax\":\"boiler pump max power\",\"pumpmodmin\":\"boiler pump min power\",\"pumpontemp\":\"pump "
+        "delay\",\"pumpkickday\":\"pump kick day\",\"pumpkickdelay\":\"pump kick delay\",\"pumpkickhour\":\"pump kick hour\",\"pumpmode\":\"boiler pump "
+        "mode\",\"pumpmodmax\":\"boiler pump max power\",\"pumpmodmin\":\"boiler pump min power\",\"pumpontemp\":\"pump "
         "logic temperature\",\"reset\":\"reset\",\"selburnpow\":\"burner selected max power\",\"selflowtemp\":\"selected flow "
         "temperature\",\"summertemp\":\"summer temperature\"}]";
     TEST_ASSERT_EQUAL_STRING(expected_response, call_url("/api/boiler/commands"));

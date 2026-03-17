@@ -65,10 +65,16 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
     espMqttClientSecure & setPreSharedKey(const char * pskIdent, const char * psKey);
 
   protected:
+#ifndef NO_TLS_SUPPORT
     espMqttClientInternals::ClientSecureSync _client;
+#else
+    espMqttClientInternals::ClientSync _client;
+#endif
 };
 
-#elif defined(__linux__)
+#endif
+
+#if defined(__linux__)
 class espMqttClient : public MqttClientSetup<espMqttClient> {
   public:
     espMqttClient();
@@ -76,10 +82,4 @@ class espMqttClient : public MqttClientSetup<espMqttClient> {
   protected:
     espMqttClientInternals::ClientPosix _client;
 };
-#elif defined(_WIN32) || defined(__APPLE__)
-class espMqttClient : public MqttClientSetup<espMqttClient> {
-  public:
-    espMqttClient();
-};
-
 #endif

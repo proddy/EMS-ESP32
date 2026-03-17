@@ -842,6 +842,15 @@ bool AnalogSensor::get_value_info(JsonObject output, const char * cmd, const int
         return true;
     }
 
+    if (!strcmp(cmd, F_(metrics))) {
+        std::string metrics = get_metrics_prometheus();
+        if (!metrics.empty()) {
+            output["api_data"] = metrics;
+            return true;
+        }
+        return false;
+    }
+
     // this is for a specific sensor, return the value
     const char * attribute_s = Command::get_attribute(cmd);
 
@@ -854,6 +863,35 @@ bool AnalogSensor::get_value_info(JsonObject output, const char * cmd, const int
     }
 
     return false; // not found
+}
+
+// generate Prometheus metrics format from analog values
+std::string AnalogSensor::get_metrics_prometheus() {
+    std::string result;
+    result.reserve(sensors_.size() * 140);
+    char val[10];
+    for (auto & sensor : sensors_) {
+        result += (std::string) "# HELP emsesp_" + sensor.name() + " " + sensor.name();
+        if (sensor.type() != AnalogType::DIGITAL_OUT && sensor.type() != AnalogType::DIGITAL_IN) {
+            result += (std::string) ", " + EMSdevice::uom_to_string(sensor.uom());
+        } else {
+            result += (std::string) ", boolean";
+        }
+        result += (std::string) ", readable, visible";
+        if (sensor.type() == AnalogType::COUNTER || sensor.type() == AnalogType::RGB || sensor.type() == AnalogType::PULSE
+            || (sensor.type() >= AnalogType::DIGITAL_OUT && sensor.type() <= AnalogType::PWM_2)
+            || (sensor.type() >= AnalogType::CNT_0 && sensor.type() <= AnalogType::CNT_2)) {
+            result += (std::string) ", writable";
+        }
+        result += (std::string) "\n# TYPE emsesp_" + sensor.name() + " gauge\n";
+        result += (std::string) "emsesp_" + sensor.name() + " ";
+        if (sensor.type() != AnalogType::DIGITAL_OUT && sensor.type() != AnalogType::DIGITAL_IN) {
+            result += (std::string) Helpers::render_value(val, sensor.value(), 2) + "\n";
+        } else {
+            result += (std::string) (sensor.value() == 0 ? "0\n" : "1\n");
+        }
+    }
+    return result;
 }
 
 // note we don't add the device and state classes here, as we do in the custom entity service

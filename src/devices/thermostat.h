@@ -50,7 +50,7 @@ class Thermostat : public EMSdevice {
         uint8_t daymidtemp;
         uint8_t nighttemp;
         uint8_t holidaytemp;
-        uint8_t heatingtype; // type of heating: 1 radiator, 2 convectors, 3 floors, 4 room supply
+        uint8_t heatingtype; // type of heating: 1 radiator, 2 convectors, 3 floor, 4 room supply
         uint8_t targetflowtemp;
         uint8_t summertemp;
         int8_t  nofrosttemp; // signed -20°C to +10°C
@@ -65,6 +65,7 @@ class Thermostat : public EMSdevice {
         int16_t curroominfl;
         uint8_t flowtempoffset;
         uint8_t minflowtemp;
+        uint8_t baseflowtemp;
         uint8_t maxflowtemp;
         uint8_t reducemode;
         uint8_t nofrostmode;
@@ -169,6 +170,7 @@ class Thermostat : public EMSdevice {
             DAYMID,
             COOLTEMP,
             COOLSTART,
+            BASEFLOW,
             UNKNOWN
 
         };
@@ -582,6 +584,9 @@ class Thermostat : public EMSdevice {
     }
     inline bool set_minflowtemp(const char * value, const int8_t id) {
         return set_temperature_value(value, id, HeatingCircuit::Mode::MINFLOW);
+    }
+    inline bool set_baseflowtemp(const char * value, const int8_t id) {
+        return set_temperature_value(value, id, HeatingCircuit::Mode::BASEFLOW);
     }
     inline bool set_roominfluence(const char * value, const int8_t id) {
         return set_temperature_value(value, id, HeatingCircuit::Mode::ROOMINFLUENCE, true);

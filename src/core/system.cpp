@@ -52,6 +52,15 @@
 #include <esp_mac.h>
 #endif
 
+#ifndef NO_TLS_SUPPORT
+#define ENABLE_SMTP
+#define USE_ESP_SSLCLIENT
+#define READYCLIENT_SSL_CLIENT ESP_SSLClient
+#define READYCLIENT_TYPE_1 // TYPE 1 when using ESP_SSLClient
+#include <ESP_SSLClient.h>
+#include <ReadyMail.h>
+#endif
+
 #ifndef EMSESP_STANDALONE
 #include "esp_efuse.h"
 #endif
@@ -122,6 +131,110 @@ uint8_t System::language_index() {
 // send raw to ems
 bool System::command_send(const char * value, const int8_t id) {
     return EMSESP::txservice_.send_raw(value); // ignore id
+}
+
+bool System::command_sendmail(const char * value, const int8_t id) {
+    bool     enabled = false;
+    bool     ssl, starttls;
+    uint16_t port;
+    String   server, login, pass, sender, recp, subject;
+    EMSESP::webSettingsService.read([&](WebSettings & settings) {
+        enabled  = settings.email_enabled;
+        ssl      = settings.email_ssl;
+        starttls = settings.email_starttls;
+        server   = settings.email_server;
+        port     = settings.email_port;
+        login    = settings.email_login;
+        pass     = settings.email_pass;
+        sender   = settings.email_sender;
+        recp     = settings.email_recp;
+        subject  = settings.email_subject;
+    });
+    if (!enabled) {
+        return false;
+    }
+    LOG_DEBUG("Command sendmail port %d%s called with '%s'", port, ssl ? " (SSL)" : starttls ? " (STARTTLS)" : "", value);
+    // LOG_DEBUG("Command sendmail port %d called with '%s'", port, value);
+    bool success = false;
+
+#ifndef NO_TLS_SUPPORT
+    WiFiClient *    basic_client;
+    ESP_SSLClient * ssl_client;
+    ReadyClient *   r_client; // rClient(ssl_client);
+    SMTPClient *    smtp;     // smtp(rClient);
+    basic_client = new WiFiClient;
+    ssl_client   = new ESP_SSLClient;
+    r_client     = new ReadyClient(*ssl_client);
+    smtp         = new SMTPClient(*r_client);
+
+    ssl_client->setClient(basic_client);
+    ssl_client->setInsecure();
+    ssl_client->setBufferSizes(1024, 1024);
+    r_client->addPort(port, starttls ? readymail_protocol_tls : ssl ? readymail_protocol_ssl : readymail_protocol_plain_text);
+
+    // smtp->connect(server, port, sendmailCallback);
+    smtp->connect(server, port);
+    if (!smtp->isConnected()) {
+        LOG_ERROR("Sendmail connection error");
+        delete smtp;
+        delete r_client;
+        delete ssl_client;
+        delete basic_client;
+        return false;
+    }
+
+    // LOG_INFO("autenticate %s:%s", login.c_str(), pass.c_str());
+    smtp->authenticate(login, pass, readymail_auth_password);
+    if (!smtp->isAuthenticated()) {
+        LOG_ERROR("Sendmail authenticate error");
+        delete smtp;
+        delete r_client;
+        delete ssl_client;
+        delete basic_client;
+        return false;
+    }
+    JsonDocument doc;
+    String       body = value;
+    if (body.length()) {
+        auto error = deserializeJson(doc, (const char *)value);
+        if (!error && doc.as<JsonObject>().size() >= 0) {
+            subject = doc["subject"] | subject;
+            recp    = doc["to"] | recp;
+            sender  = doc["from"] | sender;
+            body    = doc["body"] | body;
+        }
+    }
+
+    SMTPMessage & msg = smtp->getMessage();
+    msg.headers.add(rfc822_subject, subject);
+    msg.headers.add(rfc822_from, sender);
+    msg.headers.add(rfc822_to, recp);
+
+    // Use addCustom to add custom header e.g. Imprtance and Priority.
+    // msg.headers.addCustom("Importance", PRIORITY);
+    // msg.headers.addCustom("X-MSMail-Priority", PRIORITY);
+    // msg.headers.addCustom("X-Priority", PRIORITY_NUM);
+
+    msg.text.body(body);
+
+    // bodyText.replace("\r\n", "<br>\r\n");
+    // msg.html.body("<html><body><div style=\"color:#cc0066;\">" + bodyText + "</div></body></html>");
+    // msg.html.transferEncoding("base64");
+
+    // With embedFile function, the html message will send as attachment.
+    // if (EMBED_MESSAGE)
+    //    msg.html.embedFile(true, "msg.html", embed_message_type_attachment);
+
+    msg.timestamp = time(nullptr);
+
+    success = smtp->send(msg);
+
+    delete smtp;
+    delete r_client;
+    delete ssl_client;
+    delete basic_client;
+#endif
+    return success;
 }
 
 // return string of languages and count
@@ -556,11 +669,6 @@ void System::store_settings(WebSettings & settings) {
     board_profile_  = settings.board_profile;
     telnet_enabled_ = settings.telnet_enabled;
 
-    modbus_enabled_     = settings.modbus_enabled;
-    modbus_port_        = settings.modbus_port;
-    modbus_max_clients_ = settings.modbus_max_clients;
-    modbus_timeout_     = settings.modbus_timeout;
-
     tx_mode_              = settings.tx_mode;
     syslog_enabled_       = settings.syslog_enabled;
     syslog_level_         = settings.syslog_level;
@@ -581,6 +689,24 @@ void System::store_settings(WebSettings & settings) {
 
     locale_         = settings.locale;
     developer_mode_ = settings.developer_mode;
+    // start services
+    if (settings.modbus_enabled) {
+        if (EMSESP::modbus_ == nullptr) {
+            EMSESP::modbus_ = new Modbus;
+            EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
+        } else if (settings.modbus_port != modbus_port_ || settings.modbus_max_clients != modbus_max_clients_ || settings.modbus_timeout != modbus_timeout_) {
+            EMSESP::modbus_->stop();
+            EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
+        }
+    } else if (EMSESP::modbus_ != nullptr) {
+        EMSESP::modbus_->stop();
+        delete EMSESP::modbus_;
+        EMSESP::modbus_ = nullptr;
+    }
+    modbus_enabled_     = settings.modbus_enabled;
+    modbus_port_        = settings.modbus_port;
+    modbus_max_clients_ = settings.modbus_max_clients;
+    modbus_timeout_     = settings.modbus_timeout;
 }
 
 // Starts up core services
@@ -1006,6 +1132,7 @@ void System::commands_init() {
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(read), System::command_read, FL_(read_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(send), System::command_send, FL_(send_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(fetch), System::command_fetch, FL_(fetch_cmd), CommandFlag::ADMIN_ONLY);
+    Command::add(EMSdevice::DeviceType::SYSTEM, F_(sendmail), System::command_sendmail, FL_(sendmail_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(restart), System::command_restart, FL_(restart_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(format), System::command_format, FL_(format_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(txpause), System::command_txpause, FL_(txpause_cmd), CommandFlag::ADMIN_ONLY);
@@ -2173,6 +2300,15 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
     }
 #endif
 
+    // Modbus Status
+    node            = output["Modbus"].to<JsonObject>();
+    node["enabled"] = EMSESP::system_.modbus_enabled_;
+    if (EMSESP::system_.modbus_enabled_) {
+        node["maxClients"] = EMSESP::system_.modbus_max_clients_;
+        node["port"]       = EMSESP::system_.modbus_port_;
+        node["timeout"]    = EMSESP::system_.modbus_timeout_;
+    }
+
     // Sensor Status
     node = output["sensor"].to<JsonObject>();
     if (EMSESP::sensor_enabled()) {
@@ -2180,6 +2316,9 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
         node["temperatureSensorReads"] = EMSESP::temperaturesensor_.reads();
         node["temperatureSensorFails"] = EMSESP::temperaturesensor_.fails();
     }
+
+    node            = output["Analog"].to<JsonObject>();
+    node["enabled"] = EMSESP::analog_enabled();
     if (EMSESP::analog_enabled()) {
         node["analogSensors"]     = EMSESP::analogsensor_.count_entities();
         node["analogSensorReads"] = EMSESP::analogsensor_.reads();
@@ -2914,7 +3053,6 @@ void System::set_valid_system_gpios() {
     // excluded:
     // GPIO3, GPIO45 - GPIO46 = strapping pins
     // GPIO26 - GPIO32 = SPI flash and PSRAM and not recommended
-    // GPIO33 - GPIO37 = Octal flash/PSRAM
     // GPIO19 - GPIO20 = USB-JTAG
     // GPIO22 - GPIO25 = don't exist
     //
@@ -2922,7 +3060,12 @@ void System::set_valid_system_gpios() {
     // GPIO11 - GPIO19 = ADC analog input only pins
     // GPIO47 - GPIO48 = valid on a Wemos S3
     // GPIO8 = used by Liligo S3 board profile for Rx
-    valid_system_gpios_ = string_range_to_vector("0-48", "3, 45-46, 26-32, 33-37, 19-20, 22-25");
+    if (ESP.getPsramSize() > 0) {
+        // GPIO33 - GPIO37 = Octal flash/PSRAM
+        valid_system_gpios_ = string_range_to_vector("0-48", "3, 45-46, 26-32, 33-37, 19-20, 22-25");
+    } else {
+        valid_system_gpios_ = string_range_to_vector("0-48", "3, 45-46, 26-32, 19-20, 22-25");
+    }
 
 #elif CONFIG_IDF_TARGET_ESP32
     // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html

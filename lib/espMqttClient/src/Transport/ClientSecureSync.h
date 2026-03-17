@@ -10,7 +10,9 @@ the LICENSE file.
 
 #ifndef NO_TLS_SUPPORT
 
-#include "esp_tls.h"
+// #include "esp_tls.h"
+#include <WiFiClient.h>
+#include <ESP_SSLClient.h>
 #include "Transport.h"
 
 namespace espMqttClientInternals {
@@ -27,21 +29,8 @@ class ClientSecureSync : public Transport {
     bool   connected() override;
     bool   disconnected() override;
 
-    // TLS configuration (call before connect)
-    void setCACert(const char * rootCA);
-    void setCertificate(const char * clientCert);
-    void setPrivateKey(const char * privateKey);
-    void setPreSharedKey(const char * pskIdent, const char * psKey);
-    void setInsecure();
-
-  private:
-    esp_tls_t *   _tls;
-    esp_tls_cfg_t _cfg;
-    bool          _connected;
-#if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)
-    psk_hint_key_t _psk;
-    unsigned char  _psk_key[64];
-#endif
+    WiFiClient    basic_client;
+    ESP_SSLClient client;
 };
 
 } // namespace espMqttClientInternals

@@ -84,7 +84,7 @@ uuid::log::Logger EMSESP::logger() {
 RxService         EMSESP::rxservice_;         // incoming Telegram Rx handler
 TxService         EMSESP::txservice_;         // outgoing Telegram Tx handler
 Mqtt              EMSESP::mqtt_;              // mqtt handler
-Modbus *          EMSESP::modbus_;            // modbus handler
+Modbus *          EMSESP::modbus_ = nullptr;  // modbus handler
 System            EMSESP::system_;            // core system services
 TemperatureSensor EMSESP::temperaturesensor_; // Temperature sensors
 AnalogSensor      EMSESP::analogsensor_;      // Analog sensors
@@ -1307,9 +1307,16 @@ bool EMSESP::add_device(const uint8_t device_id, const uint8_t product_id, const
     // first check to see if we already have it, if so update the record
     for (auto it = emsdevices.begin(); it != emsdevices.end(); ++it) {
         if ((*it) && (*it)->is_device_id(device_id)) {
-            if (product_id == 0 || (*it)->product_id() != 0) { // update only with valid product_id
+            if (product_id == 0) { // no product-id, ignore
+                return false;
+            }
+            if ((*it)->product_id() == product_id) { // update version if we have valid product_id
+                if (!strcmp((*it)->version(), "00.00")) {
+                    (*it)->version(version);
+                }
                 return true;
             }
+            // product-id has changed for this device-id, delete and re-add
             (*it)->erase_device_values();
             emsdevices.erase(it); // erase the old device without product_id and re detect
             break;
@@ -1793,12 +1800,6 @@ void EMSESP::start() {
         telnet_.initial_idle_timeout(3600);  // in sec, one hour idle timeout
         telnet_.default_write_timeout(1000); // in ms, socket timeout 1 second
 #endif
-    }
-
-    // start services
-    if (system_.modbus_enabled()) {
-        modbus_ = new Modbus;
-        modbus_->start(1, system_.modbus_port(), system_.modbus_max_clients(), system_.modbus_timeout() * 1000);
     }
 
     mqtt_.start();                              // mqtt init

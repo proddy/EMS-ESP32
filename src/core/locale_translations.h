@@ -65,6 +65,7 @@ MAKE_WORD_TRANSLATION(commands_cmd, "list all commands", "Liste aller Kommandos"
 MAKE_WORD_TRANSLATION(entities_cmd, "list all entities", "Liste aller Entitäten", "lijst van alle entiteiten", "lista all entiteter", "wyświetl wszsytkie encje", "Viser alle enheter", "lister toutes les entités", "Tüm varlıkları listele", "elenca tutte le entità", "zobraziť všetky entity", "vypsat všechny entity")
 MAKE_WORD_TRANSLATION(metrics_cmd, "list all prometheus metrics", "Liste aller Prometheus Metriken", "lijst van alle Prometheus metriken", "lista alla Prometheus metriker", "wyświetl wszystkie Prometheus metryki", "Viser alle Prometheus metrikker", "lister toutes les métriques Prometheus", "Tüm Prometheus metriklerini listele", "elenca tutte le metriche Prometheus", "zobraziť všetky Prometheus metriky", "vypsat všechny Prometheus metriky")
 MAKE_WORD_TRANSLATION(send_cmd, "send a telegram", "Sende EMS-Telegramm", "stuur een telegram", "skicka ett telegram", "wyślij telegram", "send et telegram", "envoyer un télégramme", "Bir telegram gönder", "invia un telegramma", "poslať telegram", "odeslat telegram")
+MAKE_WORD_TRANSLATION(sendmail_cmd, "send email", "Sende eMail", "stuur email", "", "wyślij email", "send email", "", "email gönder", "invia email", "poslať email") // TODO translate
 MAKE_WORD_TRANSLATION(read_cmd, "send read request", "Sende Leseanfrage", "stuur leesaanvraag", "skicka en läsförfrågan", "wyślij żądanie odczytu", "send leseforespørsel", "envoyer une demande de lecture", "okuma isteği gönder", "invia richiesta di lettura", "odoslať žiadosť o prečítanie", "odeslat požadavek na čtení")
 MAKE_WORD_TRANSLATION(setiovalue_cmd, "set I/O value", "Setze Werte E/A", "instellen standaardwaarde", "sätt ett I/O-värde", "ustaw wartość", "sett en io verdi", "définir valeur E/S", "Giriş/Çıkış değerlerini ayarla", "imposta valore io", "nastaviť hodnotu io", "nastavit hodnotu I/O")
 MAKE_WORD_TRANSLATION(changeloglevel_cmd, "change log level", "Ändere Protokollebene", "aanpassen log niveau", "ändra logg-nivå", "zmień poziom log-u", "endre loggnivå", "changer le niveau de journal", "Kayıt seviyesini değiştir", "cambia livello registrazione", "zmeniť úroveň protokolu", "změnit úroveň protokolování")
@@ -197,6 +198,9 @@ MAKE_WORD_TRANSLATION(lower, "lower", "niedriger", "lager", "lägre", "mniejszy"
 MAKE_WORD_TRANSLATION(error, "error", "Fehler", "error", "Fel", "błąd", "feil", "erreur", "Hata", "errore", "error", "chyba")
 MAKE_WORD_TRANSLATION(history, "history", "Fehlerspeicher", "geschiedenis", "historik", "historia", "historikk", "historique", "geçmiş", "storico", "história", "historie")
 MAKE_WORD_TRANSLATION(message, "message", "Meldung", "melding", "meddelande", "komunikat", "melding", "message", "mesajı", "messaggio", "správa", "zpráva")
+MAKE_WORD_TRANSLATION(hp_error, "hp error", "WP Fehler", "hp error", "hp Fel", "hp błąd", "hp feil", "hp erreur", "hp Hata", "hp errore", "hp error", "hp chyba")
+MAKE_WORD_TRANSLATION(factory, "factory", "werkseinst.", "", "", "", "", "", "", "", "nastavenie z výroby", "nastavení z výroby")
+MAKE_WORD_TRANSLATION(burn_starts, "burner starts", "Brennerstarts", "", "", "", "", "", "", "", "štarty horáka", "")
 MAKE_WORD_TRANSLATION(na, "n/a", "n/a", "n/a", "n/a", "nd.", "n/a", "n/c", "mevcut değil", "n/a", "n/a", "n/a")
 MAKE_WORD_TRANSLATION(inverted, "inverted", "invertiert", "omgekeerd", "inverterad", "odwrócony", "invertert", "inversé", "ters", "invertito", "invertovaný", "invertovaný")
 
@@ -423,6 +427,10 @@ MAKE_TRANSLATION(pumpCharacter, "pumpcharacter", "boiler pump characteristic", "
 MAKE_TRANSLATION(pumpOnTemp, "pumpontemp", "pump logic temperature", "Pumpenlogiktemperatur", "pomplogica temperatuur", "Pumplogiktemperatur", "temperatura logiki pompy", "pumpelogikktemperatur", "température logique pompe", "pompa mantık sıcaklığı", "temperatura logica pompa", "teplota logiky čerpadla", "teplota logiky čerpadla")
 MAKE_TRANSLATION(headertemp, "headertemp", "low loss header", "Hydr. Weiche", "open verdeler", "Fördelare", "sprzęgło hydrauliczne", "lav tap header", "bouteille de déc. hydr.", "isı bloğu gidiş suyu sıc.", "comp. idr.", "nízkostratová hlavica", "hydraulický oddělovač")
 MAKE_TRANSLATION(heatblock, "heatblock", "heating block", "Wärmezelle", "Aanvoertemp. warmtecel", "Värmeblock", "blok grzewczy", "varmeblokk", "départ corps de chauffe", "Hid.denge kabı sıcaklığı", "mandata scamb. pr.", "vykurovací blok", "blok topení")
+
+MAKE_TRANSLATION(pumpKickHour, "pumpkickhour", "pump kick hour", "Stunde Pumpkick")
+MAKE_TRANSLATION(pumpKickDay, "pumpkickday", "pump kick day", "Tag Pumpkick")
+MAKE_TRANSLATION(pumpKickDelay, "pumpkickdelay", "pump kick delay", "Pause vor Pumpkick")
 
 MAKE_TRANSLATION(curveOn, "curveon", "heatingcurve on", "Heizkurve an", "stookkromme aan", "Värmekurva På", "krzywa grzewcza włączona", "varmekurve på", "courbe de chauffage activée", "ısıtma eğrisi açık", "curva di riscaldamento attiva", "vykurovacia krivka zapnutá", "topná křivka zapnutá")
 MAKE_TRANSLATION(curveBase, "curvebase", "heatingcurve base", "Heizkurve Basis", "stookkromme basis", "Värmekurva Bas", "podstawa krzywej grzewczej", "varmekurve basis", "base de courbe de chauffage", "ısıtma eğrisi tabanı", "base curva di riscaldamento", "základňa vykurovacej krivky", "základ topné křivky")
@@ -773,6 +781,7 @@ MAKE_TRANSLATION(comforttemp, "comforttemp", "comfort temperature", "Komforttemp
 MAKE_TRANSLATION(summertemp, "summertemp", "summer temperature", "Sommertemperatur", "Zomertemperatuur", "Sommartemperatur", "temperatura przełączania lato/zima", "Sommertemperatur", "température été", "yaz sıcaklığı", "temperatura estiva", "letná teplota", "letní teplota")
 MAKE_TRANSLATION(designtemp, "designtemp", "design temperature", "Auslegungstemperatur", "Ontwerptemperatuur", "Design-temperatur", "temperatura projektowa", "designtemperatur", "température conception", "özel sıcaklık", "temperatura predefinita", "návrhová teplota", "dimenzovaná teplota")
 MAKE_TRANSLATION(offsettemp, "offsettemp", "offset temperature", "Temperaturanhebung", "Temperatuur offset", "Temperaturkorrigering", "korekta temperatury", "temperaturkorrigering", "température offset", "artış sıcaklığı", "aumento della temperatura", "offsetová teplota", "offset teploty")
+MAKE_TRANSLATION(baseflowtemp, "baseflowtemp", "base flow temperature", "Basis Vorlauftemperatur") // ToDo translate
 MAKE_TRANSLATION(minflowtemp, "minflowtemp", "min flow temperature", "min. Vorlauftemperatur", "Minimale aanvoertemperatuur", "Min. Flödestemperatur", "minimalna temperatura zasilania", "min. turtemperatur", "température min. flux", "minimun akış sıcaklığı", "temperatura minima di mandata", "min. výstupná teplota", "vytápění minimální teplota")
 MAKE_TRANSLATION(maxflowtemp, "maxflowtemp", "max flow temperature", "max. Vorlauftemperatur", "Maximale aanvoertemperatuur", "Max. Flödestemperatur", "maksymalna temperatura zasilania", "maks turtemperatur", "température max flux", "maksimum akış sıcaklığı", "temperatura massima di mandata", "maximálna teplota prívodu", "vytápění maximální teplota")
 MAKE_TRANSLATION(roominfluence, "roominfluence", "room influence", "Raumeinfluss", "Ruimteinvloed", "Rumspåverkan", "wpływ pomieszczenia", "rominnflytelse", "influence pièce", "oda etkisi", "influenza della camera", "vplyv miestnosti", "vliv prostoru")

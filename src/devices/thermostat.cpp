@@ -1101,6 +1101,8 @@ void Thermostat::process_JunkersWW(std::shared_ptr<const Telegram> telegram) {
 void Thermostat::process_JunkersDisp(std::shared_ptr<const Telegram> telegram) {
     has_enumupdate(telegram, ibaMainDisplay_, 1, 1);
     has_update(telegram, ibaLanguage_, 3);
+    has_update(telegram, ibaMinExtTemperature_, 16);
+    has_update(telegram, ibaBuildingType_, 17); // percent /10
 }
 
 // type 0x02A5 - data from Worchester CRF200
@@ -1250,12 +1252,12 @@ void Thermostat::process_RC300Summer(std::shared_ptr<const Telegram> telegram) {
 
     if (hc->heatingtype != 3) {
         has_update(telegram, hc->designtemp, 4);
-        has_update(telegram, hc->minflowtemp, model() == EMSdevice::EMS_DEVICE_FLAG_BC400 ? 13 : 8);
     } else {
         has_update(telegram, hc->designtemp, 5);
-        has_update(telegram, hc->minflowtemp, 8);
     }
-
+    // minflowtemp could be in 8 or 13 #2969
+    has_update(telegram, hc->minflowtemp, 13);
+    has_update(telegram, hc->baseflowtemp, 8);
     has_update(telegram, hc->fastHeatup, 10);
     has_update(telegram, hc->comfortPointOffset, 11);
     has_update(telegram, hc->comfortPointTemp, 12);
@@ -2025,6 +2027,8 @@ bool Thermostat::set_minexttemp(const char * value, const int8_t id) {
         write_command(0x241, 10, mt, 0x241);
     } else if (isRC300()) {
         write_command(0x240, 10, mt, 0x240);
+    } else if (model() == EMSdevice::EMS_DEVICE_FLAG_JUNKERS) {
+        write_command(0x110, 16, mt, 0x110);
     } else {
         write_command(EMS_TYPE_IBASettings, 5, mt, EMS_TYPE_IBASettings);
     }
@@ -2181,6 +2185,14 @@ bool Thermostat::set_remotehum(const char * value, const int8_t id) {
 
 // 0xA5/0xA7 - Set the building settings
 bool Thermostat::set_building(const char * value, const int8_t id) {
+    if (model() == EMSdevice::EMS_DEVICE_FLAG_JUNKERS) {
+        int i;
+        if (Helpers::value2number(value, i, 0, 100)) {
+            write_command(0x110, 17, i / 10, 0x110);
+            return true;
+        }
+        return false;
+    }
     uint8_t bd;
     if (!Helpers::value2enum(value, bd, FL_(enum_ibaBuildingType))) {
         return false;
@@ -2326,6 +2338,7 @@ bool Thermostat::set_control(const char * value, const int8_t id) {
     // 1-FB10, 2-FB100
     if (model() == EMSdevice::EMS_DEVICE_FLAG_JUNKERS && !has_flags(EMSdevice::EMS_DEVICE_FLAG_JUNKERS_OLD)) {
         if (Helpers::value2enum(value, ctrl, FL_(enum_j_control))) {
+            hc->control = ctrl; // set in advance, dont wait for verify
             write_command(set_typeids[hc->hc()], 1, ctrl);
             return true;
         }
@@ -2374,6 +2387,7 @@ bool Thermostat::set_control(const char * value, const int8_t id) {
         }
     } else if (Helpers::value2enum(value, ctrl, FL_(enum_control))) {
         write_command(set_typeids[hc->hc()], EMS_OFFSET_RC35Set_control, ctrl);
+        hc->control = ctrl; // set in advance, dont wait for verify
         return true;
     }
 
@@ -4074,10 +4088,16 @@ bool Thermostat::set_temperature(const float temperature, const uint8_t mode, co
             }
             factor = 1;
             break;
+        case HeatingCircuit::Mode::BASEFLOW:
+            set_typeid      = summer_typeids[hc->hc()];
+            validate_typeid = set_typeid;
+            offset          = 8;
+            factor          = 1;
+            break;
         case HeatingCircuit::Mode::MINFLOW:
             set_typeid      = summer_typeids[hc->hc()];
             validate_typeid = set_typeid;
-            offset          = hc->heatingtype != 3 && model == EMS_DEVICE_FLAG_BC400 ? 13 : 8;
+            offset          = 13;
             factor          = 1;
             break;
         case HeatingCircuit::Mode::MAXFLOW:
@@ -4731,6 +4751,19 @@ void Thermostat::register_device_values() {
                                   MAKE_CF_CB(set_language));
         }
         register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
+                              &ibaBuildingType_,
+                              DeviceValueType::UINT8,
+                              DeviceValueNumOp::DV_NUMOP_MUL10,
+                              FL_(ibaBuildingType),
+                              DeviceValueUOM::PERCENT,
+                              MAKE_CF_CB(set_building));
+        register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
+                              &ibaMinExtTemperature_,
+                              DeviceValueType::INT8,
+                              FL_(ibaMinExtTemperature),
+                              DeviceValueUOM::DEGREES,
+                              MAKE_CF_CB(set_minexttemp));
+        register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
                               &hybridStrategy_,
                               DeviceValueType::ENUM,
                               FL_(enum_hybridStrategy),
@@ -4880,6 +4913,7 @@ void Thermostat::register_device_values_hc(std::shared_ptr<Thermostat::HeatingCi
         register_device_value(tag, &hc->summertemp, DeviceValueType::UINT8, FL_(summertemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_summertemp), 10, 30);
         register_device_value(tag, &hc->designtemp, DeviceValueType::UINT8, FL_(designtemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_designtemp));
         register_device_value(tag, &hc->offsettemp, DeviceValueType::INT8, FL_(offsettemp), DeviceValueUOM::DEGREES_R, MAKE_CF_CB(set_offsettemp));
+        register_device_value(tag, &hc->baseflowtemp, DeviceValueType::UINT8, FL_(baseflowtemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_baseflowtemp));
         register_device_value(tag, &hc->minflowtemp, DeviceValueType::UINT8, FL_(minflowtemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_minflowtemp));
         register_device_value(tag, &hc->maxflowtemp, DeviceValueType::UINT8, FL_(maxflowtemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_maxflowtemp));
         register_device_value(tag, &hc->roominfluence, DeviceValueType::UINT8, FL_(roominfluence), DeviceValueUOM::DEGREES_R, MAKE_CF_CB(set_roominfluence));

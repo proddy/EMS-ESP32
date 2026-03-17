@@ -88,6 +88,8 @@ class WebSchedulerService : public StatefulService<WebScheduler> {
     uint8_t count_entities(bool cmd_only = false);
     bool    onChange(const char * cmd);
 
+    std::string get_metrics_prometheus();
+
     std::string raw_value;
     std::string computed_value;
 
