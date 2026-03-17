@@ -886,9 +886,9 @@ std::string AnalogSensor::get_metrics_prometheus() {
         result += (std::string) "\n# TYPE emsesp_" + sensor.name() + " gauge\n";
         result += (std::string) "emsesp_" + sensor.name() + " ";
         if (sensor.type() != AnalogType::DIGITAL_OUT && sensor.type() != AnalogType::DIGITAL_IN) {
-            result += (std::string) Helpers::render_value(val, sensor.value(), 2) + "\n";
+            result += (std::string)Helpers::render_value(val, sensor.value(), 2) + "\n";
         } else {
-            result += (std::string) (sensor.value() == 0 ? "0\n" : "1\n");
+            result += (std::string)(sensor.value() == 0 ? "0\n" : "1\n");
         }
     }
     return result;
