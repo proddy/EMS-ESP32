@@ -8,7 +8,7 @@ import {
   useState
 } from 'react';
 import { IconContext } from 'react-icons';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { toast } from 'react-toastify';
 
 import CommentsDisabledOutlinedIcon from '@mui/icons-material/CommentsDisabledOutlined';
@@ -534,7 +534,17 @@ const Devices = memo(() => {
   const renderCoreData = () => (
     <>
       {!coreData.connected ? (
-        <MessageBox level="error" message={LL.EMS_BUS_WARNING()} />
+        <MessageBox level="error" message={LL.EMS_BUS_WARNING() + '.'}>
+          &nbsp;(
+          <Link
+            target="_blank"
+            to="https://docs.emsesp.org/Troubleshooting#ems-bus-is-not-connecting"
+            style={{ color: 'white' }}
+          >
+            {LL.ONLINE_HELP()}
+          </Link>
+          )
+        </MessageBox>
       ) : (
         <Box justifyContent="center" flexDirection="column">
           <IconContext.Provider

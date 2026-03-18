@@ -357,7 +357,8 @@ const cz: Translation = {
   FIRMWARE_VERSION_INFO: 'Informace o verzi firmwaru',
   NO_DATA: 'Žádná data',
   USER_PROFILE: 'Uživatelský profil',
-  STORED_VERSIONS: 'Uložené verze'
+  STORED_VERSIONS: 'Uložené verze',
+  ONLINE_HELP: 'online nápověda'
 };
 
 export default cz;

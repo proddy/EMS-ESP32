@@ -357,7 +357,8 @@ const de: Translation = {
   FIRMWARE_VERSION_INFO: 'Firmware-Versionsinformation',
   NO_DATA: 'Keine Daten',
   USER_PROFILE: 'Benutzerprofil',
-  STORED_VERSIONS: 'Gespeicherte Versionen'
+  STORED_VERSIONS: 'Gespeicherte Versionen',
+  ONLINE_HELP: 'Online-Hilfe'
 };
 
 export default de;

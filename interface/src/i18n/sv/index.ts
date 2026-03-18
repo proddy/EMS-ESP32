@@ -357,7 +357,8 @@ const sv: Translation = {
   FIRMWARE_VERSION_INFO: 'Information om firmwareversion',
   NO_DATA: 'Ingen data',
   USER_PROFILE: 'Användarprofil',
-  STORED_VERSIONS: 'Lagrad versioner'
+  STORED_VERSIONS: 'Lagrad versioner',
+  ONLINE_HELP: 'online hjälp'
 };
 
 export default sv;
