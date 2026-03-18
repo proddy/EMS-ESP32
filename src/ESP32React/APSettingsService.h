@@ -70,9 +70,9 @@ class APSettings {
     IPAddress subnetMask;
 
     bool operator==(const APSettings & settings) const {
-        return provisionMode == settings.provisionMode && channel == settings.channel && ssidHidden == settings.ssidHidden
-               && maxClients == settings.maxClients && localIP == settings.localIP && gatewayIP == settings.gatewayIP
-               && subnetMask == settings.subnetMask && ssid == settings.ssid && password == settings.password;
+        return provisionMode == settings.provisionMode && channel == settings.channel && ssidHidden == settings.ssidHidden && maxClients == settings.maxClients
+               && localIP == settings.localIP && gatewayIP == settings.gatewayIP && subnetMask == settings.subnetMask && ssid == settings.ssid
+               && password == settings.password;
     }
 
     static void              read(const APSettings & settings, JsonObject root);

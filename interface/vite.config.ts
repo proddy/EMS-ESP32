@@ -2,9 +2,8 @@ import preact from '@preact/preset-vite';
 import fs from 'fs';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { Plugin, defineConfig } from 'vite';
+import { Plugin, PluginOption, defineConfig } from 'vite';
 import viteImagemin from 'vite-plugin-imagemin';
-import viteTsconfigPaths from 'vite-tsconfig-paths';
 import zlib from 'zlib';
 
 // @ts-expect-error - mock server doesn't have type declarations
@@ -99,16 +98,31 @@ const createPreactPlugin = (devToolsEnabled: boolean) =>
     prefreshEnabled: false
   });
 
+// Patch preact/compat to export stub React 19 APIs (use, useOptimistic) so that
+// react-router v7 doesn't trigger IMPORT_IS_UNDEFINED warnings from Rolldown.
+const preactCompatPatchPlugin = (): Plugin => ({
+  name: 'preact-compat-react19-patch',
+  transform(code, id) {
+    if (id.includes('preact') && id.includes('compat.module.js')) {
+      return {
+        code:
+          code +
+          '\nexport var use = undefined;\nexport var useOptimistic = undefined;\n',
+        map: null
+      };
+    }
+    return undefined;
+  }
+});
+
 // Common base plugins
 const createBasePlugins = (
   devToolsEnabled: boolean,
   includeBundleReporter = true
-) => {
-  const plugins = [
+): PluginOption[] => {
+  const plugins: PluginOption[] = [
     createPreactPlugin(devToolsEnabled),
-    viteTsconfigPaths({
-      projects: ['./tsconfig.json']
-    })
+    preactCompatPatchPlugin()
   ];
   if (includeBundleReporter) {
     plugins.push(bundleSizeReporter());
@@ -234,7 +248,8 @@ export default defineConfig(
         plugins: [...createBasePlugins(true, true), mockServer()],
         resolve: {
           alias: RESOLVE_ALIASES,
-          extensions: RESOLVE_EXTENSIONS
+          extensions: RESOLVE_EXTENSIONS,
+          tsconfigPaths: true
         },
         server: {
           open: true,
@@ -263,7 +278,8 @@ export default defineConfig(
         plugins: createBasePlugins(false, true),
         resolve: {
           alias: RESOLVE_ALIASES,
-          extensions: RESOLVE_EXTENSIONS
+          extensions: RESOLVE_EXTENSIONS,
+          tsconfigPaths: true
         },
         build: {
           ...createBaseBuildConfig(),
@@ -297,7 +313,8 @@ export default defineConfig(
       ],
       resolve: {
         alias: RESOLVE_ALIASES,
-        extensions: RESOLVE_EXTENSIONS
+        extensions: RESOLVE_EXTENSIONS,
+        tsconfigPaths: true
       },
       build: {
         ...createBaseBuildConfig(),
@@ -306,8 +323,7 @@ export default defineConfig(
         rollupOptions: {
           treeshake: {
             moduleSideEffects: false,
-            propertyReadSideEffects: false,
-            tryCatchDeoptimization: false,
+            propertyReadSideEffects: false as const,
             unknownGlobalSideEffects: false
           },
           output: {
