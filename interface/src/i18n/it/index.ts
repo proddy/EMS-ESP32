@@ -357,7 +357,8 @@ const it: Translation = {
   FIRMWARE_VERSION_INFO: 'Informazioni sulla versione del firmware',
   NO_DATA: 'Nessun dato',
   USER_PROFILE: 'Profilo utente',
-  STORED_VERSIONS: 'Versioni memorizzate'
+  STORED_VERSIONS: 'Versioni memorizzate',
+  ONLINE_HELP: 'aiuto online'
 };
 
 export default it;

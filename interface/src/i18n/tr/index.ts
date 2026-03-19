@@ -357,7 +357,8 @@ const tr: Translation = {
   FIRMWARE_VERSION_INFO: 'Firmware Sürüm Bilgisi',
   NO_DATA: 'Hiçbir veri yok',
   USER_PROFILE: 'Kullanıcı Profili',
-  STORED_VERSIONS: 'Kaydedilmiş Sürümler'
+  STORED_VERSIONS: 'Kaydedilmiş Sürümler',
+  ONLINE_HELP: 'online yardım'
 };
 
 export default tr;

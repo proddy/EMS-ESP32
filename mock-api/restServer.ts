@@ -4564,7 +4564,7 @@ router
     let sorted_devices = [...emsesp_coredata.devices].sort((a, b) => a.t - b.t);
     // append emsesp_coredata to sorted_devices so Custom is always at the end of the list
     sorted_devices.push(emsesp_coredata_custom);
-    // sorted_devices = []; // uncomment if simulating no devices...
+    // return { connected: false, devices: [] }; // uncomment if simulating no devices...
     return { connected: true, devices: sorted_devices };
   })
   .get(EMSESP_SENSOR_DATA_ENDPOINT, () => {
