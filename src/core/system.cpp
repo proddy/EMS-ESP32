@@ -34,25 +34,6 @@
 #include "../test/test.h"
 #endif
 
-#ifndef EMSESP_STANDALONE
-#ifdef ESP_IDF_VERSION_MAJOR // IDF 4+
-#if CONFIG_IDF_TARGET_ESP32  // ESP32/PICO-D4
-#include "../esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "../esp32s2/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "../esp32c3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "../esp32s3/rom/rtc.h"
-#else
-#error Target CONFIG_IDF_TARGET is not supported
-#endif
-#else // ESP32 Before IDF 4.0
-#include "../rom/rtc.h"
-#endif
-#include <esp_mac.h>
-#endif
-
 #ifndef NO_TLS_SUPPORT
 #define ENABLE_SMTP
 #define USE_ESP_SSLCLIENT
@@ -63,6 +44,7 @@
 #endif
 
 #ifndef EMSESP_STANDALONE
+#include <esp_mac.h>
 #include "esp_efuse.h"
 #endif
 
@@ -2642,7 +2624,7 @@ bool System::command_restart(const char * value, const int8_t id) {
 
 std::string System::reset_reason(uint8_t cpu) const {
 #ifndef EMSESP_STANDALONE
-    switch (rtc_get_reset_reason(cpu)) {
+    switch (esp_rom_get_reset_reason(cpu)) {
     case 1:
         return ("Power on reset");
     // case 2 :reset pin not on esp32

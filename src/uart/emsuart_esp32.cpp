@@ -68,6 +68,14 @@ void EMSuart::uart_event_task(void * pvParameters) {
 // initialize UART driver
 void EMSuart::start(const uint8_t tx_mode, const uint8_t rx_gpio, const uint8_t tx_gpio) {
     if (tx_mode_ == EMS_TXMODE_INIT) {
+#if CONFIG_IDF_TARGET_ESP32C6
+        uart_config_t uart_config = {.baud_rate           = EMSUART_BAUD,
+                                     .data_bits           = UART_DATA_8_BITS,
+                                     .parity              = UART_PARITY_DISABLE,
+                                     .stop_bits           = UART_STOP_BITS_1,
+                                     .flow_ctrl           = UART_HW_FLOWCTRL_DISABLE,
+                                     .rx_flow_ctrl_thresh = 0};
+#else
         uart_config_t uart_config = {.baud_rate           = EMSUART_BAUD,
                                      .data_bits           = UART_DATA_8_BITS,
                                      .parity              = UART_PARITY_DISABLE,
@@ -76,6 +84,7 @@ void EMSuart::start(const uint8_t tx_mode, const uint8_t rx_gpio, const uint8_t 
                                      .rx_flow_ctrl_thresh = 0,
                                      .source_clk          = UART_SCLK_APB,
                                      .flags               = {0}};
+#endif
 #if defined(EMSUART_RX_INVERT)
         inverse_mask |= UART_SIGNAL_RXD_INV;
 #endif
