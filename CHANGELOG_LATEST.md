@@ -12,6 +12,7 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - prometheus metrics for temperature/analog/scheduler/custom [#2962](https://github.com/emsesp/EMS-ESP32/issues/2962)
 - boiler pumpkick [#2965](https://github.com/emsesp/EMS-ESP32/discussions/2965)
 - heatpump reset [#2933](https://github.com/emsesp/EMS-ESP32/issues/2933)
+- 2.nd freshwater module (dhw4) [#2991](https://github.com/emsesp/EMS-ESP32/issues/2991)
 
 ## Fixed
 
