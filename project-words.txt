@@ -6,6 +6,9 @@ abluftqualität
 abluftqualitätsfühler
 abrt
 absburnpow
+ACAC
+ACAH
+ACAO
 accomodate
 aceotrope
 activehigh
@@ -64,7 +67,6 @@ asyncwebsocket
 asyncwebsynchronization
 atoint
 ausreichend
-außenluft
 authmode
 autodst
 automode
@@ -82,6 +84,7 @@ auxheatmix
 auxheatrmode
 auxlimitstart
 auxmaxlimit
+außenluft
 avty
 awsc
 azubuike
@@ -137,7 +140,6 @@ calinttemp
 catagory
 cbuf
 cerapur
-česky
 cfamily
 changeloglevel
 chargeduration
@@ -192,6 +194,7 @@ controlmode
 coolingcircuit
 coolingon
 coolingstarts
+coolingtype
 cooloffdelay
 coolondelay
 coolstart
@@ -669,12 +672,12 @@ lowpressure
 lowtopic
 lufqualität
 luft
-lüfterstufe
 luftfeuchte
 luftfeuchtefühler
 luftqualfühl
-lüftungsfrostschutz
 lukás
+lüfterstufe
+lüftungsfrostschutz
 maintenancedate
 maintenancemessage
 maintenancetime
@@ -827,7 +830,6 @@ nwcl
 nystrom
 odata
 oddparity
-öffnen
 offsettemp
 offtemp
 oilpreheat
@@ -942,6 +944,9 @@ rawstr
 rcplus
 readback
 readelf
+READYCLIENT
+readymail
+recp
 recved
 redtemp
 redthreshold
@@ -1090,17 +1095,18 @@ staipassigned
 startshp
 starttemp
 starttemperature
+starttls
 startvalue
 statusbyte
 stickbreaker
 stoffregen
 stoptime
 storagetemp
-störung
 stringarray
 stringize
 studt
 studt's
+störung
 suback
 substract
 summermode
@@ -1126,6 +1132,7 @@ switchtimeww
 sycle
 syspress
 sysrettemp
+systembackup
 systemstatus
 tado
 tapactivated
@@ -1182,7 +1189,6 @@ trocken
 truefalse
 tsens
 tseslint
-türk
 turnoffdiff
 turnondiff
 txen
@@ -1200,6 +1206,7 @@ typehh
 typeids
 typel
 typesafe
+türk
 uart
 ubauptime
 ucrt
@@ -1252,7 +1259,6 @@ vorheizreg
 vpcooling
 vrey
 vybm
-wärmetauscher
 washingmachine
 watchid
 wayon
@@ -1301,6 +1307,7 @@ wwtemp
 wwtemplow
 wwvacations
 wwwhenmodeoff
+wärmetauscher
 xclnt
 xiao
 xrtu
@@ -1311,7 +1318,6 @@ yerger's
 yubox
 zadig
 zivanovic
-živanović
 zlcn
 zolder
 zqhi
@@ -1321,11 +1327,6 @@ zuluftebläse
 zuluftgebläse
 zulufttemp
 zyxwvutsrqponmlkjihgfedcba
-ACAO
-ACAH
-ACAC
-coolingtype
-starttls
-recp
-READYCLIENT
-readymail
+öffnen
+česky
+živanović

@@ -1449,23 +1449,59 @@ bool System::check_restore() {
             JsonObject input = jsonDocument.as<JsonObject>();
             // see what type of file it is, either settings or customization. anything else is ignored
             std::string settings_type = input["type"];
+
+            // system backup, which is a consolidated json object with all the settings files
+            if (settings_type == "systembackup") {
+                JsonArray sections = input["systembackup"].to<JsonArray>();
+                for (JsonObject section : sections) {
+                    std::string section_type = section["type"];
+                    if (section_type == "settings") {
+                        reboot_required = saveSettings(NETWORK_SETTINGS_FILE, section);
+                        reboot_required |= saveSettings(AP_SETTINGS_FILE, section);
+                        reboot_required |= saveSettings(MQTT_SETTINGS_FILE, section);
+                        reboot_required |= saveSettings(NTP_SETTINGS_FILE, section);
+                        reboot_required |= saveSettings(SECURITY_SETTINGS_FILE, section);
+                        reboot_required |= saveSettings(EMSESP_SETTINGS_FILE, section);
+                    }
+                    if (section_type == "schedule") {
+                        reboot_required = saveSettings(EMSESP_SCHEDULER_FILE, section);
+                    }
+                    if (section_type == "customizations") {
+                        reboot_required = saveSettings(EMSESP_CUSTOMIZATION_FILE, section);
+                    }
+                    if (section_type == "entities") {
+                        reboot_required = saveSettings(EMSESP_CUSTOMENTITY_FILE, section);
+                    }
+                    if (section_type == "modules") {
+                        reboot_required = saveSettings(EMSESP_MODULES_FILE, section);
+                    }
+                    if (section_type == "customSupport") {
+                        // it's a custom support file - save it to /config
+                        new_file.close();
+                        if (LittleFS.rename(TEMP_FILENAME_PATH, EMSESP_CUSTOMSUPPORT_FILE)) {
+                            LOG_INFO("Custom support file stored");
+                            return false; // no need to reboot
+                        } else {
+                            LOG_ERROR("Failed to save custom support file");
+                        }
+                    }
+                }
+            }
+
+            // It's a settings file. Parse each section separately. If it's system related it will require a reboot
             if (settings_type == "settings") {
-                // It's a settings file. Parse each section separately. If it's system related it will require a reboot
-                reboot_required = saveSettings(NETWORK_SETTINGS_FILE, "Network", input);
-                reboot_required |= saveSettings(AP_SETTINGS_FILE, "AP", input);
-                reboot_required |= saveSettings(MQTT_SETTINGS_FILE, "MQTT", input);
-                reboot_required |= saveSettings(NTP_SETTINGS_FILE, "NTP", input);
-                reboot_required |= saveSettings(SECURITY_SETTINGS_FILE, "Security", input);
-                reboot_required |= saveSettings(EMSESP_SETTINGS_FILE, "Settings", input);
+                reboot_required = saveSettings(NETWORK_SETTINGS_FILE, input);
+                reboot_required |= saveSettings(AP_SETTINGS_FILE, input);
+                reboot_required |= saveSettings(MQTT_SETTINGS_FILE, input);
+                reboot_required |= saveSettings(NTP_SETTINGS_FILE, input);
+                reboot_required |= saveSettings(SECURITY_SETTINGS_FILE, input);
+                reboot_required |= saveSettings(EMSESP_SETTINGS_FILE, input);
             } else if (settings_type == "customizations") {
-                // it's a customization file, just replace it and there's no need to reboot
-                saveSettings(EMSESP_CUSTOMIZATION_FILE, "Customizations", input);
+                saveSettings(EMSESP_CUSTOMIZATION_FILE, input);
             } else if (settings_type == "schedule") {
-                // it's a schedule file, just replace it and there's no need to reboot
-                saveSettings(EMSESP_SCHEDULER_FILE, "Schedule", input);
+                saveSettings(EMSESP_SCHEDULER_FILE, input);
             } else if (settings_type == "entities") {
-                // it's a entity file, just replace it and there's no need to reboot
-                saveSettings(EMSESP_CUSTOMENTITY_FILE, "Entities", input);
+                saveSettings(EMSESP_CUSTOMENTITY_FILE, input);
             } else if (settings_type == "customSupport") {
                 // it's a custom support file - save it to /config
                 new_file.close();
@@ -1623,39 +1659,122 @@ bool System::check_upgrade() {
     return false; // no reboot required
 }
 
-// convert settings file into json object
-void System::extractSettings(const char * filename, const char * section, JsonObject output) {
+// map each config filename to its human-readable section key
+static const std::pair<const char *, const char *> SECTION_MAP[] = {
+    {NETWORK_SETTINGS_FILE, "Network"},
+    {AP_SETTINGS_FILE, "AP"},
+    {MQTT_SETTINGS_FILE, "MQTT"},
+    {NTP_SETTINGS_FILE, "NTP"},
+    {SECURITY_SETTINGS_FILE, "Security"},
+    {EMSESP_SETTINGS_FILE, "Settings"},
+    {EMSESP_SCHEDULER_FILE, "Schedule"},
+    {EMSESP_CUSTOMIZATION_FILE, "Customizations"},
+    {EMSESP_CUSTOMENTITY_FILE, "Entities"},
+    {EMSESP_MODULES_FILE, "Modules"},
+};
+
+// convert a single config file into a section of the output json object
+void System::exportSettings(const std::string & type, const char * filename, JsonObject output) {
+    if (type != "settings") {
+        output["type"] = type; // add the type to the output, not for settings as it's already added because its grouped
+    }
+
 #ifndef EMSESP_STANDALONE
+    const char * section = nullptr;
+    for (const auto & [f, label] : SECTION_MAP) {
+        if (strcmp(f, filename) == 0) {
+            section = label;
+            break;
+        }
+    }
+
+    if (!section) {
+        return;
+    }
+
     File settingsFile = LittleFS.open(filename);
     if (settingsFile) {
         JsonDocument         jsonDocument;
         DeserializationError error = deserializeJson(jsonDocument, settingsFile);
         if (error == DeserializationError::Ok && jsonDocument.is<JsonObject>()) {
-            JsonObject jsonObject = jsonDocument.as<JsonObject>();
-            JsonObject node       = output[section].to<JsonObject>();
-            for (JsonPair kvp : jsonObject) {
+            JsonObject node = output[section].to<JsonObject>();
+            for (JsonPair kvp : jsonDocument.as<JsonObject>()) {
                 node[kvp.key()] = kvp.value();
             }
         }
+        settingsFile.close();
     }
-    settingsFile.close();
 #endif
 }
 
-// save settings file using input from a json object
-bool System::saveSettings(const char * filename, const char * section, JsonObject input) {
+// full backup of all settings files
+void System::exportSystemBackup(JsonObject output) {
+    output["type"] = "systembackup"; // add the type to the output
+
+    // create an array of objects for each file
+    JsonArray nodes = output["systembackup"].to<JsonArray>();
+
+    // start with settings by grouping them together
+    JsonObject node = nodes.add<JsonObject>();
+    node["type"]    = "settings"; // add type once for this group
+    exportSettings("settings", NETWORK_SETTINGS_FILE, node);
+    exportSettings("settings", AP_SETTINGS_FILE, node);
+    exportSettings("settings", MQTT_SETTINGS_FILE, node);
+    exportSettings("settings", NTP_SETTINGS_FILE, node);
+    exportSettings("settings", SECURITY_SETTINGS_FILE, node);
+    exportSettings("settings", EMSESP_SETTINGS_FILE, node);
+
+    node = nodes.add<JsonObject>();
+    exportSettings("schedule", EMSESP_SCHEDULER_FILE, node);
+    node = nodes.add<JsonObject>();
+    exportSettings("customizations", EMSESP_CUSTOMIZATION_FILE, node);
+    node = nodes.add<JsonObject>();
+    exportSettings("entities", EMSESP_CUSTOMENTITY_FILE, node);
+    node = nodes.add<JsonObject>();
+    exportSettings("modules", EMSESP_MODULES_FILE, node);
 #ifndef EMSESP_STANDALONE
+    // special case for custom support
+    File file = LittleFS.open(EMSESP_CUSTOMSUPPORT_FILE, "r");
+    if (file) {
+        JsonDocument         jsonDocument;
+        DeserializationError error = deserializeJson(jsonDocument, file);
+        if (error == DeserializationError::Ok && jsonDocument.is<JsonObject>()) {
+            JsonObject node = nodes.add<JsonObject>();
+            node["type"]    = "customSupport";
+            node["data"]    = jsonDocument.as<JsonObject>();
+        }
+        file.close();
+    }
+#endif
+}
+
+// save a file using input from a json object, called from upload/restore
+bool System::saveSettings(const char * filename, JsonObject input) {
+#ifndef EMSESP_STANDALONE
+    const char * section = nullptr;
+    for (const auto & [f, label] : SECTION_MAP) {
+        if (strcmp(f, filename) == 0) {
+            section = label;
+            break;
+        }
+    }
+
+    if (!section) {
+        return false;
+    }
+
     JsonObject section_json = input[section];
     if (section_json) {
         File section_file = LittleFS.open(filename, "w");
         if (section_file) {
-            LOG_INFO("Applying new uploaded %s data", section);
+            LOG_DEBUG("Applying new uploaded %s data", section);
             serializeJson(section_json, section_file);
             section_file.close();
             return true; // reboot required
         }
     }
 #endif
+
     return false; // not found
 }
 

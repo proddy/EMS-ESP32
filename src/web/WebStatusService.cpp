@@ -310,26 +310,24 @@ void WebStatusService::allvalues(JsonObject output) {
 // action = export
 // returns data for a specific feature/settings as a json object
 bool WebStatusService::exportData(JsonObject root, std::string & type) {
-    root["type"] = type;
-
     if (type == "settings") {
-        JsonObject node = root["System"].to<JsonObject>();
-        node["version"] = EMSESP_APP_VERSION;
-        System::extractSettings(NETWORK_SETTINGS_FILE, "Network", root);
-        System::extractSettings(AP_SETTINGS_FILE, "AP", root);
-        System::extractSettings(MQTT_SETTINGS_FILE, "MQTT", root);
-        System::extractSettings(NTP_SETTINGS_FILE, "NTP", root);
-        System::extractSettings(SECURITY_SETTINGS_FILE, "Security", root);
-        System::extractSettings(EMSESP_SETTINGS_FILE, "Settings", root);
+        root["type"] = type; // add settings as a group
+        System::exportSettings(type, NETWORK_SETTINGS_FILE, root);
+        System::exportSettings(type, AP_SETTINGS_FILE, root);
+        System::exportSettings(type, MQTT_SETTINGS_FILE, root);
+        System::exportSettings(type, NTP_SETTINGS_FILE, root);
+        System::exportSettings(type, SECURITY_SETTINGS_FILE, root);
+        System::exportSettings(type, EMSESP_SETTINGS_FILE, root);
     } else if (type == "schedule") {
-        System::extractSettings(EMSESP_SCHEDULER_FILE, "Schedule", root);
+        System::exportSettings(type, EMSESP_SCHEDULER_FILE, root);
     } else if (type == "customizations") {
-        System::extractSettings(EMSESP_CUSTOMIZATION_FILE, "Customizations", root);
+        System::exportSettings(type, EMSESP_CUSTOMIZATION_FILE, root);
     } else if (type == "entities") {
-        System::extractSettings(EMSESP_CUSTOMENTITY_FILE, "Entities", root);
+        System::exportSettings(type, EMSESP_CUSTOMENTITY_FILE, root);
     } else if (type == "allvalues") {
-        root.clear(); // don't need the "type" key added to the output
         allvalues(root);
+    } else if (type == "systembackup") {
+        System::exportSystemBackup(root);
     } else {
         return false; // error
     }

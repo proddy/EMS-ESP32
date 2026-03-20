@@ -20,7 +20,6 @@ import { useI18nContext } from 'i18n/i18n-react';
 import { saveFile } from 'utils';
 
 interface DownloadButton {
-  key: string;
   type: string;
   label: string | number;
   isGridButton: boolean;
@@ -66,31 +65,31 @@ const DownloadUpload = () => {
   const downloadButtons: DownloadButton[] = useMemo(
     () => [
       {
-        key: 'settings',
         type: 'settings',
         label: LL.SETTINGS_OF(LL.APPLICATION()),
         isGridButton: true
       },
       {
-        key: 'customizations',
         type: 'customizations',
         label: LL.CUSTOMIZATIONS(),
         isGridButton: true
       },
       {
-        key: 'entities',
         type: 'entities',
         label: LL.CUSTOM_ENTITIES(0),
         isGridButton: true
       },
       {
-        key: 'schedule',
         type: 'schedule',
         label: LL.SCHEDULE(0),
         isGridButton: true
       },
       {
-        key: 'allvalues',
+        type: 'systembackup',
+        label: LL.DOWNLOAD_SYSTEM_BACKUP(),
+        isGridButton: true
+      },
+      {
         type: 'allvalues',
         label: LL.ALLVALUES(),
         isGridButton: false
@@ -133,7 +132,7 @@ const DownloadUpload = () => {
 
       <Grid container spacing={2}>
         {gridButtons.map((button) => (
-          <Grid key={button.key}>
+          <Grid key={button.type}>
             <Button
               startIcon={<DownloadIcon />}
               variant="outlined"

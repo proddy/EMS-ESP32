@@ -149,8 +149,9 @@ class System {
     void    systemStatus(uint8_t status_code);
     uint8_t systemStatus();
 
-    static void extractSettings(const char * filename, const char * section, JsonObject output);
-    static bool saveSettings(const char * filename, const char * section, JsonObject input);
+    static void exportSettings(const std::string & type, const char * filename, JsonObject output);
+    static void exportSystemBackup(JsonObject output);
+    static bool saveSettings(const char * filename, JsonObject input);
 
     static bool                 add_gpio(uint8_t pin, const char * source_name);
     static std::vector<uint8_t> available_gpios();
