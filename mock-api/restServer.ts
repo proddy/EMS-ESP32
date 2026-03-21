@@ -302,10 +302,10 @@ function updateMask(entity: any, de: any, dd: any) {
       const old_custom_name = dd.nodes[dd_objIndex].cn;
       console.log(
         'comparing names, old (' +
-          old_custom_name +
-          ') with new (' +
-          new_custom_name +
-          ')'
+        old_custom_name +
+        ') with new (' +
+        new_custom_name +
+        ')'
       );
       if (old_custom_name !== new_custom_name) {
         changed = true;
@@ -363,6 +363,8 @@ function export_data(type: string) {
       return emsesp_modules;
     case 'allvalues':
       return emsesp_allvalues;
+    case 'systembackup':
+      return emsesp_systembackup;
     default:
       return status(404);
   }
@@ -401,15 +403,15 @@ function check_upgrade(version: string) {
 
     console.log(
       'Upgrade this version (' +
-        THIS_VERSION +
-        ') to dev (' +
-        dev_version +
-        ') is ' +
-        (DEV_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO') +
-        ' and to stable (' +
-        stable_version +
-        ') is ' +
-        (STABLE_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO')
+      THIS_VERSION +
+      ') to dev (' +
+      dev_version +
+      ') is ' +
+      (DEV_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO') +
+      ' and to stable (' +
+      stable_version +
+      ') is ' +
+      (STABLE_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO')
     );
     data = {
       emsesp_version: THIS_VERSION,
@@ -731,6 +733,8 @@ const emsesp_info = {
     }
   ]
 };
+
+const emsesp_systembackup = {};
 
 const emsesp_allvalues = {
   'Boiler Nefit Trendline HRC30 (DeviceID:0x08, ProductID:123, Version:06.01)': {
