@@ -3208,6 +3208,10 @@ void System::set_valid_system_gpios() {
     } else {
         valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 20, 24, 28-31");
     }
+#elif CONFIG_IDF_TARGET_ESP32C6
+    // https://docs.espressif.com/projects/esp-idf/en/v5.5.3/esp32c6/api-reference/peripherals/gpio.html
+    // 24-30 used for flash, 12-13 USB, 16-17 uart0
+    valid_system_gpios_ = string_range_to_vector("0-30", "12-13, 16-17, 24-30");
 #elif defined(EMSESP_STANDALONE)
     valid_system_gpios_ = string_range_to_vector("0-39");
 #endif

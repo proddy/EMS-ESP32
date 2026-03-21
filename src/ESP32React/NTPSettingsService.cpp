@@ -52,7 +52,12 @@ void NTPSettingsService::configureTime(AsyncWebServerRequest * request, JsonVari
             tm.tm_isdst         = -1; // not set by strptime, tells mktime to determine daylightsaving
             time_t         time = mktime(&tm);
             struct timeval now  = {.tv_sec = time, .tv_usec = {}};
+#if CONFIG_IDF_TARGET_ESP32C3
+           // settimeofday and adjtime() does not work, unknown how to set time
+            emsesp::EMSESP::logger().warning("manual clock setting not possible");
+#else
             settimeofday(&now, nullptr);
+#endif
             AsyncWebServerResponse * response = request->beginResponse(200);
             request->send(response);
             return;

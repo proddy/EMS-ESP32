@@ -1759,8 +1759,12 @@ void Thermostat::process_RCTime(std::shared_ptr<const Telegram> telegram) {
             ttime         = mktime(tm_); // thermostat time
         }
         struct timeval newnow = {.tv_sec = ttime, .tv_usec = 0};
+#if CONFIG_IDF_TARGET_ESP32C3
+        // unknown how to set time on C3
+#else
         settimeofday(&newnow, nullptr);
         LOG_INFO("ems-esp time set from thermostat");
+#endif
     }
 #endif
 }
