@@ -61,22 +61,27 @@ void UploadFileService::handleUpload(AsyncWebServerRequest * request, const Stri
         if (_is_firmware) {
             // Check firmware header, 0xE9 magic offset 0 indicates esp bin, chip offset 12: esp32:0, S2:2, C3:5
 #if CONFIG_IDF_TARGET_ESP32 // ESP32/PICO-D4
-            if (len > 12 && (data[0] != 0xE9 || data[12] != 0)) {
+            if (len > 12 && (data[0] != ESP_IMAGE_HEADER_MAGIC || data[12] != ESP_CHIP_ID_ESP32)) {
                 handleError(request, 503); // service unavailable
                 return;
             }
 #elif CONFIG_IDF_TARGET_ESP32S2
-            if (len > 12 && (data[0] != 0xE9 || data[12] != 2)) {
+            if (len > 12 && (data[0] != ESP_IMAGE_HEADER_MAGIC || data[12] != ESP_CHIP_ID_ESP32S2)) {
                 handleError(request, 503); // service unavailable
                 return;
             }
 #elif CONFIG_IDF_TARGET_ESP32C3
-            if (len > 12 && (data[0] != 0xE9 || data[12] != 5)) {
+            if (len > 12 && (data[0] != ESP_IMAGE_HEADER_MAGIC || data[12] != ESP_CHIP_ID_ESP32C3)) {
                 handleError(request, 503); // service unavailable
                 return;
             }
 #elif CONFIG_IDF_TARGET_ESP32S3
-            if (len > 12 && (data[0] != 0xE9 || data[12] != 9)) {
+            if (len > 12 && (data[0] != ESP_IMAGE_HEADER_MAGIC || data[12] != ESP_CHIP_ID_ESP32S3)) {
+                handleError(request, 503); // service unavailable
+                return;
+            }
+#elif CONFIG_IDF_TARGET_ESP32C6
+            if (len > 12 && (data[0] != ESP_IMAGE_HEADER_MAGIC || data[12] != ESP_CHIP_ID_ESP32C6)) {
                 handleError(request, 503); // service unavailable
                 return;
             }

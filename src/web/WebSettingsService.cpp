@@ -506,6 +506,8 @@ void WebSettings::set_board_profile(WebSettings & settings) {
         settings.board_profile = "S2MINI";
 #elif CONFIG_IDF_TARGET_ESP32S3
         settings.board_profile = "S32S3"; // BBQKees Gateway S3
+#elif CONFIG_IDF_TARGET_ESP32C6
+        settings.board_profile = "CUSTOM";
 #endif
         // apply the new board profile setting
         System::load_board_profile(data, settings.board_profile.c_str());

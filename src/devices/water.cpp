@@ -29,16 +29,21 @@ Water::Water(uint8_t device_type, uint8_t device_id, uint8_t product_id, const c
     dhw_       = device_id - EMSdevice::EMS_DEVICE_ID_DHW1;
     int8_t tag = DeviceValueTAG::TAG_DHW1 + dhw_;
     if (flags == EMSdevice::EMS_DEVICE_FLAG_SM100) { // device_id 0x2A,  DHW3
+
         // telegram handlers
-        register_telegram_type(0x07D6, "SM100wwTemperature", false, MAKE_PF_CB(process_SM100wwTemperature));
-        register_telegram_type(0x07AA, "SM100wwStatus", false, MAKE_PF_CB(process_SM100wwStatus));
-        register_telegram_type(0x07AB, "SM100wwCommand", false, MAKE_PF_CB(process_SM100wwCommand));
-        register_telegram_type(0x07AC, "SM100wwParam1", false, MAKE_PF_CB(process_SM100wwParam2));
-        register_telegram_type(0x07A5, "SM100wwCirc", true, MAKE_PF_CB(process_SM100wwCirc));
-        register_telegram_type(0x07A6, "SM100wwParam", true, MAKE_PF_CB(process_SM100wwParam));
-        register_telegram_type(0x07AE, "SM100wwKeepWarm", true, MAKE_PF_CB(process_SM100wwKeepWarm));
-        register_telegram_type(0x07E0, "SM100wwStatus2", true, MAKE_PF_CB(process_SM100wwStatus2));
-        register_telegram_type(0x07AD, "SM100ValveStatus", false, MAKE_PF_CB(process_SM100ValveStatus));
+        register_telegram_type(0x07D6 + dhw_ - 2, "SM100wwTemperature", false, MAKE_PF_CB(process_SM100wwTemperature));
+        register_telegram_type(0x07E0 + dhw_ - 2, "SM100wwStatus2", true, MAKE_PF_CB(process_SM100wwStatus2));
+        register_telegram_type(0x07A6, "SM100wwParam", true, MAKE_PF_CB(process_SM100wwParam)); // same telegram for all circuits
+        if (tag == DeviceValueTAG::TAG_DHW3) {
+            register_telegram_type(0x07AA, "SM100wwStatus", false, MAKE_PF_CB(process_SM100wwStatus));
+            register_telegram_type(0x07AC, "SM100wwParam1", false, MAKE_PF_CB(process_SM100wwParam2));
+            register_telegram_type(0x07A5, "SM100wwCirc", true, MAKE_PF_CB(process_SM100wwCirc));
+            register_telegram_type(0x07AE, "SM100wwKeepWarm", true, MAKE_PF_CB(process_SM100wwKeepWarm));
+            register_telegram_type(0x07AD, "SM100ValveStatus", false, MAKE_PF_CB(process_SM100ValveStatus));
+            register_telegram_type(0x07AB, "SM100wwCommand", false, MAKE_PF_CB(process_SM100wwCommand)); // command from thermostat
+        } else if (tag == DeviceValueTAG::TAG_DHW4) {
+            register_telegram_type(0x07C3, "SM100wwCommand", false, MAKE_PF_CB(process_SM100wwCommand)); // command from dhw3->dhw4
+        }
         // device values...
         register_device_value(tag, &wwTemp_, DeviceValueType::UINT16, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(wwTemp), DeviceValueUOM::DEGREES);
         register_device_value(tag, &wwTemp2_, DeviceValueType::UINT16, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(wwStorageTemp1), DeviceValueUOM::DEGREES);
@@ -100,7 +105,7 @@ Water::Water(uint8_t device_type, uint8_t device_id, uint8_t product_id, const c
     }
 }
 
-// SM100wwTemperature - 0x07D6
+// SM100wwTemperature - 0x07D6, dhw4: 0x07D7
 // Solar Module(0x2A) -> (0x00), (0x7D6), data: 01 C1 00 00 02 5B 01 AF 01 AD 80 00 01 90
 void Water::process_SM100wwTemperature(std::shared_ptr<const Telegram> telegram) {
     has_update(telegram, wwTemp_, 0);     // is *10 TS17
@@ -156,12 +161,10 @@ void Water::process_SM100ValveStatus(std::shared_ptr<const Telegram> telegram) {
     has_update(telegram, wwRetValve_, 1);
 }
 
-/*
-// SM100ww? - 0x7E0, some kind of status
+// SM100ww? - 0x7E0, some kind of status, dhw4: 0x7E1
 // data: 00 00 46 00 00 01 06 0E 06 0E 00 00 00 00 00 03 03 03 03
 // publishes single values offset 1/2(16bit), offset 5, offset 6, offset 7, offset 8, offset 9,
 // status2 = 03:"no heat", 06:"heat request", 08:"disinfecting", 09:"hold"
-*/
 void Water::process_SM100wwStatus2(std::shared_ptr<const Telegram> telegram) {
     // has_update(telegram, wwFlow_, 7); // single byte, wrong see #1387
     has_update(telegram, wwStatus2_, 8);
@@ -170,6 +173,7 @@ void Water::process_SM100wwStatus2(std::shared_ptr<const Telegram> telegram) {
 
 // SM100wwCommand - 0x07AB
 // Thermostat(0x10) -> Solar Module(0x2A), (0x7AB), data: 01 00 01
+// or dhw3 module (0x2A) -> dhw4 module(0x2B), (0x7C3), data: 01 01 00
 void Water::process_SM100wwCommand(std::shared_ptr<const Telegram> telegram) {
     // not implemented yet
 }

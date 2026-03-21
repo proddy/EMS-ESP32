@@ -2,6 +2,7 @@
   "build": {
     "core": "esp32",
     "extra_flags": [
+      "-DNO_TLS_SUPPORT",
       "-DARDUINO_XIAO_ESP32C6",
       "-DARDUINO_USB_MODE=1",
       "-DARDUINO_USB_CDC_ON_BOOT=1"

@@ -13,6 +13,7 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - boiler pumpkick [#2965](https://github.com/emsesp/EMS-ESP32/discussions/2965)
 - heatpump reset [#2933](https://github.com/emsesp/EMS-ESP32/issues/2933)
 - e-mail notification using ReadyMail Client
+- 2.nd freshwater module (dhw4) [#2991](https://github.com/emsesp/EMS-ESP32/issues/2991)
 
 ## Fixed
 

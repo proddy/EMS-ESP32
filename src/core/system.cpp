@@ -34,25 +34,6 @@
 #include "../test/test.h"
 #endif
 
-#ifndef EMSESP_STANDALONE
-#ifdef ESP_IDF_VERSION_MAJOR // IDF 4+
-#if CONFIG_IDF_TARGET_ESP32  // ESP32/PICO-D4
-#include "../esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "../esp32s2/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "../esp32c3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "../esp32s3/rom/rtc.h"
-#else
-#error Target CONFIG_IDF_TARGET is not supported
-#endif
-#else // ESP32 Before IDF 4.0
-#include "../rom/rtc.h"
-#endif
-#include <esp_mac.h>
-#endif
-
 #ifndef NO_TLS_SUPPORT
 #define ENABLE_SMTP
 #define USE_ESP_SSLCLIENT
@@ -63,6 +44,7 @@
 #endif
 
 #ifndef EMSESP_STANDALONE
+#include <esp_mac.h>
 #include "esp_efuse.h"
 #endif
 
@@ -2761,37 +2743,38 @@ bool System::command_restart(const char * value, const int8_t id) {
 
 std::string System::reset_reason(uint8_t cpu) const {
 #ifndef EMSESP_STANDALONE
-    switch (rtc_get_reset_reason(cpu)) {
-    case 1:
+    switch (esp_rom_get_reset_reason(cpu)) {
+    case RESET_REASON_CHIP_POWER_ON:
         return ("Power on reset");
-    // case 2 :reset pin not on esp32
-    case 3:
+    case 2: // not on esp32
+        return ("reset pin");
+    case RESET_REASON_CORE_SW:
         return ("Software reset");
     case 4: // not on S2, C3
         return ("Legacy watch dog reset");
-    case 5:
+    case RESET_REASON_CORE_DEEP_SLEEP:
         return ("Deep sleep reset");
-    case 6: // not on S2, C3
-        return ("Reset by SDIO");
-    case 7:
+    case 6: // RESET_REASON_CORE_SDIO: // not on S2, S3, C3
+         return ("Reset by SDIO");
+    case RESET_REASON_CORE_MWDT0:
         return ("Timer group0 watch dog reset");
-    case 8:
+    case RESET_REASON_CORE_MWDT1:
         return ("Timer group1 watch dog reset");
-    case 9:
+    case RESET_REASON_CORE_RTC_WDT:
         return ("RTC watch dog reset");
     case 10:
         return ("Intrusion reset CPU");
-    case 11:
+    case RESET_REASON_CPU0_MWDT0:
         return ("Timer group reset CPU");
-    case 12:
+    case RESET_REASON_CPU0_SW:
         return ("Software reset CPU");
-    case 13:
+    case RESET_REASON_CPU0_RTC_WDT:
         return ("RTC watch dog reset: CPU");
-    case 14: // not on S2, C3
+    case 14: // RESET_REASON_CPU1_CPU0: // not on S2, S3, C3
         return ("APP CPU reset by PRO CPU");
-    case 15:
+    case RESET_REASON_SYS_BROWN_OUT:
         return ("Brownout reset");
-    case 16:
+    case RESET_REASON_SYS_RTC_WDT:
         return ("RTC watch dog reset: CPU+RTC");
     default:
         break;
@@ -3225,6 +3208,10 @@ void System::set_valid_system_gpios() {
     } else {
         valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 20, 24, 28-31");
     }
+#elif CONFIG_IDF_TARGET_ESP32C6
+    // https://docs.espressif.com/projects/esp-idf/en/v5.5.3/esp32c6/api-reference/peripherals/gpio.html
+    // 24-30 used for flash, 12-13 USB, 16-17 uart0
+    valid_system_gpios_ = string_range_to_vector("0-30", "12-13, 16-17, 24-30");
 #elif defined(EMSESP_STANDALONE)
     valid_system_gpios_ = string_range_to_vector("0-39");
 #endif
