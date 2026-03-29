@@ -1600,12 +1600,12 @@ void EMSESP::incoming_telegram(uint8_t * data, const uint8_t length) {
             wait_km_     = true;
             connect_time = uuid::get_uptime_sec();
         }
+
         // this could also be by coincidence, so we should add a counter to the EMSbus class to check if the poll_id is the same as the EMS_BUS_ID for a certain number of times
         if (poll_id == EMSbus::ems_bus_id()) {
             EMSbus::poll_matched(uuid::get_uptime());
-        } else {
-            EMSbus::poll_match_reset();
         }
+
         if (wait_km_) {
             if (poll_id != 0x48 && (uuid::get_uptime_sec() - connect_time) < EMS_WAIT_KM_TIMEOUT) {
                 return;

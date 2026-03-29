@@ -215,15 +215,12 @@ class EMSbus {
 
     // sets the flag for EMS bus connected
     static void last_bus_activity(uint32_t timestamp) {
+        // record the first time we connected to the BUS, as this will be our uptime
         if (!last_bus_activity_) {
             bus_uptime_start_ = timestamp;
         }
         last_bus_activity_ = timestamp;
         bus_connected_     = true;
-    }
-
-    static void poll_match_reset() {
-        poll_match_count_ = 0;
     }
 
     // return bus uptime in seconds
