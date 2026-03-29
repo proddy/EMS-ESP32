@@ -262,20 +262,6 @@ const Dashboard = memo(() => {
 
     return (
       <>
-        {!data.connected && (
-          <MessageBox level="error" message={LL.EMS_BUS_WARNING() + '.'}>
-            &nbsp;(
-            <Link
-              target="_blank"
-              to="https://docs.emsesp.org/Troubleshooting#ems-bus-is-not-connecting"
-              style={{ color: 'white' }}
-            >
-              {LL.ONLINE_HELP()}
-            </Link>
-            )
-          </MessageBox>
-        )}
-
         {data.connected && data.nodes.length > 0 && !hasFavEntities && (
           <MessageBox mb={2} level="warning">
             <Typography>
