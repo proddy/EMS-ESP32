@@ -1600,9 +1600,11 @@ void EMSESP::incoming_telegram(uint8_t * data, const uint8_t length) {
             wait_km_     = true;
             connect_time = uuid::get_uptime_sec();
         }
+        // this could also be by coincidence, so we should add a counter to the EMSbus class to check if the poll_id is the same as the EMS_BUS_ID for a certain number of times
         if (poll_id == EMSbus::ems_bus_id()) {
-            // TODO this could also be by coincidence, so we should add a counter to the EMSbus class to check if the poll_id is the same as the EMS_BUS_ID for a certain number of times
-            EMSbus::last_bus_activity(uuid::get_uptime()); // set the flag indication the EMS bus is active
+            EMSbus::poll_matched(uuid::get_uptime());
+        } else {
+            EMSbus::poll_match_reset();
         }
         if (wait_km_) {
             if (poll_id != 0x48 && (uuid::get_uptime_sec() - connect_time) < EMS_WAIT_KM_TIMEOUT) {
@@ -1709,6 +1711,11 @@ void EMSESP::start() {
     bool factory_settings = false;
 #endif
 
+    // start NVS storage
+    if (!nvs_.begin("ems-esp", false, "nvs1")) { // try bigger nvs partition on 16M flash first
+        nvs_.begin("ems-esp", false, "nvs");     // fallback to small nvs
+    }
+
     // set valid GPIOs list based on ESP32 chip/platform type
     system_.set_valid_system_gpios();
 
@@ -1757,7 +1764,7 @@ void EMSESP::start() {
     LOG_INFO("Last system reset reason Core0: %s, Core1: %s", system_.reset_reason(0).c_str(), system_.reset_reason(1).c_str());
 #endif
 
-// see if we're restoring a settings file
+    // see if we're restoring a settings file
 #ifndef EMSESP_STANDALONE
     if (system_.check_restore()) {
         LOG_WARNING("EMS-ESP will restart to apply new settings. Please wait.");
@@ -1765,11 +1772,7 @@ void EMSESP::start() {
     };
 #endif
 
-    if (!nvs_.begin("ems-esp", false, "nvs1")) { // try bigger nvs partition on 16M flash first
-        nvs_.begin("ems-esp", false, "nvs");     // fallback to small nvs
-    }
-
-    LOG_DEBUG("Fuse device information: %s", system_.getBBQKeesGatewayDetails().isEmpty() ? "not set" : system_.getBBQKeesGatewayDetails().c_str());
+    LOG_DEBUG("eFuse device information: %s", system_.getBBQKeesGatewayDetails().isEmpty() ? "not set" : system_.getBBQKeesGatewayDetails().c_str());
 
     webSettingsService.begin(); // load EMS-ESP Application settings
 
@@ -1848,7 +1851,7 @@ void EMSESP::loop() {
         return; // LED flashing is active, skip the rest of the loop
     }
 
-    esp32React.loop();    // web services like network, AP, MQTT
+    esp32React.loop();    // core services: Network, AP, MQTT and NTP
     webLogService.loop(); // log in Web UI
 
     // run the loop, unless we're in the middle of an OTA upload

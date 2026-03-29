@@ -159,10 +159,11 @@ class EMSbus {
   public:
     static uuid::log::Logger logger_;
 
-    static constexpr uint8_t EMS_MASK_UNSET     = 0xFF; // EMS bus type (budrus/junkers) hasn't been detected yet
-    static constexpr uint8_t EMS_MASK_HT3       = 0x80; // EMS bus type Junkers/HT3
-    static constexpr uint8_t EMS_MASK_BUDERUS   = 0xFF; // EMS bus type Buderus
-    static constexpr uint8_t EMS_TX_ERROR_LIMIT = 10;   // % limit of failed Tx read/write attempts before showing a warning
+    static constexpr uint8_t EMS_MASK_UNSET       = 0xFF; // EMS bus type (budrus/junkers) hasn't been detected yet
+    static constexpr uint8_t EMS_MASK_HT3         = 0x80; // EMS bus type Junkers/HT3
+    static constexpr uint8_t EMS_MASK_BUDERUS     = 0xFF; // EMS bus type Buderus
+    static constexpr uint8_t EMS_TX_ERROR_LIMIT   = 10;   // % limit of failed Tx read/write attempts before showing a warning
+    static constexpr uint8_t EMS_POLL_MATCH_LIMIT = 3;    // consecutive poll matches needed before declaring bus connected
 
     static bool is_ht3() {
         return (ems_mask_ == EMS_MASK_HT3);
@@ -204,15 +205,25 @@ class EMSbus {
 #endif
     }
 
+    // called on each poll match; requires EMS_POLL_MATCH_LIMIT consecutive matches before declaring bus connected
+    static void poll_matched(uint32_t timestamp) {
+        if (++poll_match_count_ < EMS_POLL_MATCH_LIMIT) {
+            return;
+        }
+        last_bus_activity(timestamp);
+    }
+
     // sets the flag for EMS bus connected
     static void last_bus_activity(uint32_t timestamp) {
-        // record the first time we connected to the BUS, as this will be our uptime
         if (!last_bus_activity_) {
             bus_uptime_start_ = timestamp;
         }
-
         last_bus_activity_ = timestamp;
         bus_connected_     = true;
+    }
+
+    static void poll_match_reset() {
+        poll_match_count_ = 0;
     }
 
     // return bus uptime in seconds
@@ -238,6 +249,7 @@ class EMSbus {
     static uint32_t last_bus_activity_; // timestamp of last time a valid Rx came in
     static uint32_t bus_uptime_start_;  // timestamp of first time we connected to the bus
     static bool     bus_connected_;     // start assuming the bus hasn't been connected
+    static uint8_t  poll_match_count_;  // consecutive poll ID matches seen so far
     static uint8_t  ems_mask_;          // unset=0xFF, buderus=0x00, junkers/ht3=0x80
     static uint8_t  ems_bus_id_;        // the bus id, which configurable and stored in settings
     static uint8_t  tx_mode_;           // local copy of the tx mode
