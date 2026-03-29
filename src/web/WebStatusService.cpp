@@ -365,7 +365,7 @@ bool WebStatusService::getCustomSupport(JsonObject root) {
 #endif
 
 #if defined(EMSESP_DEBUG)
-    EMSESP::logger().debug("Showing custom support page");
+    EMSESP::logger().debug("Sending custom support page");
 #endif
 
     root.set(doc.as<JsonObject>()); // add to web response root object
