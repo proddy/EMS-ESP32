@@ -56,6 +56,7 @@ void IRAM_ATTR AnalogSensor::freqIrq2() {
 #endif
 
 void AnalogSensor::start(const bool factory_settings) {
+    // add hardcode sensors for BBQKees gateway boards
     if (factory_settings && EMSESP::system_.board_profile() == "E32V2_2") {
         EMSESP::webCustomizationService.update([&](WebCustomization & settings) {
             auto newSensor = AnalogCustomization();
