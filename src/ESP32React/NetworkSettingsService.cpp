@@ -34,8 +34,8 @@ void NetworkSettingsService::begin() {
     WiFi.persistent(false);
     WiFi.setAutoReconnect(false);
 
-    WiFi.mode(WIFI_MODE_MAX);
-    WiFi.mode(WIFI_MODE_NULL);
+    WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_OFF);
 
     // scan settings give connect issues since arduino 2.0.14 and arduino 3.x.x with some wifi systems
     // WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN); // default is FAST_SCAN
@@ -108,7 +108,7 @@ void NetworkSettingsService::loop() {
         break;
     case CONNECT_WAIT_ETH_IP4:
         if (ETH.hasIP()) {
-            emsesp::EMSESP::logger().info("Eth IPv4: %s", ETH.localIP().toString().c_str());
+            emsesp::EMSESP::logger().info("ETH IPv4: %s", ETH.localIP().toString().c_str());
             connect = CONNECT_WAIT_ETH_IP6;
         }
         if (!ETH.connected()) {
