@@ -54,10 +54,10 @@ void WebCustomization::read(WebCustomization & customizations, JsonObject root) 
     JsonArray sensorsJson = root["ts"].to<JsonArray>();
     for (const SensorCustomization & sensor : customizations.sensorCustomizations) {
         JsonObject sensorJson   = sensorsJson.add<JsonObject>();
-        sensorJson["id"]        = (const char *)sensor.id;   // ID of chip
+        sensorJson["id"]        = (const char *)sensor.id;   // ID of dallas temperature sensor chip
         sensorJson["name"]      = (const char *)sensor.name; // n
         sensorJson["offset"]    = sensor.offset;             // o
-        sensorJson["is_system"] = sensor.is_system;          // s for core_voltage, supply_voltage
+        sensorJson["is_system"] = sensor.is_system;          // s for gateway_temperature
     }
 
     // Analog Sensor customization
