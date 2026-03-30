@@ -2582,7 +2582,7 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
 #endif
 
     // Modbus Status
-    node            = output["Modbus"].to<JsonObject>();
+    node            = output["modbus"].to<JsonObject>();
     node["enabled"] = EMSESP::system_.modbus_enabled_;
     if (EMSESP::system_.modbus_enabled_) {
         node["maxClients"] = EMSESP::system_.modbus_max_clients_;
@@ -2598,7 +2598,8 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
         node["temperatureSensorFails"] = EMSESP::temperaturesensor_.fails();
     }
 
-    node            = output["Analog"].to<JsonObject>();
+    // Analog Status
+    node            = output["analog"].to<JsonObject>();
     node["enabled"] = EMSESP::analog_enabled();
     if (EMSESP::analog_enabled()) {
         node["analogSensors"]     = EMSESP::analogsensor_.count_entities();
@@ -2982,7 +2983,7 @@ bool System::ntp_connected() {
     return ntp_connected_;
 }
 
-// see if its a BBQKees Gateway by checking the efuse values
+// see if its a BBQKees Gateway by checking the eFuse values
 String System::getBBQKeesGatewayDetails(uint8_t detail) {
 #ifndef EMSESP_STANDALONE
     union {
