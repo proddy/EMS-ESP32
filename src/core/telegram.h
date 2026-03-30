@@ -205,14 +205,6 @@ class EMSbus {
 #endif
     }
 
-    // called on each poll match; requires EMS_POLL_MATCH_LIMIT consecutive matches before declaring bus connected
-    static void poll_matched(uint32_t timestamp) {
-        if (++poll_match_count_ < EMS_POLL_MATCH_LIMIT) {
-            return;
-        }
-        last_bus_activity(timestamp);
-    }
-
     // sets the flag for EMS bus connected
     static void last_bus_activity(uint32_t timestamp) {
         // record the first time we connected to the BUS, as this will be our uptime
@@ -246,7 +238,6 @@ class EMSbus {
     static uint32_t last_bus_activity_; // timestamp of last time a valid Rx came in
     static uint32_t bus_uptime_start_;  // timestamp of first time we connected to the bus
     static bool     bus_connected_;     // start assuming the bus hasn't been connected
-    static uint8_t  poll_match_count_;  // consecutive poll ID matches seen so far
     static uint8_t  ems_mask_;          // unset=0xFF, buderus=0x00, junkers/ht3=0x80
     static uint8_t  ems_bus_id_;        // the bus id, which configurable and stored in settings
     static uint8_t  tx_mode_;           // local copy of the tx mode
