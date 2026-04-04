@@ -363,39 +363,139 @@ bool WebSchedulerService::command(const char * name, const std::string & command
             commands(s, false);
             url.replace(q + 1, l, s);
         }
-        if (http.begin(url.c_str())) {
-            // add any given headers
-            for (JsonPair p : doc["header"].as<JsonObject>()) {
-                http.addHeader(p.key().c_str(), p.value().as<String>().c_str());
+        std::string value  = doc["value"] | data;   // extract value if its in the command, or take the data
+        std::string method = doc["method"] | "GET"; // default GET
+        commands(value, false);
+        if (value.length()) {
+            method = "POST";
+        }
+        std::string result;
+        int         httpResult = 0;
+#ifndef NO_TLS_SUPPORT
+        if (Helpers::toLower(url.c_str()).starts_with("https://")) {
+            WiFiClient *    basic_client = new WiFiClient;
+            ESP_SSLClient * ssl_client   = new ESP_SSLClient;
+            ssl_client->setInsecure(); // with root CA we should set here: ssl_client->setCACert(rootCACert);
+            ssl_client->setBufferSizes(1024, 1024);
+            ssl_client->setSessionTimeout(120); // Set the timeout in seconds (>=120 seconds)
+            url.replace(0, 8, "");
+            std::string host  = url;
+            auto        index = url.find_first_of('/');
+            if (index != std::string::npos) {
+                host = url.substr(0, index);
+                url.replace(0, index, "");
             }
-            std::string value  = doc["value"] | data.c_str(); // extract value if its in the command, or take the data
-            std::string method = doc["method"] | "GET";       // default GET
-
-            commands(value, false);
-            // if there is data, force a POST
-            int httpResult = 0;
-            if (value.length() || method == "post") { // we have all lowercase
-                if (value.find_first_of('{') != std::string::npos) {
-                    http.addHeader(asyncsrv::T_Content_Type, asyncsrv::T_application_json, false); // auto-set to JSON
+            // EMSESP::logger().debug("Host: %s, URL: %s", host.c_str(), url.c_str());
+            ssl_client->setClient(basic_client);
+            if (ssl_client->connect(host.c_str(), 443)) {
+                if (value.length() || Helpers::toLower(method) == "post") {
+                    // EMSESP::logger().debug("POST %s HTTP/1.1", url.c_str());
+                    ssl_client->print("POST ");
+                    ssl_client->print(url.c_str());
+                    ssl_client->println(" HTTP/1.1");
+                    ssl_client->print("Host: ");
+                    ssl_client->println(host.c_str());
+                    bool content_set = false;
+                    for (JsonPair p : doc["header"].as<JsonObject>()) {
+                        content_set |= (emsesp::Helpers::toLower(p.key().c_str()) == "content-type");
+                        ssl_client->print(p.key().c_str());
+                        ssl_client->print(": ");
+                        ssl_client->println(p.value().as<std::string>().c_str());
+                    }
+                    if (!content_set) {
+                        ssl_client->print("Content-Type: ");
+                        if (value.starts_with('{')) {
+                            ssl_client->println(asyncsrv::T_application_json);
+                        } else {
+                            ssl_client->println(asyncsrv::T_text_plain);
+                        }
+                    }
+                    ssl_client->print("Content-Length: ");
+                    ssl_client->println(value.length());
+                    ssl_client->println("Connection: close");
+                    ssl_client->print("\r\n");
+                    ssl_client->print(value.c_str());
+                } else {
+                    // EMSESP::logger().debug("GET %s HTTP/1.1", url.c_str());
+                    ssl_client->print("GET ");
+                    ssl_client->print(url.c_str());
+                    ssl_client->println(" HTTP/1.1");
+                    ssl_client->print("Host: ");
+                    ssl_client->println(host.c_str());
+                    for (JsonPair p : doc["header"].as<JsonObject>()) {
+                        ssl_client->print(p.key().c_str());
+                        ssl_client->print(": ");
+                        ssl_client->println(p.value().as<std::string>().c_str());
+                    }
+                    ssl_client->println("Connection: close");
                 }
-                httpResult = http.POST(value.c_str());
+                auto ms = millis();
+                while (ssl_client->connected() && !ssl_client->available() && millis() - ms < 3000) {
+                    delay(0);
+                }
+                while (ssl_client->available()) {
+                    result += (char)ssl_client->read();
+                }
+                ssl_client->stop();
+                // EMSESP::logger().debug("HTTPS response: %s", result.c_str());
+                index = result.find_first_of(' ');
+                if (index != std::string::npos) {
+                    httpResult = stoi(result.substr(index + 1, 3));
+                    // EMSESP::logger().debug("HTTPS code: %i", httpResult);
+                }
+                index = result.find("\r\n\r\n");
+                if (index != std::string::npos) {
+                    result.replace(0, index + 4, "");
+                    // EMSESP::logger().debug("HTTPS response: %s", result.c_str());
+                }
             } else {
-                httpResult = http.GET(); // normal GET
+                EMSESP::logger().warning("HTTPS connection failed");
             }
-
-            http.end();
-
+            delete ssl_client;
+            delete basic_client;
             // check HTTP return code
             if (httpResult != 200) {
-                char error[100];
-                snprintf(error, sizeof(error), "Schedule %s: URL command failed with http code %d", name, httpResult);
-                EMSESP::logger().warning(error);
+                EMSESP::logger().warning("Schedule '%s': URL command failed with http code %d", name, httpResult);
+                return false;
+            }
+            return true;
+        } else
+#endif
+        if (Helpers::toLower(url.c_str()).starts_with("http://")) {
+            HTTPClient * http = new HTTPClient;
+            if (http->begin(url.c_str())) {
+                bool content_set = false;
+                for (JsonPair p : doc["header"].as<JsonObject>()) {
+                    http->addHeader(p.key().c_str(), p.value().as<std::string>().c_str());
+                    content_set |= p.key() == "content-type";
+                }
+                // if there is data, force a POST
+                if (Helpers::toLower(method) == "post") { // we have all lowercase
+                    if (!content_set) {
+                        // http->addHeader("Content-Type", value.find_first_of('{') != std::string::npos ? "application/json" : "text/plain");
+                        if (value.starts_with('{')) {
+                            http->addHeader(asyncsrv::T_Content_Type, asyncsrv::T_application_json, false); // auto-set to JSON
+                        } else {
+                            http->addHeader(asyncsrv::T_Content_Type, asyncsrv::T_text_plain, false); // auto-set to JSON
+                        }
+                    }
+                    httpResult = http->POST(value.c_str());
+                } else {
+                    httpResult = http->GET(); // normal GET
+                    if (httpResult > 0) {
+                        result = http->getString().c_str();
+                    }
+                }
+            }
+            http->end();
+            delete http;
+            // check HTTP return code
+            if (httpResult != 200) {
+                EMSESP::logger().warning("Schedule '%s': URL command failed with http code %d", name, httpResult);
                 return false;
             }
 #if defined(EMSESP_DEBUG)
-            char msg[100];
-            snprintf(msg, sizeof(msg), "Schedule %s: URL command successful with http code %d", name, httpResult);
-            EMSESP::logger().debug(msg);
+            EMSESP::logger().debug("Schedule %s: URL '%s' command successful with http code %d", name, url.c_str(), httpResult);
 #endif
             return true;
         }

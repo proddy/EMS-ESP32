@@ -140,14 +140,10 @@ bool System::command_sendmail(const char * value, const int8_t id) {
     bool success = false;
 
 #ifndef NO_TLS_SUPPORT
-    WiFiClient *    basic_client;
-    ESP_SSLClient * ssl_client;
-    ReadyClient *   r_client; // rClient(ssl_client);
-    SMTPClient *    smtp;     // smtp(rClient);
-    basic_client = new WiFiClient;
-    ssl_client   = new ESP_SSLClient;
-    r_client     = new ReadyClient(*ssl_client);
-    smtp         = new SMTPClient(*r_client);
+    WiFiClient *    basic_client = new WiFiClient;
+    ESP_SSLClient * ssl_client   = new ESP_SSLClient;
+    ReadyClient *   r_client     = new ReadyClient(*ssl_client);
+    SMTPClient *    smtp         = new SMTPClient(*r_client);
 
     ssl_client->setClient(basic_client);
     ssl_client->setInsecure();
@@ -196,7 +192,16 @@ bool System::command_sendmail(const char * value, const int8_t id) {
     // msg.headers.addCustom("Importance", PRIORITY);
     // msg.headers.addCustom("X-MSMail-Priority", PRIORITY);
     // msg.headers.addCustom("X-Priority", PRIORITY_NUM);
-
+    EMSESP::webSchedulerService.computed_value.clear();
+    EMSESP::webSchedulerService.raw_value = body.c_str();
+    for (uint16_t wait = 0; wait < 2000 && !EMSESP::webSchedulerService.raw_value.empty(); wait++) {
+        delay(1);
+    }
+    if (!EMSESP::webSchedulerService.computed_value.empty()) {
+        body = EMSESP::webSchedulerService.computed_value.c_str();
+        EMSESP::webSchedulerService.computed_value.clear();
+        EMSESP::webSchedulerService.computed_value.shrink_to_fit(); // free allocated memory
+    }
     msg.text.body(body);
 
     // bodyText.replace("\r\n", "<br>\r\n");
@@ -351,7 +356,8 @@ bool System::command_message(const char * value, const int8_t id, JsonObject out
     LOG_INFO("Message: %s", EMSESP::webSchedulerService.computed_value.c_str());  // send to log
     Mqtt::queue_publish(F_(message), EMSESP::webSchedulerService.computed_value); // send to MQTT if enabled
     output["api_data"] = EMSESP::webSchedulerService.computed_value;              // send to API
-
+    EMSESP::webSchedulerService.computed_value.clear();
+    EMSESP::webSchedulerService.computed_value.shrink_to_fit();
     return true;
 }
 
@@ -1780,7 +1786,7 @@ void System::exportSystemBackup(JsonObject output) {
     output["version"] = EMSESP_APP_VERSION; // add the version to the output
 
 #ifndef EMSESP_STANDALONE
-        // add date/time if NTP enabled and active
+    // add date/time if NTP enabled and active
     if ((esp_sntp_enabled()) && (EMSESP::system_.ntp_connected())) {
         time_t now = time(nullptr);
         if (now > 1500000000L) {

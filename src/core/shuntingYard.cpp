@@ -380,11 +380,15 @@ std::string commands(std::string & expr, bool quotes) {
             if (return_code != CommandRet::OK && return_code != CommandRet::NO_VALUE) {
                 return expr = "";
             }
-
-            std::string data = output["api_data"] | "";
-            if (!isnum(data) && quotes) {
-                data.insert(data.begin(), '"');
-                data.insert(data.end(), '"');
+            std::string data;
+            if (output["api_data"].is<std::string>()) {
+                data = output["api_data"].as<std::string>();
+                if (!isnum(data) && quotes) {
+                    data.insert(data.begin(), '"');
+                    data.insert(data.end(), '"');
+                }
+            } else {
+                serializeJson(output, data);
             }
             expr.replace(f, l, data);
             e        = f + data.length();
@@ -700,7 +704,6 @@ std::string compute(const std::string & expr) {
         std::string  cmd = expr_new.substr(f, e - f).c_str();
         JsonDocument doc;
         if (DeserializationError::Ok == deserializeJson(doc, cmd)) {
-            HTTPClient  http;
             std::string url, header_s, value_s, method_s, key_s, keys_s;
             // search keys lower case
             for (JsonPair p : doc.as<JsonObject>()) {
@@ -720,56 +723,149 @@ std::string compute(const std::string & expr) {
                     keys_s = p.key().c_str();
                 }
             }
-            if (http.begin(url.c_str())) {
-                int httpResult = 0;
-                for (JsonPair p : doc[header_s].as<JsonObject>()) {
-                    http.addHeader(p.key().c_str(), p.value().as<std::string>().c_str());
+            bool        content_set = false;
+            std::string value       = doc[value_s] | "";
+            std::string method      = doc[method_s] | "GET";
+            if (value.length()) {
+                method = "POST";
+            }
+            std::string result;
+            int         httpResult = 0;
+#ifndef NO_TLS_SUPPORT
+            if (Helpers::toLower(url.c_str()).starts_with("https://")) {
+                WiFiClient *    basic_client = new WiFiClient;
+                ESP_SSLClient * ssl_client   = new ESP_SSLClient;
+                ssl_client->setInsecure(); // with root CA we should set here: ssl_client->setCACert(rootCACert);
+                ssl_client->setBufferSizes(1024, 1024);
+                ssl_client->setSessionTimeout(120); // Set the timeout in seconds (>=120 seconds)
+                url.replace(0, 8, "");
+                std::string host  = url;
+                auto        index = url.find_first_of('/');
+                if (index != std::string::npos) {
+                    host = url.substr(0, index);
+                    url.replace(0, index, "");
                 }
-                std::string value  = doc[value_s] | "";
-                std::string method = doc[method_s] | "get";
-
-                // if there is data, force a POST
-                if (value.length() || Helpers::toLower(method) == "post") {
-                    if (value.find_first_of('{') != std::string::npos) {
-                        http.addHeader(asyncsrv::T_Content_Type, asyncsrv::T_application_json, false); // auto-set to JSON
-                    }
-                    httpResult = http.POST(value.c_str());
-                } else {
-                    httpResult = http.GET(); // normal GET
+                /*
+                index = host.find_first_of('@');
+                std::string auth;
+                if (index != std::string::npos) {
+                    auth = base64::encode(host.substr(0, index));
+                    host.replace(0, index, "");
                 }
-
-                if (httpResult > 0) {
-                    std::string  result = http.getString().c_str();
-                    std::string  key    = doc[key_s] | "";
-                    JsonDocument keys_doc; // JsonDocument to hold "keys" after doc is parsed with HTTP body
-                    if (doc[keys_s].is<JsonArray>()) {
-                        keys_doc.set(doc[keys_s].as<JsonArray>());
-                    }
-                    JsonArray keys = keys_doc.as<JsonArray>();
-
-                    if (key.length() || !keys.isNull()) {
-                        doc.clear();
-                        if (DeserializationError::Ok == deserializeJson(doc, result)) {
-                            if (key.length()) {
-                                result = doc[key.c_str()].as<std::string>();
+                */
+                ssl_client->setClient(basic_client);
+                if (ssl_client->connect(host.c_str(), 443)) {
+                    if (value.length() || Helpers::toLower(method) == "post") {
+                        ssl_client->print("POST ");
+                        ssl_client->print(url.c_str());
+                        ssl_client->println(" HTTP/1.1");
+                        ssl_client->print("Host: ");
+                        ssl_client->println(host.c_str());
+                        for (JsonPair p : doc[header_s].as<JsonObject>()) {
+                            content_set |= (emsesp::Helpers::toLower(p.key().c_str()) == "content-type");
+                            ssl_client->print(p.key().c_str());
+                            ssl_client->print(": ");
+                            ssl_client->println(p.value().as<std::string>().c_str());
+                        }
+                        if (!content_set) {
+                            ssl_client->print("Content-Type: ");
+                            if (value.starts_with('{')) {
+                                ssl_client->println(asyncsrv::T_application_json);
                             } else {
-                                JsonVariant json = doc.as<JsonVariant>();
-                                for (JsonVariant keys_key : keys) {
-                                    if (keys_key.is<std::string>() && json.is<JsonObject>()) {
-                                        json = json[keys_key.as<std::string>()].as<JsonVariant>();
-                                    } else if (keys_key.is<int>() && json.is<JsonArray>()) {
-                                        json = json[keys_key.as<int>()].as<JsonVariant>();
-                                    } else {
-                                        break; // type mismatch
-                                    }
-                                }
-                                result = json.as<std::string>();
+                                ssl_client->println(asyncsrv::T_text_plain);
                             }
                         }
+                        ssl_client->print("Content-Length: ");
+                        ssl_client->println(value.length());
+                        ssl_client->println("Connection: close");
+                        ssl_client->print("\r\n");
+                        ssl_client->print(value.c_str());
+                    } else {
+                        ssl_client->print("GET ");
+                        ssl_client->print(url.c_str());
+                        ssl_client->println(" HTTP/1.1");
+                        ssl_client->print("Host: ");
+                        ssl_client->println(host.c_str());
+                        for (JsonPair p : doc[header_s].as<JsonObject>()) {
+                            ssl_client->print(p.key().c_str());
+                            ssl_client->print(": ");
+                            ssl_client->println(p.value().as<std::string>().c_str());
+                        }
+                        ssl_client->println("Connection: close");
                     }
-                    expr_new.replace(f, e - f, result.c_str());
+                    auto ms = millis();
+                    while (!ssl_client->available() && millis() - ms < 3000) {
+                        delay(0);
+                    }
+                    while (ssl_client->available()) {
+                        result += (char)ssl_client->read();
+                    }
+                    ssl_client->stop();
+                    index = result.find_first_of(' ');
+                    if (index != std::string::npos) {
+                        httpResult = stoi(result.substr(index + 1, 3));
+                    }
+                    index = result.find("\r\n\r\n");
+                    if (index != std::string::npos) {
+                        result.replace(0, index + 4, "");
+                    }
                 }
-                http.end();
+                delete ssl_client;
+                delete basic_client;
+            } else
+#endif
+                if (Helpers::toLower(url.c_str()).starts_with("http://")) {
+                HTTPClient * http = new HTTPClient;
+                if (http->begin(url.c_str())) {
+                    for (JsonPair p : doc[header_s].as<JsonObject>()) {
+                        http->addHeader(p.key().c_str(), p.value().as<std::string>().c_str());
+                        content_set |= (emsesp::Helpers::toLower(p.key().c_str()) == "content-type");
+                    }
+                    if (value.length() || Helpers::toLower(method) == "post") {
+                        if (!content_set) {
+                            http->addHeader("Content-Type", value.starts_with('{') ? asyncsrv::T_application_json : asyncsrv::T_text_plain);
+                        }
+                        httpResult = http->POST(value.c_str());
+                    } else {
+                        httpResult = http->GET(); // normal GET
+                    }
+                    if (httpResult > 0) {
+                        result = http->getString().c_str();
+                    }
+                }
+                http->end();
+                delete http;
+            }
+            if (httpResult == 200) {
+                std::string  key = doc[key_s] | "";
+                JsonDocument keys_doc; // JsonDocument to hold "keys" after doc is parsed with HTTP body
+                if (doc[keys_s].is<JsonArray>()) {
+                    keys_doc.set(doc[keys_s].as<JsonArray>());
+                }
+                JsonArray keys = keys_doc.as<JsonArray>();
+                if (key.length() || !keys.isNull()) {
+                    doc.clear();
+                    if (DeserializationError::Ok == deserializeJson(doc, result)) {
+                        if (key.length()) {
+                            result = doc[key.c_str()].as<std::string>();
+                        } else {
+                            JsonVariant json = doc.as<JsonVariant>();
+                            for (JsonVariant keys_key : keys) {
+                                if (keys_key.is<std::string>() && json.is<JsonObject>()) {
+                                    json = json[keys_key.as<std::string>()].as<JsonVariant>();
+                                } else if (keys_key.is<int>() && json.is<JsonArray>()) {
+                                    json = json[keys_key.as<int>()].as<JsonVariant>();
+                                } else {
+                                    break; // type mismatch
+                                }
+                            }
+                            result = json.as<std::string>();
+                        }
+                    }
+                }
+                expr_new.replace(f, e - f, result);
+            } else if (httpResult != 0) {
+                EMSESP::logger().warning("URL command failed with https code: %d, response: %s", httpResult, result.c_str());
             }
         }
         f = expr_new.find_first_of('{', e);
