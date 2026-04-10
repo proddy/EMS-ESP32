@@ -191,6 +191,12 @@ Solar::Solar(uint8_t device_type, uint8_t device_id, uint8_t product_id, const c
                               FL_(cylMiddleTemp),
                               DeviceValueUOM::DEGREES);
         register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
+                              &ts3_,
+                              DeviceValueType::INT16,
+                              DeviceValueNumOp::DV_NUMOP_DIV10,
+                              FL_(ts3),
+                              DeviceValueUOM::DEGREES);
+        register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
                               &retHeatAssist_,
                               DeviceValueType::INT16,
                               DeviceValueNumOp::DV_NUMOP_DIV10,
@@ -613,6 +619,7 @@ void Solar::process_SM100Monitor(std::shared_ptr<const Telegram> telegram) {
     has_update(telegram, collector2Temp_, 6);  // is *10 - TS7: Temperature sensor for collector array 2
     has_update(telegram, cylMiddleTemp_, 8);   // is *10 - TS14: cylinder middle temperature
     has_update(telegram, retHeatAssist_, 10);  // is *10 - TS15: return temperature heating assistance
+    has_update(telegram, ts3_, 14);            // is *10 - TS3: cylinder middle temperature, see discord
     has_update(telegram, ts8_, 22);            // is *10 - TS8: ?
     has_update(telegram, cylBottomTemp3_, 24); // is *10 - TS5: Temperature sensor cylinder 3, bottom
 }
