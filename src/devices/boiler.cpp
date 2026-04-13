@@ -83,7 +83,7 @@ Boiler::Boiler(uint8_t device_type, int8_t device_id, uint8_t product_id, const 
 
         register_telegram_type(0x492, "HpHeaterConfig", true, MAKE_PF_CB(process_HpHeaterConfig));
         register_telegram_type(0x488, "HPValve", true, MAKE_PF_CB(process_HpValve));
-        register_telegram_type(0x484, "HPSilentMode", true, MAKE_PF_CB(process_HpSilentMode));
+        register_telegram_type(0x484, "HPSilentMode", true, MAKE_PF_CB(process_HpSilentMode), 65);
         register_telegram_type(0x48B, "HPPumps", true, MAKE_PF_CB(process_HpPumps));
         register_telegram_type(0x491, "HPAdditionalHeater", true, MAKE_PF_CB(process_HpAdditionalHeater));
         register_telegram_type(0x499, "HPDhwSettings", true, MAKE_PF_CB(process_HpDhwSettings));

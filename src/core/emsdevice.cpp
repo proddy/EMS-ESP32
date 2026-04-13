@@ -368,7 +368,7 @@ void EMSdevice::fetch_values() {
 
     for (const auto & tf : telegram_functions_) {
         if (tf.fetch_) {
-            read_command(tf.telegram_type_id_);
+            read_command(tf.telegram_type_id_, 0, tf.length_);
         }
     }
 }
@@ -547,8 +547,8 @@ void EMSdevice::show_mqtt_handlers(uuid::console::Shell & shell) const {
 }
 
 // register a callback function for a specific telegram type
-void EMSdevice::register_telegram_type(const uint16_t telegram_type_id, const char * telegram_type_name, bool fetch, const process_function_p f) {
-    telegram_functions_.emplace_back(telegram_type_id, telegram_type_name, fetch, false, f);
+void EMSdevice::register_telegram_type(const uint16_t telegram_type_id, const char * telegram_type_name, bool fetch, const process_function_p f, uint8_t length) {
+    telegram_functions_.emplace_back(telegram_type_id, telegram_type_name, fetch, false, length, f);
 }
 
 // add to device value library, also know now as a "device entity"
