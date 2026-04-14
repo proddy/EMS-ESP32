@@ -502,9 +502,9 @@ void WebSettings::set_board_profile(WebSettings & settings) {
 #ifndef EMSESP_STANDALONE
     uint32_t psram_size = ESP.getPsramSize() / 1024; // in KB
     if (psram_size > 0) {
-        EMSESP::logger().info("Loaded board profile %s, PSRAM: %lu KB", settings.board_profile.c_str(), psram_size);
+        EMSESP::logger().info("Loaded board profile %s (PSRAM: %lu KB)", settings.board_profile.c_str(), psram_size);
     } else {
-        EMSESP::logger().info("Loaded board profile %s, PSRAM: not available", settings.board_profile.c_str());
+        EMSESP::logger().info("Loaded board profile %s (PSRAM: not available)", settings.board_profile.c_str());
     }
 #endif
 

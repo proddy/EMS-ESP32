@@ -6,6 +6,7 @@ import {
   useRef,
   useState
 } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'react-toastify';
 
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -85,10 +86,13 @@ const DragNdrop = ({ text, onFileSelected }: DragNdropProps) => {
     }
   )
     .onSuccess((event) => {
-      setUpgradeImportantMessageType(
-        (event.data as { upgradeImportantMessageType: number })
-          .upgradeImportantMessageType
-      );
+      const upgradeImportantMessageType_n = (
+        event.data as { upgradeImportantMessageType: number }
+      ).upgradeImportantMessageType;
+      setUpgradeImportantMessageType(upgradeImportantMessageType_n);
+      if (upgradeImportantMessageType_n === 0) {
+        onFileSelected(file);
+      }
     })
     .onError((error) => {
       toast.error(String(error.error?.message || 'An error occurred'));
@@ -211,6 +215,15 @@ const DragNdrop = ({ text, onFileSelected }: DragNdropProps) => {
                   LL.UPGRADE_IMPORTANT_MESSAGES_1()}
                 {upgradeImportantMessageType === 2 &&
                   LL.UPGRADE_IMPORTANT_MESSAGES_2()}
+                <Typography sx={{ mt: 2 }}>
+                  <Link
+                    target="_blank"
+                    to="https://docs.emsesp.org/FAQ#upgrading-the-firmware"
+                    style={{ color: 'lightblue' }}
+                  >
+                    {LL.ONLINE_HELP()}
+                  </Link>
+                </Typography>
               </DialogContent>
               <DialogActions>
                 <Button

@@ -188,7 +188,6 @@ const nl: Translation = {
   DOWNLOAD_SETTINGS_TEXT: 'Maak een back-up van uw configuratie en instellingen',
   DOWNLOAD_SETTINGS_TEXT2: 'Exporteer alle waarden',
   DOWNLOAD_SYSTEM_BACKUP: 'Systeem Backup',
-  WARNING_SYSTEM_BACKUP: 'Dit zal een backup maken van uw configuratie en instellingen. Alle wachtwoorden zullen leesbaar zijn in het backup bestand. Weet je zeker dat je wilt doorgaan?',
   UPLOAD_TEXT: 'Upload een nieuw firmwarebestand (.bin) of een back-upbestand (.json)',
   UPLOAD_DROP_TEXT: 'Sleep en firmware .bin bestand hierheen of klik hier',
   ERROR: 'Onverwachte fout, probeer opnieuw',
@@ -360,7 +359,12 @@ const nl: Translation = {
   NO_DATA: 'Geen data',
   USER_PROFILE: 'Gebruikersprofiel',
   STORED_VERSIONS: 'Opgeslagen versies',
-  ONLINE_HELP: 'online help'
+  ONLINE_HELP: 'online help',
+  UPGRADE_IMPORTANT_MESSAGES: 'Upgrade Belangrijke Berichten',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Deze upgrade vereist een fabrieksinstelling. Zorg ervoor dat u een back-up van uw configuratie en instellingen hebt gemaakt voordat u doorgaat en upload deze na de installatie van de nieuwe versie.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'U updatet naar een nieuwe grote versie. Zorg ervoor dat u de ChangeLog hebt gelezen voor alle brekende wijzigingen.',
+  WARNING_SYSTEM_BACKUP: 'Dit zal een back-up van uw volledige systeemconfiguratie en instellingen maken. Alle wachtwoorden zijn leesbaar in het back-upbestand. Wees voorzichtig bij delen! Wilt u doorgaan?'
+
 };
 
 export default nl;

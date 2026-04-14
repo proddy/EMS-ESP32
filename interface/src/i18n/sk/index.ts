@@ -188,7 +188,6 @@ const sk: Translation = {
   DOWNLOAD_SETTINGS_TEXT: 'Vytvorte zálohu svojej konfigurácie a nastavení',
   DOWNLOAD_SETTINGS_TEXT2: 'Exportovať všetky hodnoty',
   DOWNLOAD_SYSTEM_BACKUP: 'Systémová záloha',
-  WARNING_SYSTEM_BACKUP: 'Toto vytvorí zálohu vašich nastavení a konfigurácií. Všetky hesla budú v zálohovom súbore čitateľné. Naozaj chcete pokračovať?',
   UPLOAD_TEXT: 'Nahrajte nový súbor firmvéru (.bin) alebo súbor zálohy (.json)',
   UPLOAD_DROP_TEXT: 'Presuňte súbor .bin firmvéru alebo kliknite sem',
   ERROR: 'Neočakávaná chyba, prosím skúste to znova',
@@ -361,9 +360,10 @@ const sk: Translation = {
   USER_PROFILE: 'Profil používateľa',
   STORED_VERSIONS: 'Uložené verzie',
   ONLINE_HELP: 'online pomoc',
-  UPGRADE_IMPORTANT_MESSAGES: 'Upgrade Important Messages',
-  UPGRADE_IMPORTANT_MESSAGES_1: 'This upgrade requires a factory reset. Make sure you have made a backup of your configuration and settings, and upload after the new version is installed.',
-  UPGRADE_IMPORTANT_MESSAGES_2: 'You are upgrading to a new major version. Make sure you have read the ChangeLog for any breakijng changes.',
+  UPGRADE_IMPORTANT_MESSAGES: 'Aktualizovať dôležité správy',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Táto aktualizácia vyžaduje reštart základných nastavení. Uistite sa, že ste vytvorili zálohu svojich konfigurácií a nastavení pred pokračovaním a nahrajte ju po instalácii novej verzie.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Aktualizujete sa na novú hlavnú verziu. Uistite sa, že ste prečítali ChangeLog pre akékoľvek dôležité zmeny.',
+  WARNING_SYSTEM_BACKUP: 'Toto vytvorí zálohu všetkých vašich celých systémových konfigurácií a nastavení. Všetky hesla budú čitateľné v zálohovom súbore. Buďte opatrní pri zdieľaní! Chcete pokračovať?'
 
 };
 

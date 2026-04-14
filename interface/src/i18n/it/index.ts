@@ -188,7 +188,6 @@ const it: Translation = {
   DOWNLOAD_SETTINGS_TEXT: 'Create a backup of your configuration and settings',
   DOWNLOAD_SETTINGS_TEXT2: 'Esporta tutti i valori',
   DOWNLOAD_SYSTEM_BACKUP: 'Backup sistema',
-  WARNING_SYSTEM_BACKUP: 'Questo creerà un backup delle tue configurazioni e impostazioni. Tutte le password saranno leggibili nel file di backup. Vuoi continuare?',
   UPLOAD_TEXT: 'Upload a new firmware file (.bin) or a backup file (.json)',
   UPLOAD_DROP_TEXT: 'Drop a firmware .bin file or click here',
   ERROR: 'Errore Inaspettato, prego tenta ancora',
@@ -361,9 +360,10 @@ const it: Translation = {
   USER_PROFILE: 'Profilo utente',
   STORED_VERSIONS: 'Versioni memorizzate',
   ONLINE_HELP: 'aiuto online',
-  UPGRADE_IMPORTANT_MESSAGES: 'Upgrade Important Messages',
-  UPGRADE_IMPORTANT_MESSAGES_1: 'This upgrade requires a factory reset. Make sure you have made a backup of your configuration and settings, and upload after the new version is installed.',
-  UPGRADE_IMPORTANT_MESSAGES_2: 'You are upgrading to a new major version. Make sure you have read the ChangeLog for any breakijng changes.',
+  UPGRADE_IMPORTANT_MESSAGES: 'Aggiorna Messaggi Importanti',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Questa aggiornamento richiede un ripristino di fabbrica. Assicurati di aver creato un backup delle tue configurazioni e impostazioni prima di continuare e di caricarlo dopo l\'installazione della nuova versione.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Stai aggiornando a una nuova versione principale. Assicurati di aver letto il ChangeLog per qualsiasi cambiamento importante.',
+  WARNING_SYSTEM_BACKUP: 'Questo creerà un backup delle tue configurazioni e impostazioni complete. Tutte le password saranno leggibili nel file di backup. Sei sicuro di voler continuare?'
 
 };
 

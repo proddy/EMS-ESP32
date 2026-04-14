@@ -188,7 +188,6 @@ const tr: Translation = {
   DOWNLOAD_SETTINGS_TEXT: 'Yapılandırma ve ayarlarınızın yedekleme yapın',
   DOWNLOAD_SETTINGS_TEXT2: 'Tüm değerleri dışarı al',
   DOWNLOAD_SYSTEM_BACKUP: 'Sistem yedekleme',
-  WARNING_SYSTEM_BACKUP: 'Bu, yapılandırma ve ayarlarınızın bir yedeklemesi oluşturacaktır. Tüm şifreler yedekleme dosyasında okunabilir olacaktır. Devam etmek istediğinize emin misiniz?',
   UPLOAD_TEXT: 'Yeni bir firmware dosyası (.bin) veya yedek dosyası (.json) yükle',
   UPLOAD_DROP_TEXT: 'Bir firmware .bin dosyası veya buraya tıklayın',
   ERROR: 'Beklenemedik hata, lütfen tekrar deneyin.',
@@ -361,9 +360,10 @@ const tr: Translation = {
   USER_PROFILE: 'Kullanıcı Profili',
   STORED_VERSIONS: 'Kaydedilmiş Sürümler',
   ONLINE_HELP: 'online yardım',
-  UPGRADE_IMPORTANT_MESSAGES: 'Upgrade Important Messages',
-  UPGRADE_IMPORTANT_MESSAGES_1: 'This upgrade requires a factory reset. Make sure you have made a backup of your configuration and settings, and upload after the new version is installed.',
-  UPGRADE_IMPORTANT_MESSAGES_2: 'You are upgrading to a new major version. Make sure you have read the ChangeLog for any breakijng changes.',
+  UPGRADE_IMPORTANT_MESSAGES: 'Önemli Mesajları Güncelle',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Bu güncelleme továrnı ayarlarını gerektirir. Yapılandırmanızı ve ayarlarınızı önce yedekleyin ve ardından yeni sürüm yüklendikten sonra yükleyin.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Yeni bir büyük sürüme yükselteceksiniz. Değişiklikleri ChangeLogı okuduğunuzdan emin olun.',
+  WARNING_SYSTEM_BACKUP: 'Bu, sistem yapılandırmanızı ve ayarlarınızın bir yedeklemesi oluşturacaktır. Tüm şifreler yedekleme dosyasında okunabilir olacaktır. Paylaşırken dikkatli olun! Devam etmek istediğinize emin misiniz?'
 
 };
 

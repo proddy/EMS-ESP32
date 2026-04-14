@@ -188,7 +188,6 @@ const de: Translation = {
   DOWNLOAD_SETTINGS_TEXT: 'Erstellen Sie eine Sicherung Ihrer Konfigurationen und Einstellungen',
   DOWNLOAD_SETTINGS_TEXT2: 'Exportiere alle Werte',
   DOWNLOAD_SYSTEM_BACKUP: 'System Sicherung',
-  WARNING_SYSTEM_BACKUP: 'Dies wird eine Sicherung Ihrer Konfigurationen und Einstellungen erstellen. Alle Passwörter werden im Sicherungsdatei lesbar. Möchten Sie fortfahren?',
   UPLOAD_TEXT: 'Laden Sie eine neue Firmware-Datei (.bin) oder eine Sicherungsdatei (.json) hoch',
   UPLOAD_DROP_TEXT: 'Legen Sie eine Firmware-Datei (.bin) ab oder klicken Sie hier',
   ERROR: 'Unerwarteter Fehler, bitte versuchen Sie es erneut.',
@@ -361,9 +360,10 @@ const de: Translation = {
   USER_PROFILE: 'Benutzerprofil',
   STORED_VERSIONS: 'Gespeicherte Versionen',
   ONLINE_HELP: 'Online-Hilfe',
-  UPGRADE_IMPORTANT_MESSAGES: 'Upgrade Important Messages',
-  UPGRADE_IMPORTANT_MESSAGES_1: 'This upgrade requires a factory reset. Make sure you have made a backup of your configuration and settings, and upload after the new version is installed.',
-  UPGRADE_IMPORTANT_MESSAGES_2: 'You are upgrading to a new major version. Make sure you have read the ChangeLog for any breakijng changes.',
+  UPGRADE_IMPORTANT_MESSAGES: 'Wichtige Nachrichten aktualisieren',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Diese Aktualisierung erfordert eine Werkseinstellung. Stellen Sie sicher, dass Sie eine Sicherung Ihrer Konfiguration und Einstellungen vor dem Fortfahren erstellt haben und diese nach der Installation der neuen Version hochladen.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Sie aktualisieren auf eine neue Hauptversion. Stellen Sie sicher, dass Sie den ChangeLog für alle wichtigen Änderungen gelesen haben.',
+  WARNING_SYSTEM_BACKUP: 'Dies wird eine Sicherung Ihrer vollständigen Systemkonfiguration und -einstellungen erstellen. Alle Passwörter werden im Sicherungsdatei lesbar sein. Seien Sie vorsichtig beim Teilen! Möchten Sie fortfahren?'
 
 };
 

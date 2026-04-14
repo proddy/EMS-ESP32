@@ -188,7 +188,6 @@ const fr: Translation = {
   DOWNLOAD_SETTINGS_TEXT: 'Créer une sauvegarde de vos paramètres et configurations',
   DOWNLOAD_SETTINGS_TEXT2: 'Exporter toutes les valeurs',
   DOWNLOAD_SYSTEM_BACKUP: 'Sauvegarde système',
-  WARNING_SYSTEM_BACKUP: 'Cela créera une sauvegarde de vos paramètres et configurations. Tous les mots de passe seront lisibles dans le fichier de sauvegarde. Voulez-vous continuer ?',
   UPLOAD_TEXT: 'Télécharger un nouveau fichier firmware (.bin) ou une sauvegarde (.json)',
   UPLOAD_DROP_TEXT: 'Drop a firmware .bin file or click here',
   ERROR: 'Erreur inattendue, veuillez réessayer',
@@ -361,9 +360,10 @@ const fr: Translation = {
   USER_PROFILE: 'Profil utilisateur',
   STORED_VERSIONS: 'Versions stockées',
   ONLINE_HELP: 'aide en ligne',
-  UPGRADE_IMPORTANT_MESSAGES: 'Upgrade Important Messages',
-  UPGRADE_IMPORTANT_MESSAGES_1: 'This upgrade requires a factory reset. Make sure you have made a backup of your configuration and settings, and upload after the new version is installed.',
-  UPGRADE_IMPORTANT_MESSAGES_2: 'You are upgrading to a new major version. Make sure you have read the ChangeLog for any breakijng changes.',
+  UPGRADE_IMPORTANT_MESSAGES: 'Mettre à jour les messages importants',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Cette mise à jour nécessite une réinitialisation de fabrique. Assurez-vous d\'avoir créé une sauvegarde de vos configurations et paramètres avant de continuer et de la charger après l\'installation de la nouvelle version.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Vous mettez à jour vers une nouvelle version majeure. Assurez-vous de lire le ChangeLog pour tout changement important.',
+  WARNING_SYSTEM_BACKUP: 'Cela créera une sauvegarde de votre configuration et paramètres complets. Tous les mots de passe seront lisibles dans le fichier de sauvegarde. Soyez prudent avec le partage ! Voulez-vous continuer ?'
 
 };
 

@@ -188,7 +188,6 @@ const sv: Translation = {
   DOWNLOAD_SETTINGS_TEXT: 'Skapa en säkerhetskopia av din konfiguration och inställningar',
   DOWNLOAD_SETTINGS_TEXT2: 'Exportera alla värden',
   DOWNLOAD_SYSTEM_BACKUP: 'System säkerhetskopia',
-  WARNING_SYSTEM_BACKUP: 'Detta kommer att skapa en säkerhetskopia av dina inställningar och konfiguration. Alla lösenord kommer att vara läsbara i säkerhetskopian. Är du säker på att du vill fortsätta?',
   UPLOAD_TEXT: 'Ladda upp en ny firmwarefil (.bin) eller en säkerhetskopiafil (.json)',
   UPLOAD_DROP_TEXT: 'Droppa en firmware .bin fil eller klicka här',
   ERROR: 'Okänt fel, var god försök igen',
@@ -361,9 +360,10 @@ const sv: Translation = {
   USER_PROFILE: 'Användarprofil',
   STORED_VERSIONS: 'Lagrad versioner',
   ONLINE_HELP: 'online hjälp',
-  UPGRADE_IMPORTANT_MESSAGES: 'Upgrade Important Messages',
-  UPGRADE_IMPORTANT_MESSAGES_1: 'This upgrade requires a factory reset. Make sure you have made a backup of your configuration and settings, and upload after the new version is installed.',
-  UPGRADE_IMPORTANT_MESSAGES_2: 'You are upgrading to a new major version. Make sure you have read the ChangeLog for any breakijng changes.',
+  UPGRADE_IMPORTANT_MESSAGES: 'Uppdatera viktiga meddelanden',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Denna uppdatering kräver en fabriksåterställning. Se till att du har gjort en säkerhetskopia av din konfiguration och inställningar innan du fortsätter och ladda upp denna efter att den nya versionen är installerad.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Du uppdaterar till en ny huvudversion. Se till att du har läst ChangeLog för eventuella brkande ändringar.',
+  WARNING_SYSTEM_BACKUP: 'Detta kommer att skapa en säkerhetskopia av din fullständiga systemkonfiguration och inställningar. Alla lösenord kommer att vara läsbara i säkerhetskopien. Var försiktig med att dela! Vill du fortsätta?'
 
 };
 

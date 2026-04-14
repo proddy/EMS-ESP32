@@ -274,6 +274,7 @@ const InstallDialog = memo(
     fetchDevVersion,
     latestVersion,
     latestDevVersion,
+    upgradeImportantMessageType,
     downloadOnly,
     platform,
     LL,
@@ -284,6 +285,7 @@ const InstallDialog = memo(
     fetchDevVersion: boolean;
     latestVersion?: VersionInfo;
     latestDevVersion?: VersionInfo;
+    upgradeImportantMessageType: number;
     downloadOnly: boolean;
     platform: string;
     LL: TranslationFunctions;
@@ -312,6 +314,18 @@ const InstallDialog = memo(
               downloadOnly ? LL.DOWNLOAD(1) : LL.INSTALL(),
               fetchDevVersion ? latestDevVersion?.name : latestVersion?.name
             )}
+          </Typography>
+
+          {upgradeImportantMessageType === 1 && LL.UPGRADE_IMPORTANT_MESSAGES_1()}
+          {upgradeImportantMessageType === 2 && LL.UPGRADE_IMPORTANT_MESSAGES_2()}
+          <Typography sx={{ mt: 2 }}>
+            <Link
+              target="_blank"
+              to="https://docs.emsesp.org/FAQ#upgrading-the-firmware"
+              style={{ color: 'lightblue' }}
+            >
+              {LL.ONLINE_HELP()}
+            </Link>
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -469,6 +483,26 @@ const Version = () => {
     immediate: false
   });
 
+  const [upgradeImportantMessageType, setUpgradeImportantMessageType] =
+    useState<number>(0);
+
+  const { send: checkUpgradeImportantMessages } = useRequest(
+    (version: string) =>
+      callAction({ action: 'upgradeImportantMessages', param: version }),
+    {
+      immediate: false
+    }
+  )
+    .onSuccess((event) => {
+      const upgradeImportantMessageType_n = (
+        event.data as { upgradeImportantMessageType: number }
+      ).upgradeImportantMessageType;
+      setUpgradeImportantMessageType(upgradeImportantMessageType_n);
+    })
+    .onError((error) => {
+      toast.error(String(error.error?.message || 'An error occurred'));
+    });
+
   // Memoized values
   const platform = useMemo(() => (data ? getPlatform(data) : ''), [data]);
 
@@ -534,10 +568,16 @@ const Version = () => {
     []
   );
 
-  const showFirmwareDialog = useCallback((useDevVersion: boolean) => {
-    setFetchDevVersion(useDevVersion);
-    setOpenInstallDialog(true);
-  }, []);
+  const showFirmwareDialog = useCallback(
+    (useDevVersion: boolean) => {
+      setFetchDevVersion(useDevVersion);
+      void checkUpgradeImportantMessages(
+        useDevVersion ? latestDevVersion?.name : latestVersion?.name
+      );
+      setOpenInstallDialog(true);
+    },
+    [latestDevVersion, latestVersion, fetchDevVersion]
+  );
 
   const closeInstallDialog = useCallback(() => {
     setOpenInstallDialog(false);
@@ -817,6 +857,7 @@ const Version = () => {
                 fetchDevVersion={fetchDevVersion}
                 latestVersion={latestVersion}
                 latestDevVersion={latestDevVersion}
+                upgradeImportantMessageType={upgradeImportantMessageType}
                 downloadOnly={downloadOnly}
                 platform={platform}
                 LL={LL}

@@ -394,7 +394,28 @@ function custom_support() {
   };
 }
 
-// called by Action endpoint
+// called by Action endpoint upgradeImportantMessages
+function upgradeImportantMessages(version: string) {
+  // 0 is do nothing
+  // 1 means 3.9 and factory reset required
+  // 2 means a major version upgrade
+  let upgradeImportantMessageType_n = 0;
+
+  // see if its a filename with a .bin extension
+  if (version.endsWith('.bin')) {
+    upgradeImportantMessageType_n = 1; // 1 means 3.9 and factory reset required
+  } else if (version.endsWith('.md')) {
+    upgradeImportantMessageType_n = 0;
+  } else {
+    // this is a version string like "3.9.0"
+    upgradeImportantMessageType_n = 2;
+  }
+
+  console.log('upgradeImportantMessageType: ' + upgradeImportantMessageType_n);
+  return { upgradeImportantMessageType: upgradeImportantMessageType_n };
+}
+
+// called by Action endpoint checkUpgrade
 function check_upgrade(version: string) {
   let data = {};
   if (version) {
@@ -5172,17 +5193,7 @@ router
         return status(200);
       } else if (action === 'upgradeImportantMessages') {
         // check upgrade important messages
-        console.log(
-          'checking upgrade important messages for version',
-          content.param
-        );
-        // determine message based on if we're upgrading a minor or major version
-        // TODO finish this
-        const version = content.param;
-        const data = {
-          upgradeImportantMessageType: 1
-        };
-        return data;
+        return upgradeImportantMessages(content.param);
       }
     }
     return status(404); // cmd not found
