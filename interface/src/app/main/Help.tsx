@@ -11,6 +11,7 @@ import {
   Box,
   Button,
   Divider,
+  Grid,
   Link,
   List,
   ListItem,
@@ -42,7 +43,7 @@ interface CustomSupport {
   html: string | null;
 }
 
-const DEFAULT_IMAGE_URL = 'https://emsesp.org/_media/images/installer.jpeg';
+const DEFAULT_IMAGE_URL = 'https://emsesp.org/media/images/installer.jpeg';
 
 const SUPPORT_BOX_STYLES: SxProps<Theme> = {
   borderRadius: 3,
@@ -182,17 +183,19 @@ const HelpComponent = () => {
         </List>
       )}
 
-      <Typography sx={{ mb: 1 }} color="warning" variant="body1">
-        {LL.HELP_INFORMATION_4()}.
-      </Typography>
-      <Button
-        startIcon={<DownloadIcon />}
-        variant="outlined"
-        color="primary"
-        onClick={handleDownloadSystemInfo}
-      >
-        {LL.SUPPORT_INFORMATION(0)}
-      </Button>
+      <Grid container spacing={2} sx={{ mt: 2, alignItems: 'center' }}>
+        <Typography sx={{ mb: 1 }} color="warning" variant="body1">
+          {LL.HELP_INFORMATION_4()}:
+        </Typography>
+        <Button
+          startIcon={<DownloadIcon />}
+          variant="outlined"
+          color="primary"
+          onClick={handleDownloadSystemInfo}
+        >
+          {LL.SUPPORT_INFORMATION(0)}
+        </Button>
+      </Grid>
 
       <Divider sx={{ mt: 4 }} />
 
