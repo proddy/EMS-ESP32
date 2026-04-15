@@ -1,4 +1,4 @@
-// Code inspired by Prince Azubuike from https://medium.com/@dprincecoder/creating-a-drag-and-drop-file-upload-component-in-react-a-step-by-step-guide-4d93b6cc21e0
+// drag/drop code inspired by Prince Azubuike from https://medium.com/@dprincecoder/creating-a-drag-and-drop-file-upload-component-in-react-a-step-by-step-guide-4d93b6cc21e0
 import {
   type ChangeEvent,
   type DragEvent,
@@ -6,12 +6,28 @@ import {
   useRef,
   useState
 } from 'react';
+import { Link } from 'react-router';
+import { toast } from 'react-toastify';
 
 import CancelIcon from '@mui/icons-material/Cancel';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import UploadIcon from '@mui/icons-material/Upload';
-import { Box, Button, Typography, styled } from '@mui/material';
+import WarningIcon from '@mui/icons-material/Warning';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
+  styled
+} from '@mui/material';
 
+import { callAction } from 'api/app';
+
+import { dialogStyle } from '@/CustomTheme';
+import { useRequest } from 'alova/client';
 import { useI18nContext } from 'i18n/i18n-react';
 
 const DocumentUploader = styled(Box)<{ active?: boolean }>(({ theme, active }) => ({
@@ -58,6 +74,29 @@ const DragNdrop = ({ text, onFileSelected }: DragNdropProps) => {
   const [dragged, setDragged] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { LL } = useI18nContext();
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [upgradeImportantMessageType, setUpgradeImportantMessageType] =
+    useState<number>(0);
+
+  const { send: checkUpgradeImportantMessages } = useRequest(
+    (version: string) =>
+      callAction({ action: 'upgradeImportantMessages', param: version }),
+    {
+      immediate: false
+    }
+  )
+    .onSuccess((event) => {
+      const upgradeImportantMessageType_n = (
+        event.data as { upgradeImportantMessageType: number }
+      ).upgradeImportantMessageType;
+      setUpgradeImportantMessageType(upgradeImportantMessageType_n);
+      if (upgradeImportantMessageType_n === 0) {
+        onFileSelected(file);
+      }
+    })
+    .onError((error) => {
+      toast.error(String(error.error?.message || 'An error occurred'));
+    });
 
   const checkFileExtension = (file: File) => {
     const validExtensions = ['.json', '.bin', '.md5'];
@@ -97,9 +136,8 @@ const DragNdrop = ({ text, onFileSelected }: DragNdropProps) => {
 
   const handleUploadClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    if (file) {
-      onFileSelected(file);
-    }
+    void checkUpgradeImportantMessages(file?.name || '');
+    setShowUpgradeDialog(true);
   };
 
   const handleBrowseClick = () => {
@@ -158,6 +196,55 @@ const DragNdrop = ({ text, onFileSelected }: DragNdropProps) => {
               {LL.UPLOAD()}
             </Button>
           </Box>
+          {showUpgradeDialog && upgradeImportantMessageType > 0 && (
+            <Dialog
+              sx={dialogStyle}
+              open={showUpgradeDialog}
+              onClose={() => setShowUpgradeDialog(false)}
+            >
+              <DialogTitle>
+                <WarningIcon
+                  color="warning"
+                  sx={{ fontSize: 18, verticalAlign: 'middle' }}
+                />
+                &nbsp;&nbsp;
+                {LL.UPGRADE_IMPORTANT_MESSAGES()}
+              </DialogTitle>
+              <DialogContent dividers>
+                {upgradeImportantMessageType === 1 &&
+                  LL.UPGRADE_IMPORTANT_MESSAGES_1()}
+                {upgradeImportantMessageType === 2 &&
+                  LL.UPGRADE_IMPORTANT_MESSAGES_2()}
+                <Typography sx={{ mt: 2 }}>
+                  <Link
+                    target="_blank"
+                    to="https://docs.emsesp.org/FAQ#upgrading-the-firmware"
+                    style={{ color: 'lightblue' }}
+                  >
+                    {LL.ONLINE_HELP()}
+                  </Link>
+                </Typography>
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  startIcon={<CancelIcon />}
+                  variant="outlined"
+                  onClick={() => setShowUpgradeDialog(false)}
+                  color="secondary"
+                >
+                  {LL.CANCEL()}
+                </Button>
+                <Button
+                  startIcon={<UploadIcon />}
+                  variant="outlined"
+                  onClick={() => onFileSelected(file)}
+                  color="primary"
+                >
+                  {LL.UPLOAD()}
+                </Button>
+              </DialogActions>
+            </Dialog>
+          )}
         </>
       )}
     </DocumentUploader>

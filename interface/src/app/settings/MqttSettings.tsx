@@ -129,7 +129,7 @@ const MqttSettings = () => {
     <SectionContent>
       {blocker ? <BlockNavigation blocker={blocker} /> : null}
       <>
-        <Box display="flex" gap={2} mb={1}>
+        <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
           <BlockFormControlLabel
             control={
               <Checkbox

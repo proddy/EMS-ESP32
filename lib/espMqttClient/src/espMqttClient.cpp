@@ -69,7 +69,7 @@ espMqttClientSecure & espMqttClientSecure::setPreSharedKey(const char * pskIdent
 
 #endif
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
 espMqttClient::espMqttClient()
     : MqttClientSetup(espMqttClientTypes::UseInternalTask::NO)
     , _client() {

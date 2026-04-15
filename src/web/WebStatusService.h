@@ -30,12 +30,13 @@ class WebStatusService {
     SecurityManager * _securityManager;
 
     // actions
-    bool checkUpgrade(JsonObject root, std::string & latest_version);
-    bool exportData(JsonObject root, std::string & type);
-    bool getCustomSupport(JsonObject root);
-    bool uploadURL(const char * url);
-    bool setSystemStatus(const char * status);
-    void allvalues(JsonObject output);
+    bool    checkUpgrade(JsonObject root, std::string & latest_version);
+    bool    exportData(JsonObject root, std::string & type);
+    bool    getCustomSupport(JsonObject root);
+    bool    uploadURL(const char * url);
+    bool    setSystemStatus(const char * status);
+    void    allvalues(JsonObject output);
+    uint8_t upgradeImportantMessages(std::string & version);
 
     std::string current_version_s = EMSESP_APP_VERSION;
 };

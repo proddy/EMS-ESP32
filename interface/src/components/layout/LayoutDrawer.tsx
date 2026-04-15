@@ -29,7 +29,7 @@ const LayoutDrawerComponent = ({ mobileOpen, onClose }: LayoutDrawerProps) => {
     () => (
       <>
         <Toolbar disableGutters>
-          <Box display="flex" alignItems="center" px={2}>
+          <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
             <LayoutDrawerLogo src="/app/icon.png" alt={PROJECT_NAME} />
             <Typography variant="h6">{PROJECT_NAME}</Typography>
           </Box>

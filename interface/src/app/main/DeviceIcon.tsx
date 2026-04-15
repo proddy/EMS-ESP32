@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import type { IconType } from 'react-icons';
 import { AiOutlineAlert, AiOutlineControl, AiOutlineGateway } from 'react-icons/ai';
 import { CgSmartHomeBoiler } from 'react-icons/cg';
 import { FaSolarPanel } from 'react-icons/fa';
@@ -15,14 +16,9 @@ import { PiFan, PiGauge } from 'react-icons/pi';
 import { TiFlowSwitch, TiThermometer } from 'react-icons/ti';
 import { VscVmConnect } from 'react-icons/vsc';
 
-import type { SvgIconProps } from '@mui/material';
-
 import { DeviceType } from './types';
 
-const deviceIconLookup: Record<
-  DeviceType,
-  React.ComponentType<SvgIconProps> | null
-> = {
+const deviceIconLookup: Record<DeviceType, IconType | null> = {
   [DeviceType.TEMPERATURESENSOR]: TiThermometer,
   [DeviceType.ANALOGSENSOR]: PiGauge,
   [DeviceType.BOILER]: CgSmartHomeBoiler,

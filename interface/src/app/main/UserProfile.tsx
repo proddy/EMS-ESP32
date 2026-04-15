@@ -41,8 +41,12 @@ const UserProfileComponent = () => {
           />
         </ListItem>
       </List>
-      <Box mt={2} mb={2} display="flex" alignItems="center">
-        <Typography mr={2} variant="body1" align="center">
+      <Box sx={{ mt: 2, mb: 2, display: 'flex', alignItems: 'center' }}>
+        <Typography
+          sx={{ mr: 2, textAlign: 'center' }}
+          color="warning"
+          variant="body1"
+        >
           {LL.LANGUAGE()}:
         </Typography>
         <LanguageSelector />

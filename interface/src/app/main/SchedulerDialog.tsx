@@ -4,7 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import CancelIcon from '@mui/icons-material/Cancel';
 import DoneIcon from '@mui/icons-material/Done';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import RemoveIcon from '@mui/icons-material/RemoveCircleOutline';
+import RemoveIcon from '@mui/icons-material/RemoveCircleOutlined';
 import {
   Box,
   Button,
@@ -338,11 +338,13 @@ const SchedulerDialog = ({
                     onChange={updateFormValue}
                   />
                   {isTimerSchedule && (
-                    <Box color="warning.main" ml={2} mt={4}>
-                      <Typography variant="body2">
-                        {LL.SCHEDULER_HELP_2()}
-                      </Typography>
-                    </Box>
+                    <Typography
+                      sx={{ ml: 2, mt: 4 }}
+                      color="warning"
+                      variant="body2"
+                    >
+                      {LL.SCHEDULER_HELP_2()}
+                    </Typography>
                   )}
                 </>
               ) : (
@@ -391,7 +393,7 @@ const SchedulerDialog = ({
 
       <DialogActions>
         {!creating && (
-          <Box flexGrow={1}>
+          <Box sx={{ flexGrow: 1 }}>
             <Button
               startIcon={<RemoveIcon />}
               variant="outlined"

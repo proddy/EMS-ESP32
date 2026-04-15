@@ -15,12 +15,14 @@ const circularProgressStyles: SxProps<Theme> = (theme: Theme) => ({
 const LoadingSpinner = ({ height = '100%' }: LoadingSpinnerProps) => {
   return (
     <Box
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      flexDirection="column"
-      padding={2}
-      height={height}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        padding: 2,
+        height
+      }}
     >
       <CircularProgress sx={circularProgressStyles} size={100} />
     </Box>

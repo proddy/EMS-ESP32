@@ -79,7 +79,7 @@ const ModulesDialog = ({
             label="Enabled"
           />
         </Grid>
-        <Box mt={2} mb={1}>
+        <Box sx={{ mt: 2, mb: 1 }}>
           <TextField
             name="license"
             label="License Key"

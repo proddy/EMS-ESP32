@@ -358,9 +358,9 @@ const Scheduler = () => {
   return (
     <SectionContent>
       {blocker ? <BlockNavigation blocker={blocker} /> : null}
-      <Box mb={2} color="warning.main">
-        <Typography variant="body1">{LL.SCHEDULER_HELP_1()}.</Typography>
-      </Box>
+      <Typography sx={{ mb: 2 }} color="warning" variant="body1">
+        {LL.SCHEDULER_HELP_1()}.
+      </Typography>
       {renderSchedule()}
 
       {selectedScheduleItem && (
@@ -375,8 +375,8 @@ const Scheduler = () => {
         />
       )}
 
-      <Box display="flex" flexWrap="wrap">
-        <Box flexGrow={1}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+        <Box sx={{ flexGrow: 1 }}>
           {numChanges !== 0 && (
             <ButtonRow>
               <Button
@@ -398,7 +398,7 @@ const Scheduler = () => {
             </ButtonRow>
           )}
         </Box>
-        <Box flexWrap="nowrap" whiteSpace="nowrap">
+        <Box sx={{ flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
           <ButtonRow>
             <Button
               startIcon={<AddIcon />}

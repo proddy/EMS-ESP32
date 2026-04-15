@@ -2,12 +2,12 @@ import { memo } from 'react';
 
 import CommentsDisabledOutlinedIcon from '@mui/icons-material/CommentsDisabledOutlined';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import EditOffOutlinedIcon from '@mui/icons-material/EditOffOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import InsertCommentOutlinedIcon from '@mui/icons-material/InsertCommentOutlined';
 import StarIcon from '@mui/icons-material/Star';
-import StarOutlineIcon from '@mui/icons-material/StarOutline';
+import StarOutlineIcon from '@mui/icons-material/StarOutlined';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import type { SvgIconProps } from '@mui/material';

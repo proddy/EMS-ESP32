@@ -156,11 +156,13 @@ const Settings = () => {
         <Divider />
 
         <Box
-          mt={2}
-          display="flex"
-          justifyContent="flex-end"
-          flexWrap="nowrap"
-          whiteSpace="nowrap"
+          sx={{
+            mt: 2,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            flexWrap: 'nowrap',
+            whiteSpace: 'nowrap'
+          }}
         >
           <Button
             startIcon={<SettingsBackupRestoreIcon />}

@@ -343,9 +343,9 @@ const CustomEntities = () => {
   return (
     <SectionContent>
       {blocker ? <BlockNavigation blocker={blocker} /> : null}
-      <Box mb={2} color="warning.main">
-        <Typography variant="body1">{LL.ENTITIES_HELP_1()}.</Typography>
-      </Box>
+      <Typography sx={{ mb: 2 }} color="warning" variant="body1">
+        {LL.ENTITIES_HELP_1()}.
+      </Typography>
 
       {renderEntity()}
 
@@ -361,8 +361,8 @@ const CustomEntities = () => {
         />
       )}
 
-      <Box mt={2} display="flex" flexWrap="wrap">
-        <Box flexGrow={1}>
+      <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap' }}>
+        <Box sx={{ flexGrow: 1 }}>
           {numChanges > 0 && (
             <ButtonRow>
               <Button
@@ -384,7 +384,7 @@ const CustomEntities = () => {
             </ButtonRow>
           )}
         </Box>
-        <Box flexWrap="nowrap" whiteSpace="nowrap">
+        <Box sx={{ flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
           <Button
             startIcon={<AddIcon />}
             variant="outlined"

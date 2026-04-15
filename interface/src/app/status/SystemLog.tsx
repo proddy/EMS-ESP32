@@ -266,7 +266,7 @@ const SystemLog = () => {
 
     return (
       <>
-        <Grid container spacing={2} alignItems="center">
+        <Grid container spacing={2} sx={{ alignItems: 'center' }}>
           <Grid>
             <TextField
               name="level"
