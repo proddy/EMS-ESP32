@@ -83,20 +83,6 @@ void WebSettings::read(WebSettings & settings, JsonObject root) {
     root["modbus_max_clients"]    = settings.modbus_max_clients;
     root["modbus_timeout"]        = settings.modbus_timeout;
     root["developer_mode"]        = settings.developer_mode;
-#ifndef NO_TLS_SUPPORT
-    root["email_enabled"]         = settings.email_enabled;
-#else
-    root["email_enabled"]         = false;
-#endif
-    root["email_ssl"]      = settings.email_ssl;
-    root["email_starttls"] = settings.email_starttls;
-    root["email_server"]   = settings.email_server;
-    root["email_port"]     = settings.email_port;
-    root["email_login"]    = settings.email_login;
-    root["email_pass"]     = settings.email_pass;
-    root["email_sender"]   = settings.email_sender;
-    root["email_recp"]     = settings.email_recp;
-    root["email_subject"]  = settings.email_subject;
 }
 
 // call on initialization and also when settings are updated/saved via web or console
@@ -257,9 +243,13 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
 
     // Modbus settings
     settings.modbus_enabled = root["modbus_enabled"] | EMSESP_DEFAULT_MODBUS_ENABLED;
+    check_flag(original_settings.modbus_enabled, settings.modbus_enabled, ChangeFlags::RESTART);
     settings.modbus_port = root["modbus_port"] | EMSESP_DEFAULT_MODBUS_PORT;
+    check_flag(original_settings.modbus_port, settings.modbus_port, ChangeFlags::RESTART);
     settings.modbus_max_clients = root["modbus_max_clients"] | EMSESP_DEFAULT_MODBUS_MAX_CLIENTS;
+    check_flag(original_settings.modbus_max_clients, settings.modbus_max_clients, ChangeFlags::RESTART);
     settings.modbus_timeout = root["modbus_timeout"] | EMSESP_DEFAULT_MODBUS_TIMEOUT;
+    check_flag(original_settings.modbus_timeout, settings.modbus_timeout, ChangeFlags::RESTART);
 
     //
     // these may need mqtt restart to rebuild HA discovery topics
@@ -310,20 +300,6 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     settings.weblog_level   = root["weblog_level"] | EMSESP_DEFAULT_WEBLOG_LEVEL;
     settings.weblog_compact = root["weblog_compact"] | EMSESP_DEFAULT_WEBLOG_COMPACT;
 
-    settings.email_enabled  = root["email_enabled"] | FACTORY_EMAIL_ENABLE;
-    settings.email_ssl      = root["email_ssl"] | FACTORY_EMAIL_SSL;
-    settings.email_starttls = root["email_starttls"] | FACTORY_EMAIL_STARTTLS;
-    settings.email_server   = root["email_server"] | FACTORY_EMAIL_SERVER;
-    settings.email_port     = root["email_port"] | FACTORY_EMAIL_PORT;
-    settings.email_login    = root["email_login"] | FACTORY_EMAIL_LOGIN;
-    settings.email_pass     = root["email_pass"] | FACTORY_EMAIL_PASSWORD;
-    settings.email_sender   = root["email_sender"] | FACTORY_EMAIL_FROM;
-    settings.email_recp     = root["email_recp"] | FACTORY_EMAIL_TO;
-    settings.email_subject  = root["email_subject"] | FACTORY_EMAIL_SUBJECT;
-
-    if (settings.email_ssl && settings.email_starttls) {
-        settings.email_ssl = false;
-    }
     // if no psram limit weblog buffer to 25 messages
     if (EMSESP::system_.PSram() > 0) {
         settings.weblog_buffer = root["weblog_buffer"] | EMSESP_DEFAULT_WEBLOG_BUFFER;
@@ -482,14 +458,23 @@ void WebSettings::set_board_profile(WebSettings & settings) {
 #if CONFIG_IDF_TARGET_ESP32
         // check for no PSRAM, could be a E32 or S32?
         if (!ESP.getPsramSize()) {
+#if ESP_ARDUINO_VERSION_MAJOR < 3
+            if (ETH.begin(1, 16, 23, 18, ETH_PHY_LAN8720, ETH_CLOCK_GPIO0_IN)) {
+#else
             if (ETH.begin(ETH_PHY_LAN8720, 1, 23, 18, 16, ETH_CLOCK_GPIO0_IN)) {
+#endif
                 settings.board_profile = "E32"; // Ethernet without PSRAM
             } else {
                 settings.board_profile = "S32"; // ESP32 standard WiFi without PSRAM
             }
         } else {
-            // check for boards with PSRAM, could be a E32V2 otherwise default back to the S32
+// check for boards with PSRAM, could be a E32V2 otherwise default back to the S32
+#if ESP_ARDUINO_VERSION_MAJOR < 3
+            if (ETH.begin(0, 15, 23, 18, ETH_PHY_LAN8720, ETH_CLOCK_GPIO0_OUT)) {
+#else
             if (ETH.begin(ETH_PHY_LAN8720, 0, 23, 18, 15, ETH_CLOCK_GPIO0_OUT)) {
+#endif
+
                 if (analogReadMilliVolts(39) > 700) {   // core voltage > 2.6V
                     settings.board_profile = "E32V2_2"; // Ethernet, PSRAM, internal sensors
                 } else {
@@ -517,9 +502,9 @@ void WebSettings::set_board_profile(WebSettings & settings) {
 #ifndef EMSESP_STANDALONE
     uint32_t psram_size = ESP.getPsramSize() / 1024; // in KB
     if (psram_size > 0) {
-        EMSESP::logger().info("Loaded board profile %s, PSRAM: %lu KB", settings.board_profile.c_str(), psram_size);
+        EMSESP::logger().info("Loaded board profile %s (PSRAM: %lu KB)", settings.board_profile.c_str(), psram_size);
     } else {
-        EMSESP::logger().info("Loaded board profile %s, PSRAM: not available", settings.board_profile.c_str());
+        EMSESP::logger().info("Loaded board profile %s (PSRAM: not available)", settings.board_profile.c_str());
     }
 #endif
 

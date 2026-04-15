@@ -11,6 +11,7 @@ import {
   Box,
   Button,
   Divider,
+  Grid,
   Link,
   List,
   ListItem,
@@ -42,7 +43,7 @@ interface CustomSupport {
   html: string | null;
 }
 
-const DEFAULT_IMAGE_URL = 'https://emsesp.org/_media/images/installer.jpeg';
+const DEFAULT_IMAGE_URL = 'https://emsesp.org/media/images/installer.jpeg';
 
 const SUPPORT_BOX_STYLES: SxProps<Theme> = {
   borderRadius: 3,
@@ -71,7 +72,6 @@ const HelpComponent = () => {
   });
   const [imgError, setImgError] = useState<boolean>(false);
 
-  // Memoize the request method to prevent re-creation on every render
   const getCustomSupportMethod = useMemo(
     () => callAction({ action: 'getCustomSupport' }),
     []
@@ -146,11 +146,9 @@ const HelpComponent = () => {
     <SectionContent>
       {customSupport.html && (
         <Stack
-          padding={1}
-          mb={2}
           direction="row"
           divider={<Divider orientation="vertical" flexItem />}
-          sx={SUPPORT_BOX_STYLES}
+          sx={{ padding: 1, mb: 2, ...SUPPORT_BOX_STYLES }}
         >
           <Typography variant="subtitle1">
             <div dangerouslySetInnerHTML={{ __html: customSupport.html }} />
@@ -185,9 +183,9 @@ const HelpComponent = () => {
         </List>
       )}
 
-      <Box p={2} color="warning.main">
-        <Typography mb={1} variant="body1">
-          {LL.HELP_INFORMATION_4()}.
+      <Grid container spacing={2} sx={{ mt: 2, alignItems: 'center' }}>
+        <Typography sx={{ mb: 1 }} color="warning" variant="body1">
+          {LL.HELP_INFORMATION_4()}:
         </Typography>
         <Button
           startIcon={<DownloadIcon />}
@@ -197,11 +195,11 @@ const HelpComponent = () => {
         >
           {LL.SUPPORT_INFORMATION(0)}
         </Button>
-      </Box>
+      </Grid>
 
       <Divider sx={{ mt: 4 }} />
 
-      <Typography color="white" variant="subtitle1" align="center" mt={1}>
+      <Typography color="white" variant="subtitle1" align="center" sx={{ mt: 1 }}>
         &copy;&nbsp;
         <Link
           target="_blank"

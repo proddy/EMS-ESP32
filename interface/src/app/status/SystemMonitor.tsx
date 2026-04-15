@@ -118,17 +118,15 @@ const SystemMonitor = () => {
           p: 3
         }}
       >
-        <Box display="flex" alignItems="center" flexDirection="column">
+        <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
           <img
             src="/app/icon.png"
             alt="EMS-ESP"
             style={{ width: '40px', height: '40px', marginBottom: '16px' }}
           />
           <Typography
-            color="secondary"
+            sx={{ color: 'secondary', fontWeight: 400, textAlign: 'center' }}
             variant="h6"
-            fontWeight={400}
-            textAlign="center"
           >
             {statusMessage}
           </Typography>
@@ -148,11 +146,14 @@ const SystemMonitor = () => {
             </MessageBox>
           ) : (
             <>
-              <Typography mt={2} variant="h6" fontWeight={400} textAlign="center">
+              <Typography
+                sx={{ mt: 2, fontWeight: 400, textAlign: 'center' }}
+                variant="h6"
+              >
                 {LL.PLEASE_WAIT()}&hellip;
               </Typography>
               {isUploading && (
-                <Box width="100%" pl={2} pr={2} py={2}>
+                <Box sx={{ width: '100%', pl: 2, pr: 2, py: 2 }}>
                   <LinearProgressWithLabel value={progressValue} />
                 </Box>
               )}

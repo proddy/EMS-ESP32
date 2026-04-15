@@ -128,9 +128,9 @@ const DevicesDialog = ({
     <Dialog sx={dialogStyle} open={open} onClose={onClose}>
       <DialogTitle>{dialogTitle}</DialogTitle>
       <DialogContent dividers>
-        <Box color="warning.main" mb={2}>
-          <Typography variant="body2">{editItem.id.slice(2)}</Typography>
-        </Box>
+        <Typography sx={{ mb: 2 }} color="warning" variant="body2">
+          {editItem.id.slice(2)}
+        </Typography>
         <Grid container>
           <Grid size={12}>
             {editItem.l ? (

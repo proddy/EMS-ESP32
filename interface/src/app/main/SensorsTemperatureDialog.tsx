@@ -4,7 +4,6 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import DoneIcon from '@mui/icons-material/Done';
 import WarningIcon from '@mui/icons-material/Warning';
 import {
-  Box,
   Button,
   Dialog,
   DialogActions,
@@ -111,11 +110,9 @@ const SensorsTemperatureDialog = ({
     <Dialog sx={dialogStyle} open={open} onClose={handleClose}>
       <DialogTitle>{dialogTitle}</DialogTitle>
       <DialogContent dividers>
-        <Box color="warning.main" mb={2}>
-          <Typography variant="body2">
-            {LL.ID_OF(LL.SENSOR(0))}: {editItem.id}
-          </Typography>
-        </Box>
+        <Typography sx={{ mb: 2 }} color="warning" variant="body2">
+          {LL.ID_OF(LL.SENSOR(0))}: {editItem.id}
+        </Typography>
         <Grid container spacing={2}>
           <Grid>
             <ValidatedTextField
@@ -142,7 +139,7 @@ const SensorsTemperatureDialog = ({
         </Grid>
         {editItem.s && (
           <Grid>
-            <Typography mt={1} color="warning.main" variant="body2">
+            <Typography sx={{ mt: 1 }} color="warning" variant="body2">
               <WarningIcon
                 fontSize="small"
                 sx={{ mr: 1, verticalAlign: 'middle' }}

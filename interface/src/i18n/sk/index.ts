@@ -4,7 +4,7 @@ const sk: Translation = {
   LANGUAGE: 'Jazyk',
   RETRY: 'Opakovať',
   LOADING: 'Načítanie',
-  IS_REQUIRED: '{0} je požadovaných',
+  IS_REQUIRED: '{0} je požadovaná',
   SIGN_IN: 'Prihlásiť sa',
   SIGN_OUT: 'Odhlásiť sa',
   USERNAME: 'Užívateľské meno',
@@ -276,11 +276,11 @@ const sk: Translation = {
   NETWORK_SUBNET: 'Maska podsiete',
   NETWORK_DNS: 'DNS servery',
   ADDRESS_OF: '{0} adresa',
-  ADMINISTRATOR: 'Administrator',
+  ADMINISTRATOR: 'Administrátor',
   GUEST: 'Hosť',
-  NEW: 'Nová',
+  NEW: 'Novú',
   NEW_NAME_OF: 'Nový názov {0}',
-  ENTITY: 'entita',
+  ENTITY: 'entitu',
   MIN: 'min',
   MAX: 'max',
   BLOCK_NAVIGATE_1: 'Máte neuložené zmeny',
@@ -359,7 +359,12 @@ const sk: Translation = {
   NO_DATA: 'Žiadne dáta',
   USER_PROFILE: 'Profil používateľa',
   STORED_VERSIONS: 'Uložené verzie',
-  ONLINE_HELP: 'online pomoc'
+  ONLINE_HELP: 'online pomoc',
+  UPGRADE_IMPORTANT_MESSAGES: 'Aktualizovať dôležité správy',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Táto aktualizácia vyžaduje reštart základných nastavení. Uistite sa, že ste vytvorili zálohu svojich konfigurácií a nastavení pred pokračovaním a nahrajte ju po instalácii novej verzie.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Aktualizujete sa na novú hlavnú verziu. Uistite sa, že ste prečítali ChangeLog pre akékoľvek dôležité zmeny.',
+  WARNING_SYSTEM_BACKUP: 'Toto vytvorí zálohu všetkých vašich celých systémových konfigurácií a nastavení. Všetky hesla budú čitateľné v zálohovom súbore. Buďte opatrní pri zdieľaní! Chcete pokračovať?'
+
 };
 
 export default sk;

@@ -470,10 +470,10 @@ const Customizations = () => {
 
   const renderDeviceList = () => (
     <>
-      <Box mb={1} color="warning.main">
-        <Typography variant="body1">{LL.CUSTOMIZATIONS_HELP_1()}.</Typography>
-      </Box>
-      <Box display="flex" flexWrap="wrap" alignItems="center" gap={2}>
+      <Typography sx={{ mb: 1 }} color="warning" variant="body1">
+        {LL.CUSTOMIZATIONS_HELP_1()}.
+      </Typography>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2 }}>
         {rename ? (
           <>
             <TextField
@@ -570,27 +570,22 @@ const Customizations = () => {
   const renderDeviceData = () => {
     return (
       <>
-        <Box color="warning.main">
-          <Typography variant="body2" mt={1} mb={1}>
-            <OptionIcon type="favorite" isSet={true} />={LL.CUSTOMIZATIONS_HELP_2()}
-            &nbsp;&nbsp;
-            <OptionIcon type="readonly" isSet={true} />={LL.CUSTOMIZATIONS_HELP_3()}
-            &nbsp;&nbsp;
-            <OptionIcon type="api_mqtt_exclude" isSet={true} />=
-            {LL.CUSTOMIZATIONS_HELP_4()}&nbsp;&nbsp;
-            <OptionIcon type="web_exclude" isSet={true} />=
-            {LL.CUSTOMIZATIONS_HELP_5()}&nbsp;&nbsp;
-            <OptionIcon type="deleted" isSet={true} />={LL.CUSTOMIZATIONS_HELP_6()}
-          </Typography>
-        </Box>
+        <Typography sx={{ mt: 1, mb: 1 }} color="warning" variant="body2">
+          <OptionIcon type="favorite" isSet={true} />={LL.CUSTOMIZATIONS_HELP_2()}
+          &nbsp;&nbsp;
+          <OptionIcon type="readonly" isSet={true} />={LL.CUSTOMIZATIONS_HELP_3()}
+          &nbsp;&nbsp;
+          <OptionIcon type="api_mqtt_exclude" isSet={true} />=
+          {LL.CUSTOMIZATIONS_HELP_4()}&nbsp;&nbsp;
+          <OptionIcon type="web_exclude" isSet={true} />={LL.CUSTOMIZATIONS_HELP_5()}
+          &nbsp;&nbsp;
+          <OptionIcon type="deleted" isSet={true} />={LL.CUSTOMIZATIONS_HELP_6()}
+        </Typography>
         <Grid
           container
-          mb={1}
-          mt={0}
           spacing={2}
           direction="row"
-          justifyContent="flex-start"
-          alignItems="center"
+          sx={{ mb: 1, mt: 0, justifyContent: 'flex-start', alignItems: 'center' }}
         >
           <Grid>
             <TextField
@@ -779,8 +774,8 @@ const Customizations = () => {
           </Button>
         </MessageBox>
       ) : (
-        <Box display="flex" flexWrap="wrap">
-          <Box flexGrow={1}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+          <Box sx={{ flexGrow: 1 }}>
             {numChanges !== 0 && (
               <ButtonRow>
                 <Button

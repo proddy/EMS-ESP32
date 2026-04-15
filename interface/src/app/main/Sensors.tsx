@@ -591,7 +591,14 @@ const Sensors = () => {
         />
       )}
       {sensorData?.analog_enabled === true && me.admin && (
-        <Box mt={2} display="flex" flexWrap="wrap" justifyContent="flex-end">
+        <Box
+          sx={{
+            mt: 2,
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end'
+          }}
+        >
           <Button
             variant="outlined"
             color="primary"

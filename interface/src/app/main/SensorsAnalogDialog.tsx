@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import CancelIcon from '@mui/icons-material/Cancel';
 import DoneIcon from '@mui/icons-material/Done';
-import RemoveIcon from '@mui/icons-material/RemoveCircleOutline';
+import RemoveIcon from '@mui/icons-material/RemoveCircleOutlined';
 import WarningIcon from '@mui/icons-material/Warning';
 import {
   Box,
@@ -479,7 +479,7 @@ const SensorsAnalogDialog = ({
           )}
         </Grid>
         {fieldErrors && Object.keys(fieldErrors).length > 0 && (
-          <Box mt={1}>
+          <Box sx={{ mt: 1 }}>
             {Object.values(fieldErrors).map((errArr, idx) =>
               Array.isArray(errArr)
                 ? errArr.map((err, j) => (
@@ -487,7 +487,7 @@ const SensorsAnalogDialog = ({
                       key={`${idx}-${j}`}
                       color="error"
                       variant="caption"
-                      display="block"
+                      sx={{ display: 'block' }}
                     >
                       {err.message}
                     </Typography>
@@ -498,7 +498,7 @@ const SensorsAnalogDialog = ({
         )}
         {editItem.s && (
           <Grid>
-            <Typography mt={1} color="warning.main" variant="body2">
+            <Typography sx={{ mt: 1 }} color="warning" variant="body2">
               <WarningIcon
                 fontSize="small"
                 sx={{ mr: 1, verticalAlign: 'middle' }}
@@ -511,7 +511,7 @@ const SensorsAnalogDialog = ({
       </DialogContent>
       <DialogActions>
         {!creating && (
-          <Box flexGrow={1} sx={{ '& button': { mt: 0 } }}>
+          <Box sx={{ flexGrow: 1, '& button': { mt: 0 } }}>
             <Button
               startIcon={<RemoveIcon />}
               disabled={editItem.s}
