@@ -274,6 +274,8 @@ const InstallDialog = memo(
     fetchDevVersion,
     latestVersion,
     latestDevVersion,
+    upgradeImportantMessageType,
+    downloadOnly,
     platform,
     LL,
     onClose,
@@ -283,6 +285,8 @@ const InstallDialog = memo(
     fetchDevVersion: boolean;
     latestVersion?: VersionInfo;
     latestDevVersion?: VersionInfo;
+    upgradeImportantMessageType: number;
+    downloadOnly: boolean;
     platform: string;
     LL: TranslationFunctions;
     onClose: () => void;
@@ -305,11 +309,23 @@ const InstallDialog = memo(
           {`${LL.INSTALL()} ${fetchDevVersion ? LL.DEVELOPMENT() : LL.STABLE()} Firmware`}
         </DialogTitle>
         <DialogContent dividers>
-          <Typography mb={2}>
+          <Typography sx={{ mb: 2 }}>
             {LL.INSTALL_VERSION(
-              LL.INSTALL(),
+              downloadOnly ? LL.DOWNLOAD(1) : LL.INSTALL(),
               fetchDevVersion ? latestDevVersion?.name : latestVersion?.name
             )}
+          </Typography>
+
+          {upgradeImportantMessageType === 1 && LL.UPGRADE_IMPORTANT_MESSAGES_1()}
+          {upgradeImportantMessageType === 2 && LL.UPGRADE_IMPORTANT_MESSAGES_2()}
+          <Typography sx={{ mt: 2 }}>
+            <Link
+              target="_blank"
+              to="https://docs.emsesp.org/FAQ#upgrading-the-firmware"
+              style={{ color: 'lightblue' }}
+            >
+              {LL.ONLINE_HELP()}
+            </Link>
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -331,14 +347,16 @@ const InstallDialog = memo(
               {LL.DOWNLOAD(0)}
             </Link>
           </Button>
-          <Button
-            startIcon={<WarningIcon color="warning" />}
-            variant="outlined"
-            onClick={() => onInstall(binURL)}
-            color="primary"
-          >
-            {LL.INSTALL()}
-          </Button>
+          {!downloadOnly && (
+            <Button
+              startIcon={<WarningIcon color="warning" />}
+              variant="outlined"
+              onClick={() => onInstall(binURL)}
+              color="primary"
+            >
+              {LL.INSTALL()}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     );
@@ -367,7 +385,9 @@ const InstallPartitionDialog = memo(
           {LL.INSTALL()} {LL.STORED_VERSIONS()}
         </DialogTitle>
         <DialogContent dividers>
-          <Typography mb={2}>{LL.INSTALL_VERSION(LL.INSTALL(), version)}</Typography>
+          <Typography sx={{ mb: 2 }}>
+            {LL.INSTALL_VERSION(LL.INSTALL(), version)}
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button
@@ -419,6 +439,7 @@ const Version = () => {
   const [stableUpgradeAvailable, setStableUpgradeAvailable] =
     useState<boolean>(false);
   const [internetLive, setInternetLive] = useState<boolean>(false);
+  const [downloadOnly, setDownloadOnly] = useState<boolean>(false);
   const [showVersionInfo, setShowVersionInfo] = useState<number>(0); // 1 = stable, 2 = dev, 3 = partition
   const [firmwareSize, setFirmwareSize] = useState<number>(0);
 
@@ -444,6 +465,9 @@ const Version = () => {
     error
   } = useRequest(SystemApi.readSystemStatus).onSuccess((event) => {
     const systemData = event.data as VersionData;
+    if (systemData.arduino_version.startsWith('Tasmota')) {
+      setDownloadOnly(true);
+    }
     setUsingDevVersion(systemData.emsesp_version.includes('dev'));
   });
 
@@ -458,6 +482,26 @@ const Version = () => {
   const { send: sendAPI } = useRequest((data: APIcall) => API(data), {
     immediate: false
   });
+
+  const [upgradeImportantMessageType, setUpgradeImportantMessageType] =
+    useState<number>(0);
+
+  const { send: checkUpgradeImportantMessages } = useRequest(
+    (version: string) =>
+      callAction({ action: 'upgradeImportantMessages', param: version }),
+    {
+      immediate: false
+    }
+  )
+    .onSuccess((event) => {
+      const upgradeImportantMessageType_n = (
+        event.data as { upgradeImportantMessageType: number }
+      ).upgradeImportantMessageType;
+      setUpgradeImportantMessageType(upgradeImportantMessageType_n);
+    })
+    .onError((error) => {
+      toast.error(String(error.error?.message || 'An error occurred'));
+    });
 
   // Memoized values
   const platform = useMemo(() => (data ? getPlatform(data) : ''), [data]);
@@ -524,10 +568,16 @@ const Version = () => {
     []
   );
 
-  const showFirmwareDialog = useCallback((useDevVersion: boolean) => {
-    setFetchDevVersion(useDevVersion);
-    setOpenInstallDialog(true);
-  }, []);
+  const showFirmwareDialog = useCallback(
+    (useDevVersion: boolean) => {
+      setFetchDevVersion(useDevVersion);
+      void checkUpgradeImportantMessages(
+        useDevVersion ? latestDevVersion?.name : latestVersion?.name
+      );
+      setOpenInstallDialog(true);
+    },
+    [latestDevVersion, latestVersion, fetchDevVersion]
+  );
 
   const closeInstallDialog = useCallback(() => {
     setOpenInstallDialog(false);
@@ -629,8 +679,8 @@ const Version = () => {
 
     return (
       <>
-        <Box p={2} border="1px solid grey" borderRadius={2}>
-          <Typography mb={1} variant="h6" color="primary">
+        <Box sx={{ p: 2, border: '1px solid #565656', borderRadius: 2 }}>
+          <Typography sx={{ mb: 1 }} variant="h6" color="primary">
             {LL.THIS_VERSION()}
           </Typography>
 
@@ -695,7 +745,7 @@ const Version = () => {
 
           {internetLive ? (
             <>
-              <Typography mt={4} mb={1} variant="h6" color="primary">
+              <Typography sx={{ mt: 4, mb: 1 }} variant="h6" color="primary">
                 {LL.AVAILABLE_VERSION()}
               </Typography>
 
@@ -717,7 +767,7 @@ const Version = () => {
                     </Grid>
                     <Grid size={{ xs: 8, md: 10 }}>
                       {otherPartitions.map((partition) => (
-                        <Typography key={partition.partition} mb={1}>
+                        <Typography key={partition.partition} sx={{ mb: 1 }}>
                           {partition.version}
                           <IconButton
                             onClick={() =>
@@ -783,7 +833,7 @@ const Version = () => {
               </Grid>
             </>
           ) : (
-            <Typography mt={2} color="warning">
+            <Typography sx={{ mt: 2 }} color="warning">
               <WarningIcon color="warning" sx={{ verticalAlign: 'middle', mr: 2 }} />
               {LL.INTERNET_CONNECTION_REQUIRED()}
             </Typography>
@@ -807,6 +857,8 @@ const Version = () => {
                 fetchDevVersion={fetchDevVersion}
                 latestVersion={latestVersion}
                 latestDevVersion={latestDevVersion}
+                upgradeImportantMessageType={upgradeImportantMessageType}
+                downloadOnly={downloadOnly}
                 platform={platform}
                 LL={LL}
                 onClose={closeInstallDialog}
@@ -823,7 +875,7 @@ const Version = () => {
               <Typography sx={{ pt: 2, pb: 2 }} variant="h6" color="primary">
                 {LL.UPLOAD()}
               </Typography>
-              <SingleUpload text={LL.UPLOAD_DROP_TEXT()} doRestart={doRestart} />
+              <SingleUpload doRestart={doRestart} />
             </>
           )}
         </Box>
@@ -842,6 +894,7 @@ const Version = () => {
     locale,
     openInstallDialog,
     fetchDevVersion,
+    downloadOnly,
     me.admin,
     showButtons,
     handleVersionInfoClose,

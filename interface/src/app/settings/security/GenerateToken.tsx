@@ -54,19 +54,27 @@ const GenerateToken = ({ username, onClose }: GenerateTokenProps) => {
       <DialogContent dividers>
         {token ? (
           <>
-            <MessageBox message={LL.ACCESS_TOKEN_TEXT()} level="info" my={2} />
-            <Box mt={2} mb={2}>
+            <MessageBox
+              message={LL.ACCESS_TOKEN_TEXT()}
+              level="info"
+              sx={{ mt: 2, mb: 2 }}
+            />
+            <Box sx={{ mt: 2, mb: 2 }}>
               <TextField
                 label="Token"
                 multiline
                 value={token.token}
                 fullWidth
-                contentEditable={false}
+                slotProps={{
+                  input: {
+                    readOnly: true
+                  }
+                }}
               />
             </Box>
           </>
         ) : (
-          <Box m={4} textAlign="center">
+          <Box sx={{ m: 4, textAlign: 'center' }}>
             <LinearProgress />
             <Typography variant="h6">{LL.GENERATING_TOKEN()}&hellip;</Typography>
           </Box>

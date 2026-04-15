@@ -186,9 +186,9 @@ const Modules = () => {
 
     return (
       <>
-        <Box mb={2} color="warning.main">
-          <Typography variant="body1">{LL.MODULES_DESCRIPTION()}.</Typography>
-        </Box>
+        <Typography sx={{ mb: 2 }} color="warning" variant="body1">
+          {LL.MODULES_DESCRIPTION()}.
+        </Typography>
         <Table
           data={{ nodes: modules }}
           theme={modules_theme}
@@ -236,8 +236,8 @@ const Modules = () => {
           )}
         </Table>
 
-        <Box mt={1} display="flex" flexWrap="wrap">
-          <Box flexGrow={1}>
+        <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap' }}>
+          <Box sx={{ flexGrow: 1 }}>
             {numChanges !== 0 && (
               <ButtonRow>
                 <Button

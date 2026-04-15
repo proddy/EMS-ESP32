@@ -359,7 +359,12 @@ const it: Translation = {
   NO_DATA: 'Nessun dato',
   USER_PROFILE: 'Profilo utente',
   STORED_VERSIONS: 'Versioni memorizzate',
-  ONLINE_HELP: 'aiuto online'
+  ONLINE_HELP: 'aiuto online',
+  UPGRADE_IMPORTANT_MESSAGES: 'Aggiorna Messaggi Importanti',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Questa aggiornamento richiede un ripristino di fabbrica. Assicurati di aver creato un backup delle tue configurazioni e impostazioni prima di continuare e di caricarlo dopo l\'installazione della nuova versione.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Stai aggiornando a una nuova versione principale. Assicurati di aver letto il ChangeLog per qualsiasi cambiamento importante.',
+  WARNING_SYSTEM_BACKUP: 'Questo creerà un backup delle tue configurazioni e impostazioni complete. Tutte le password saranno leggibili nel file di backup. Sei sicuro di voler continuare?'
+
 };
 
 export default it;

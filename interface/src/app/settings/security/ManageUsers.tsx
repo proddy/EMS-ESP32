@@ -240,12 +240,16 @@ const ManageUsers = () => {
         </Table>
 
         {noAdminConfigured() && (
-          <MessageBox level="warning" message={LL.USER_WARNING()} my={2} />
+          <MessageBox
+            level="warning"
+            message={LL.USER_WARNING()}
+            sx={{ mt: 2, mb: 2 }}
+          />
         )}
 
-        <Box display="flex" flexWrap="wrap">
+        <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
           {changed !== 0 && (
-            <Box flexGrow={1} sx={{ '& button': { mt: 2 } }}>
+            <Box sx={{ flexGrow: 1, '& button': { mt: 2 } }}>
               <ButtonRow>
                 <Button
                   startIcon={<CancelIcon />}
@@ -270,7 +274,7 @@ const ManageUsers = () => {
               </ButtonRow>
             </Box>
           )}
-          <Box flexWrap="nowrap" whiteSpace="nowrap">
+          <Box sx={{ flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
             <ButtonRow>
               <Button
                 startIcon={<PersonAddIcon />}

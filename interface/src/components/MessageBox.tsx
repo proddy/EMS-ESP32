@@ -53,12 +53,16 @@ const MessageBox: FC<PropsWithChildren<MessageBoxProps>> = ({
 
   return (
     <Box
-      p={2}
-      display="flex"
-      alignItems="center"
-      borderRadius={1}
-      sx={{ backgroundColor, color: 'white', ...sx }}
       {...rest}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        borderRadius: 1,
+        backgroundColor,
+        color: 'white',
+        p: 2,
+        ...sx
+      }}
     >
       <Icon />
       {(message || children) && (

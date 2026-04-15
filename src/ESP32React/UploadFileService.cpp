@@ -184,7 +184,7 @@ void UploadFileService::handleError(AsyncWebServerRequest * request, int code) {
 }
 
 void UploadFileService::handleEarlyDisconnect() {
-    emsesp::EMSESP::logger().info("Upload completed");
+    emsesp::EMSESP::logger().info("Upload finished");
     emsesp::EMSESP::system_.uart_init(); // re-enable UART
 
     _is_firmware = false;

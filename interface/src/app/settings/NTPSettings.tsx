@@ -193,9 +193,9 @@ const NTPSettings = () => {
           {timeZoneItems}
         </ValidatedTextField>
 
-        <Box display="flex" flexWrap="wrap">
+        <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
           {!data.enabled && !dirtyFlags.length && (
-            <Box flexWrap="nowrap" whiteSpace="nowrap">
+            <Box sx={{ flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
               <ButtonRow>
                 <Button
                   onClick={openSetTime}
@@ -259,9 +259,9 @@ const NTPSettings = () => {
       <Dialog sx={dialogStyle} open={settingTime} onClose={handleCloseSetTime}>
         <DialogTitle>{LL.SET_TIME(1)}</DialogTitle>
         <DialogContent dividers>
-          <Box color="warning.main" p={0} pl={0} pr={0} mt={0} mb={2}>
-            <Typography variant="body2">{LL.SET_TIME_TEXT()}</Typography>
-          </Box>
+          <Typography color="warning" variant="body2">
+            {LL.SET_TIME_TEXT()}
+          </Typography>
           <TextField
             label={LL.LOCAL_TIME(0)}
             type="datetime-local"

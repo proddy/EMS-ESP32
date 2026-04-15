@@ -7,7 +7,7 @@ import DoneIcon from '@mui/icons-material/Done';
 import EditOffOutlinedIcon from '@mui/icons-material/EditOffOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import InsertCommentOutlinedIcon from '@mui/icons-material/InsertCommentOutlined';
-import RemoveIcon from '@mui/icons-material/RemoveCircleOutline';
+import RemoveIcon from '@mui/icons-material/RemoveCircleOutlined';
 import {
   Box,
   Button,
@@ -178,7 +178,7 @@ const CustomEntitiesDialog = ({
               onChange={updateFormValue}
             />
           </Grid>
-          <Grid mt={3}>
+          <Grid sx={{ mt: 3 }}>
             <BlockFormControlLabel
               control={
                 <Checkbox
@@ -238,7 +238,7 @@ const CustomEntitiesDialog = ({
           )}
           {editItem.ram === 0 && (
             <>
-              <Grid mt={3}>
+              <Grid sx={{ mt: 3 }}>
                 <BlockFormControlLabel
                   control={
                     <Checkbox
@@ -404,7 +404,7 @@ const CustomEntitiesDialog = ({
       </DialogContent>
       <DialogActions>
         {!creating && (
-          <Box flexGrow={1}>
+          <Box sx={{ flexGrow: 1 }}>
             <Button
               startIcon={<RemoveIcon />}
               variant="outlined"

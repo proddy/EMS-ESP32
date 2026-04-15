@@ -37,7 +37,7 @@ interface LabelValueProps {
 
 const LabelValue = memo(({ label, value }: LabelValueProps) => (
   <Grid container direction="row">
-    <Typography variant="body2" color="warning.main">
+    <Typography variant="body2" color="warning">
       {label}:&nbsp;
     </Typography>
     <Typography variant="body2">{value}</Typography>
@@ -131,7 +131,7 @@ const CustomizationsDialog = ({
         />
         <LabelValue label={LL.WRITEABLE()} value={writeableIcon} />
 
-        <Box mt={1} mb={2}>
+        <Box sx={{ mt: 1, mb: 2 }}>
           <EntityMaskToggle onUpdate={updateDeviceEntity} de={editItem} />
         </Box>
 
@@ -172,7 +172,7 @@ const CustomizationsDialog = ({
         </Grid>
 
         {error && (
-          <Typography variant="body2" color="error" mt={2}>
+          <Typography sx={{ mt: 2 }} variant="body2" color="error">
             Error: Check min and max values
           </Typography>
         )}

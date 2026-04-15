@@ -1,12 +1,23 @@
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 
+import CancelIcon from '@mui/icons-material/Cancel';
 import DownloadIcon from '@mui/icons-material/GetApp';
-import { Box, Button, Grid, Typography } from '@mui/material';
+import WarningIcon from '@mui/icons-material/Warning';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Grid,
+  Typography
+} from '@mui/material';
 
 import * as SystemApi from 'api/system';
 import { API, callAction } from 'api/app';
 
+import { dialogStyle } from '@/CustomTheme';
 import { useRequest } from 'alova/client';
 import type { APIcall } from 'app/main/types';
 import SystemMonitor from 'app/status/SystemMonitor';
@@ -19,14 +30,10 @@ import {
 import { useI18nContext } from 'i18n/i18n-react';
 import { saveFile } from 'utils';
 
-interface DownloadButton {
-  type: string;
-  label: string | number;
-  isGridButton: boolean;
-}
-
 const DownloadUpload = () => {
   const { LL } = useI18nContext();
+
+  const [confirmBackup, setConfirmBackup] = useState<boolean>(false);
 
   const [restarting, setRestarting] = useState<boolean>(false);
 
@@ -62,40 +69,44 @@ const DownloadUpload = () => {
 
   useLayoutTitle(LL.DOWNLOAD_UPLOAD());
 
-  const downloadButtons: DownloadButton[] = useMemo(
-    () => [
-      {
-        type: 'settings',
-        label: LL.SETTINGS_OF(LL.APPLICATION()),
-        isGridButton: true
-      },
-      {
-        type: 'customizations',
-        label: LL.CUSTOMIZATIONS(),
-        isGridButton: true
-      },
-      {
-        type: 'entities',
-        label: LL.CUSTOM_ENTITIES(0),
-        isGridButton: true
-      },
-      {
-        type: 'schedule',
-        label: LL.SCHEDULE(0),
-        isGridButton: true
-      },
-      {
-        type: 'systembackup',
-        label: LL.DOWNLOAD_SYSTEM_BACKUP(),
-        isGridButton: true
-      },
-      {
-        type: 'allvalues',
-        label: LL.ALLVALUES(),
-        isGridButton: false
-      }
-    ],
-    [LL]
+  const handleCloseBackupDialog = useCallback(() => {
+    setConfirmBackup(false);
+  }, []);
+
+  const renderBackupDialog = useMemo(
+    () => (
+      <Dialog
+        sx={dialogStyle}
+        open={confirmBackup}
+        onClose={handleCloseBackupDialog}
+      >
+        <DialogTitle>{LL.DOWNLOAD_SYSTEM_BACKUP()}</DialogTitle>
+        <DialogContent dividers>
+          <WarningIcon color="warning" sx={{ fontSize: 18 }} />
+          &nbsp;
+          {LL.WARNING_SYSTEM_BACKUP()}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            startIcon={<CancelIcon />}
+            variant="outlined"
+            onClick={handleCloseBackupDialog}
+            color="secondary"
+          >
+            {LL.CANCEL()}
+          </Button>
+          <Button
+            startIcon={<DownloadIcon />}
+            variant="outlined"
+            onClick={() => handleDownload('systembackup')()}
+            color="primary"
+          >
+            {LL.DOWNLOAD(0)}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    ),
+    [confirmBackup, handleCloseBackupDialog, LL]
   );
 
   const handleDownload = useCallback(
@@ -117,58 +128,57 @@ const DownloadUpload = () => {
     );
   }
 
-  const gridButtons = downloadButtons.filter((btn) => btn.isGridButton);
-  const standaloneButton = downloadButtons.find((btn) => !btn.isGridButton);
-
   return (
     <SectionContent>
+      {renderBackupDialog}
+
       <Typography sx={{ pb: 2 }} variant="h6" color="primary">
         {LL.DOWNLOAD(0)}
       </Typography>
 
-      <Typography mb={1} variant="body1" color="warning">
-        {LL.DOWNLOAD_SETTINGS_TEXT()}.
-      </Typography>
-
-      <Grid container spacing={2}>
-        {gridButtons.map((button) => (
-          <Grid key={button.type}>
-            <Button
-              startIcon={<DownloadIcon />}
-              variant="outlined"
-              color="primary"
-              onClick={handleDownload(button.type)}
-            >
-              {button.label}
-            </Button>
-          </Grid>
-        ))}
-      </Grid>
-
-      <Typography mt={2} mb={1} variant="body1" color="warning">
-        {LL.DOWNLOAD_SETTINGS_TEXT2()}.
-      </Typography>
-
-      {standaloneButton && (
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          alignItems: 'center'
+        }}
+      >
+        <Typography variant="body1" color="warning">
+          {LL.DOWNLOAD_SETTINGS_TEXT()}:
+        </Typography>
         <Button
           startIcon={<DownloadIcon />}
           variant="outlined"
           color="primary"
-          onClick={handleDownload(standaloneButton.type)}
+          onClick={() => setConfirmBackup(true)}
         >
-          {standaloneButton.label}
+          {LL.DOWNLOAD_SYSTEM_BACKUP()}
         </Button>
-      )}
+      </Grid>
+
+      <Grid container spacing={2} sx={{ mt: 2, alignItems: 'center' }}>
+        <Typography variant="body1" color="warning">
+          {LL.DOWNLOAD_SETTINGS_TEXT2()}:
+        </Typography>
+        <Button
+          startIcon={<DownloadIcon />}
+          variant="outlined"
+          color="primary"
+          onClick={handleDownload('allvalues')}
+        >
+          {LL.ALLVALUES()}
+        </Button>
+      </Grid>
 
       <Typography sx={{ pt: 2, pb: 2 }} variant="h6" color="primary">
         {LL.UPLOAD()}
       </Typography>
 
-      <Box color="warning.main" sx={{ pb: 2 }}>
-        <Typography variant="body1">{LL.UPLOAD_TEXT()}.</Typography>
-      </Box>
+      <Typography sx={{ pb: 2 }} color="warning" variant="body1">
+        {LL.UPLOAD_TEXT()}:
+      </Typography>
 
-      <SingleUpload text={LL.UPLOAD_DRAG()} doRestart={doRestart} />
+      <SingleUpload doRestart={doRestart} />
     </SectionContent>
   );
 };

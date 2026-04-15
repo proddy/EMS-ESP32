@@ -38,15 +38,6 @@
 #include "../test/test.h"
 #endif
 
-#ifndef NO_TLS_SUPPORT
-#define ENABLE_SMTP
-#define USE_ESP_SSLCLIENT
-#define READYCLIENT_SSL_CLIENT ESP_SSLClient
-#define READYCLIENT_TYPE_1 // TYPE 1 when using ESP_SSLClient
-#include <ESP_SSLClient.h>
-#include <ReadyMail.h>
-#endif
-
 namespace emsesp {
 
 // Languages supported. Note: the order is important
@@ -113,110 +104,6 @@ uint8_t System::language_index() {
 // send raw to ems
 bool System::command_send(const char * value, const int8_t id) {
     return EMSESP::txservice_.send_raw(value); // ignore id
-}
-
-bool System::command_sendmail(const char * value, const int8_t id) {
-    bool     enabled = false;
-    bool     ssl, starttls;
-    uint16_t port;
-    String   server, login, pass, sender, recp, subject;
-    EMSESP::webSettingsService.read([&](WebSettings & settings) {
-        enabled  = settings.email_enabled;
-        ssl      = settings.email_ssl;
-        starttls = settings.email_starttls;
-        server   = settings.email_server;
-        port     = settings.email_port;
-        login    = settings.email_login;
-        pass     = settings.email_pass;
-        sender   = settings.email_sender;
-        recp     = settings.email_recp;
-        subject  = settings.email_subject;
-    });
-    if (!enabled) {
-        return false;
-    }
-    LOG_DEBUG("Command sendmail port %d%s called with '%s'", port, ssl ? " (SSL)" : starttls ? " (STARTTLS)" : "", value);
-    // LOG_DEBUG("Command sendmail port %d called with '%s'", port, value);
-    bool success = false;
-
-#ifndef NO_TLS_SUPPORT
-    WiFiClient *    basic_client;
-    ESP_SSLClient * ssl_client;
-    ReadyClient *   r_client; // rClient(ssl_client);
-    SMTPClient *    smtp;     // smtp(rClient);
-    basic_client = new WiFiClient;
-    ssl_client   = new ESP_SSLClient;
-    r_client     = new ReadyClient(*ssl_client);
-    smtp         = new SMTPClient(*r_client);
-
-    ssl_client->setClient(basic_client);
-    ssl_client->setInsecure();
-    ssl_client->setBufferSizes(1024, 1024);
-    r_client->addPort(port, starttls ? readymail_protocol_tls : ssl ? readymail_protocol_ssl : readymail_protocol_plain_text);
-
-    // smtp->connect(server, port, sendmailCallback);
-    smtp->connect(server, port);
-    if (!smtp->isConnected()) {
-        LOG_ERROR("Sendmail connection error");
-        delete smtp;
-        delete r_client;
-        delete ssl_client;
-        delete basic_client;
-        return false;
-    }
-
-    // LOG_INFO("authenticate %s:%s", login.c_str(), pass.c_str());
-    smtp->authenticate(login, pass, readymail_auth_password);
-    if (!smtp->isAuthenticated()) {
-        LOG_ERROR("Sendmail authenticate error");
-        delete smtp;
-        delete r_client;
-        delete ssl_client;
-        delete basic_client;
-        return false;
-    }
-    JsonDocument doc;
-    String       body = value;
-    if (body.length()) {
-        auto error = deserializeJson(doc, (const char *)value);
-        if (!error && doc.as<JsonObject>().size() >= 0) {
-            subject = doc["subject"] | subject;
-            recp    = doc["to"] | recp;
-            sender  = doc["from"] | sender;
-            body    = doc["body"] | body;
-        }
-    }
-
-    SMTPMessage & msg = smtp->getMessage();
-    msg.headers.add(rfc822_subject, subject);
-    msg.headers.add(rfc822_from, sender);
-    msg.headers.add(rfc822_to, recp);
-
-    // Use addCustom to add custom header e.g. Importance and Priority.
-    // msg.headers.addCustom("Importance", PRIORITY);
-    // msg.headers.addCustom("X-MSMail-Priority", PRIORITY);
-    // msg.headers.addCustom("X-Priority", PRIORITY_NUM);
-
-    msg.text.body(body);
-
-    // bodyText.replace("\r\n", "<br>\r\n");
-    // msg.html.body("<html><body><div style=\"color:#cc0066;\">" + bodyText + "</div></body></html>");
-    // msg.html.transferEncoding("base64");
-
-    // With embedFile function, the html message will send as attachment.
-    // if (EMBED_MESSAGE)
-    //    msg.html.embedFile(true, "msg.html", embed_message_type_attachment);
-
-    msg.timestamp = time(nullptr);
-
-    success = smtp->send(msg);
-
-    delete smtp;
-    delete r_client;
-    delete ssl_client;
-    delete basic_client;
-#endif
-    return success;
 }
 
 // return string of languages and count
@@ -309,26 +196,26 @@ bool System::command_publish(const char * value, const int8_t id) {
 // syslog level
 // commenting this out - don't see the point on having an API service to change the syslog level
 /*
-bool System::command_syslog_level(const char * value, const int8_t id) {
-    uint8_t s = 0xff;
-    if (Helpers::value2enum(value, s, FL_(list_syslog_level))) {
-        bool changed = false;
-        EMSESP::webSettingsService.update(
-            [&](WebSettings & settings) {
-                if (settings.syslog_level != (int8_t)s - 1) {
-                    settings.syslog_level = (int8_t)s - 1;
-                    changed               = true;
-                }
-                return StateUpdateResult::CHANGED;
-            });
-        if (changed) {
-            EMSESP::system_.syslog_init();
-        }
-        return true;
-    }
-    return false;
-}
-*/
+ bool System::command_syslog_level(const char * value, const int8_t id) {
+     uint8_t s = 0xff;
+     if (Helpers::value2enum(value, s, FL_(list_syslog_level))) {
+         bool changed = false;
+         EMSESP::webSettingsService.update(
+             [&](WebSettings & settings) {
+                 if (settings.syslog_level != (int8_t)s - 1) {
+                     settings.syslog_level = (int8_t)s - 1;
+                     changed               = true;
+                 }
+                 return StateUpdateResult::CHANGED;
+             });
+         if (changed) {
+             EMSESP::system_.syslog_init();
+         }
+         return true;
+     }
+     return false;
+ }
+ */
 
 // send message - to system log and MQTT
 bool System::command_message(const char * value, const int8_t id, JsonObject output) {
@@ -576,6 +463,7 @@ void System::system_restart(const char * partitionname) {
 
     Mqtt::disconnect(); // gracefully disconnect MQTT, needed for QOS1
     EMSuart::stop();    // stop UART so there is no interference
+
 #ifndef EMSESP_STANDALONE
     delay(1000);   // wait 1 second
     ESP.restart(); // ka-boom! - this is the only place where the ESP32 restart is called
@@ -677,6 +565,7 @@ void System::store_settings(WebSettings & settings) {
 
     locale_         = settings.locale;
     developer_mode_ = settings.developer_mode;
+
     // start services
     if (settings.modbus_enabled) {
         if (EMSESP::modbus_ == nullptr) {
@@ -718,10 +607,19 @@ void System::start() {
     appfree_ = esp_ota_get_running_partition()->size / 1024 - appused_;
     refreshHeapMem(); // refresh free heap and max alloc heap
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
+#if ESP_IDF_VERSION_MAJOR < 5
+    temp_sensor_config_t temp_sensor = TSENS_CONFIG_DEFAULT();
+    temp_sensor_get_config(&temp_sensor);
+    temp_sensor.dac_offset = TSENS_DAC_DEFAULT; // DEFAULT: range:-10℃ ~  80℃, error < 1℃.
+    temp_sensor_set_config(temp_sensor);
+    temp_sensor_start();
+    temp_sensor_read_celsius(&temperature_);
+#else
     temperature_sensor_config_t temp_sensor_config = TEMPERATURE_SENSOR_CONFIG_DEFAULT(-10, 80);
     temperature_sensor_install(&temp_sensor_config, &temperature_handle_);
     temperature_sensor_enable(temperature_handle_);
     temperature_sensor_get_celsius(temperature_handle_, &temperature_);
+#endif
 #endif
 #endif
 
@@ -924,14 +822,14 @@ void System::send_info_mqtt() {
         doc["network"]  = "ethernet";
         doc["hostname"] = ETH.getHostname();
         /*
-        doc["MAC"]             = ETH.macAddress();
-        doc["IPv4 address"]    = uuid::printable_to_string(ETH.localIP()) + "/" + uuid::printable_to_string(ETH.subnetMask());
-        doc["IPv4 gateway"]    = uuid::printable_to_string(ETH.gatewayIP());
-        doc["IPv4 nameserver"] = uuid::printable_to_string(ETH.dnsIP());
-        if (ETH.localIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && ETH.localIPv6().toString() != "::") {
-            doc["IPv6 address"] = uuid::printable_to_string(ETH.localIPv6());
-    }
-            */
+         doc["MAC"]             = ETH.macAddress();
+         doc["IPv4 address"]    = uuid::printable_to_string(ETH.localIP()) + "/" + uuid::printable_to_string(ETH.subnetMask());
+         doc["IPv4 gateway"]    = uuid::printable_to_string(ETH.gatewayIP());
+         doc["IPv4 nameserver"] = uuid::printable_to_string(ETH.dnsIP());
+         if (ETH.localIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && ETH.localIPv6().toString() != "::") {
+             doc["IPv6 address"] = uuid::printable_to_string(ETH.localIPv6());
+     }
+             */
 
     } else if (WiFi.status() == WL_CONNECTED) {
         doc["network"]         = "wifi";
@@ -943,9 +841,16 @@ void System::send_info_mqtt() {
         doc["IPv4 gateway"]    = uuid::printable_to_string(WiFi.gatewayIP());
         doc["IPv4 nameserver"] = uuid::printable_to_string(WiFi.dnsIP());
 
+#if ESP_IDF_VERSION_MAJOR < 5
+        if (WiFi.localIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && WiFi.localIPv6().toString() != "::") {
+            doc["IPv6 address"] = uuid::printable_to_string(WiFi.localIPv6());
+        }
+#else
         if (WiFi.linkLocalIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && WiFi.linkLocalIPv6().toString() != "::") {
             doc["IPv6 address"] = uuid::printable_to_string(WiFi.linkLocalIPv6());
         }
+
+#endif
     }
 #endif
     Mqtt::queue_publish_retain(F_(info), doc.as<JsonObject>()); // topic called "info" and it's Retained
@@ -1054,7 +959,12 @@ void System::network_init() {
         delay(500);
         digitalWrite(eth_power_, HIGH);
     }
+
+#if ESP_IDF_VERSION_MAJOR < 5
+    eth_present_ = ETH.begin(phy_addr, power, mdc, mdio, type, clock_mode);
+#else
     eth_present_ = ETH.begin(type, phy_addr, mdc, mdio, power, clock_mode);
+#endif
 #endif
 }
 
@@ -1066,7 +976,11 @@ void System::system_check() {
 
 #ifndef EMSESP_STANDALONE
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
+#if ESP_IDF_VERSION_MAJOR < 5
+        temp_sensor_read_celsius(&temperature_);
+#else
         temperature_sensor_get_celsius(temperature_handle_, &temperature_);
+#endif
 #endif
 #endif
 
@@ -1120,7 +1034,6 @@ void System::commands_init() {
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(read), System::command_read, FL_(read_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(send), System::command_send, FL_(send_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(fetch), System::command_fetch, FL_(fetch_cmd), CommandFlag::ADMIN_ONLY);
-    Command::add(EMSdevice::DeviceType::SYSTEM, F_(sendmail), System::command_sendmail, FL_(sendmail_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(restart), System::command_restart, FL_(restart_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(format), System::command_format, FL_(format_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(txpause), System::command_txpause, FL_(txpause_cmd), CommandFlag::ADMIN_ONLY);
@@ -1362,9 +1275,16 @@ void System::show_system(uuid::console::Shell & shell) {
         shell.printfln(" IPv4 address: %s/%s", uuid::printable_to_string(WiFi.localIP()).c_str(), uuid::printable_to_string(WiFi.subnetMask()).c_str());
         shell.printfln(" IPv4 gateway: %s", uuid::printable_to_string(WiFi.gatewayIP()).c_str());
         shell.printfln(" IPv4 nameserver: %s", uuid::printable_to_string(WiFi.dnsIP()).c_str());
+#if ESP_IDF_VERSION_MAJOR < 5
+        if (WiFi.localIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && WiFi.localIPv6().toString() != "::") {
+            shell.printfln(" IPv6 address: %s", uuid::printable_to_string(WiFi.localIPv6()).c_str());
+        }
+#else
         if (WiFi.linkLocalIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && WiFi.linkLocalIPv6().toString() != "::") {
             shell.printfln(" IPv6 address: %s", uuid::printable_to_string(WiFi.linkLocalIPv6()).c_str());
         }
+#endif
+
         break;
 
     case WL_CONNECT_FAILED:
@@ -1395,9 +1315,15 @@ void System::show_system(uuid::console::Shell & shell) {
         shell.printfln(" IPv4 address: %s/%s", uuid::printable_to_string(ETH.localIP()).c_str(), uuid::printable_to_string(ETH.subnetMask()).c_str());
         shell.printfln(" IPv4 gateway: %s", uuid::printable_to_string(ETH.gatewayIP()).c_str());
         shell.printfln(" IPv4 nameserver: %s", uuid::printable_to_string(ETH.dnsIP()).c_str());
+#if ESP_IDF_VERSION_MAJOR < 5
+        if (ETH.localIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && ETH.localIPv6().toString() != "::") {
+            shell.printfln(" IPv6 address: %s", uuid::printable_to_string(ETH.localIPv6()).c_str());
+        }
+#else
         if (ETH.linkLocalIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && ETH.linkLocalIPv6().toString() != "::") {
             shell.printfln(" IPv6 address: %s", uuid::printable_to_string(ETH.linkLocalIPv6()).c_str());
         }
+#endif
     }
     shell.println();
 
@@ -1419,6 +1345,7 @@ void System::show_system(uuid::console::Shell & shell) {
     }
 
     shell.println();
+
 #endif
 }
 
@@ -1722,6 +1649,7 @@ bool System::check_upgrade() {
 }
 
 // map each config filename to its human-readable section key
+#ifndef EMSESP_STANDALONE
 static const std::pair<const char *, const char *> SECTION_MAP[] = {
     {NETWORK_SETTINGS_FILE, "Network"},
     {AP_SETTINGS_FILE, "AP"},
@@ -1734,6 +1662,7 @@ static const std::pair<const char *, const char *> SECTION_MAP[] = {
     {EMSESP_CUSTOMENTITY_FILE, "Entities"},
     {EMSESP_MODULES_FILE, "Modules"},
 };
+#endif
 
 // convert a single config file into a section of the output json object
 void System::exportSettings(const std::string & type, const char * filename, JsonObject output) {
@@ -1834,29 +1763,38 @@ void System::exportSystemBackup(JsonObject output) {
 
     const char *   nvs_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, "nvs1") ? "nvs1" : "nvs"; // nvs1 is on 16MBs
     nvs_iterator_t it       = nullptr;
-    esp_err_t      err      = nvs_entry_find(nvs_part, "ems-esp", NVS_TYPE_ANY, &it);
+#if ESP_IDF_VERSION_MAJOR < 5
+    it = nvs_entry_find(nvs_part, "ems-esp", NVS_TYPE_ANY);
+    if (it == nullptr) {
+#else
+    esp_err_t err = nvs_entry_find(nvs_part, "ems-esp", NVS_TYPE_ANY, &it);
     if (err != ESP_OK) {
+#endif
         LOG_ERROR("Failed to find NVS entry for %s", nvs_part);
         return;
     }
 
     JsonArray entries = node["nvs"].to<JsonArray>();
+#if ESP_IDF_VERSION_MAJOR < 5
+    while (it != nullptr) {
+        nvs_entry_info_t info;
+        nvs_entry_info(it, &info);
+#else
     while (err == ESP_OK) {
         nvs_entry_info_t info;
         nvs_entry_info(it, &info);
+#endif
         JsonObject entry = entries.add<JsonObject>();
-        entry["type"]    = info.type; // e.g. NVS_TYPE_U32 or NVS_TYPE_STR etc
+        entry["type"]    = info.type;
         entry["key"]     = info.key;
 
         LOG_DEBUG("Exporting NVS value: %s = %d", info.key, info.type);
 
-        // serialize based on the type. We use putString, putChar, putUChar, putDouble, putBool, putULong only
         switch (info.type) {
         case NVS_TYPE_I8:
             entry["value"] = EMSESP::nvs_.getChar(info.key);
             break;
         case NVS_TYPE_U8:
-            // also used for bool
             entry["value"] = EMSESP::nvs_.getUChar(info.key);
             break;
         case NVS_TYPE_I32:
@@ -1872,19 +1810,22 @@ void System::exportSystemBackup(JsonObject output) {
             entry["value"] = EMSESP::nvs_.getULong64(info.key);
             break;
         case NVS_TYPE_BLOB:
-            // used for double (e.g. sensor values, nrgheat, nrgww), and stored as bytes in NVS
-            entry["value"] = EMSESP::nvs_.getDouble(info.key);
+            entry["value"] = EMSESP::nvs_.getDouble(info.key); // bytes used for double values
             break;
         case NVS_TYPE_STR:
         case NVS_TYPE_ANY:
         default:
-            // any other value we store as a string
             entry["value"] = EMSESP::nvs_.getString(info.key);
             break;
         }
 
+#if ESP_IDF_VERSION_MAJOR < 5
+        it = nvs_entry_next(it);
+    }
+#else
         err = nvs_entry_next(&it);
     }
+#endif
 
     if (it != nullptr) {
         nvs_release_iterator(it);
@@ -2686,12 +2627,12 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
         node["maxWebLogBuffer"] = settings.weblog_buffer;
 
         /*
-#if defined(EMSESP_UNITY)
-        node["webLogBuffer"] = 0;
-#else
-        node["webLogBuffer"] = EMSESP::webLogService.num_log_messages();
-#endif
-*/
+ #if defined(EMSESP_UNITY)
+         node["webLogBuffer"] = 0;
+ #else
+         node["webLogBuffer"] = EMSESP::webLogService.num_log_messages();
+ #endif
+ */
         node["modbusEnabled"]   = settings.modbus_enabled;
         node["forceHeatingOff"] = settings.boiler_heatingoff;
         node["developerMode"]   = settings.developer_mode;
@@ -3319,7 +3260,7 @@ void System::set_valid_system_gpios() {
     valid_system_gpios_ = string_range_to_vector("0-21", "2, 8, 12-17, 18-19");
 
 #elif CONFIG_IDF_TARGET_ESP32S2
-    // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-reference/peripherals/gpio.html
+        // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-reference/peripherals/gpio.html
     // excluded:
     // GPIO26 - GPIO32 = SPI flash and PSRAM
     // GPIO45 - GPIO46 = strapping pins
@@ -3332,7 +3273,7 @@ void System::set_valid_system_gpios() {
     valid_system_gpios_ = string_range_to_vector("0-46", "19, 20, 26-32, 45-46, 39-42, 22-25");
 
 #elif CONFIG_IDF_TARGET_ESP32S3
-    // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/peripherals/gpio.html
+        // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/peripherals/gpio.html
     // excluded:
     // GPIO3, GPIO45 - GPIO46 = strapping pins
     // GPIO26 - GPIO32 = SPI flash and PSRAM and not recommended
@@ -3351,7 +3292,7 @@ void System::set_valid_system_gpios() {
     }
 
 #elif CONFIG_IDF_TARGET_ESP32
-    // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html
+        // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html
     // excluded:
     // GPIO6 - GPIO11, GPIO16 - GPIO17 = used for SPI flash and PSRAM (dio mode only GPIO06-GPIO08, GPIO11)
     // GPIO20, GPIO24, GPIO28 - GPIO31 = don't exist
@@ -3382,10 +3323,6 @@ void System::set_valid_system_gpios() {
     } else {
         valid_system_gpios_ = string_range_to_vector("0-39", "6-11, 20, 24, 28-31");
     }
-#elif CONFIG_IDF_TARGET_ESP32C6
-    // https://docs.espressif.com/projects/esp-idf/en/v5.5.3/esp32c6/api-reference/peripherals/gpio.html
-    // 24-30 used for flash, 12-13 USB, 16-17 uart0
-    valid_system_gpios_ = string_range_to_vector("0-30", "12-13, 16-17, 24-30");
 #elif defined(EMSESP_STANDALONE)
     valid_system_gpios_ = string_range_to_vector("0-39");
 #endif
