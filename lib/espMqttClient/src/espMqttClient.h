@@ -14,7 +14,7 @@ the LICENSE file.
 #if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 #include "Transport/ClientSync.h"
 #include "Transport/ClientSecureSync.h"
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
 #include "Transport/ClientPosix.h"
 #endif
 
@@ -74,7 +74,7 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
 
 #endif
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
 class espMqttClient : public MqttClientSetup<espMqttClient> {
   public:
     espMqttClient();
