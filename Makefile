@@ -52,13 +52,13 @@ INCLUDES  := src/core src/devices src/web src/test lib_standalone lib/* lib/semv
 LIBRARIES :=
 
 CPPCHECK = cppcheck
-CHECKFLAGS = -q --force --std=gnu++17
+CHECKFLAGS = -q --force --std=gnu++20
 
 #----------------------------------------------------------------------
 # Languages Standard
 #----------------------------------------------------------------------
-C_STANDARD   := -std=c17
-CXX_STANDARD := -std=gnu++17
+C_STANDARD   := -std=c20
+CXX_STANDARD := -std=gnu++20
 
 #----------------------------------------------------------------------
 # Defined Symbols
