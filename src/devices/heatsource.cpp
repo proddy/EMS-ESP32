@@ -33,7 +33,7 @@ Heatsource::Heatsource(uint8_t device_type, uint8_t device_id, uint8_t product_i
         register_telegram_type(0x54E, "AmStatus", false, MAKE_PF_CB(process_amStatusMessage));
         register_telegram_type(0x54F, "AmCommand", false, MAKE_PF_CB(process_amCommandMessage)); // not broadcasted, but actually not used
         register_telegram_type(0x550, "AmExtra", false, MAKE_PF_CB(process_amExtraMessage));
-        register_telegram_type(0x54C, "AmSettings", true, MAKE_PF_CB(process_amSettingMessage)); // not broadcasted
+        register_telegram_type(0x54C, "AmSettings", true, MAKE_PF_CB(process_amSettingMessage), 23); // not broadcasted
 
         register_device_value(tag, &curFlowTemp_, DeviceValueType::INT16, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(sysFlowTemp), DeviceValueUOM::DEGREES);
         register_device_value(tag, &retTemp_, DeviceValueType::INT16, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(sysRetTemp), DeviceValueUOM::DEGREES);

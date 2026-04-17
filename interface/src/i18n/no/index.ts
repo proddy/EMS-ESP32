@@ -350,6 +350,7 @@ const no: Translation = {
   NO_DATA_1: 'Ingen favoritte EMS enheter funnet enda. Bruk',
   NO_DATA_2: 'modul for å markere dem.',
   NO_DATA_3: 'For å se alle tilgjengelige enheter, gå til',
+  NO_GPIO:'Det ble ikke funnet noen tilgjengelige GPIO-porter',
   THIS_VERSION: 'Denne versjonen',
   PLATFORM: 'Plattform',
   RELEASE_TYPE: 'Utgivelses type',

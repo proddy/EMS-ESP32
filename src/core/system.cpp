@@ -1789,7 +1789,7 @@ void System::exportSystemBackup(JsonObject output) {
     output["version"] = EMSESP_APP_VERSION; // add the version to the output
 
 #ifndef EMSESP_STANDALONE
-        // add date/time if NTP enabled and active
+    // add date/time if NTP enabled and active
     if ((esp_sntp_enabled()) && (EMSESP::system_.ntp_connected())) {
         time_t now = time(nullptr);
         if (now > 1500000000L) {
@@ -1854,18 +1854,16 @@ void System::exportSystemBackup(JsonObject output) {
         nvs_entry_info_t info;
         nvs_entry_info(it, &info);
         JsonObject entry = entries.add<JsonObject>();
-        entry["type"]    = info.type; // e.g. NVS_TYPE_U32 or NVS_TYPE_STR etc
+        entry["type"]    = info.type;
         entry["key"]     = info.key;
 
         LOG_DEBUG("Exporting NVS value: %s = %d", info.key, info.type);
 
-        // serialize based on the type. We use putString, putChar, putUChar, putDouble, putBool, putULong only
         switch (info.type) {
         case NVS_TYPE_I8:
             entry["value"] = EMSESP::nvs_.getChar(info.key);
             break;
         case NVS_TYPE_U8:
-            // also used for bool
             entry["value"] = EMSESP::nvs_.getUChar(info.key);
             break;
         case NVS_TYPE_I32:
@@ -1881,17 +1879,14 @@ void System::exportSystemBackup(JsonObject output) {
             entry["value"] = EMSESP::nvs_.getULong64(info.key);
             break;
         case NVS_TYPE_BLOB:
-            // used for double (e.g. sensor values, nrgheat, nrgww), and stored as bytes in NVS
-            entry["value"] = EMSESP::nvs_.getDouble(info.key);
+            entry["value"] = EMSESP::nvs_.getDouble(info.key); // bytes used for double values
             break;
         case NVS_TYPE_STR:
         case NVS_TYPE_ANY:
         default:
-            // any other value we store as a string
             entry["value"] = EMSESP::nvs_.getString(info.key);
             break;
         }
-
         err = nvs_entry_next(&it);
     }
 

@@ -27,7 +27,7 @@ uuid::log::Logger Pool::logger_{F_(pool), uuid::log::Facility::CONSOLE};
 Pool::Pool(uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, const char * name, uint8_t flags, uint8_t brand)
     : EMSdevice(device_type, device_id, product_id, version, name, flags, brand) {
     // Pool module
-    register_telegram_type(0x5BA, "HpPoolStatus", true, MAKE_PF_CB(process_HpPoolStatus));
+    register_telegram_type(0x5BA, "HpPoolStatus", true, MAKE_PF_CB(process_HpPoolStatus), 4);
     register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
                           &poolTemp_,
                           DeviceValueType::INT16,

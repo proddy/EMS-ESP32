@@ -29,32 +29,32 @@ Solar::Solar(uint8_t device_type, uint8_t device_id, uint8_t product_id, const c
     // telegram handlers
     if (flags == EMSdevice::EMS_DEVICE_FLAG_SM10) {
         register_telegram_type(0x97, "SM10Monitor", false, MAKE_PF_CB(process_SM10Monitor));
-        register_telegram_type(0x96, "SM10Config", true, MAKE_PF_CB(process_SM10Config));
+        register_telegram_type(0x96, "SM10Config", true, MAKE_PF_CB(process_SM10Config), 15);
         EMSESP::send_read_request(0x97, device_id);
     }
 
     if (flags == EMSdevice::EMS_DEVICE_FLAG_SM100) {
         // F9 is not a telegram type, it's a flag for configure
         // register_telegram_type(0xF9, "ParamCfg", false, MAKE_PF_CB(process_SM100ParamCfg));
-        register_telegram_type(0x0358, "SM100SystemConfig", true, MAKE_PF_CB(process_SM100SystemConfig));
-        register_telegram_type(0x035A, "SM100CircuitConfig", true, MAKE_PF_CB(process_SM100CircuitConfig));
-        register_telegram_type(0x035D, "SM100Circuit2Config", true, MAKE_PF_CB(process_SM100Circuit2Config));
+        register_telegram_type(0x0358, "SM100SystemConfig", true, MAKE_PF_CB(process_SM100SystemConfig), 32);
+        register_telegram_type(0x035A, "SM100CircuitConfig", true, MAKE_PF_CB(process_SM100CircuitConfig), 14);
+        register_telegram_type(0x035D, "SM100Circuit2Config", true, MAKE_PF_CB(process_SM100Circuit2Config), 12);
         register_telegram_type(0x0362, "SM100Monitor", false, MAKE_PF_CB(process_SM100Monitor));
         register_telegram_type(0x0363, "SM100Monitor2", false, MAKE_PF_CB(process_SM100Monitor2));
         register_telegram_type(0x0366, "SM100Config", false, MAKE_PF_CB(process_SM100Config));
         register_telegram_type(0x0364, "SM100Status", false, MAKE_PF_CB(process_SM100Status));
         register_telegram_type(0x036A, "SM100Status2", false, MAKE_PF_CB(process_SM100Status2));
-        register_telegram_type(0x0380, "SM100CollectorConfig", true, MAKE_PF_CB(process_SM100CollectorConfig));
-        register_telegram_type(0x038E, "SM100Energy", true, MAKE_PF_CB(process_SM100Energy));
-        register_telegram_type(0x0391, "SM100Time", true, MAKE_PF_CB(process_SM100Time));
-        register_telegram_type(0x035F, "SM100Config1", true, MAKE_PF_CB(process_SM100Config1));
-        register_telegram_type(0x035C, "SM100HeatAssist", true, MAKE_PF_CB(process_SM100HeatAssist));
-        register_telegram_type(0x0361, "SM100Differential", true, MAKE_PF_CB(process_SM100Differential));
+        register_telegram_type(0x0380, "SM100CollectorConfig", true, MAKE_PF_CB(process_SM100CollectorConfig), 9);
+        register_telegram_type(0x038E, "SM100Energy", true, MAKE_PF_CB(process_SM100Energy), 12);
+        register_telegram_type(0x0391, "SM100Time", true, MAKE_PF_CB(process_SM100Time), 48);
+        register_telegram_type(0x035F, "SM100Config1", true, MAKE_PF_CB(process_SM100Config1), 11);
+        register_telegram_type(0x035C, "SM100HeatAssist", true, MAKE_PF_CB(process_SM100HeatAssist), 2);
+        register_telegram_type(0x0361, "SM100Differential", true, MAKE_PF_CB(process_SM100Differential), 1);
     }
 
     if (flags == EMSdevice::EMS_DEVICE_FLAG_ISM) {
-        register_telegram_type(0x0103, "ISM1StatusMessage", true, MAKE_PF_CB(process_ISM1StatusMessage));
-        register_telegram_type(0x0101, "ISM1Set", true, MAKE_PF_CB(process_ISM1Set));
+        register_telegram_type(0x0103, "ISM1StatusMessage", true, MAKE_PF_CB(process_ISM1StatusMessage), 14);
+        register_telegram_type(0x0101, "ISM1Set", true, MAKE_PF_CB(process_ISM1Set), 7);
         register_telegram_type(0x0104, "ISM2StatusMessage", false, MAKE_PF_CB(process_ISM2StatusMessage));
     }
 
@@ -190,6 +190,7 @@ Solar::Solar(uint8_t device_type, uint8_t device_id, uint8_t product_id, const c
                               DeviceValueNumOp::DV_NUMOP_DIV10,
                               FL_(cylMiddleTemp),
                               DeviceValueUOM::DEGREES);
+        register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &ts3_, DeviceValueType::INT16, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(ts3), DeviceValueUOM::DEGREES);
         register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
                               &retHeatAssist_,
                               DeviceValueType::INT16,
@@ -613,6 +614,7 @@ void Solar::process_SM100Monitor(std::shared_ptr<const Telegram> telegram) {
     has_update(telegram, collector2Temp_, 6);  // is *10 - TS7: Temperature sensor for collector array 2
     has_update(telegram, cylMiddleTemp_, 8);   // is *10 - TS14: cylinder middle temperature
     has_update(telegram, retHeatAssist_, 10);  // is *10 - TS15: return temperature heating assistance
+    has_update(telegram, ts3_, 14);            // is *10 - TS3: cylinder middle temperature, see discord
     has_update(telegram, ts8_, 22);            // is *10 - TS8: ?
     has_update(telegram, cylBottomTemp3_, 24); // is *10 - TS5: Temperature sensor cylinder 3, bottom
 }

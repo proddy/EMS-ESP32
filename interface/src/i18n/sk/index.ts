@@ -350,6 +350,7 @@ const sk: Translation = {
   NO_DATA_1: 'Nenašli sa žiadne obľúbené entity EMS. Použite',
   NO_DATA_2: 'modul na ich označenie.',
   NO_DATA_3: 'Ak chcete zobraziť všetky dostupné entity, prejdite na',
+  NO_GPIO:'Nebol nájdený žiadny dostupný GPIO',
   THIS_VERSION: 'Táto verzia',
   PLATFORM: 'Platforma',
   RELEASE_TYPE: 'Typ vydania',

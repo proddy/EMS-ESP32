@@ -56,7 +56,7 @@ Mixer::Mixer(uint8_t device_type, uint8_t device_id, uint8_t product_id, const c
 
     // EMS 1.0
     if (flags == EMSdevice::EMS_DEVICE_FLAG_MM10) {
-        register_telegram_type(0x00AA, "MMConfigMessage", true, MAKE_PF_CB(process_MMConfigMessage));
+        register_telegram_type(0x00AA, "MMConfigMessage", true, MAKE_PF_CB(process_MMConfigMessage), 10);
         register_telegram_type(0x00AB, "MMStatusMessage", false, MAKE_PF_CB(process_MMStatusMessage));
         register_telegram_type(0x00AC, "MMSetMessage", false, MAKE_PF_CB(process_MMSetMessage));
         register_device_value(tag, &flowTempHc_, DeviceValueType::UINT16, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(flowTempHc), DeviceValueUOM::DEGREES);

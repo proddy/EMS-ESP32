@@ -350,6 +350,7 @@ const it: Translation = {
   NO_DATA_1: 'Nessuna entità EMS preferita trovata. Usa il',
   NO_DATA_2: 'modulo per marcarle.',
   NO_DATA_3: 'Per vedere tutte le entità disponibili vai a',
+  NO_GPIO:'Non è stato trovato alcun GPIO disponibile',
   THIS_VERSION: 'Questa versione',
   PLATFORM: 'Piattaforma',
   RELEASE_TYPE: 'Tipo di rilascio',

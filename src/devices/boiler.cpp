@@ -35,7 +35,7 @@ Boiler::Boiler(uint8_t device_type, int8_t device_id, uint8_t product_id, const 
     register_telegram_type(0x11, "UBAErrorMessage2", false, MAKE_PF_CB(process_UBAErrorMessage));
     register_telegram_type(0xC2, "UBAErrorMessage3", false, MAKE_PF_CB(process_UBAErrorMessage2));
     register_telegram_type(0xC6, "UBAErrorMessage3", false, MAKE_PF_CB(process_UBAErrorMessage3));
-    register_telegram_type(0x14, "UBATotalUptime", true, MAKE_PF_CB(process_UBATotalUptime));
+    register_telegram_type(0x14, "UBATotalUptime", true, MAKE_PF_CB(process_UBATotalUptime), 3);
     register_telegram_type(0x15, "UBAMaintenanceData", false, MAKE_PF_CB(process_UBAMaintenanceData));
     register_telegram_type(0x1C, "UBAMaintenanceStatus", false, MAKE_PF_CB(process_UBAMaintenanceStatus));
 
@@ -46,13 +46,13 @@ Boiler::Boiler(uint8_t device_type, int8_t device_id, uint8_t product_id, const 
     register_telegram_type(0x35, "UBAFlags", false, MAKE_PF_CB(process_UBAFlags));
 
     // only EMS 1.0
-    register_telegram_type(0x16, "UBAParameters", true, MAKE_PF_CB(process_UBAParameters));
-    register_telegram_type(0x33, "UBAParameterWW", true, MAKE_PF_CB(process_UBAParameterWW));
+    register_telegram_type(0x16, "UBAParameters", true, MAKE_PF_CB(process_UBAParameters), 27);
+    register_telegram_type(0x33, "UBAParameterWW", true, MAKE_PF_CB(process_UBAParameterWW), 11);
     register_telegram_type(0x34, "UBAMonitorWW", false, MAKE_PF_CB(process_UBAMonitorWW));
 
     // not ems1.0, but HT3
     if (model() != EMSdevice::EMS_DEVICE_FLAG_EMS) {
-        register_telegram_type(0x27, "UBASettingsWW", true, MAKE_PF_CB(process_UBASettingsWW));
+        register_telegram_type(0x27, "UBASettingsWW", true, MAKE_PF_CB(process_UBASettingsWW), 11);
         register_telegram_type(0x2A, "MC110Status", false, MAKE_PF_CB(process_MC110Status));
     }
 
@@ -62,39 +62,39 @@ Boiler::Boiler(uint8_t device_type, int8_t device_id, uint8_t product_id, const 
         register_telegram_type(0xE3, "UBAMonitorSlowPlus2", false, MAKE_PF_CB(process_UBAMonitorSlowPlus2));
         register_telegram_type(0xE4, "UBAMonitorFastPlus", false, MAKE_PF_CB(process_UBAMonitorFastPlus));
         register_telegram_type(0xE5, "UBAMonitorSlowPlus", false, MAKE_PF_CB(process_UBAMonitorSlowPlus));
-        register_telegram_type(0xE6, "UBAParametersPlus", true, MAKE_PF_CB(process_UBAParametersPlus));
+        register_telegram_type(0xE6, "UBAParametersPlus", true, MAKE_PF_CB(process_UBAParametersPlus), 25);
         register_telegram_type(0xE9, "UBAMonitorWWPlus", false, MAKE_PF_CB(process_UBAMonitorWWPlus));
-        register_telegram_type(0xEA, "UBAParameterWWPlus", true, MAKE_PF_CB(process_UBAParameterWWPlus));
-        register_telegram_type(0xEB, "PumpKick", true, MAKE_PF_CB(process_PumpKick));
-        register_telegram_type(0x28, "WeatherComp", true, MAKE_PF_CB(process_WeatherComp));
+        register_telegram_type(0xEA, "UBAParameterWWPlus", true, MAKE_PF_CB(process_UBAParameterWWPlus), 28);
+        register_telegram_type(0xEB, "PumpKick", true, MAKE_PF_CB(process_PumpKick), 4);
+        register_telegram_type(0x28, "WeatherComp", true, MAKE_PF_CB(process_WeatherComp), 6);
         register_telegram_type(0x2E0, "UBASetPoints", false, MAKE_PF_CB(process_UBASetPoints2));
-        register_telegram_type(0x2CC, "HPPressure", true, MAKE_PF_CB(process_HpPressure));
+        register_telegram_type(0x2CC, "HPPressure", true, MAKE_PF_CB(process_HpPressure), 10);
     }
 
     if (isHeatPump()) {
         register_telegram_type(0x494, "UBAEnergySupplied", false, MAKE_PF_CB(process_UBAEnergySupplied));
         register_telegram_type(0x495, "UBAInformation", false, MAKE_PF_CB(process_UBAInformation));
-        register_telegram_type(0x48D, "HpPower", true, MAKE_PF_CB(process_HpPower));
+        register_telegram_type(0x48D, "HpPower", true, MAKE_PF_CB(process_HpPower), 20);
         register_telegram_type(0x48F, "HpTemperatures", false, MAKE_PF_CB(process_HpTemperatures));
-        register_telegram_type(0x48A, "HpPool", true, MAKE_PF_CB(process_HpPool));
+        register_telegram_type(0x48A, "HpPool", true, MAKE_PF_CB(process_HpPool), 2);
         register_telegram_type(0x4A2, "HpInput", true, MAKE_PF_CB(process_HpInput));
-        register_telegram_type(0x485, "HpCooling", true, MAKE_PF_CB(process_HpCooling));
-        register_telegram_type(0x486, "HpInConfig", true, MAKE_PF_CB(process_HpInConfig));
+        register_telegram_type(0x485, "HpCooling", true, MAKE_PF_CB(process_HpCooling), 22);
+        register_telegram_type(0x486, "HpInConfig", true, MAKE_PF_CB(process_HpInConfig), 53);
 
-        register_telegram_type(0x492, "HpHeaterConfig", true, MAKE_PF_CB(process_HpHeaterConfig));
-        register_telegram_type(0x488, "HPValve", true, MAKE_PF_CB(process_HpValve));
-        register_telegram_type(0x484, "HPSilentMode", true, MAKE_PF_CB(process_HpSilentMode));
-        register_telegram_type(0x48B, "HPPumps", true, MAKE_PF_CB(process_HpPumps));
-        register_telegram_type(0x491, "HPAdditionalHeater", true, MAKE_PF_CB(process_HpAdditionalHeater));
-        register_telegram_type(0x499, "HPDhwSettings", true, MAKE_PF_CB(process_HpDhwSettings));
-        register_telegram_type(0x49C, "HPSettings2", true, MAKE_PF_CB(process_HpSettings2));
-        register_telegram_type(0x49D, "HPSettings3", true, MAKE_PF_CB(process_HpSettings3));
-        register_telegram_type(0x4AE, "HPEnergy", true, MAKE_PF_CB(process_HpEnergy));
-        register_telegram_type(0x4AF, "HPMeters", true, MAKE_PF_CB(process_HpMeters));
-        register_telegram_type(0x4A5, "HPFan", true, MAKE_PF_CB(process_HpFan));
-        register_telegram_type(0x4AA, "HPPower2", true, MAKE_PF_CB(process_HpPower2));
-        register_telegram_type(0x4A7, "HPPowerLimit", true, MAKE_PF_CB(process_HpPowerLimit));
-        register_telegram_type(0x2D6, "HPPump2", true, MAKE_PF_CB(process_HpPump2));
+        register_telegram_type(0x492, "HpHeaterConfig", true, MAKE_PF_CB(process_HpHeaterConfig), 5);
+        register_telegram_type(0x488, "HPValve", true, MAKE_PF_CB(process_HpValve), 14);
+        register_telegram_type(0x484, "HPSilentMode", true, MAKE_PF_CB(process_HpSilentMode), 65);
+        register_telegram_type(0x48B, "HPPumps", true, MAKE_PF_CB(process_HpPumps), 19);
+        register_telegram_type(0x491, "HPAdditionalHeater", true, MAKE_PF_CB(process_HpAdditionalHeater), 18);
+        register_telegram_type(0x499, "HPDhwSettings", true, MAKE_PF_CB(process_HpDhwSettings), 15);
+        register_telegram_type(0x49C, "HPSettings2", true, MAKE_PF_CB(process_HpSettings2), 4);
+        register_telegram_type(0x49D, "HPSettings3", true, MAKE_PF_CB(process_HpSettings3), 12);
+        register_telegram_type(0x4AE, "HPEnergy", true, MAKE_PF_CB(process_HpEnergy), 32);
+        register_telegram_type(0x4AF, "HPMeters", true, MAKE_PF_CB(process_HpMeters), 56);
+        register_telegram_type(0x4A5, "HPFan", true, MAKE_PF_CB(process_HpFan), 15);
+        register_telegram_type(0x4AA, "HPPower2", true, MAKE_PF_CB(process_HpPower2), 2);
+        register_telegram_type(0x4A7, "HPPowerLimit", true, MAKE_PF_CB(process_HpPowerLimit), 2);
+        register_telegram_type(0x2D6, "HPPump2", true, MAKE_PF_CB(process_HpPump2), 11);
     }
 
     // some gas boilers, see #1701
@@ -1139,7 +1139,7 @@ Boiler::Boiler(uint8_t device_type, int8_t device_id, uint8_t product_id, const 
 
 
     if (!isHeatPump() && model() != EMSdevice::EMS_DEVICE_FLAG_HIU) {
-        register_telegram_type(0x04, "UBAFactory", true, MAKE_PF_CB(process_UBAFactory));
+        register_telegram_type(0x04, "UBAFactory", true, MAKE_PF_CB(process_UBAFactory), 21);
         register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &nomPower_, DeviceValueType::UINT8, FL_(nomPower), DeviceValueUOM::KW, MAKE_CF_CB(set_nomPower));
         register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
                               &nrgTotal_,

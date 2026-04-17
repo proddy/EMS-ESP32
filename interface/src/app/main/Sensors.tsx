@@ -348,7 +348,7 @@ const Sensors = () => {
 
   const addAnalogSensor = useCallback(() => {
     if (firstAvailableGPIO.current === undefined) {
-      toast.error('No available GPIO found');
+      toast.error(LL.NO_GPIO());
       return;
     }
     setCreating(true);
