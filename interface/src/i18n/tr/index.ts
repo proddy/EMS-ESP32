@@ -350,6 +350,7 @@ const tr: Translation = {
   NO_DATA_1: 'Henüz bir favori EMS varlığı bulunamadı. Kullanın',
   NO_DATA_2: 'modülünü kullanın.',
   NO_DATA_3: 'Tüm kullanılabilir varlıkları görmek için git',
+  NO_GPIO:'Kullanılabilir GPIO bulunamadı',
   THIS_VERSION: 'Bu Sürüm',
   PLATFORM: 'Platforma',
   RELEASE_TYPE: 'Sürüm Tipi',

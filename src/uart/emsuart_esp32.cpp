@@ -39,21 +39,19 @@ uint32_t             inverse_mask = 0;
 // receive task, wait for break and call incoming_telegram
 void EMSuart::uart_event_task(void * pvParameters) {
     uart_event_t event;
-    uint8_t      telegram[EMS_MAXBUFFERSIZE];
+    uint8_t      telegram[UART_FIFO_LEN + 1]; // same size as in driver_install
     uint8_t      length = 0;
 
     while (1) {
-        //Waiting for UART event.
+        // Waiting for UART event.
         if (xQueueReceive(uart_queue, (void *)&event, portMAX_DELAY)) {
             if (event.type == UART_DATA) {
                 length += event.size;
             } else if (event.type == UART_BREAK) {
+                // read buffer up to break
+                uart_read_bytes(EMSUART_NUM, telegram, length, portMAX_DELAY);
                 if (length == 2 || (length >= 6 && length <= EMS_MAXBUFFERSIZE)) {
-                    uart_read_bytes(EMSUART_NUM, telegram, length, portMAX_DELAY);
                     EMSESP::incoming_telegram(telegram, (uint8_t)(length - 1));
-                } else { // flush buffer up to break
-                    uint8_t buf[SOC_UART_FIFO_LEN];
-                    uart_read_bytes(EMSUART_NUM, buf, length, portMAX_DELAY);
                 }
                 length = 0;
             } else if (event.type == UART_BUFFER_FULL) {
@@ -94,7 +92,7 @@ void EMSuart::start(const uint8_t tx_mode, const uint8_t rx_gpio, const uint8_t 
         uart_param_config(EMSUART_NUM, &uart_config);
         uart_set_pin(EMSUART_NUM, tx_gpio, rx_gpio, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
         uart_set_line_inverse(EMSUART_NUM, inverse_mask);
-        uart_driver_install(EMSUART_NUM, SOC_UART_FIFO_LEN + 1, 0, (EMS_MAXBUFFERSIZE + 1) * 2, &uart_queue, 0); // buffer must be > fifo
+        uart_driver_install(EMSUART_NUM, UART_FIFO_LEN + 1, 0, UART_FIFO_LEN + 3, &uart_queue, 0); // buffer must be > fifo, queue can hold data+break+overflow message
         uart_set_rx_full_threshold(EMSUART_NUM, 1);
         uart_set_rx_timeout(EMSUART_NUM, 0); // disable
 

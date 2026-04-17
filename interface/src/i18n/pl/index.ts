@@ -350,6 +350,7 @@ const pl: BaseTranslation = {
   NO_DATA_1: 'Brak ulubionych encji EMS. Użyj',
   NO_DATA_2: 'moduł do ich oznaczenia.',
   NO_DATA_3: 'Aby zobaczyć wszystkie dostępne encje przejdź do',
+  NO_GPIO:'Nie znaleziono dostępnych pinów GPIO',
   THIS_VERSION: 'Ta wersja',
   PLATFORM: 'Platforma',
   RELEASE_TYPE: 'Typ wydania',

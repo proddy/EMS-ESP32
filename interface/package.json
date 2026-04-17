@@ -1,6 +1,6 @@
 {
   "name": "EMS-ESP",
-  "version": "3.8.0",
+  "version": "3.8.2",
   "description": "EMS-ESP WebUI",
   "homepage": "https://emsesp.org",
   "author": "proddy, emsesp.org",
@@ -44,7 +44,7 @@
     "react-router": "^7.14.1",
     "react-toastify": "^11.0.5",
     "typesafe-i18n": "^5.27.1",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",

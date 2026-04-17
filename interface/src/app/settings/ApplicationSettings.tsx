@@ -28,6 +28,7 @@ import {
   FormLoader,
   MessageBox,
   SectionContent,
+  ValidatedPasswordField,
   ValidatedTextField,
   useLayoutTitle
 } from 'components';
@@ -350,6 +351,156 @@ const ApplicationSettings = () => {
               />
             </Grid>
           </Grid>
+        )}
+        <Typography color="secondary">eMail</Typography>
+        <BlockFormControlLabel
+          control={
+            <Checkbox
+              checked={data.email_enabled}
+              onChange={updateFormValue}
+              name="email_enabled"
+              disabled={!hardwareData.psram}
+            />
+          }
+          label={
+            <Typography color={!hardwareData.psram ? 'grey' : 'default'}>
+              Enable eMail notification
+              {!hardwareData.psram && (
+                <Typography variant="caption">
+                  &nbsp; &#40;{LL.IS_REQUIRED('PSRAM')}&#41;
+                </Typography>
+              )}
+            </Typography>
+          }
+        />
+        {data.email_enabled && (
+          <>
+            <Grid
+              container
+              spacing={2}
+              direction="row"
+              justifyContent="flex-start"
+              alignItems="flex-start"
+            >
+              <Grid>
+                <ValidatedTextField
+                  fieldErrors={fieldErrors || {}}
+                  name="email_server"
+                  label="SMTP Server"
+                  variant="outlined"
+                  value={data.email_server}
+                  onChange={updateFormValue}
+                  margin="normal"
+                />
+              </Grid>
+              <Grid>
+                <ValidatedTextField
+                  fieldErrors={fieldErrors || {}}
+                  sx={{ width: '12ch' }}
+                  name="email_port"
+                  variant="outlined"
+                  label="Port"
+                  value={numberValue(data.email_port)}
+                  type="number"
+                  onChange={updateFormValue}
+                  margin="normal"
+                />
+              </Grid>
+              <Grid size={4} mt={!data.email_ssl && !data.email_starttls ? 0 : 3}>
+                {!data.email_starttls && (
+                  <BlockFormControlLabel
+                    sx={{ width: '12ch' }}
+                    control={
+                      <Checkbox
+                        checked={data.email_ssl}
+                        onChange={updateFormValue}
+                        name="email_ssl"
+                        disabled={
+                          data.email_starttls || data.email_ssl === undefined
+                        }
+                      />
+                    }
+                    label="SSL/TLS"
+                  />
+                )}
+                {!data.email_ssl && (
+                  <BlockFormControlLabel
+                    sx={{ width: '12ch' }}
+                    control={
+                      <Checkbox
+                        checked={data.email_starttls}
+                        onChange={updateFormValue}
+                        name="email_starttls"
+                        disabled={
+                          data.email_ssl || data.email_starttls === undefined
+                        }
+                      />
+                    }
+                    label="STARTTLS"
+                  />
+                )}
+              </Grid>
+            </Grid>
+            <Grid container spacing={2} rowSpacing={0}>
+              <Grid>
+                <ValidatedTextField
+                  fieldErrors={fieldErrors || {}}
+                  name="email_login"
+                  label="Login"
+                  variant="outlined"
+                  value={data.email_login}
+                  onChange={updateFormValue}
+                  margin="normal"
+                />
+              </Grid>
+              <Grid>
+                <ValidatedPasswordField
+                  fieldErrors={fieldErrors || {}}
+                  name="email_pass"
+                  label="Password"
+                  variant="outlined"
+                  value={data.email_pass}
+                  onChange={updateFormValue}
+                  margin="normal"
+                />
+              </Grid>
+            </Grid>
+            <Grid container spacing={2} rowSpacing={0}>
+              <Grid>
+                <ValidatedTextField
+                  fieldErrors={fieldErrors || {}}
+                  name="email_sender"
+                  label="From"
+                  variant="outlined"
+                  value={data.email_sender}
+                  onChange={updateFormValue}
+                  margin="normal"
+                />
+              </Grid>
+              <Grid>
+                <ValidatedTextField
+                  fieldErrors={fieldErrors || {}}
+                  name="email_recp"
+                  label="To"
+                  variant="outlined"
+                  value={data.email_recp}
+                  onChange={updateFormValue}
+                  margin="normal"
+                />
+              </Grid>
+              <Grid>
+                <ValidatedTextField
+                  fieldErrors={fieldErrors || {}}
+                  name="email_subject"
+                  label="Subject"
+                  variant="outlined"
+                  value={data.email_subject}
+                  onChange={updateFormValue}
+                  margin="normal"
+                />
+              </Grid>
+            </Grid>
+          </>
         )}
         <Typography sx={{ pb: 1, pt: 2 }} variant="h6" color="primary">
           {LL.SENSORS()}

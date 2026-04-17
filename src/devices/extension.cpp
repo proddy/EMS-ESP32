@@ -29,7 +29,7 @@ Extension::Extension(uint8_t device_type, uint8_t device_id, uint8_t product_id,
         return;
     }
     // Extension module EM100 device_id 0x12
-    register_telegram_type(0x935, "EM100SetMessage", true, MAKE_PF_CB(process_EM100SetMessage));
+    register_telegram_type(0x935, "EM100SetMessage", true, MAKE_PF_CB(process_EM100SetMessage), 5);
     register_telegram_type(0x936, "EM100OutMessage", false, MAKE_PF_CB(process_EM100OutMessage));
     register_telegram_type(0x937, "EM100TempMessage", false, MAKE_PF_CB(process_EM100TempMessage));
     register_telegram_type(0x938, "EM100InputMessage", false, MAKE_PF_CB(process_EM100InputMessage));

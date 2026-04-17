@@ -32,13 +32,13 @@ Water::Water(uint8_t device_type, uint8_t device_id, uint8_t product_id, const c
 
         // telegram handlers
         register_telegram_type(0x07D6 + dhw_ - 2, "SM100wwTemperature", false, MAKE_PF_CB(process_SM100wwTemperature));
-        register_telegram_type(0x07E0 + dhw_ - 2, "SM100wwStatus2", true, MAKE_PF_CB(process_SM100wwStatus2));
-        register_telegram_type(0x07A6, "SM100wwParam", true, MAKE_PF_CB(process_SM100wwParam)); // same telegram for all circuits
+        register_telegram_type(0x07E0 + dhw_ - 2, "SM100wwStatus2", true, MAKE_PF_CB(process_SM100wwStatus2), 10);
+        register_telegram_type(0x07A6, "SM100wwParam", true, MAKE_PF_CB(process_SM100wwParam), 20); // same telegram for all circuits
         if (tag == DeviceValueTAG::TAG_DHW3) {
             register_telegram_type(0x07AA, "SM100wwStatus", false, MAKE_PF_CB(process_SM100wwStatus));
             register_telegram_type(0x07AC, "SM100wwParam1", false, MAKE_PF_CB(process_SM100wwParam2));
-            register_telegram_type(0x07A5, "SM100wwCirc", true, MAKE_PF_CB(process_SM100wwCirc));
-            register_telegram_type(0x07AE, "SM100wwKeepWarm", true, MAKE_PF_CB(process_SM100wwKeepWarm));
+            register_telegram_type(0x07A5, "SM100wwCirc", true, MAKE_PF_CB(process_SM100wwCirc), 5);
+            register_telegram_type(0x07AE, "SM100wwKeepWarm", true, MAKE_PF_CB(process_SM100wwKeepWarm), 1);
             register_telegram_type(0x07AD, "SM100ValveStatus", false, MAKE_PF_CB(process_SM100ValveStatus));
             register_telegram_type(0x07AB, "SM100wwCommand", false, MAKE_PF_CB(process_SM100wwCommand)); // command from thermostat
         } else if (tag == DeviceValueTAG::TAG_DHW4) {
@@ -70,7 +70,7 @@ Water::Water(uint8_t device_type, uint8_t device_id, uint8_t product_id, const c
 
     } else if (flags == EMSdevice::EMS_DEVICE_FLAG_MMPLUS) { // dhw1 and dhw 2
         register_telegram_type(0x331 + dhw_, "MMPLUSStatusMessage_WWC", false, MAKE_PF_CB(process_MMPLUSStatusMessage_WWC));
-        register_telegram_type(0x313 + dhw_, "MMPLUSConfigMessage_WWC", true, MAKE_PF_CB(process_MMPLUSConfigMessage_WWC));
+        register_telegram_type(0x313 + dhw_, "MMPLUSConfigMessage_WWC", true, MAKE_PF_CB(process_MMPLUSConfigMessage_WWC), 11);
         // register_telegram_type(0x33B + type_offset, "MMPLUSSetMessage_WWC", true, MAKE_PF_CB(process_MMPLUSSetMessage_WWC));
         // device values...
         register_device_value(tag, &wwTemp_, DeviceValueType::UINT16, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(wwTemp), DeviceValueUOM::DEGREES);
@@ -88,7 +88,7 @@ Water::Water(uint8_t device_type, uint8_t device_id, uint8_t product_id, const c
         tag  = DeviceValueTAG::TAG_DHW1;
         register_telegram_type(0x34, "UBAMonitorWW", false, MAKE_PF_CB(process_IPMMonitorWW));
         register_telegram_type(0x1E, "HydrTemp", false, MAKE_PF_CB(process_IPMHydrTemp));
-        register_telegram_type(0x33, "UBAParameterWW", true, MAKE_PF_CB(process_IPMParameterWW));
+        register_telegram_type(0x33, "UBAParameterWW", true, MAKE_PF_CB(process_IPMParameterWW), 12);
         // register_telegram_type(0x10D, "wwNTCStatus", false, MAKE_PF_CB(process_wwNTCStatus));
         // device values...
         register_device_value(tag, &wwSelTemp_, DeviceValueType::UINT8, FL_(wwSelTemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_wwSelTemp));

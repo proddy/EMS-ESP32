@@ -13,11 +13,12 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - boiler pumpkick [#2965](https://github.com/emsesp/EMS-ESP32/discussions/2965)
 - heatpump reset [#2933](https://github.com/emsesp/EMS-ESP32/issues/2933)
 - e-mail notification using ReadyMail Client
-- 2.nd freshwater module (dhw4) [#2991](https://github.com/emsesp/EMS-ESP32/issues/2991)
+- 2.nd freshwater module (dhw4, dhw5) [#2991](https://github.com/emsesp/EMS-ESP32/issues/2991)
 
 ## Fixed
 
 - SRC climate creation [#2936](https://github.com/emsesp/EMS-ESP32/issues/2936) and [#2960](https://github.com/emsesp/EMS-ESP32/issues/2960)
+- missing translations [#3015](https://github.com/emsesp/EMS-ESP32/issues/3015)
 
 ## Changed
 
@@ -31,3 +32,5 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - device class for % values [#2980](https://github.com/emsesp/EMS-ESP32/issues/2980)
 - use tasmota core 2026.03.30
 - secure mqtt uses ESP_SSLClient
+- fetch telegrams: set length to fetch [#3017](https://github.com/emsesp/EMS-ESP32/issues/3017)
+- move http client from stack to heap

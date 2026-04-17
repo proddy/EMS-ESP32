@@ -259,7 +259,7 @@ class EMSdevice {
     void setCustomizationEntity(const std::string & entity_id);
     void getCustomizationEntities(std::vector<std::string> & entity_ids);
 
-    void register_telegram_type(const uint16_t telegram_type_id, const char * telegram_type_name, bool fetch, const process_function_p cb);
+    void register_telegram_type(const uint16_t telegram_type_id, const char * telegram_type_name, bool fetch, const process_function_p cb, uint8_t length = 0);
     bool handle_telegram(std::shared_ptr<const Telegram> telegram);
 
     std::string get_value_uom(const std::string & shortname) const;
@@ -555,13 +555,15 @@ class EMSdevice {
         const char *             telegram_type_name_; // e.g. RC20Message
         bool                     fetch_;              // if this type_id be queried automatically
         bool                     received_;
+        uint8_t                  length_;
         const process_function_p process_function_;
 
-        TelegramFunction(uint16_t telegram_type_id, const char * telegram_type_name, bool fetch, bool received, const process_function_p process_function)
+        TelegramFunction(uint16_t telegram_type_id, const char * telegram_type_name, bool fetch, bool received, uint8_t length, const process_function_p process_function)
             : telegram_type_id_(telegram_type_id)
             , telegram_type_name_(telegram_type_name)
             , fetch_(fetch)
             , received_(received)
+            , length_(length)
             , process_function_(process_function) {
         }
     };

@@ -141,8 +141,8 @@ let system_status = {
 let DEV_VERSION_IS_UPGRADEABLE: boolean;
 let STABLE_VERSION_IS_UPGRADEABLE: boolean;
 let THIS_VERSION: string;
-let LATEST_STABLE_VERSION = '3.8.0';
-let LATEST_DEV_VERSION = '3.8.1-dev.2';
+let LATEST_STABLE_VERSION = '3.8.2';
+let LATEST_DEV_VERSION = '3.8.3-dev.2';
 
 // scenarios for testing versioning
 let version_test = 0; // on latest stable, or switch to dev
