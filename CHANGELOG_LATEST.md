@@ -32,3 +32,4 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - device class for % values [#2980](https://github.com/emsesp/EMS-ESP32/issues/2980)
 - fetch telegrams: set length to fetch [#3017](https://github.com/emsesp/EMS-ESP32/issues/3017)
 - move http client from stack to heap
+- heap optimizations [#3021](https://github.com/emsesp/EMS-ESP32/discussions/3021)
