@@ -253,7 +253,7 @@ uint8_t WebStatusService::upgradeImportantMessages(std::string & version) {
 
     // it's a filename with a .bin or .md extension, try and extract the version from it
     // e.g. EMS-ESP-3_8_2-dev_13-ESP32-16MB+.bin -> major=3 minor=8 patch=2
-    version::Semver200_version latest_version;
+    version::EMSESP_Version latest_version;
     if ((version.find(".bin") != std::string::npos) || (version.find(".md") != std::string::npos)) {
         std::string filename = version;
         auto        pos      = filename.find("EMS-ESP-");
@@ -274,18 +274,18 @@ uint8_t WebStatusService::upgradeImportantMessages(std::string & version) {
         std::string major_version = filename.substr(pos, underscore1 - pos);
         std::string minor_version = filename.substr(underscore1 + 1, underscore2 - underscore1 - 1);
         std::string patch_version = filename.substr(underscore2 + 1, dash - underscore2 - 1);
-        latest_version            = version::Semver200_version(major_version + "." + minor_version + "." + patch_version);
+        latest_version            = version::EMSESP_Version(major_version + "." + minor_version + "." + patch_version);
     } else {
         // if it's .json file exit
         if (version.find(".json") != std::string::npos) {
             return 0;
         } else {
             // treat it like a version string like "3.9.0"
-            latest_version = version::Semver200_version(version);
+            latest_version = version::EMSESP_Version(version);
         }
     }
 
-    version::Semver200_version current_version(current_version_s); // get current version
+    version::EMSESP_Version current_version(current_version_s); // get current version
 
     if (latest_version > current_version && current_version.minor() < latest_version.minor()) {
         return 0; // if it's just a minor version upgrade return 0
@@ -306,9 +306,9 @@ uint8_t WebStatusService::upgradeImportantMessages(std::string & version) {
 // versions holds the latest development version and stable version in one string, comma separated
 bool WebStatusService::checkUpgrade(JsonObject root, std::string & version) {
     if (!version.empty()) {
-        version::Semver200_version current_version(current_version_s);
-        version::Semver200_version latest_dev_version(version.substr(0, version.find(',')));
-        version::Semver200_version latest_stable_version(version.substr(version.find(',') + 1));
+        version::EMSESP_Version current_version(current_version_s);
+        version::EMSESP_Version latest_dev_version(version.substr(0, version.find(',')));
+        version::EMSESP_Version latest_stable_version(version.substr(version.find(',') + 1));
 
         bool dev_upgradeable    = latest_dev_version > current_version;
         bool stable_upgradeable = latest_stable_version > current_version;

@@ -24,20 +24,26 @@ let bundleStats = {
   other: { count: 0, uncompressed: 0, compressed: 0 }
 };
 
-const generateWWWClass =
-  () => `typedef std::function<void(const char * uri, const String & contentType, const uint8_t * content, size_t len, const String & hash)> RouteRegistrationHandler;
-// Bundle Statistics:
+// AsyncWebHandler that performs the lookup.
+const generateWWWClass = () => `// Bundle Statistics:
 // - Total compressed size: ${(totalSize / 1000).toFixed(1)} KB
 // - Total uncompressed size: ${(Object.values(bundleStats).reduce((sum, stat) => sum + stat.uncompressed, 0) / 1000).toFixed(1)} KB
 // - Compression ratio: ${(((Object.values(bundleStats).reduce((sum, stat) => sum + stat.uncompressed, 0) - totalSize) / Object.values(bundleStats).reduce((sum, stat) => sum + stat.uncompressed, 0)) * 100).toFixed(1)}%
 // - Generated on: ${new Date().toISOString()}
 
-class WWWData {
-${INDENT}public:
-${INDENT.repeat(2)}static void registerRoutes(RouteRegistrationHandler handler) {
-${fileInfo.map((f) => `${INDENT.repeat(3)}handler("${f.uri}", "${f.mimeType}", ${f.variable}, ${f.size}, ${f.hash});`).join('\n')}
-${INDENT.repeat(2)}}
+struct WWWAsset {
+${INDENT}const char *    uri;
+${INDENT}const char *    contentType;
+${INDENT}const uint8_t * content;
+${INDENT}size_t          len;
+${INDENT}const char *    etag; // already includes enclosing double quotes
 };
+
+static const WWWAsset WWW_ASSETS[] = {
+${fileInfo.map((f) => `${INDENT}{"${f.uri}", "${f.mimeType}", ${f.variable}, ${f.size}, "\\"${f.rawHash}\\""},`).join('\n')}
+};
+
+static constexpr size_t WWW_ASSETS_COUNT = sizeof(WWW_ASSETS) / sizeof(WWW_ASSETS[0]);
 `;
 
 const getFilesSync = (dir, files = []) => {
@@ -72,6 +78,7 @@ const writeFile = (relativeFilePath, buffer) => {
   const zipBuffer = zlib.gzipSync(buffer, { level: 9 });
   // const hash = crypto.createHash('sha256').update(zipBuffer).digest('hex');
   const hash = etag(zipBuffer); // use smaller md5 instead of sha256
+  const rawHash = hash.replace(/^"|"$/g, '');
 
   zipBuffer.forEach((b) => {
     if (!(size % bytesPerLine)) {
@@ -94,7 +101,8 @@ const writeFile = (relativeFilePath, buffer) => {
     mimeType,
     variable,
     size,
-    hash
+    hash,
+    rawHash
   });
 
   totalSize += size;

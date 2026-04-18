@@ -70,12 +70,16 @@ void ArduinoJsonJWT::parseJWT(String jwt, JsonDocument & jsonDocument) {
  */
 String ArduinoJsonJWT::sign(String & payload) {
     std::array<unsigned char, 32> hmacResult{};
-    mbedtls_md_hmac(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256),
-                    reinterpret_cast<const unsigned char *>(_secret.c_str()),
-                    _secret.length(),
-                    reinterpret_cast<const unsigned char *>(payload.c_str()),
-                    payload.length(),
-                    hmacResult.data());
+    {
+        mbedtls_md_context_t ctx;
+        mbedtls_md_type_t    md_type = MBEDTLS_MD_SHA256;
+        mbedtls_md_init(&ctx);
+        mbedtls_md_setup(&ctx, mbedtls_md_info_from_type(md_type), 1);
+        mbedtls_md_hmac_starts(&ctx, reinterpret_cast<const unsigned char *>(_secret.c_str()), _secret.length());
+        mbedtls_md_hmac_update(&ctx, reinterpret_cast<const unsigned char *>(payload.c_str()), payload.length());
+        mbedtls_md_hmac_finish(&ctx, hmacResult.data());
+        mbedtls_md_free(&ctx);
+    }
     return encode(reinterpret_cast<const char *>(hmacResult.data()), hmacResult.size());
 }
 

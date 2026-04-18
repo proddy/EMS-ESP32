@@ -166,6 +166,51 @@ const createManualChunks = (detailed = false) => {
   };
 };
 
+// Rolldown-native codeSplitting groups for the production build.
+// See: https://rolldown.rs/reference/outputoptions.codesplitting
+const createRolldownCodeSplitting = () => ({
+  groups: [
+    { name: '@preact', test: /[\\/]node_modules[\\/].*preact/, priority: 100 },
+    {
+      name: '@react-router',
+      test: /[\\/]node_modules[\\/].*react-router/,
+      priority: 95
+    },
+    {
+      name: '@mui-material',
+      test: /[\\/]node_modules[\\/]@mui[\\/]material/,
+      priority: 95
+    },
+    {
+      name: '@mui-icons',
+      test: /[\\/]node_modules[\\/]@mui[\\/]icons-material/,
+      priority: 95
+    },
+    { name: '@alova', test: /[\\/]node_modules[\\/].*alova/, priority: 90 },
+    { name: '@i18n', test: /[\\/]node_modules[\\/].*typesafe-i18n/, priority: 90 },
+    {
+      name: '@toastify',
+      test: /[\\/]node_modules[\\/].*react-toastify/,
+      priority: 90
+    },
+    {
+      name: '@table-library',
+      test: /[\\/]node_modules[\\/]@table-library/,
+      priority: 90
+    },
+    { name: 'vendor', test: /[\\/]node_modules[\\/]/, priority: 10 },
+    // Collapse the lazy-loaded route stubs + shared app/components/utils
+    // code into one chunk. This cuts firmware-side route count roughly in
+    // half and speeds up route-matching on every incoming HTTP request.
+    {
+      name: 'app',
+      test: /[\\/](app|components|utils)[\\/]/,
+      priority: 5
+    },
+    { name: 'api', test: /[\\/]api[\\/]/, priority: 5 }
+  ]
+});
+
 // Common build base configuration
 const createBaseBuildConfig = () => ({
   target: ES_TARGET,
@@ -330,10 +375,17 @@ export default defineConfig(
             chunkFileNames: 'assets/[name]-[hash].js',
             entryFileNames: 'assets/[name]-[hash].js',
             assetFileNames: 'assets/[name]-[hash].[ext]',
+            // Kept as a no-op for documentation/fallback. With Vite 8
             manualChunks: createManualChunks(true),
             sourcemap: false
           }
-        }
+        },
+        rolldownOptions: {
+          output: {
+            codeSplitting: createRolldownCodeSplitting()
+          }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any
       }
     };
   }

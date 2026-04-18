@@ -26,13 +26,12 @@
 #include <esp_mac.h>
 #include "esp_efuse.h"
 #include <nvs.h>
-#include <mbedtls/base64.h>
 #endif
 
 #include <HTTPClient.h>
 #include <map>
 
-#include <semver200.h>
+#include "EMSESP_Version.h"
 
 #if defined(EMSESP_TEST)
 #include "../test/test.h"
@@ -457,15 +456,16 @@ void System::get_partition_info() {
             strftime(time_string, sizeof(time_string), "%FT%T", localtime(&d));
             p_info.install_date = d > 1500000000L ? time_string : "";
 
-            esp_image_metadata_t meta     = {};
-            esp_partition_pos_t  part_pos = {.offset = part->address, .size = part->size};
-            if (esp_image_verify(ESP_IMAGE_VERIFY_SILENT, &part_pos, &meta) == ESP_OK) {
-                p_info.size = meta.image_len / 1024; // actual firmware size in KB
-            } else {
-                p_info.size = 0;
+            if (!p_info.version.empty()) {
+                esp_image_metadata_t meta     = {};
+                esp_partition_pos_t  part_pos = {.offset = part->address, .size = part->size};
+                if (esp_image_verify(ESP_IMAGE_VERIFY_SILENT, &part_pos, &meta) == ESP_OK) {
+                    p_info.size = meta.image_len / 1024; // actual firmware size in KB
+                } else {
+                    p_info.size = 0;
+                }
+                partition_info_[part->label] = p_info;
             }
-
-            partition_info_[part->label] = p_info;
         }
 
         it = esp_partition_next(it); // loop to next partition
@@ -1613,8 +1613,8 @@ bool System::check_upgrade() {
         settingsVersion = "3.5.0"; // this was the last stable version without version info
     }
 
-    version::Semver200_version settings_version(settingsVersion);
-    version::Semver200_version this_version(EMSESP_APP_VERSION);
+    version::EMSESP_Version settings_version(settingsVersion);
+    version::EMSESP_Version this_version(EMSESP_APP_VERSION);
 
     std::string settings_version_type = settings_version.prerelease().empty() ? "" : ("-" + settings_version.prerelease());
     std::string this_version_type     = this_version.prerelease().empty() ? "" : ("-" + this_version.prerelease());
@@ -1765,18 +1765,17 @@ void System::exportSettings(const std::string & type, const char * filename, Jso
 
     File settingsFile = LittleFS.open(filename);
     if (settingsFile) {
-        JsonDocument         jsonDocument;
-        DeserializationError error = deserializeJson(jsonDocument, settingsFile);
-        if (error == DeserializationError::Ok && jsonDocument.is<JsonObject>()) {
-            JsonObject node = output[section].to<JsonObject>();
-            for (JsonPair kvp : jsonDocument.as<JsonObject>()) {
-                node[kvp.key()] = kvp.value();
+        {
+            JsonDocument         jsonDocument;
+            DeserializationError error = deserializeJson(jsonDocument, settingsFile);
+            settingsFile.close(); // close early, we no longer need the file
+            if (error || !jsonDocument.is<JsonObject>()) {
+                LOG_ERROR("Failed to deserialize settings file %s", filename);
+                return;
             }
-        } else {
-            LOG_ERROR("Failed to deserialize settings file %s", filename);
+            output[section].set(jsonDocument.as<JsonObject>());
         }
         LOG_DEBUG("Exported %s settings from file %s", section, filename);
-        settingsFile.close();
     } else {
         LOG_ERROR("No settings file for %s found", filename);
     }
@@ -1828,13 +1827,15 @@ void System::exportSystemBackup(JsonObject output) {
     if (file) {
         JsonDocument         jsonDocument;
         DeserializationError error = deserializeJson(jsonDocument, file);
-        if (error == DeserializationError::Ok && jsonDocument.is<JsonObject>()) {
-            JsonObject node = nodes.add<JsonObject>();
-            node["type"]    = "customSupport";
-            node["data"]    = jsonDocument.as<JsonObject>();
+        file.close(); // close early, we no longer need the file
+        if (!error && jsonDocument.is<JsonObject>()) {
+            JsonObject support_node = nodes.add<JsonObject>();
+            support_node["type"]    = "customSupport";
+            support_node["data"].set(jsonDocument.as<JsonObject>());
+            LOG_DEBUG("Exported custom support file %s", EMSESP_CUSTOMSUPPORT_FILE);
+        } else {
+            LOG_ERROR("Failed to deserialize custom support file");
         }
-        file.close();
-        LOG_DEBUG("Exported custom support file %s", EMSESP_CUSTOMSUPPORT_FILE);
     }
 
     // Backup NVS values
