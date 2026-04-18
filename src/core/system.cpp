@@ -1762,8 +1762,6 @@ void System::exportSystemBackup(JsonObject output) {
     node         = nodes.add<JsonObject>();
     node["type"] = "nvs";
 
-    // EMSESP::nvs_ is opened on "nvs" (see EMSESP::start), so always read the backup from there.
-    // The old "nvs1" partition may still exist on 16MB boards but has been migrated and emptied.
     const char *   nvs_part = "nvs";
     nvs_iterator_t it       = nullptr;
 #if ESP_IDF_VERSION_MAJOR < 5
