@@ -19,6 +19,7 @@
 #ifndef EMSESP_EMSFACTORY_H_
 #define EMSESP_EMSFACTORY_H_
 
+#include <cstdint>
 #include <memory> // for unique_ptr
 #include <map>
 
