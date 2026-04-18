@@ -57,7 +57,7 @@
     "@types/react-dom": "^19.2.3",
     "axe-core": "^4.11.3",
     "concurrently": "^9.2.1",
-    "eslint": "^10.2.0",
+    "eslint": "^10.2.1",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.3",
     "rollup-plugin-visualizer": "^7.0.1",
