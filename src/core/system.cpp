@@ -1061,6 +1061,10 @@ void System::network_init() {
         digitalWrite(eth_power_, HIGH);
     }
     eth_present_ = ETH.begin(type, phy_addr, mdc, mdio, power, clock_mode);
+    if (eth_present_) {
+        // Push hostname to the ETH netif immediately after it's created
+        ETH.setHostname(hostname_.c_str());
+    }
 #endif
 }
 
