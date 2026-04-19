@@ -112,6 +112,7 @@ const DownloadUpload = () => {
   const handleDownload = useCallback(
     (type: string) => () => {
       void sendExportData(type);
+      setConfirmBackup(false);
     },
     [sendExportData]
   );
