@@ -75,7 +75,7 @@ enum FUSE_VALUE : uint8_t { ALL = 0, MFG = 1, MODEL = 2, BOARD = 3, REV = 4, BAT
 struct PartitionInfo {
     std::string version;
     size_t      size;
-    std::string install_date; // optional, only available if NTP is connected
+    time_t      install_date; // UTC epoch seconds; 0 if unknown. Format with localtime() at render time so it honors the current TZ.
 };
 
 class System {

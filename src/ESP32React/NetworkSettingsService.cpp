@@ -80,11 +80,11 @@ void NetworkSettingsService::loop() {
     case CONNECT_IDLE:
         if (ETH.started() && _state.ssid.length() == 0) {
             emsesp::EMSESP::logger().info("ETH started");
+            ETH.setHostname(emsesp::EMSESP::system_.hostname().c_str());
             ETH.enableIPv6(true);
             if (_state.staticIPConfig) {
                 ETH.config(_state.localIP, _state.gatewayIP, _state.subnetMask, _state.dnsIP1, _state.dnsIP2);
             }
-            ETH.setHostname(emsesp::EMSESP::system_.hostname().c_str());
             connect = CONNECT_WAIT_ETH;
         }
         if (WiFi.isConnected()) {
@@ -173,11 +173,13 @@ void NetworkSettingsService::manageSTA() {
 
     // Connect or reconnect as required
     if ((WiFi.getMode() & WIFI_STA) == 0) {
+        WiFi.setHostname(_state.hostname.c_str());     // updates shared default_hostname buffer
+        WiFi.enableSTA(true);                          // creates the STA netif
+        WiFi.STA.setHostname(_state.hostname.c_str()); // pushes to esp_netif_set_hostname
         WiFi.enableIPv6(true);
         if (_state.staticIPConfig) {
             WiFi.config(_state.localIP, _state.gatewayIP, _state.subnetMask, _state.dnsIP1, _state.dnsIP2); // configure for static IP
         }
-        WiFi.setHostname(_state.hostname.c_str()); // set hostname
 
         // www.esp32.com/viewtopic.php?t=12055
         if (_state.bandwidth20) {
@@ -419,11 +421,11 @@ void NetworkSettingsService::WiFiEvent(arduino_event_id_t event, arduino_event_i
         break;
 
     case ARDUINO_EVENT_ETH_START:
-        // configure for static IP
+        // apply hostname FIRST so DHCP DISCOVER carries the correct name
+        ETH.setHostname(emsesp::EMSESP::system_.hostname().c_str());
         if (_state.staticIPConfig) {
             ETH.config(_state.localIP, _state.gatewayIP, _state.subnetMask, _state.dnsIP1, _state.dnsIP2);
         }
-        ETH.setHostname(emsesp::EMSESP::system_.hostname().c_str());
         break;
 
     case ARDUINO_EVENT_ETH_GOT_IP:

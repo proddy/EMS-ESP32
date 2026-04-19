@@ -26,13 +26,12 @@
 #include <esp_mac.h>
 #include "esp_efuse.h"
 #include <nvs.h>
-#include <mbedtls/base64.h>
 #endif
 
 #include <HTTPClient.h>
 #include <map>
 
-#include <semver200.h>
+#include "EMSESP_Version.h"
 
 #if defined(EMSESP_TEST)
 #include "../test/test.h"
@@ -408,11 +407,11 @@ void System::get_partition_info() {
     partition_info_.clear(); // clear existing data
 
 #ifdef EMSESP_STANDALONE
-    // dummy data for standalone mode - version, size, install_date
-    partition_info_["app0"]    = {EMSESP_APP_VERSION, 0, ""};
-    partition_info_["app1"]    = {"", 0, ""};
-    partition_info_["factory"] = {"", 0, ""};
-    partition_info_["boot"]    = {"", 0, ""};
+    // dummy data for standalone mode - version, size, install_date in UTC epoch
+    partition_info_["app0"]    = {EMSESP_APP_VERSION, 0, 0};
+    partition_info_["app1"]    = {"", 0, 0};
+    partition_info_["factory"] = {"", 0, 0};
+    partition_info_["boot"]    = {"", 0, 0};
 #else
 
     auto current_partition = (const char *)esp_ota_get_running_partition()->label;
@@ -452,20 +451,19 @@ void System::get_partition_info() {
             p_info.version = EMSESP::nvs_.getString(part->label, "").c_str();
             char c[20];
             snprintf(c, sizeof(c), "d_%s", (const char *)part->label);
-            time_t d = EMSESP::nvs_.getULong(c, 0);
-            char   time_string[25];
-            strftime(time_string, sizeof(time_string), "%FT%T", localtime(&d));
-            p_info.install_date = d > 1500000000L ? time_string : "";
+            time_t d            = EMSESP::nvs_.getULong(c, 0);
+            p_info.install_date = d > 1500000000L ? d : 0; // store UTC epoch; formatted to local time at render
 
-            esp_image_metadata_t meta     = {};
-            esp_partition_pos_t  part_pos = {.offset = part->address, .size = part->size};
-            if (esp_image_verify(ESP_IMAGE_VERIFY_SILENT, &part_pos, &meta) == ESP_OK) {
-                p_info.size = meta.image_len / 1024; // actual firmware size in KB
-            } else {
-                p_info.size = 0;
+            if (!p_info.version.empty()) {
+                esp_image_metadata_t meta     = {};
+                esp_partition_pos_t  part_pos = {.offset = part->address, .size = part->size};
+                if (esp_image_verify(ESP_IMAGE_VERIFY_SILENT, &part_pos, &meta) == ESP_OK) {
+                    p_info.size = meta.image_len / 1024; // actual firmware size in KB
+                } else {
+                    p_info.size = 0;
+                }
+                partition_info_[part->label] = p_info;
             }
-
-            partition_info_[part->label] = p_info;
         }
 
         it = esp_partition_next(it); // loop to next partition
@@ -474,7 +472,7 @@ void System::get_partition_info() {
 #endif
 }
 
-// set NTP install time/date for the current partition
+// set install time/date for the current partition, in UTC
 // assumes NTP is connected and working
 void System::set_partition_install_date() {
 #ifndef EMSESP_STANDALONE
@@ -1061,6 +1059,10 @@ void System::network_init() {
         digitalWrite(eth_power_, HIGH);
     }
     eth_present_ = ETH.begin(type, phy_addr, mdc, mdio, power, clock_mode);
+    if (eth_present_) {
+        // Push hostname to the ETH netif immediately after it's created
+        ETH.setHostname(hostname_.c_str());
+    }
 #endif
 }
 
@@ -1333,11 +1335,18 @@ void System::show_system(uuid::console::Shell & shell) {
         if (partition.second.version.empty()) {
             continue; // no version, empty string
         }
+        std::string installed;
+        if (partition.second.install_date > 0) {
+            char   time_string[25];
+            time_t d = partition.second.install_date;
+            strftime(time_string, sizeof(time_string), "%FT%T", localtime(&d));
+            installed = std::string(", installed on ") + time_string;
+        }
         shell.printfln("  %s: v%s (%d KB%s) %s",
                        partition.first.c_str(),
                        partition.second.version.c_str(),
                        partition.second.size,
-                       partition.second.install_date.empty() ? "" : (std::string(", installed on ") + partition.second.install_date).c_str(),
+                       installed.c_str(),
                        (strcmp(esp_ota_get_running_partition()->label, partition.first.c_str()) == 0) ? "** active **" : "");
     }
 
@@ -1613,8 +1622,8 @@ bool System::check_upgrade() {
         settingsVersion = "3.5.0"; // this was the last stable version without version info
     }
 
-    version::Semver200_version settings_version(settingsVersion);
-    version::Semver200_version this_version(EMSESP_APP_VERSION);
+    version::EMSESP_Version settings_version(settingsVersion);
+    version::EMSESP_Version this_version(EMSESP_APP_VERSION);
 
     std::string settings_version_type = settings_version.prerelease().empty() ? "" : ("-" + settings_version.prerelease());
     std::string this_version_type     = this_version.prerelease().empty() ? "" : ("-" + this_version.prerelease());
@@ -1765,18 +1774,17 @@ void System::exportSettings(const std::string & type, const char * filename, Jso
 
     File settingsFile = LittleFS.open(filename);
     if (settingsFile) {
-        JsonDocument         jsonDocument;
-        DeserializationError error = deserializeJson(jsonDocument, settingsFile);
-        if (error == DeserializationError::Ok && jsonDocument.is<JsonObject>()) {
-            JsonObject node = output[section].to<JsonObject>();
-            for (JsonPair kvp : jsonDocument.as<JsonObject>()) {
-                node[kvp.key()] = kvp.value();
+        {
+            JsonDocument         jsonDocument;
+            DeserializationError error = deserializeJson(jsonDocument, settingsFile);
+            settingsFile.close(); // close early, we no longer need the file
+            if (error || !jsonDocument.is<JsonObject>()) {
+                LOG_ERROR("Failed to deserialize settings file %s", filename);
+                return;
             }
-        } else {
-            LOG_ERROR("Failed to deserialize settings file %s", filename);
+            output[section].set(jsonDocument.as<JsonObject>());
         }
         LOG_DEBUG("Exported %s settings from file %s", section, filename);
-        settingsFile.close();
     } else {
         LOG_ERROR("No settings file for %s found", filename);
     }
@@ -1828,13 +1836,15 @@ void System::exportSystemBackup(JsonObject output) {
     if (file) {
         JsonDocument         jsonDocument;
         DeserializationError error = deserializeJson(jsonDocument, file);
-        if (error == DeserializationError::Ok && jsonDocument.is<JsonObject>()) {
-            JsonObject node = nodes.add<JsonObject>();
-            node["type"]    = "customSupport";
-            node["data"]    = jsonDocument.as<JsonObject>();
+        file.close(); // close early, we no longer need the file
+        if (!error && jsonDocument.is<JsonObject>()) {
+            JsonObject support_node = nodes.add<JsonObject>();
+            support_node["type"]    = "customSupport";
+            support_node["data"].set(jsonDocument.as<JsonObject>());
+            LOG_DEBUG("Exported custom support file %s", EMSESP_CUSTOMSUPPORT_FILE);
+        } else {
+            LOG_ERROR("Failed to deserialize custom support file");
         }
-        file.close();
-        LOG_DEBUG("Exported custom support file %s", EMSESP_CUSTOMSUPPORT_FILE);
     }
 
     // Backup NVS values

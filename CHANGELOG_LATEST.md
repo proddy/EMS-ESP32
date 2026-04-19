@@ -14,6 +14,7 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - heatpump reset [#2933](https://github.com/emsesp/EMS-ESP32/issues/2933)
 - e-mail notification using ReadyMail Client
 - 2.nd freshwater module (dhw4, dhw5) [#2991](https://github.com/emsesp/EMS-ESP32/issues/2991)
+- full system backup and restore
 
 ## Fixed
 
@@ -34,3 +35,4 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - secure mqtt uses ESP_SSLClient
 - fetch telegrams: set length to fetch [#3017](https://github.com/emsesp/EMS-ESP32/issues/3017)
 - move http client from stack to heap
+- heap optimizations [#3021](https://github.com/emsesp/EMS-ESP32/discussions/3021)

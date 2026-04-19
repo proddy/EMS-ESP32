@@ -16,7 +16,6 @@ NTPSettingsService::NTPSettingsService(AsyncWebServer * server, FS * fs, Securit
 
 void NTPSettingsService::begin() {
     _fsPersistence.readFromFS();
-    configureNTP();
 }
 
 void NTPSettingsService::loop() {
@@ -53,7 +52,7 @@ void NTPSettingsService::configureTime(AsyncWebServerRequest * request, JsonVari
             time_t         time = mktime(&tm);
             struct timeval now  = {.tv_sec = time, .tv_usec = {}};
 #if CONFIG_IDF_TARGET_ESP32C3
-           // settimeofday and adjtime() does not work, unknown how to set time
+            // settimeofday and adjtime() does not work, unknown how to set time
             emsesp::EMSESP::logger().warning("manual clock setting not possible");
 #else
             settimeofday(&now, nullptr);

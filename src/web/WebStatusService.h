@@ -4,7 +4,7 @@
 #define EMSESP_SYSTEM_STATUS_SERVICE_PATH "/rest/systemStatus"
 #define EMSESP_ACTION_SERVICE_PATH "/rest/action"
 
-#include <semver200.h> // for version checking
+#include "../core/EMSESP_Version.h"
 #include "../emsesp_version.h"
 
 namespace emsesp {

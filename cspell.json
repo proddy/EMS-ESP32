@@ -38,6 +38,7 @@
     "vite.config.ts",
     "lib/esp32-psram/**",
     "test/test_api/test_api.h",
-    "lib_standalone/**"
+    "lib_standalone/**",
+    "**/*.js"
   ]
   }

@@ -211,14 +211,15 @@ const DragNdrop = ({ text, onFileSelected }: DragNdropProps) => {
                 {LL.UPGRADE_IMPORTANT_MESSAGES()}
               </DialogTitle>
               <DialogContent dividers>
-                {upgradeImportantMessageType === 1 &&
-                  LL.UPGRADE_IMPORTANT_MESSAGES_1()}
                 {upgradeImportantMessageType === 2 &&
                   LL.UPGRADE_IMPORTANT_MESSAGES_2()}
+                {upgradeImportantMessageType === 1 &&
+                  LL.UPGRADE_IMPORTANT_MESSAGES_1()}
                 <Typography sx={{ mt: 2 }}>
                   <Link
-                    target="_blank"
                     to="https://docs.emsesp.org/FAQ#upgrading-the-firmware"
+                    target="_blank"
+                    rel="noreferrer"
                     style={{ color: 'lightblue' }}
                   >
                     {LL.ONLINE_HELP()}
