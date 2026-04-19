@@ -146,18 +146,27 @@ void WebStatusService::systemStatus(AsyncWebServerRequest * request) {
     }
 
     // get the partition info for each partition, including the running one
-    // the partition data is done once in System::start() and stored in partition_info_
+    // the partition data is gathered once in System::start() and stored in partition_info_
+    // install_date is stored as a UTC epoch and formatted to local time here so it honors
+    // the current TZ (which may not have been set yet when System::start() ran).
     JsonArray partitions = root["partitions"].to<JsonArray>();
     for (const auto & partition : EMSESP::system_.partition_info_) {
         // Skip partition if it has no version, or it's size is 0
         if (partition.second.version.empty() || partition.second.size == 0) {
             continue;
         }
-        JsonObject part      = partitions.add<JsonObject>();
-        part["partition"]    = partition.first;
-        part["version"]      = partition.second.version;
-        part["size"]         = partition.second.size;
-        part["install_date"] = partition.second.install_date;
+        JsonObject part   = partitions.add<JsonObject>();
+        part["partition"] = partition.first;
+        part["version"]   = partition.second.version;
+        part["size"]      = partition.second.size;
+        if (partition.second.install_date > 0) {
+            char   time_string[25];
+            time_t d = partition.second.install_date;
+            strftime(time_string, sizeof(time_string), "%FT%T", localtime(&d));
+            part["install_date"] = time_string;
+        } else {
+            part["install_date"] = "";
+        }
     }
 
     root["developer_mode"] = EMSESP::system_.developer_mode();
