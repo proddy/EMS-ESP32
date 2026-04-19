@@ -350,7 +350,7 @@ const it: Translation = {
   NO_DATA_1: 'Nessuna entità EMS preferita trovata. Usa il',
   NO_DATA_2: 'modulo per marcarle.',
   NO_DATA_3: 'Per vedere tutte le entità disponibili vai a',
-  NO_GPIO:'Non è stato trovato alcun GPIO disponibile',
+  NO_GPIO: 'Non è stato trovato alcun GPIO disponibile',
   THIS_VERSION: 'Questa versione',
   PLATFORM: 'Piattaforma',
   RELEASE_TYPE: 'Tipo di rilascio',
@@ -362,7 +362,7 @@ const it: Translation = {
   STORED_VERSIONS: 'Versioni memorizzate',
   ONLINE_HELP: 'aiuto online',
   UPGRADE_IMPORTANT_MESSAGES: 'Aggiorna Messaggi Importanti',
-  UPGRADE_IMPORTANT_MESSAGES_1: 'Questa aggiornamento richiede un ripristino di fabbrica. Assicurati di aver creato un backup delle tue configurazioni e impostazioni prima di continuare e di caricarlo dopo l\'installazione della nuova versione.',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Questa aggiornamento richiede un ripristino di fabbrica. Assicurati di prima scaricare un backup del sistema prima di continuare, e poi caricare questo file dopo l\'installazione della nuova versione.',
   UPGRADE_IMPORTANT_MESSAGES_2: 'Stai aggiornando a una nuova versione principale. Assicurati di aver letto il ChangeLog per qualsiasi cambiamento importante.',
   WARNING_SYSTEM_BACKUP: 'Questo creerà un backup delle tue configurazioni e impostazioni complete. Tutte le password saranno leggibili nel file di backup. Sei sicuro di voler continuare?'
 

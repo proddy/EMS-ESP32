@@ -350,7 +350,7 @@ const en: Translation = {
   NO_DATA_1: 'No favorite EMS entities found yet. Use the',
   NO_DATA_2: 'module to mark them.',
   NO_DATA_3: 'To see all available entities go to',
-  NO_GPIO:'No available GPIO found',
+  NO_GPIO: 'No available GPIO found',
   THIS_VERSION: 'This Version',
   PLATFORM: 'Platform',
   RELEASE_TYPE: 'Release Type',
@@ -362,7 +362,7 @@ const en: Translation = {
   STORED_VERSIONS: 'Stored Versions',
   ONLINE_HELP: 'online help',
   UPGRADE_IMPORTANT_MESSAGES: 'Upgrade Important Messages',
-  UPGRADE_IMPORTANT_MESSAGES_1: 'This upgrade requires a factory reset. Make sure you have made a backup of your configuration and settings before continuing, and upload this after the new version is installed.',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'This upgrade requires a factory reset. Make sure you first download a System Backup before continuing, and then upload this file after the new version is installed.',
   UPGRADE_IMPORTANT_MESSAGES_2: 'You are upgrading to a new major version. Make sure you have read the ChangeLog for any breaking changes.',
   WARNING_SYSTEM_BACKUP: 'This will create a backup of your full system configuration and settings. All passwords will be readable in the backup file. Be careful with sharing! Do you want to continue?'
 

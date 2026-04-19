@@ -350,7 +350,7 @@ const de: Translation = {
   NO_DATA_1: 'Keine favorisierten EMS-Entitäten gefunden! Verwenden Sie das Modul',
   NO_DATA_2: ', um sie zu markieren.',
   NO_DATA_3: 'Um alle verfügbaren Entitäten anzuzeigen, gehen Sie zu',
-  NO_GPIO:'Keine freien GPIO gefunden',
+  NO_GPIO: 'Keine freien GPIO gefunden',
   THIS_VERSION: 'Diese Version',
   PLATFORM: 'Plattform',
   RELEASE_TYPE: 'Release Typ',
@@ -362,7 +362,7 @@ const de: Translation = {
   STORED_VERSIONS: 'Gespeicherte Versionen',
   ONLINE_HELP: 'Online-Hilfe',
   UPGRADE_IMPORTANT_MESSAGES: 'Wichtige Nachrichten aktualisieren',
-  UPGRADE_IMPORTANT_MESSAGES_1: 'Diese Aktualisierung erfordert eine Werkseinstellung. Stellen Sie sicher, dass Sie eine Sicherung Ihrer Konfiguration und Einstellungen vor dem Fortfahren erstellt haben und diese nach der Installation der neuen Version hochladen.',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Diese Aktualisierung erfordert eine Werkseinstellung. Stellen Sie sicher, dass Sie zuerst eine Systemsicherung herunterladen, bevor Sie fortfahren, und laden Sie diese Datei dann nach der Installation der neuen Version hoch.',
   UPGRADE_IMPORTANT_MESSAGES_2: 'Sie aktualisieren auf eine neue Hauptversion. Stellen Sie sicher, dass Sie den ChangeLog für alle wichtigen Änderungen gelesen haben.',
   WARNING_SYSTEM_BACKUP: 'Dies wird eine Sicherung Ihrer vollständigen Systemkonfiguration und -einstellungen erstellen. Alle Passwörter werden im Sicherungsdatei lesbar sein. Seien Sie vorsichtig beim Teilen! Möchten Sie fortfahren?'
 

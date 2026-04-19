@@ -350,7 +350,7 @@ const nl: Translation = {
   NO_DATA_1: 'Er zijn nog geen favoriete EMS-entiteiten gevonden. Gebruik de',
   NO_DATA_2: 'module om ze te markeren.',
   NO_DATA_3: 'Om alle beschikbare entiteiten te zien, ga naar',
-  NO_GPIO:'Er is geen beschikbare GPIO gevonden',
+  NO_GPIO: 'Er is geen beschikbare GPIO gevonden',
   THIS_VERSION: 'Deze Versie',
   PLATFORM: 'Platform',
   RELEASE_TYPE: 'Release Typ',
@@ -362,7 +362,7 @@ const nl: Translation = {
   STORED_VERSIONS: 'Opgeslagen versies',
   ONLINE_HELP: 'online help',
   UPGRADE_IMPORTANT_MESSAGES: 'Upgrade Belangrijke Berichten',
-  UPGRADE_IMPORTANT_MESSAGES_1: 'Deze upgrade vereist een fabrieksinstelling. Zorg ervoor dat u een back-up van uw configuratie en instellingen hebt gemaakt voordat u doorgaat en upload deze na de installatie van de nieuwe versie.',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Deze upgrade vereist een fabrieksinstelling. Zorg ervoor dat u eerst een Systeem Backup download voordat u doorgaat, en upload deze file na de installatie van de nieuwe versie.',
   UPGRADE_IMPORTANT_MESSAGES_2: 'U updatet naar een nieuwe grote versie. Zorg ervoor dat u de ChangeLog hebt gelezen voor alle brekende wijzigingen.',
   WARNING_SYSTEM_BACKUP: 'Dit zal een back-up van uw volledige systeemconfiguratie en instellingen maken. Alle wachtwoorden zijn leesbaar in het back-upbestand. Wees voorzichtig bij delen! Wilt u doorgaan?'
 

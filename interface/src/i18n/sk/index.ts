@@ -350,7 +350,7 @@ const sk: Translation = {
   NO_DATA_1: 'Nenašli sa žiadne obľúbené entity EMS. Použite',
   NO_DATA_2: 'modul na ich označenie.',
   NO_DATA_3: 'Ak chcete zobraziť všetky dostupné entity, prejdite na',
-  NO_GPIO:'Nebol nájdený žiadny dostupný GPIO',
+  NO_GPIO: 'Nebol nájdený žiadny dostupný GPIO',
   THIS_VERSION: 'Táto verzia',
   PLATFORM: 'Platforma',
   RELEASE_TYPE: 'Typ vydania',
@@ -362,7 +362,7 @@ const sk: Translation = {
   STORED_VERSIONS: 'Uložené verzie',
   ONLINE_HELP: 'online pomoc',
   UPGRADE_IMPORTANT_MESSAGES: 'Aktualizovať dôležité správy',
-  UPGRADE_IMPORTANT_MESSAGES_1: 'Táto aktualizácia vyžaduje reštart základných nastavení. Uistite sa, že ste vytvorili zálohu svojich konfigurácií a nastavení pred pokračovaním a nahrajte ju po instalácii novej verzie.',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Táto aktualizácia vyžaduje reštart základných nastavení. Uistite sa, že najprv stiahnete systémovú zálohu pred pokračovaním, a potom nahrajte tento súbor po instalácii novej verzie.',
   UPGRADE_IMPORTANT_MESSAGES_2: 'Aktualizujete sa na novú hlavnú verziu. Uistite sa, že ste prečítali ChangeLog pre akékoľvek dôležité zmeny.',
   WARNING_SYSTEM_BACKUP: 'Toto vytvorí zálohu všetkých vašich celých systémových konfigurácií a nastavení. Všetky hesla budú čitateľné v zálohovom súbore. Buďte opatrní pri zdieľaní! Chcete pokračovať?'
 
