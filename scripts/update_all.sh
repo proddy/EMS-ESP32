@@ -20,7 +20,7 @@ pnpm format
 
 cd ..
 cd interface
-pnpm build_webUI
+pnpm build-webUI
 
 cd ..
 npx cspell "**"

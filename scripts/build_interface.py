@@ -74,7 +74,7 @@ def buildWeb():
         # Run pnpm commands in the interface directory
         commands = [
             f"{pnpm_exe} install",
-            f"{pnpm_exe} build_webUI"
+            f"{pnpm_exe} build-webUI"
         ]
 
         for command in commands:
@@ -102,7 +102,7 @@ def buildWeb():
         return False
 
 
-def build_webUI(*args, **kwargs):
+def build-webUI(*args, **kwargs):
     success = buildWeb()
     if not success:
         print("Web interface build failed!")
@@ -114,7 +114,7 @@ def build_webUI(*args, **kwargs):
 env.AddCustomTarget(
     name="build",
     dependencies=None,
-    actions=[build_webUI],
+    actions=[build-webUI],
     title="build web interface",
     description="installs pnpm packages, updates libraries and builds web UI",
     always_build=True
