@@ -15,7 +15,7 @@ const REPEAT_CHAR = '=';
 const REPEAT_COUNT = 50;
 const DEFAULT_OUT_DIR = 'dist';
 const ES_TARGET = 'es2020';
-const CHUNK_SIZE_WARNING_LIMIT = 512;
+const CHUNK_SIZE_WARNING_LIMIT = 1024;
 const ASSETS_INLINE_LIMIT = 4096;
 
 // Common resolve aliases
@@ -130,86 +130,10 @@ const createBasePlugins = (
   return plugins;
 };
 
-// Manual chunk splitting strategy
-const createManualChunks = (detailed = false) => {
-  return (id: string): string | undefined => {
-    if (id.includes('node_modules')) {
-      if (id.includes('preact')) return '@preact';
-      if (detailed) {
-        if (id.includes('react-router')) return '@react-router';
-        if (id.includes('@mui/material')) return '@mui-material';
-        if (id.includes('@mui/icons-material')) return '@mui-icons';
-        if (id.includes('alova')) return '@alova';
-        if (id.includes('typesafe-i18n')) return '@i18n';
-        if (id.includes('react-toastify')) return '@toastify';
-        if (id.includes('@table-library')) return '@table-library';
-        if (id.includes('uuid')) return '@uuid';
-        if (id.includes('axios') || id.includes('fetch')) return '@http';
-        if (id.includes('lodash') || id.includes('ramda')) return '@utils';
-      }
-      return 'vendor';
-    }
-    if (detailed) {
-      // Group circularly dependent modules together to avoid circular chunk warnings
-      // components, app, and utils are tightly coupled, so combine them
-      if (
-        id.includes('components/') ||
-        id.includes('app/') ||
-        id.includes('utils/')
-      ) {
-        return 'app';
-      }
-      // Keep api separate as it's typically more independent
-      if (id.includes('api/')) return 'api';
-    }
-    return undefined;
-  };
+const manualChunks = (id: string): string | undefined => {
+  if (id.includes('node_modules')) return 'vendor';
+  return undefined;
 };
-
-// Rolldown-native codeSplitting groups for the production build.
-// See: https://rolldown.rs/reference/outputoptions.codesplitting
-const createRolldownCodeSplitting = () => ({
-  groups: [
-    { name: '@preact', test: /[\\/]node_modules[\\/].*preact/, priority: 100 },
-    {
-      name: '@react-router',
-      test: /[\\/]node_modules[\\/].*react-router/,
-      priority: 95
-    },
-    {
-      name: '@mui-material',
-      test: /[\\/]node_modules[\\/]@mui[\\/]material/,
-      priority: 95
-    },
-    {
-      name: '@mui-icons',
-      test: /[\\/]node_modules[\\/]@mui[\\/]icons-material/,
-      priority: 95
-    },
-    { name: '@alova', test: /[\\/]node_modules[\\/].*alova/, priority: 90 },
-    { name: '@i18n', test: /[\\/]node_modules[\\/].*typesafe-i18n/, priority: 90 },
-    {
-      name: '@toastify',
-      test: /[\\/]node_modules[\\/].*react-toastify/,
-      priority: 90
-    },
-    {
-      name: '@table-library',
-      test: /[\\/]node_modules[\\/]@table-library/,
-      priority: 90
-    },
-    { name: 'vendor', test: /[\\/]node_modules[\\/]/, priority: 10 },
-    // Collapse the lazy-loaded route stubs + shared app/components/utils
-    // code into one chunk. This cuts firmware-side route count roughly in
-    // half and speeds up route-matching on every incoming HTTP request.
-    {
-      name: 'app',
-      test: /[\\/](app|components|utils)[\\/]/,
-      priority: 5
-    },
-    { name: 'api', test: /[\\/]api[\\/]/, priority: 5 }
-  ]
-});
 
 // Common build base configuration
 const createBaseBuildConfig = () => ({
@@ -335,7 +259,7 @@ export default defineConfig(
               moduleSideEffects: false
             },
             output: {
-              manualChunks: createManualChunks(false)
+              manualChunks
             }
           }
         }
@@ -375,17 +299,10 @@ export default defineConfig(
             chunkFileNames: 'assets/[name]-[hash].js',
             entryFileNames: 'assets/[name]-[hash].js',
             assetFileNames: 'assets/[name]-[hash].[ext]',
-            // Kept as a no-op for documentation/fallback. With Vite 8
-            manualChunks: createManualChunks(true),
+            manualChunks,
             sourcemap: false
           }
-        },
-        rolldownOptions: {
-          output: {
-            codeSplitting: createRolldownCodeSplitting()
-          }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any
+        }
       }
     };
   }

@@ -1,18 +1,12 @@
-import { type FC, Suspense, lazy, memo, useContext, useEffect, useRef } from 'react';
+import { type FC, memo, useContext, useEffect, useRef } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import { toast } from 'react-toastify';
 
-import {
-  LoadingSpinner,
-  RequireAuthenticated,
-  RequireUnauthenticated
-} from 'components';
+import AuthenticatedRouting from 'AuthenticatedRouting';
+import SignIn from 'SignIn';
+import { RequireAuthenticated, RequireUnauthenticated } from 'components';
 import { Authentication, AuthenticationContext } from 'contexts/authentication';
 import { useI18nContext } from 'i18n/i18n-react';
-
-// Lazy load route components for better code splitting
-const SignIn = lazy(() => import('SignIn'));
-const AuthenticatedRouting = lazy(() => import('AuthenticatedRouting'));
 
 interface SecurityRedirectProps {
   readonly message: string;
@@ -45,34 +39,32 @@ const AppRouting: FC = memo(() => {
 
   return (
     <Authentication>
-      <Suspense fallback={<LoadingSpinner />}>
-        <Routes>
-          <Route
-            path="/unauthorized"
-            element={<RootRedirect message={LL.PLEASE_SIGNIN()} signOut />}
-          />
-          <Route
-            path="/fileUpdated"
-            element={<RootRedirect message={LL.UPLOAD_SUCCESSFUL()} />}
-          />
-          <Route
-            path="/"
-            element={
-              <RequireUnauthenticated>
-                <SignIn />
-              </RequireUnauthenticated>
-            }
-          />
-          <Route
-            path="/*"
-            element={
-              <RequireAuthenticated>
-                <AuthenticatedRouting />
-              </RequireAuthenticated>
-            }
-          />
-        </Routes>
-      </Suspense>
+      <Routes>
+        <Route
+          path="/unauthorized"
+          element={<RootRedirect message={LL.PLEASE_SIGNIN()} signOut />}
+        />
+        <Route
+          path="/fileUpdated"
+          element={<RootRedirect message={LL.UPLOAD_SUCCESSFUL()} />}
+        />
+        <Route
+          path="/"
+          element={
+            <RequireUnauthenticated>
+              <SignIn />
+            </RequireUnauthenticated>
+          }
+        />
+        <Route
+          path="/*"
+          element={
+            <RequireAuthenticated>
+              <AuthenticatedRouting />
+            </RequireAuthenticated>
+          }
+        />
+      </Routes>
     </Authentication>
   );
 });
