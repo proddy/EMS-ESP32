@@ -1767,7 +1767,7 @@ void System::exportSystemBackup(JsonObject output) {
     node         = nodes.add<JsonObject>();
     node["type"] = "nvs";
 
-    const char *   nvs_part = "nvs";
+    const char *   nvs_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, "nvs1") ? "nvs1" : "nvs"; // nvs1 is on 16MBs
     nvs_iterator_t it       = nullptr;
 #if ESP_IDF_VERSION_MAJOR < 5
     it = nvs_entry_find(nvs_part, "ems-esp", NVS_TYPE_ANY);
