@@ -74,6 +74,7 @@ MAKE_WORD(board_profile)
 MAKE_WORD(setvalue)
 MAKE_WORD(service)
 MAKE_WORD(message)
+MAKE_WORD(oled)
 
 // for commands
 MAKE_WORD(call)

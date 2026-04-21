@@ -68,6 +68,7 @@
 #include "console.h"
 #include "console_stream.h"
 #include "shower.h"
+#include "oled.h"
 #include "roomcontrol.h"
 #include "command.h"
 
@@ -95,6 +96,7 @@ using DeviceValueNumOp = DeviceValue::DeviceValueNumOp;
 // forward declarations for compiler
 class EMSESPShell;
 class Shower;
+class OLED;
 
 static constexpr const char * EMSESP_NVS_BOOT_NEW_FIRMWARE = "fresh_firmware"; // max 15 characters
 
@@ -231,6 +233,7 @@ class EMSESP {
     static TemperatureSensor temperaturesensor_;
     static AnalogSensor      analogsensor_;
     static Shower            shower_;
+    static OLED              oled_;
     static RxService         rxservice_;
     static TxService         txservice_;
     static Preferences       nvs_;

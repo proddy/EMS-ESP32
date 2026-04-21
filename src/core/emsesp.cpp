@@ -89,6 +89,7 @@ System            EMSESP::system_;            // core system services
 TemperatureSensor EMSESP::temperaturesensor_; // Temperature sensors
 AnalogSensor      EMSESP::analogsensor_;      // Analog sensors
 Shower            EMSESP::shower_;            // Shower logic
+OLED              EMSESP::oled_;              // OLED display
 Preferences       EMSESP::nvs_;               // NV Storage
 
 // for a specific EMS device go and request data values
@@ -1724,6 +1725,9 @@ void EMSESP::start() {
     // loads core system services settings (network, mqtt, ap, ntp etc)
     esp32React.begin();
 
+    // start OLED display
+    oled_.start();
+
 #ifndef EMSESP_STANDALONE
     if (factory_settings) {
         LOG_WARNING("No settings found on filesystem. Using factory settings.");
@@ -1867,6 +1871,7 @@ void EMSESP::loop() {
         // loop through the services
         rxservice_.loop();          // process any incoming Rx telegrams
         shower_.loop();             // check for shower on/off
+        oled_.loop();               // refresh OLED display
         temperaturesensor_.loop();  // read sensor temperatures
         analogsensor_.loop();       // read analog sensor values
         publish_all_loop();         // with HA messages in parts to avoid flooding the MQTT queue

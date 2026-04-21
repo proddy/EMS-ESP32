@@ -751,6 +751,8 @@ void System::button_OnClick(PButton & b) {
     Test::listDir(LittleFS, "/", 3);
 #endif
 #endif
+
+    EMSESP::oled_.showMenu();
 }
 
 // button double click
