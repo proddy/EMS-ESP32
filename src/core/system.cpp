@@ -425,7 +425,8 @@ void System::get_partition_info() {
         auto t = time(nullptr);
         // write timestamp always with new version, if clock is not set, this will be updated with ntp
         EMSESP::nvs_.putULong(c, t);
-    }
+        // make sure OTA setting is updated with core3 format
+        esp_ota_set_boot_partition(esp_ota_get_running_partition());    }
 
     // Loop through all available partitions and update map with the version info pulled from NVS
     // Partitions can be app0, app1, factory, boot
