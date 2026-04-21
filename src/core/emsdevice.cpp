@@ -387,10 +387,10 @@ void EMSdevice::toggle_fetch(uint16_t telegram_id, bool toggle) {
 }
 
 // get status of automatic fetch for a telegramID
-bool EMSdevice::is_fetch(uint16_t telegram_id) const {
+bool EMSdevice::is_fetch(uint16_t telegram_id, uint8_t len) const {
     for (const auto & tf : telegram_functions_) {
         if (tf.telegram_type_id_ == telegram_id) {
-            return tf.fetch_;
+            return tf.fetch_ && tf.length_ >= len;
         }
     }
     return false;

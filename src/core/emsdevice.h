@@ -362,7 +362,7 @@ class EMSdevice {
     const char * telegram_type_name(std::shared_ptr<const Telegram> telegram);
     void         fetch_values();
     void         toggle_fetch(uint16_t telegram_id, bool toggle);
-    bool         is_fetch(uint16_t telegram_id) const;
+    bool         is_fetch(uint16_t telegram_id, uint8_t len = 0) const;
     bool         is_received(uint16_t telegram_id) const;
     bool         has_telegram_id(uint16_t id) const;
     void         ha_config_clear();
