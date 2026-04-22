@@ -187,7 +187,7 @@ const de: Translation = {
   COMPACT: 'Kompakte Darstellung',
   DOWNLOAD_SETTINGS_TEXT: 'Erstellen Sie eine Sicherung Ihrer Konfigurationen und Einstellungen',
   DOWNLOAD_SETTINGS_TEXT2: 'Exportiere alle Werte',
-  DOWNLOAD_SYSTEM_BACKUP: 'System Sicherung',
+  DOWNLOAD_SYSTEM_BACKUP: 'Systemsicherung',
   UPLOAD_TEXT: 'Laden Sie eine neue Firmware-Datei (.bin) oder eine Sicherungsdatei (.json) hoch',
   UPLOAD_DROP_TEXT: 'Legen Sie eine Firmware-Datei (.bin) ab oder klicken Sie hier',
   ERROR: 'Unerwarteter Fehler, bitte versuchen Sie es erneut.',
@@ -362,9 +362,9 @@ const de: Translation = {
   STORED_VERSIONS: 'Gespeicherte Versionen',
   ONLINE_HELP: 'Online-Hilfe',
   UPGRADE_IMPORTANT_MESSAGES: 'Wichtige Nachrichten aktualisieren',
-  UPGRADE_IMPORTANT_MESSAGES_1: 'Diese Aktualisierung erfordert eine Werkseinstellung. Stellen Sie sicher, dass Sie zuerst eine Systemsicherung herunterladen, bevor Sie fortfahren, und laden Sie diese Datei dann nach der Installation der neuen Version hoch.',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Für diese Aktualisierung ist ein Werksreset erforderlich. Stellen Sie sicher, dass Sie zuerst eine Systemsicherung herunterladen, bevor Sie fortfahren, und laden Sie diese Datei dann nach der Installation der neuen Version hoch.',
   UPGRADE_IMPORTANT_MESSAGES_2: 'Sie aktualisieren auf eine neue Hauptversion. Stellen Sie sicher, dass Sie den ChangeLog für alle wichtigen Änderungen gelesen haben.',
-  WARNING_SYSTEM_BACKUP: 'Dies wird eine Sicherung Ihrer vollständigen Systemkonfiguration und -einstellungen erstellen. Alle Passwörter werden im Sicherungsdatei lesbar sein. Seien Sie vorsichtig beim Teilen! Möchten Sie fortfahren?'
+  WARNING_SYSTEM_BACKUP: 'Dies wird eine Sicherung Ihrer vollständigen Systemkonfiguration und Einstellungen erstellen. Alle Passwörter werden in dieser Sicherungsdatei lesbar sein. Seien Sie vorsichtig beim Teilen! Möchten Sie fortfahren?'
 
 };
 
