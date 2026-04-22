@@ -171,6 +171,7 @@ telegram_type_id,name,is_fetched
 0x0468,HPSet, 
 0x0469,HPSet, 
 0x046A,HPSet, 
+0x0470,RC300Summer2, 
 0x0471,RC300Summer2, 
 0x0472,RC300Summer2, 
 0x0473,RC300Summer2, 
@@ -178,7 +179,6 @@ telegram_type_id,name,is_fetched
 0x0475,RC300Summer2, 
 0x0476,RC300Summer2, 
 0x0477,RC300Summer2, 
-0x0478,RC300Summer2, 
 0x047B,HP2, 
 0x0484,HPSilentMode,fetched
 0x0485,HpCooling,fetched
