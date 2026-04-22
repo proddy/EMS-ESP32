@@ -36,7 +36,7 @@ import {
 import { useI18nContext } from 'i18n/i18n-react';
 import type { NTPSettingsType, Time } from 'types';
 import { formatLocalDateTime, updateValueDirty, useRest } from 'utils';
-import { validate } from 'validators';
+import { ValidationError, validate } from 'validators';
 import { NTP_SETTINGS_VALIDATOR } from 'validators/ntp';
 
 import { TIME_ZONES, selectedTimeZone, useTimeZoneSelectItems } from './TZ';
@@ -133,7 +133,7 @@ const NTPSettings = () => {
       await validate(NTP_SETTINGS_VALIDATOR, data);
       await saveData();
     } catch (error) {
-      setFieldErrors(error as ValidateFieldsError);
+      setFieldErrors((error as ValidationError).fieldErrors);
     }
   }, [data, saveData]);
 

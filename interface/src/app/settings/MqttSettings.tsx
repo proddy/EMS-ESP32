@@ -31,7 +31,7 @@ import {
 import { useI18nContext } from 'i18n/i18n-react';
 import type { MqttSettingsType } from 'types';
 import { numberValue, updateValueDirty, useRest } from 'utils';
-import { createMqttSettingsValidator, validate } from 'validators';
+import { ValidationError, createMqttSettingsValidator, validate } from 'validators';
 
 import { callAction } from '../../api/app';
 
@@ -94,7 +94,7 @@ const MqttSettings = () => {
       await validate(createMqttSettingsValidator(data), data);
       await saveData();
     } catch (error) {
-      setFieldErrors(error as ValidateFieldsError);
+      setFieldErrors((error as ValidationError).fieldErrors);
     }
   }, [data, saveData]);
 

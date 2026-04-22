@@ -1,5 +1,19 @@
-import type { InternalRuleItem, ValidateOption } from 'async-validator';
+import type {
+  InternalRuleItem,
+  ValidateFieldsError,
+  ValidateOption
+} from 'async-validator';
 import type Schema from 'async-validator';
+
+export class ValidationError extends Error {
+  readonly fieldErrors: ValidateFieldsError;
+
+  constructor(fieldErrors: ValidateFieldsError) {
+    super('Validation failed');
+    this.name = 'ValidationError';
+    this.fieldErrors = fieldErrors;
+  }
+}
 
 export const validate = <T extends object>(
   validator: Schema,
@@ -8,7 +22,7 @@ export const validate = <T extends object>(
 ): Promise<T> =>
   new Promise((resolve, reject) => {
     void validator.validate(source, options ?? {}, (errors, fieldErrors) => {
-      errors ? reject(fieldErrors as Error) : resolve(source as T);
+      errors ? reject(new ValidationError(fieldErrors)) : resolve(source as T);
     });
   });
 
