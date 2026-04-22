@@ -686,7 +686,7 @@ void WebCustomEntityService::fetch() {
             uint8_t stop       = (entity.offset + len[entity.value_type]) % fetchblock;
             bool    is_fetched = start < fetchblock && stop < fetchblock; // make sure the complete value is a a fetched block
             for (const auto & emsdevice : EMSESP::emsdevices) {
-                if (emsdevice->is_device_id(entity.device_id) && emsdevice->is_fetch(entity.type_id)
+                if (emsdevice->is_device_id(entity.device_id) && emsdevice->is_fetch(entity.type_id, entity.offset + len[entity.value_type])
                     && (is_fetched || entity.value_type == DeviceValueType::STRING)) {
                     needFetch = false;
                     break;
