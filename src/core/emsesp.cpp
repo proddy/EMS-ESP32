@@ -1727,6 +1727,8 @@ void EMSESP::start() {
 #ifndef EMSESP_STANDALONE
     if (factory_settings) {
         LOG_WARNING("No settings found on filesystem. Using factory settings.");
+        // make sure OTAdata is updated with core3 format
+        esp_ota_set_boot_partition(esp_ota_get_running_partition());
     }
 #endif
 

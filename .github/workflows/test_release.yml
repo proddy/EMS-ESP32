@@ -28,7 +28,7 @@ jobs:
           node-version: 24
 
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Enable Corepack
         run: corepack enable pnpm
@@ -63,7 +63,7 @@ jobs:
 
       - name: Create GitHub Release
         id: 'automatic_releases'
-        uses: emsesp/action-automatic-releases@v1.0.0
+        uses: emsesp/action-automatic-releases@v1.0.1
         with:
           repo_token: '${{ secrets.GITHUB_TOKEN }}'
           title: Test Build v${{steps.build_info.outputs.VERSION}}
