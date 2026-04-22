@@ -40,7 +40,7 @@ import {
 import { useI18nContext } from 'i18n/i18n-react';
 import type { NetworkSettingsType } from 'types';
 import { updateValueDirty, useRest } from 'utils';
-import { validate } from 'validators';
+import { ValidationError, validate } from 'validators';
 import { createNetworkSettingsValidator } from 'validators/network';
 
 import SystemMonitor from '../../status/SystemMonitor';
@@ -116,7 +116,7 @@ const NetworkSettings = () => {
       await validate(createNetworkSettingsValidator(data), data);
       await saveData();
     } catch (error) {
-      setFieldErrors(error as ValidateFieldsError);
+      setFieldErrors((error as ValidationError).fieldErrors);
     }
     deselectNetwork();
   }, [data, saveData, deselectNetwork]);

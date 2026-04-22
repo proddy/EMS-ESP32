@@ -24,7 +24,7 @@ import {
 import { useI18nContext } from 'i18n/i18n-react';
 import type { UserType } from 'types';
 import { updateValue } from 'utils';
-import { validate } from 'validators';
+import { ValidationError, validate } from 'validators';
 
 interface UserFormProps {
   creating: boolean;
@@ -69,7 +69,7 @@ const User: FC<UserFormProps> = ({
         await validate(validator, user);
         onDoneEditing();
       } catch (error) {
-        setFieldErrors(error as ValidateFieldsError);
+        setFieldErrors((error as ValidationError).fieldErrors);
       }
     }
   }, [user, validator, onDoneEditing]);
