@@ -69,7 +69,9 @@ class EMSESP_Version {
             return a.major_ < b.major_;
         if (a.minor_ != b.minor_)
             return a.minor_ < b.minor_;
-        return a.patch_ < b.patch_;
+        if (a.patch_ != b.patch_)
+            return a.patch_ < b.patch_;
+        return a.prerelease_ < b.prerelease_;
     }
 
     friend bool operator>(const EMSESP_Version & a, const EMSESP_Version & b) {
@@ -77,7 +79,7 @@ class EMSESP_Version {
     }
 
     friend bool operator==(const EMSESP_Version & a, const EMSESP_Version & b) {
-        return a.major_ == b.major_ && a.minor_ == b.minor_ && a.patch_ == b.patch_;
+        return a.major_ == b.major_ && a.minor_ == b.minor_ && a.patch_ == b.patch_ && a.prerelease_ == b.prerelease_;
     }
 
     friend bool operator!=(const EMSESP_Version & a, const EMSESP_Version & b) {
