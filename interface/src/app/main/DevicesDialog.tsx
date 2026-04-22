@@ -24,7 +24,7 @@ import type { ValidateFieldsError } from 'async-validator';
 import { ValidatedTextField } from 'components';
 import { useI18nContext } from 'i18n/i18n-react';
 import { numberValue, updateValue } from 'utils';
-import { validate } from 'validators';
+import { ValidationError, validate } from 'validators';
 
 import { DeviceValueUOM, DeviceValueUOM_s } from './types';
 import type { DeviceValue } from './types';
@@ -67,7 +67,7 @@ const DevicesDialog = ({
       await validate(validator, editItem);
       onSave(editItem);
     } catch (error) {
-      setFieldErrors(error as ValidateFieldsError);
+      setFieldErrors((error as ValidationError).fieldErrors);
     }
   }, [validator, editItem, onSave]);
 

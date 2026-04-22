@@ -33,7 +33,7 @@ import {
 } from 'components';
 import { useI18nContext } from 'i18n/i18n-react';
 import { numberValue, updateValueDirty, useRest } from 'utils';
-import { validate } from 'validators';
+import { ValidationError, validate } from 'validators';
 
 import { API, getBoardProfile, readSettings, writeSettings } from '../../api/app';
 import { BOARD_PROFILES } from '../main/types';
@@ -153,7 +153,7 @@ const ApplicationSettings = () => {
       setFieldErrors(undefined);
       await validate(createSettingsValidator(data), data);
     } catch (error) {
-      setFieldErrors(error as ValidateFieldsError);
+      setFieldErrors((error as ValidationError).fieldErrors);
     } finally {
       await saveData();
     }

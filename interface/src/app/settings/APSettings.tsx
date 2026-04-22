@@ -21,7 +21,7 @@ import { useI18nContext } from 'i18n/i18n-react';
 import type { APSettingsType } from 'types';
 import { APProvisionMode } from 'types';
 import { numberValue, updateValueDirty, useRest } from 'utils';
-import { createAPSettingsValidator, validate } from 'validators';
+import { ValidationError, createAPSettingsValidator, validate } from 'validators';
 
 export const isAPEnabled = ({ provision_mode }: APSettingsType) =>
   provision_mode === APProvisionMode.AP_MODE_ALWAYS ||
@@ -86,7 +86,7 @@ const APSettings = () => {
       await validate(createAPSettingsValidator(data), data);
       await saveData();
     } catch (error) {
-      setFieldErrors(error as ValidateFieldsError);
+      setFieldErrors((error as ValidationError).fieldErrors);
     }
   }, [data, saveData]);
 
