@@ -28,7 +28,7 @@ import type { ValidateFieldsError } from 'async-validator';
 import { BlockFormControlLabel, ValidatedTextField } from 'components';
 import { useI18nContext } from 'i18n/i18n-react';
 import { numberValue, updateValue } from 'utils';
-import { validate } from 'validators';
+import { ValidationError, validate } from 'validators';
 
 import { DeviceValueType, DeviceValueTypeNames, DeviceValueUOM_s } from './types';
 import type { EntityItem } from './types';
@@ -136,7 +136,7 @@ const CustomEntitiesDialog = ({
       }
       onSave(processedItem);
     } catch (error) {
-      setFieldErrors(error as ValidateFieldsError);
+      setFieldErrors((error as ValidationError).fieldErrors);
     }
   }, [validator, editItem, onSave]);
 
@@ -215,7 +215,7 @@ const CustomEntitiesDialog = ({
                   name="value"
                   label={LL.DEFAULT(0) + ' ' + LL.VALUE(0)}
                   type="string"
-                  value={editItem.value as string}
+                  value={editItem.value}
                   variant="outlined"
                   onChange={updateFormValue}
                   fullWidth
@@ -260,7 +260,7 @@ const CustomEntitiesDialog = ({
                   margin="normal"
                   sx={{ width: '11ch' }}
                   type="string"
-                  value={editItem.device_id as string}
+                  value={editItem.device_id}
                   onChange={updateFormValue}
                   slotProps={{
                     input: {
@@ -280,7 +280,7 @@ const CustomEntitiesDialog = ({
                   margin="normal"
                   sx={{ width: '11ch' }}
                   type="string"
-                  value={editItem.type_id as string}
+                  value={editItem.type_id}
                   onChange={updateFormValue}
                   slotProps={{
                     input: {
@@ -381,7 +381,7 @@ const CustomEntitiesDialog = ({
                     fieldErrors={fieldErrors || {}}
                     name="factor"
                     label={LL.BITMASK()}
-                    value={editItem.factor as string}
+                    value={editItem.factor}
                     sx={{ width: '11ch' }}
                     variant="outlined"
                     onChange={updateFormValue}

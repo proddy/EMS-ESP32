@@ -19,7 +19,7 @@ import { AuthenticatedContext } from 'contexts/authentication';
 import { useI18nContext } from 'i18n/i18n-react';
 import type { SecuritySettingsType } from 'types';
 import { updateValueDirty, useRest } from 'utils';
-import { SECURITY_SETTINGS_VALIDATOR, validate } from 'validators';
+import { SECURITY_SETTINGS_VALIDATOR, ValidationError, validate } from 'validators';
 
 const SecuritySettings = () => {
   const { LL } = useI18nContext();
@@ -58,7 +58,7 @@ const SecuritySettings = () => {
       await saveData();
       await authenticatedContext.refresh();
     } catch (error) {
-      setFieldErrors(error as ValidateFieldsError);
+      setFieldErrors((error as ValidationError).fieldErrors);
     }
   }, [data, saveData, authenticatedContext]);
 

@@ -21,12 +21,6 @@
 #include "temperaturesensor.h"
 #include "emsesp.h"
 
-#ifdef ESP32
-#define YIELD
-#else
-#define YIELD yield()
-#endif
-
 namespace emsesp {
 
 uuid::log::Logger TemperatureSensor::logger_{F_(temperaturesensor), uuid::log::Facility::DAEMON};
@@ -81,7 +75,6 @@ void TemperatureSensor::loop() {
             LOG_DEBUG("Read sensor temperature");
 #endif
             if (bus_.reset() || parasite_) {
-                YIELD;
                 bus_.skip();
                 bus_.write(CMD_CONVERT_TEMP, parasite_ ? 1 : 0);
                 state_     = State::READING;
@@ -260,19 +253,16 @@ int16_t TemperatureSensor::get_temperature_c(const uint8_t addr[]) {
         LOG_ERROR("Bus reset failed before reading scratchpad from %s", Sensor(addr).id());
         return EMS_VALUE_INT16_NOTSET;
     }
-    YIELD;
 
     uint8_t scratchpad[SCRATCHPAD_LEN] = {0};
     bus_.select(addr);
     bus_.write(CMD_READ_SCRATCHPAD);
     bus_.read_bytes(scratchpad, SCRATCHPAD_LEN);
-    YIELD;
 
     if (!bus_.reset()) {
         LOG_ERROR("Bus reset failed after reading scratchpad from %s", Sensor(addr).id());
         return EMS_VALUE_INT16_NOTSET;
     }
-    YIELD;
 
     if (bus_.crc8(scratchpad, SCRATCHPAD_LEN - 1) != scratchpad[SCRATCHPAD_LEN - 1]) {
         LOG_WARNING("Invalid scratchpad CRC: %02X%02X%02X%02X%02X%02X%02X%02X%02X from sensor %s",

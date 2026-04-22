@@ -26,7 +26,7 @@ import type { ValidateFieldsError } from 'async-validator';
 import { BlockFormControlLabel, ValidatedTextField } from 'components';
 import { useI18nContext } from 'i18n/i18n-react';
 import { updateValue } from 'utils';
-import { validate } from 'validators';
+import { ValidationError, validate } from 'validators';
 
 import { ScheduleFlag } from './types';
 import type { ScheduleItem } from './types';
@@ -120,7 +120,7 @@ const SchedulerDialog = ({
         await validate(validator, itemToSave);
         onSave(itemToSave);
       } catch (error) {
-        setFieldErrors(error as ValidateFieldsError);
+        setFieldErrors((error as ValidationError).fieldErrors);
       }
     },
     [validator, onSave]
