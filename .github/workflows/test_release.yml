@@ -47,7 +47,7 @@ jobs:
 
       - name: Build webUI
         run: |
-          platformio run -e build_webUI
+          platformio run -e build-webUI
 
       - name: Build modbus
         run: |
