@@ -64,7 +64,7 @@ jobs:
 
       - name: Update version in Cloudflare KV store
         run: |
-          JSON_DATA='{"version": "${{ github.event.release.tag_name }}", "date": "$(date -u +%Y-%m-%d)"}'
+          JSON_DATA="{\"version\": \"${{ github.event.release.tag_name }}\", \"date\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"
           curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/storage/kv/namespaces/${{ secrets.CF_NAMESPACE_ID }}/values/stable" \
                -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
                -H "Content-Type: text/plain" \
