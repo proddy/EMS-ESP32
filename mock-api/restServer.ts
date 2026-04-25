@@ -6,7 +6,7 @@ const router = AutoRouter();
 
 const REST_ENDPOINT_ROOT = '/rest/';
 const API_ENDPOINT_ROOT = '/api/';
-const GH_ENDPOINT_ROOT = '/gh/'; // for mock GitHub API for version checking
+const EMSESP_DOCS_ENDPOINT = '/emsesp.org/'; // for mock emsesp.org/versions.json
 
 // HTTP HEADERS for msgpack
 const headers = {
@@ -302,10 +302,10 @@ function updateMask(entity: any, de: any, dd: any) {
       const old_custom_name = dd.nodes[dd_objIndex].cn;
       console.log(
         'comparing names, old (' +
-          old_custom_name +
-          ') with new (' +
-          new_custom_name +
-          ')'
+        old_custom_name +
+        ') with new (' +
+        new_custom_name +
+        ')'
       );
       if (old_custom_name !== new_custom_name) {
         changed = true;
@@ -424,15 +424,15 @@ function check_upgrade(version: string) {
 
     console.log(
       'Upgrade this version (' +
-        THIS_VERSION +
-        ') to dev (' +
-        dev_version +
-        ') is ' +
-        (DEV_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO') +
-        ' and to stable (' +
-        stable_version +
-        ') is ' +
-        (STABLE_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO')
+      THIS_VERSION +
+      ') to dev (' +
+      dev_version +
+      ') is ' +
+      (DEV_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO') +
+      ' and to stable (' +
+      stable_version +
+      ') is ' +
+      (STABLE_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO')
     );
     data = {
       emsesp_version: THIS_VERSION,
@@ -706,6 +706,7 @@ const EMSESP_ACTION_ENDPOINT = REST_ENDPOINT_ROOT + 'action';
 
 // these are used in the API calls only
 const EMSESP_SYSTEM_INFO_ENDPOINT = API_ENDPOINT_ROOT + 'system/info';
+const EMSESP_VERSIONS_ENDPOINT = EMSESP_DOCS_ENDPOINT + 'versions.json';
 
 const emsesp_info = {
   System: {
@@ -5233,26 +5234,22 @@ router
     return status(404); // not found
   });
 
-// Mock GitHub API
-// https://api.github.com/repos/emsesp/EMS-ESP32/releases
-
-router
-  .get(GH_ENDPOINT_ROOT + '/tags/latest', () => {
-    const data = {
-      name: 'v' + LATEST_DEV_VERSION,
-      published_at: new Date().toISOString() // use todays date
-    };
-    console.log('returning latest development version (today): ', data);
-    return data;
-  })
-  .get(GH_ENDPOINT_ROOT + '/latest', () => {
-    const data = {
-      name: 'v' + LATEST_STABLE_VERSION,
-      published_at: '2025-03-01T13:29:13.999Z'
-    };
-    console.log('returning latest stable version: ', data);
-    return data;
-  });
+// Mock emsesp.org/versions.json
+router.get(EMSESP_VERSIONS_ENDPOINT, () => {
+  const data = {
+    stable: {
+      version: LATEST_STABLE_VERSION,
+      date: '2026-04-25'
+    },
+    dev: {
+      version: LATEST_DEV_VERSION,
+      date: '2026-04-25'
+    },
+    last_updated: new Date().toISOString()
+  };
+  console.log('sending versions.json: ', data);
+  return data;
+});
 
 // const logger: ResponseHandler = (response, request) => {
 //   console.log(

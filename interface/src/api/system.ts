@@ -1,6 +1,6 @@
 import type { LogSettings, SystemStatus } from 'types';
 
-import { alovaInstance, alovaInstanceGH } from './endpoints';
+import { DOCS_BASE_URL, alovaInstance } from './endpoints';
 
 // systemStatus - also used to ping in System Monitor for pinging
 export const readSystemStatus = () =>
@@ -13,28 +13,13 @@ export const updateLogSettings = (data: LogSettings) =>
   alovaInstance.Post('/rest/logSettings', data);
 export const fetchLogES = () => alovaInstance.Get('/es/log');
 
-// Get versions from GitHub
-// cache for 10 minutes to stop getting the IP blocked by GitHub
-export const getStableVersion = () =>
-  alovaInstanceGH.Get('latest', {
-    cacheFor: 60 * 10 * 1000,
-    transform(response: { data: { name: string; published_at: string } }) {
-      return {
-        name: response.data.name.substring(1),
-        published_at: response.data.published_at
-      };
-    }
-  });
-export const getDevVersion = () =>
-  alovaInstanceGH.Get('tags/latest', {
-    cacheFor: 60 * 10 * 1000,
-    transform(response: { data: { name: string; published_at: string } }) {
-      return {
-        name: response.data.name.split(/\s+/).splice(-1)[0]?.substring(1) || '',
-        published_at: response.data.published_at
-      };
-    }
-  });
+// get versions from emsesp.org/versions.json
+// uses native fetch (no custom headers) to keep this as a "simple" CORS
+export const getVersions = async <T = unknown>(): Promise<T> => {
+  const res = await fetch(`${DOCS_BASE_URL}/versions.json`);
+  if (!res.ok) throw new Error(res.statusText);
+  return res.json() as Promise<T>;
+};
 
 const UPLOAD_TIMEOUT = 60000; // 1 minute
 

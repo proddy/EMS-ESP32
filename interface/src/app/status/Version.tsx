@@ -34,7 +34,7 @@ import {
 
 import * as SystemApi from 'api/system';
 import { API, callAction } from 'api/app';
-import { getDevVersion, getStableVersion } from 'api/system';
+import { getVersions } from 'api/system';
 
 import { dialogStyle } from 'CustomTheme';
 import { useRequest } from 'alova/client';
@@ -86,8 +86,14 @@ interface UpgradeCheckData {
 }
 
 interface VersionInfo {
-  name: string;
-  published_at?: string;
+  version: string;
+  date: string;
+}
+
+interface Versions {
+  stable: VersionInfo;
+  dev: VersionInfo;
+  last_updated: string;
 }
 
 // Memoized components for better performance
@@ -156,8 +162,8 @@ const VersionInfoDialog = memo(
                   {isPartition
                     ? typeof version === 'string'
                       ? version
-                      : version?.name
-                    : version?.name}
+                      : version?.version
+                    : version?.version}
                 </TableCell>
               </TableRow>
               <TableRow sx={{ height: 24, borderBottom: 'none' }}>
@@ -224,7 +230,7 @@ const VersionInfoDialog = memo(
                   </TableCell>
                 </TableRow>
               )}
-              {version?.published_at && (
+              {version.date && (
                 <TableRow sx={{ height: 24, borderBottom: 'none' }}>
                   <TableCell
                     component="th"
@@ -240,7 +246,7 @@ const VersionInfoDialog = memo(
                     {isPartition ? 'Install Date' : 'Build Date'}
                   </TableCell>
                   <TableCell sx={{ borderBottom: 'none', py: 0.5, fontSize: 13 }}>
-                    {prettyDateTime(locale, new Date(version.published_at))}
+                    {prettyDateTime(locale, new Date(version.date))}
                   </TableCell>
                 </TableRow>
               )}
@@ -296,11 +302,11 @@ const InstallDialog = memo(
       if (!latestVersion || !latestDevVersion) return '';
 
       const version = fetchDevVersion ? latestDevVersion : latestVersion;
-      const filename = `EMS-ESP-${version.name.replaceAll('.', '_')}-${platform}.bin`;
+      const filename = `EMS-ESP-${version.version.replaceAll('.', '_')}-${platform}.bin`;
 
       return fetchDevVersion
         ? `${DEV_URL}${filename}`
-        : `${STABLE_URL}v${version.name}/${filename}`;
+        : `${STABLE_URL}v${version.version}/${filename}`;
     }, [fetchDevVersion, latestVersion, latestDevVersion, platform]);
 
     return (
@@ -312,7 +318,7 @@ const InstallDialog = memo(
           <Typography sx={{ mb: 2 }}>
             {LL.INSTALL_VERSION(
               downloadOnly ? LL.DOWNLOAD(1) : LL.INSTALL(),
-              fetchDevVersion ? latestDevVersion?.name : latestVersion?.name
+              fetchDevVersion ? latestDevVersion?.version : latestVersion?.version
             )}
           </Typography>
           {upgradeImportantMessageType === 2 && LL.UPGRADE_IMPORTANT_MESSAGES_2()}
@@ -436,7 +442,9 @@ const Version = () => {
   const { LL, locale } = useI18nContext();
   const { me } = useContext(AuthenticatedContext);
 
-  // State management
+  const [latestVersion, setLatestVersion] = useState<VersionInfo>();
+  const [latestDevVersion, setLatestDevVersion] = useState<VersionInfo>();
+
   const [restarting, setRestarting] = useState<boolean>(false);
   const [openInstallDialog, setOpenInstallDialog] = useState<boolean>(false);
 
@@ -490,8 +498,32 @@ const Version = () => {
     { immediate: false }
   );
 
-  const { data: latestVersion } = useRequest(getStableVersion);
-  const { data: latestDevVersion } = useRequest(getDevVersion);
+  // Fetch versions.json from emsesp.org once on mount.
+  // Uses plain fetch (not alova) so the request stays a "simple" CORS request and avoids a preflight that emsesp.org rejects.
+  // sendCheckUpgrade is stored in a ref because alova's useRequest returns a new function reference each render
+  const sendCheckUpgradeRef = useRef(sendCheckUpgrade);
+  sendCheckUpgradeRef.current = sendCheckUpgrade;
+  useEffect(() => {
+    let cancelled = false;
+    getVersions<Versions>()
+      .then((versions) => {
+        if (cancelled) return;
+        setLatestVersion(versions.stable);
+        setLatestDevVersion(versions.dev);
+        sendCheckUpgradeRef.current(
+          `${versions.stable.version},${versions.dev.version}`
+        );
+        setInternetLive(true);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        toast.error(error instanceof Error ? error.message : 'An error occurred');
+        setInternetLive(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const { send: sendAPI } = useRequest((data: APIcall) => API(data), {
     immediate: false
@@ -517,10 +549,8 @@ const Version = () => {
       toast.error(String(error.error?.message || 'An error occurred'));
     });
 
-  // Memoized values
   const platform = useMemo(() => (data ? getPlatform(data) : ''), [data]);
 
-  // Memoize filtered partitions to avoid recomputing on every render
   const otherPartitions = useMemo(
     () => data?.partitions.filter((p) => p.partition !== data.partition) ?? [],
     [data]
@@ -534,8 +564,8 @@ const Version = () => {
       const partitionData = data?.partitions.find((p) => p.partition === partition);
       if (partitionData) {
         setPartitionVersion({
-          name: partitionData.version,
-          published_at: partitionData.install_date ?? ''
+          version: partitionData.version,
+          date: partitionData.install_date ?? ''
         });
         setPartition(partitionData.partition);
         setFirmwareSize(partitionData.size);
@@ -576,7 +606,7 @@ const Version = () => {
   const showPartitionDialog = useCallback(
     (version: string, partition: string, install_date: string) => {
       setOpenInstallPartitionDialog(true);
-      setPartitionVersion({ name: version, published_at: install_date });
+      setPartitionVersion({ version: version, date: install_date });
       setPartition(partition);
     },
     []
@@ -586,7 +616,7 @@ const Version = () => {
     (useDevVersion: boolean) => {
       setFetchDevVersion(useDevVersion);
       void checkUpgradeImportantMessages(
-        useDevVersion ? latestDevVersion?.name : latestVersion?.name
+        useDevVersion ? latestDevVersion?.version : latestVersion?.version
       );
       setOpenInstallDialog(true);
     },
@@ -607,25 +637,8 @@ const Version = () => {
     setPartition('');
   }, []);
 
-  // check upgrades - only once when both versions are available
-  const upgradeCheckedRef = useRef(false);
-  useEffect(() => {
-    if (latestVersion && latestDevVersion && !upgradeCheckedRef.current) {
-      upgradeCheckedRef.current = true;
-      const versions = `${latestDevVersion.name},${latestVersion.name}`;
-      sendCheckUpgrade(versions)
-        .catch((error: Error) => {
-          toast.error(`Failed to check for upgrades: ${error.message}`);
-        })
-        .finally(() => {
-          setInternetLive(true);
-        });
-    }
-  }, [latestVersion, latestDevVersion, sendCheckUpgrade]);
-
   useLayoutTitle('EMS-ESP Firmware');
 
-  // Memoized button rendering logic
   const showButtons = useCallback(
     (showingDev: boolean) => {
       const choice = showingDev
@@ -818,7 +831,7 @@ const Version = () => {
                 </Grid>
                 <Grid size={{ xs: 8, md: 10 }}>
                   <Typography>
-                    {latestVersion?.name}
+                    {latestVersion?.version}
                     <IconButton
                       onClick={() => setShowVersionInfo(1)}
                       aria-label={LL.FIRMWARE_VERSION_INFO()}
@@ -834,7 +847,7 @@ const Version = () => {
                 </Grid>
                 <Grid size={{ xs: 8, md: 10 }}>
                   <Typography>
-                    {latestDevVersion?.name}
+                    {latestDevVersion?.version}
                     <IconButton
                       onClick={() => setShowVersionInfo(2)}
                       aria-label={LL.FIRMWARE_VERSION_INFO()}
@@ -880,7 +893,7 @@ const Version = () => {
               />
               <InstallPartitionDialog
                 openInstallPartitionDialog={openInstallPartitionDialog}
-                version={partitionVersion?.name || ''}
+                version={partitionVersion?.version || ''}
                 partition={partition}
                 LL={LL}
                 onClose={closeInstallPartitionDialog}

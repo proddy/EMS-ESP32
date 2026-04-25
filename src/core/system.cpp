@@ -2281,7 +2281,6 @@ std::string System::get_metrics_prometheus() {
             }
 
             result += info_metric;
-            // TODO fix, as local_info_labels is always empty here
             if (!local_info_labels.empty()) {
                 result += "{";
                 bool first = true;

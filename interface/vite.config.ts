@@ -230,7 +230,7 @@ export default defineConfig(
               secure: false
             },
             '/rest': 'http://localhost:3080',
-            '/gh': 'http://localhost:3080'
+            '/emsesp.org': 'http://localhost:3080'
           }
         },
         build: {
