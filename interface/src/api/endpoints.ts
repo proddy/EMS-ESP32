@@ -57,6 +57,3 @@ export const alovaInstance = createAlova({
     onSuccess: handleResponse
   }
 });
-
-export const DOCS_BASE_URL =
-  process.env.NODE_ENV === 'development' ? '/emsesp.org' : 'https://emsesp.org';

@@ -1865,6 +1865,7 @@ void EMSESP::loop() {
         }
 
         // loop through the services
+        webStatusService.loop();    // periodic refresh of cached versions.json
         rxservice_.loop();          // process any incoming Rx telegrams
         shower_.loop();             // check for shower on/off
         temperaturesensor_.loop();  // read sensor temperatures

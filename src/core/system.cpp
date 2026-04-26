@@ -899,9 +899,7 @@ void System::heartbeat_json(JsonObject output) {
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
     output["temperature"] = (int)temperature_;
 #endif
-#endif
 
-#ifndef EMSESP_STANDALONE
     if (!ethernet_connected_) {
         int8_t rssi              = WiFi.RSSI();
         output["rssi"]           = rssi;
@@ -909,6 +907,11 @@ void System::heartbeat_json(JsonObject output) {
         output["wifireconnects"] = EMSESP::esp32React.getWifiReconnects();
     }
 #endif
+
+    // see if there is a newer version available
+    if (EMSESP::webStatusService.versions_cache_valid()) {
+        output["upgradeable"] = EMSESP::webStatusService.current_upgradeable();
+    }
 }
 
 // send periodic MQTT message with system information

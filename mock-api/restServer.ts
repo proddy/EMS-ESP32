@@ -6,7 +6,6 @@ const router = AutoRouter();
 
 const REST_ENDPOINT_ROOT = '/rest/';
 const API_ENDPOINT_ROOT = '/api/';
-const EMSESP_DOCS_ENDPOINT = '/emsesp.org/'; // for mock emsesp.org/versions.json
 
 // HTTP HEADERS for msgpack
 const headers = {
@@ -302,10 +301,10 @@ function updateMask(entity: any, de: any, dd: any) {
       const old_custom_name = dd.nodes[dd_objIndex].cn;
       console.log(
         'comparing names, old (' +
-        old_custom_name +
-        ') with new (' +
-        new_custom_name +
-        ')'
+          old_custom_name +
+          ') with new (' +
+          new_custom_name +
+          ')'
       );
       if (old_custom_name !== new_custom_name) {
         changed = true;
@@ -415,36 +414,54 @@ function upgradeImportantMessages(version: string) {
   return { upgradeImportantMessageType: upgradeImportantMessageType_n };
 }
 
-// called by Action endpoint checkUpgrade
-function check_upgrade(version: string) {
-  let data = {};
-  if (version) {
-    const dev_version = version.split(',')[0];
-    const stable_version = version.split(',')[1];
+// called by Action endpoint getVersions
+// Mirrors the C++ WebStatusService::getVersions() payload:
+//   { current: { version, type, date },
+//     stable?: { version, date, upgradeable },
+//     dev?:    { version, date, upgradeable } }
+// Set MOCK_OFFLINE = true to simulate a device with no internet (omits stable/dev).
+const MOCK_OFFLINE = false;
+function get_versions() {
+  const isDev = THIS_VERSION.includes('dev');
+  const data: {
+    current: { version: string; type: 'stable' | 'dev'; date: string };
+    stable?: { version: string; date: string; upgradeable: boolean };
+    dev?: { version: string; date: string; upgradeable: boolean };
+  } = {
+    current: {
+      version: THIS_VERSION,
+      type: isDev ? 'dev' : 'stable',
+      date: '2026-04-25T12:00:00'
+    }
+  };
 
-    console.log(
-      'Upgrade this version (' +
-      THIS_VERSION +
-      ') to dev (' +
-      dev_version +
-      ') is ' +
-      (DEV_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO') +
-      ' and to stable (' +
-      stable_version +
-      ') is ' +
-      (STABLE_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO')
-    );
-    data = {
-      emsesp_version: THIS_VERSION,
-      dev_upgradeable: DEV_VERSION_IS_UPGRADEABLE,
-      stable_upgradeable: STABLE_VERSION_IS_UPGRADEABLE
+  if (!MOCK_OFFLINE) {
+    data.stable = {
+      version: LATEST_STABLE_VERSION,
+      date: '2026-04-25',
+      upgradeable: STABLE_VERSION_IS_UPGRADEABLE
     };
-  } else {
-    console.log('requesting ems-esp version (' + THIS_VERSION + ')');
-    data = {
-      emsesp_version: THIS_VERSION
+    data.dev = {
+      version: LATEST_DEV_VERSION,
+      date: '2026-04-25',
+      upgradeable: DEV_VERSION_IS_UPGRADEABLE
     };
   }
+
+  console.log(
+    'getVersions: current=' +
+      THIS_VERSION +
+      ' stable=' +
+      LATEST_STABLE_VERSION +
+      ' (upgradeable=' +
+      (STABLE_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO') +
+      ') dev=' +
+      LATEST_DEV_VERSION +
+      ' (upgradeable=' +
+      (DEV_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO') +
+      ')' +
+      (MOCK_OFFLINE ? ' [offline]' : '')
+  );
   return data;
 }
 
@@ -706,7 +723,6 @@ const EMSESP_ACTION_ENDPOINT = REST_ENDPOINT_ROOT + 'action';
 
 // these are used in the API calls only
 const EMSESP_SYSTEM_INFO_ENDPOINT = API_ENDPOINT_ROOT + 'system/info';
-const EMSESP_VERSIONS_ENDPOINT = EMSESP_DOCS_ENDPOINT + 'versions.json';
 
 const emsesp_info = {
   System: {
@@ -5173,13 +5189,9 @@ router
       } else if (action === 'getCustomSupport') {
         // send custom support
         return custom_support();
-      } else if (action === 'checkUpgrade') {
-        // check upgrade
-        // check if content has a param
-        if (!content.param) {
-          return check_upgrade('');
-        }
-        return check_upgrade(content.param);
+      } else if (action === 'getVersions') {
+        // get versions
+        return get_versions();
       } else if (action === 'uploadURL') {
         // upload URL
         console.log('upload File from URL', content.param);
@@ -5233,23 +5245,6 @@ router
     }
     return status(404); // not found
   });
-
-// Mock emsesp.org/versions.json
-router.get(EMSESP_VERSIONS_ENDPOINT, () => {
-  const data = {
-    stable: {
-      version: LATEST_STABLE_VERSION,
-      date: '2026-04-25'
-    },
-    dev: {
-      version: LATEST_DEV_VERSION,
-      date: '2026-04-25'
-    },
-    last_updated: new Date().toISOString()
-  };
-  console.log('sending versions.json: ', data);
-  return data;
-});
 
 // const logger: ResponseHandler = (response, request) => {
 //   console.log(

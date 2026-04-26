@@ -1,12 +1,4 @@
-import {
-  memo,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from 'react';
+import { memo, useCallback, useContext, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'react-toastify';
 
@@ -34,7 +26,6 @@ import {
 
 import * as SystemApi from 'api/system';
 import { API, callAction } from 'api/app';
-import { getVersions } from 'api/system';
 
 import { dialogStyle } from 'CustomTheme';
 import { useRequest } from 'alova/client';
@@ -79,21 +70,24 @@ interface VersionData {
   developer_mode: boolean;
 }
 
-interface UpgradeCheckData {
-  emsesp_version: string;
-  dev_upgradeable: boolean;
-  stable_upgradeable: boolean;
-}
-
 interface VersionInfo {
   version: string;
   date: string;
 }
 
-interface Versions {
-  stable: VersionInfo;
-  dev: VersionInfo;
-  last_updated: string;
+interface RemoteVersionInfo extends VersionInfo {
+  upgradeable: boolean;
+}
+
+interface CurrentVersionInfo extends VersionInfo {
+  type: 'stable' | 'dev';
+}
+
+// Response payload from the `getVersions` action
+interface VersionsResponse {
+  current: CurrentVersionInfo;
+  stable?: RemoteVersionInfo;
+  dev?: RemoteVersionInfo;
 }
 
 // Memoized components for better performance
@@ -465,15 +459,6 @@ const Version = () => {
   const [showVersionInfo, setShowVersionInfo] = useState<number>(0); // 1 = stable, 2 = dev, 3 = partition
   const [firmwareSize, setFirmwareSize] = useState<number>(0);
 
-  const { send: sendCheckUpgrade } = useRequest(
-    (versions: string) => callAction({ action: 'checkUpgrade', param: versions }),
-    { immediate: false }
-  ).onSuccess((event) => {
-    const data = event.data as UpgradeCheckData;
-    setDevUpgradeAvailable(data.dev_upgradeable);
-    setStableUpgradeAvailable(data.stable_upgradeable);
-  });
-
   const { send: sendSetPartition } = useRequest(
     (partition: string) => callAction({ action: 'setPartition', param: partition }),
     { immediate: false }
@@ -490,7 +475,6 @@ const Version = () => {
     if (systemData.arduino_version.startsWith('Tasmota')) {
       setDownloadOnly(true);
     }
-    setUsingDevVersion(systemData.emsesp_version.includes('dev'));
   });
 
   const { send: sendUploadURL } = useRequest(
@@ -498,32 +482,33 @@ const Version = () => {
     { immediate: false }
   );
 
-  // Fetch versions.json from emsesp.org once on mount.
-  // Uses plain fetch (not alova) so the request stays a "simple" CORS request and avoids a preflight that emsesp.org rejects.
-  // sendCheckUpgrade is stored in a ref because alova's useRequest returns a new function reference each render
-  const sendCheckUpgradeRef = useRef(sendCheckUpgrade);
-  sendCheckUpgradeRef.current = sendCheckUpgrade;
-  useEffect(() => {
-    let cancelled = false;
-    getVersions<Versions>()
-      .then((versions) => {
-        if (cancelled) return;
-        setLatestVersion(versions.stable);
-        setLatestDevVersion(versions.dev);
-        sendCheckUpgradeRef.current(
-          `${versions.stable.version},${versions.dev.version}`
-        );
-        setInternetLive(true);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        toast.error(error instanceof Error ? error.message : 'An error occurred');
-        setInternetLive(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Fetch latest stable/dev versions via the device. The ESP32 calls
+  // emsesp.org/versions.json itself and includes its own `current` info plus
+  // upgradeable flags. If the device has no internet, `stable`/`dev` are
+  // absent and we surface that as "internet not live".
+  useRequest(() => callAction({ action: 'getVersions' }))
+    .onSuccess((event) => {
+      const versions = event.data as VersionsResponse;
+      setUsingDevVersion(versions.current?.type === 'dev');
+      if (versions.stable) {
+        setLatestVersion({
+          version: versions.stable.version,
+          date: versions.stable.date
+        });
+        setStableUpgradeAvailable(versions.stable.upgradeable);
+      }
+      if (versions.dev) {
+        setLatestDevVersion({
+          version: versions.dev.version,
+          date: versions.dev.date
+        });
+        setDevUpgradeAvailable(versions.dev.upgradeable);
+      }
+      setInternetLive(Boolean(versions.stable || versions.dev));
+    })
+    .onError(() => {
+      setInternetLive(false);
+    });
 
   const { send: sendAPI } = useRequest((data: APIcall) => API(data), {
     immediate: false

@@ -229,8 +229,7 @@ export default defineConfig(
               changeOrigin: true,
               secure: false
             },
-            '/rest': 'http://localhost:3080',
-            '/emsesp.org': 'http://localhost:3080'
+            '/rest': 'http://localhost:3080'
           }
         },
         build: {
