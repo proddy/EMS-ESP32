@@ -27,9 +27,16 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v6
-  
+
       - name: Enable Corepack
         run: corepack enable pnpm
+
+
+      - name: Get the EMS-ESP version
+        id: build_info
+        run: |
+          version=`grep -E '^#define EMSESP_APP_VERSION' ./src/emsesp_version.h | awk -F'"' '{print $2}'`
+          echo "VERSION=$version" >> $GITHUB_OUTPUT
 
       - name: Install PlatformIO
         run: |
@@ -63,9 +70,20 @@ jobs:
             ./build/firmware/*.*
 
       - name: Update version in Cloudflare KV store
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_NAMESPACE_ID: ${{ secrets.CF_NAMESPACE_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          VERSION: ${{ steps.build_info.outputs.VERSION }}
         run: |
-          JSON_DATA="{\"version\": \"${{ github.event.release.tag_name }}\", \"date\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"
-          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/storage/kv/namespaces/${{ secrets.CF_NAMESPACE_ID }}/values/stable" \
-               -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
-               -H "Content-Type: text/plain" \
-               -d "$JSON_DATA"
+          JSON_DATA=$(jq -n \
+            --arg version "$VERSION" \
+            --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{version: $version, date: $date}')
+          echo "JSON_DATA: $JSON_DATA"
+          curl -sS --fail-with-body \
+            -X PUT "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_NAMESPACE_ID}/values/stable" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$JSON_DATA"
+          echo
