@@ -1,0 +1,31 @@
+name: 'Update versions'
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-version:
+    name: 'Update versions in Cloudflare KV store'
+    runs-on: ubuntu-latest
+    steps:
+        
+      - name: Checkout repository
+        uses: actions/checkout@v6
+  
+      - name: Get and Send EMS-ESP version to Cloudflare
+        run: |
+          version=$(grep -E '^#define EMSESP_APP_VERSION' ./src/emsesp_version.h | awk -F'"' '{print $2}')
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            KV_ENV="stable"
+          else
+            KV_ENV="dev"
+          fi
+          JSON_DATA="{\"version\": \"${version}\", \"date\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"
+          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/storage/kv/namespaces/${{ secrets.CF_NAMESPACE_ID }}/values/$KV_ENV" \
+               -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
+               -H "Content-Type: text/plain" \
+               -d "$JSON_DATA"
+          
