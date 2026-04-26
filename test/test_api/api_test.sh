@@ -4,7 +4,8 @@
 # Command line test for the API
 #
 
-emsesp_url="http://192.168.1.223"
+# emsesp_url="http://ems-esp.local"
+emsesp_url="http://ems-espT.local"
 
 # get the token from the Security page. This is the token for the admin user, unless changed it'll always be the same
 emsesp_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiYWRtaW4iOnRydWV9.2bHpWya2C7Q12WjNUBD6_7N3RCD7CMl-EGhyQVzFdDg"
@@ -40,13 +41,22 @@ curl -X POST \
 
 echo "\n"
 
+# Get all versions
+curl -X POST \
+    -H "Authorization: Bearer ${emsesp_token}" \
+    -H "Content-Type: application/json" \
+    -d '{"action":"getVersions"}' \
+    ${emsesp_url}/rest/action
+
+echo "\n"
+
 # This example is how to call a service in Home Assistant via the API
 # Which can be added to an EMS-EPS schedule
-
-ha_url="http://192.168.1.86:8123"
-ha_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIwMzMyZjU1MjhlZmM0NGIyOTgyMjIxNThiODU1NDkyNSIsImlhdCI6MTcyMTMwNDg2NSwiZXhwIjoyMDM2NjY0ODY1fQ.Q-Y7E_i7clH3ff4Ma-OMmhZfbN7aMi_CahKwmoar"
-
-curl -X POST \
-    ${ha_url}/api/services/script/test_notify \
-    -H "Authorization: Bearer ${ha_token}" \
-    -H "Content-Type: application/json"
+#
+# ha_url="http://192.168.1.86:8123"
+# ha_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIwMzMyZjU1MjhlZmM0NGIyOTgyMjIxNThiODU1NDkyNSIsImlhdCI6MTcyMTMwNDg2NSwiZXhwIjoyMDM2NjY0ODY1fQ.Q-Y7E_i7clH3ff4Ma-OMmhZfbN7aMi_CahKwmoar"
+#
+# curl -X POST \
+#     ${ha_url}/api/services/script/test_notify \
+#     -H "Authorization: Bearer ${ha_token}" \
+#     -H "Content-Type: application/json"
