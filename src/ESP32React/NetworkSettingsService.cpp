@@ -321,6 +321,7 @@ void NetworkSettingsService::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) 
                                       WiFi.localIP().toString().c_str(),
                                       WiFi.getHostname(),
                                       emsesp::Helpers::render_value(result, ((double)(WiFi.getTxPower()) / 4), 1));
+        emsesp::EMSESP::webStatusService.schedule_versions_refresh(); // run the version fetch as soon as the main loop picks it up
         mDNS_start();
         break;
 
@@ -337,6 +338,7 @@ void NetworkSettingsService::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) 
         if (!emsesp::EMSESP::system_.ethernet_connected()) {
             emsesp::EMSESP::logger().info("Ethernet connected (Local IP=%s, speed %d Mbps)", ETH.localIP().toString().c_str(), ETH.linkSpeed());
             emsesp::EMSESP::system_.ethernet_connected(true);
+            emsesp::EMSESP::webStatusService.schedule_versions_refresh(); // run the version fetch as soon as the main loop picks it up
             mDNS_start();
         }
         break;
@@ -380,13 +382,15 @@ void NetworkSettingsService::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) 
         auto ip6 = IPAddress(IPv6, (uint8_t *)info.got_ip6.ip6_info.ip.addr, 0).toString();
 #endif
         const char * link = event == ARDUINO_EVENT_ETH_GOT_IP6 ? "Eth" : "WiFi";
+#if defined(EMSESP_DEBUG)
         if (ip6.startsWith("fe80")) {
-            emsesp::EMSESP::logger().info("IPv6 (%s) local: %s", link, ip6.c_str());
+            emsesp::EMSESP::logger().debug("IPv6 (%s) local: %s", link, ip6.c_str());
         } else if (ip6.startsWith("fd") || ip6.startsWith("fc")) {
-            emsesp::EMSESP::logger().info("IPv6 (%s) ULA: %s", link, ip6.c_str());
+            emsesp::EMSESP::logger().debug("IPv6 (%s) ULA: %s", link, ip6.c_str());
         } else {
-            emsesp::EMSESP::logger().info("IPv6 (%s) global: %s", link, ip6.c_str());
+            emsesp::EMSESP::logger().debug("IPv6 (%s) global: %s", link, ip6.c_str());
         }
+#endif
         emsesp::EMSESP::system_.has_ipv6(true);
     } break;
 
