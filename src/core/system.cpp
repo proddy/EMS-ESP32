@@ -31,7 +31,7 @@
 #include <HTTPClient.h>
 #include <map>
 
-#include "EMSESP_Version.h"
+#include "firmwareVersion.h"
 
 #if defined(EMSESP_TEST)
 #include "../test/test.h"
@@ -1541,8 +1541,8 @@ bool System::check_upgrade() {
         settingsVersion = "3.5.0"; // this was the last stable version without version info
     }
 
-    version::EMSESP_Version settings_version(settingsVersion);
-    version::EMSESP_Version this_version(EMSESP_APP_VERSION);
+    FirmwareVersion settings_version(settingsVersion);
+    FirmwareVersion this_version(EMSESP_APP_VERSION);
 
     std::string settings_version_type = settings_version.prerelease().empty() ? "" : ("-" + settings_version.prerelease());
     std::string this_version_type     = this_version.prerelease().empty() ? "" : ("-" + this_version.prerelease());
