@@ -314,8 +314,6 @@ uint8_t WebStatusService::upgradeImportantMessages(std::string & version) {
 // returns the device's current version for dev and stable
 // The remote fetch runs from the main loop task via WebStatusService::loop() so that we never block the AsyncTCP callback
 void WebStatusService::getVersions(JsonObject root) {
-    schedule_versions_refresh(); // force a refresh
-
     FirmwareVersion current_version(current_version_s);
     bool            is_dev = current_version.prerelease().find("dev") != std::string::npos;
 
