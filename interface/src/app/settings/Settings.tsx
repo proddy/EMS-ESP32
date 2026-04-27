@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -43,148 +43,141 @@ const Settings = () => {
     immediate: false
   });
 
-  const doFormat = useCallback(async () => {
+  const doFormat = async () => {
     await sendAPI({ device: 'system', cmd: 'format', id: 0 }).then(() => {
       setRestarting(true);
       setConfirmFactoryReset(false);
     });
-  }, [sendAPI]);
+  };
 
-  const handleFactoryResetClose = useCallback(() => {
+  const handleFactoryResetClose = () => {
     setConfirmFactoryReset(false);
-  }, []);
+  };
 
-  const handleFactoryResetClick = useCallback(() => {
+  const handleFactoryResetClick = () => {
     setConfirmFactoryReset(true);
-  }, []);
+  };
 
-  const content = useMemo(() => {
-    return (
-      <>
-        <List>
-          <ListMenuItem
-            icon={TuneIcon}
-            bgcolor="#134ba2"
-            label={LL.APPLICATION()}
-            text={LL.APPLICATION_SETTINGS_1()}
-            to="application"
-          />
+  if (restarting) {
+    return <SystemMonitor />;
+  }
 
-          <ListMenuItem
-            icon={SettingsEthernetIcon}
-            bgcolor="#40828f"
-            label={LL.NETWORK(0)}
-            text={LL.CONFIGURE(LL.SETTINGS_OF(LL.NETWORK(1)))}
-            to="network"
-          />
+  return (
+    <SectionContent>
+      <List>
+        <ListMenuItem
+          icon={TuneIcon}
+          bgcolor="#134ba2"
+          label={LL.APPLICATION()}
+          text={LL.APPLICATION_SETTINGS_1()}
+          to="application"
+        />
 
-          <ListMenuItem
-            icon={SettingsInputAntennaIcon}
-            bgcolor="#5f9a5f"
-            label={LL.ACCESS_POINT(0)}
-            text={LL.CONFIGURE(LL.ACCESS_POINT(1))}
-            to="ap"
-          />
+        <ListMenuItem
+          icon={SettingsEthernetIcon}
+          bgcolor="#40828f"
+          label={LL.NETWORK(0)}
+          text={LL.CONFIGURE(LL.SETTINGS_OF(LL.NETWORK(1)))}
+          to="network"
+        />
 
-          <ListMenuItem
-            icon={AccessTimeIcon}
-            bgcolor="#c5572c"
-            label="NTP"
-            text={LL.CONFIGURE(LL.LOCAL_TIME(1))}
-            to="ntp"
-          />
+        <ListMenuItem
+          icon={SettingsInputAntennaIcon}
+          bgcolor="#5f9a5f"
+          label={LL.ACCESS_POINT(0)}
+          text={LL.CONFIGURE(LL.ACCESS_POINT(1))}
+          to="ap"
+        />
 
-          <ListMenuItem
-            icon={DeviceHubIcon}
-            bgcolor="#68374d"
-            label="MQTT"
-            text={LL.CONFIGURE('MQTT')}
-            to="mqtt"
-          />
+        <ListMenuItem
+          icon={AccessTimeIcon}
+          bgcolor="#c5572c"
+          label="NTP"
+          text={LL.CONFIGURE(LL.LOCAL_TIME(1))}
+          to="ntp"
+        />
 
-          <ListMenuItem
-            icon={LockIcon}
-            label={LL.SECURITY(0)}
-            text={LL.SECURITY_1()}
-            to="security"
-          />
+        <ListMenuItem
+          icon={DeviceHubIcon}
+          bgcolor="#68374d"
+          label="MQTT"
+          text={LL.CONFIGURE('MQTT')}
+          to="mqtt"
+        />
 
-          <ListMenuItem
-            icon={ViewModuleIcon}
-            bgcolor="#efc34b"
-            label={LL.MODULES()}
-            text={LL.MODULES_1()}
-            to="modules"
-          />
+        <ListMenuItem
+          icon={LockIcon}
+          label={LL.SECURITY(0)}
+          text={LL.SECURITY_1()}
+          to="security"
+        />
 
-          <ListMenuItem
-            icon={ImportExportIcon}
-            bgcolor="#5d89f7"
-            label={LL.DOWNLOAD_UPLOAD()}
-            text={LL.DOWNLOAD_UPLOAD_1()}
-            to="downloadUpload"
-          />
-        </List>
+        <ListMenuItem
+          icon={ViewModuleIcon}
+          bgcolor="#efc34b"
+          label={LL.MODULES()}
+          text={LL.MODULES_1()}
+          to="modules"
+        />
 
-        <Dialog
-          sx={dialogStyle}
-          open={confirmFactoryReset}
-          onClose={handleFactoryResetClose}
-        >
-          <DialogTitle>{LL.FACTORY_RESET()}</DialogTitle>
-          <DialogContent dividers>{LL.SYSTEM_FACTORY_TEXT_DIALOG()}</DialogContent>
-          <DialogActions>
-            <Button
-              startIcon={<CancelIcon />}
-              variant="outlined"
-              onClick={handleFactoryResetClose}
-              color="secondary"
-            >
-              {LL.CANCEL()}
-            </Button>
-            <Button
-              startIcon={<SettingsBackupRestoreIcon />}
-              variant="outlined"
-              onClick={doFormat}
-              color="error"
-            >
-              {LL.FACTORY_RESET()}
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <ListMenuItem
+          icon={ImportExportIcon}
+          bgcolor="#5d89f7"
+          label={LL.DOWNLOAD_UPLOAD()}
+          text={LL.DOWNLOAD_UPLOAD_1()}
+          to="downloadUpload"
+        />
+      </List>
 
-        <Divider />
-
-        <Box
-          sx={{
-            mt: 2,
-            display: 'flex',
-            justifyContent: 'flex-end',
-            flexWrap: 'nowrap',
-            whiteSpace: 'nowrap'
-          }}
-        >
+      <Dialog
+        sx={dialogStyle}
+        open={confirmFactoryReset}
+        onClose={handleFactoryResetClose}
+      >
+        <DialogTitle>{LL.FACTORY_RESET()}</DialogTitle>
+        <DialogContent dividers>{LL.SYSTEM_FACTORY_TEXT_DIALOG()}</DialogContent>
+        <DialogActions>
+          <Button
+            startIcon={<CancelIcon />}
+            variant="outlined"
+            onClick={handleFactoryResetClose}
+            color="secondary"
+          >
+            {LL.CANCEL()}
+          </Button>
           <Button
             startIcon={<SettingsBackupRestoreIcon />}
             variant="outlined"
-            onClick={handleFactoryResetClick}
+            onClick={doFormat}
             color="error"
           >
             {LL.FACTORY_RESET()}
           </Button>
-        </Box>
-      </>
-    );
-  }, [
-    LL,
-    handleFactoryResetClick,
-    handleFactoryResetClose,
-    doFormat,
-    confirmFactoryReset,
-    restarting
-  ]);
+        </DialogActions>
+      </Dialog>
 
-  return restarting ? <SystemMonitor /> : <SectionContent>{content}</SectionContent>;
+      <Divider />
+
+      <Box
+        sx={{
+          mt: 2,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          flexWrap: 'nowrap',
+          whiteSpace: 'nowrap'
+        }}
+      >
+        <Button
+          startIcon={<SettingsBackupRestoreIcon />}
+          variant="outlined"
+          onClick={handleFactoryResetClick}
+          color="error"
+        >
+          {LL.FACTORY_RESET()}
+        </Button>
+      </Box>
+    </SectionContent>
+  );
 };
 
 export default Settings;

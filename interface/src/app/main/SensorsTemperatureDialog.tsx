@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import CancelIcon from '@mui/icons-material/Cancel';
 import DoneIcon from '@mui/icons-material/Done';
@@ -50,6 +50,7 @@ const SensorsTemperatureDialog = ({
   const [fieldErrors, setFieldErrors] = useState<ValidateFieldsError>();
   const [editItem, setEditItem] = useState<TemperatureSensor>(selectedItem);
 
+  // Stable handler reference so the memoized ValidatedTextField can skip re-renders
   const updateFormValue = useMemo(
     () =>
       updateValue(
@@ -69,16 +70,13 @@ const SensorsTemperatureDialog = ({
     }
   }, [open, selectedItem]);
 
-  const handleClose = useCallback(
-    (_event: React.SyntheticEvent, reason?: string) => {
-      if (reason !== 'backdropClick') {
-        onClose();
-      }
-    },
-    [onClose]
-  );
+  const handleClose = (_event: React.SyntheticEvent, reason?: string) => {
+    if (reason !== 'backdropClick') {
+      onClose();
+    }
+  };
 
-  const save = useCallback(async () => {
+  const save = async () => {
     try {
       setFieldErrors(undefined);
       await validate(validator, editItem);
@@ -86,29 +84,11 @@ const SensorsTemperatureDialog = ({
     } catch (error) {
       setFieldErrors((error as ValidationError).fieldErrors);
     }
-  }, [validator, editItem, onSave]);
-
-  const dialogTitle = useMemo(() => `${LL.EDIT()} ${LL.TEMP_SENSOR()}`, [LL]);
-
-  const offsetValue = useMemo(() => numberValue(editItem.o), [editItem.o]);
-
-  const slotProps = useMemo(
-    () => ({
-      input: {
-        startAdornment: <InputAdornment position="start">{TEMP_UNIT}</InputAdornment>
-      },
-      htmlInput: {
-        min: OFFSET_MIN,
-        max: OFFSET_MAX,
-        step: OFFSET_STEP
-      }
-    }),
-    []
-  );
+  };
 
   return (
     <Dialog sx={dialogStyle} open={open} onClose={handleClose}>
-      <DialogTitle>{dialogTitle}</DialogTitle>
+      <DialogTitle>{`${LL.EDIT()} ${LL.TEMP_SENSOR()}`}</DialogTitle>
       <DialogContent dividers>
         <Typography sx={{ mb: 2 }} color="warning" variant="body2">
           {LL.ID_OF(LL.SENSOR(0))}: {editItem.id}
@@ -128,12 +108,23 @@ const SensorsTemperatureDialog = ({
             <TextField
               name="o"
               label={LL.OFFSET()}
-              value={offsetValue}
+              value={numberValue(editItem.o)}
               sx={{ width: '11ch' }}
               type="number"
               variant="outlined"
               onChange={updateFormValue}
-              slotProps={slotProps}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">{TEMP_UNIT}</InputAdornment>
+                  )
+                },
+                htmlInput: {
+                  min: OFFSET_MIN,
+                  max: OFFSET_MAX,
+                  step: OFFSET_STEP
+                }
+              }}
             />
           </Grid>
         </Grid>

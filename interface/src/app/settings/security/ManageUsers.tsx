@@ -99,34 +99,28 @@ const ManageUsers = () => {
     []
   );
 
-  const noAdminConfigured = useCallback(
-    () => !data?.users.find((u) => u.admin),
-    [data]
-  );
+  const noAdminConfigured = () => !data?.users.find((u) => u.admin);
 
-  const removeUser = useCallback(
-    (toRemove: UserType) => {
-      if (!data) return;
-      const users = data.users.filter((u) => u.username !== toRemove.username);
-      updateDataValue({ ...data, users });
-      setChanged(changed + 1);
-    },
-    [data, updateDataValue, changed]
-  );
+  const removeUser = (toRemove: UserType) => {
+    if (!data) return;
+    const users = data.users.filter((u) => u.username !== toRemove.username);
+    updateDataValue({ ...data, users });
+    setChanged(changed + 1);
+  };
 
-  const createUser = useCallback(() => {
+  const createUser = () => {
     setCreating(true);
     setUser({
       username: '',
       password: '',
       admin: true
     });
-  }, []);
+  };
 
-  const editUser = useCallback((toEdit: UserType) => {
+  const editUser = (toEdit: UserType) => {
     setCreating(false);
     setUser({ ...toEdit });
-  }, []);
+  };
 
   const cancelEditingUser = useCallback(() => {
     setUser(undefined);
@@ -150,20 +144,20 @@ const ManageUsers = () => {
     setGeneratingToken(undefined);
   }, []);
 
-  const generateTokenForUser = useCallback((username: string) => {
+  const generateTokenForUser = (username: string) => {
     setGeneratingToken(username);
-  }, []);
+  };
 
-  const onSubmit = useCallback(async () => {
+  const onSubmit = async () => {
     await saveData();
     await authenticatedContext.refresh();
     setChanged(0);
-  }, [saveData, authenticatedContext]);
+  };
 
-  const onCancelSubmit = useCallback(async () => {
+  const onCancelSubmit = async () => {
     await loadData();
     setChanged(0);
-  }, [loadData]);
+  };
 
   const content = () => {
     if (!data) {
@@ -177,15 +171,10 @@ const ManageUsers = () => {
       admin: boolean;
     }
 
-    // add id to the type, needed for the table
-    const user_table = useMemo(
-      () =>
-        data.users.map((u) => ({
-          ...u,
-          id: u.username
-        })) as UserType2[],
-      [data.users]
-    );
+    const user_table = data.users.map((u) => ({
+      ...u,
+      id: u.username
+    })) as UserType2[];
 
     return (
       <>

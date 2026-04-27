@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import CancelIcon from '@mui/icons-material/Cancel';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -52,6 +52,7 @@ const DevicesDialog = ({
   const [editItem, setEditItem] = useState<DeviceValue>(selectedItem);
   const [fieldErrors, setFieldErrors] = useState<ValidateFieldsError>();
 
+  // Stable handler reference so the memoized ValidatedTextField can skip re-renders
   const updateFormValue = useMemo(() => updateValue(setEditItem), [setEditItem]);
 
   useEffect(() => {
@@ -61,7 +62,7 @@ const DevicesDialog = ({
     }
   }, [open, selectedItem]);
 
-  const save = useCallback(async () => {
+  const save = async () => {
     try {
       setFieldErrors(undefined);
       await validate(validator, editItem);
@@ -69,28 +70,25 @@ const DevicesDialog = ({
     } catch (error) {
       setFieldErrors((error as ValidationError).fieldErrors);
     }
-  }, [validator, editItem, onSave]);
+  };
 
-  const setUom = useCallback(
-    (uom?: DeviceValueUOM) => {
-      if (uom === undefined) {
-        return;
-      }
-      switch (uom) {
-        case DeviceValueUOM.HOURS:
-          return LL.HOURS();
-        case DeviceValueUOM.MINUTES:
-          return LL.MINUTES();
-        case DeviceValueUOM.SECONDS:
-          return LL.SECONDS();
-        default:
-          return DeviceValueUOM_s[uom];
-      }
-    },
-    [LL]
-  );
+  const setUom = (uom?: DeviceValueUOM) => {
+    if (uom === undefined) {
+      return;
+    }
+    switch (uom) {
+      case DeviceValueUOM.HOURS:
+        return LL.HOURS();
+      case DeviceValueUOM.MINUTES:
+        return LL.MINUTES();
+      case DeviceValueUOM.SECONDS:
+        return LL.SECONDS();
+      default:
+        return DeviceValueUOM_s[uom];
+    }
+  };
 
-  const showHelperText = useCallback((dv: DeviceValue) => {
+  const showHelperText = (dv: DeviceValue) => {
     if (dv.h) return dv.h;
     if (dv.l) return dv.l.join(' | ');
     if (dv.m !== undefined && dv.x !== undefined) {
@@ -101,26 +99,16 @@ const DevicesDialog = ({
       );
     }
     return undefined;
-  }, []);
+  };
 
-  const isCommand = useMemo(
-    () => selectedItem.v === '' && selectedItem.c,
-    [selectedItem.v, selectedItem.c]
-  );
-
-  const dialogTitle = useMemo(() => {
-    if (isCommand) return LL.RUN_COMMAND();
-    return writeable ? LL.CHANGE_VALUE() : LL.VALUE(0);
-  }, [isCommand, writeable, LL]);
-
-  const buttonLabel = useMemo(() => {
-    return isCommand ? LL.EXECUTE() : LL.UPDATE();
-  }, [isCommand, LL]);
-
-  const helperText = useMemo(
-    () => showHelperText(editItem),
-    [editItem, showHelperText]
-  );
+  const isCommand = selectedItem.v === '' && selectedItem.c;
+  const dialogTitle = isCommand
+    ? LL.RUN_COMMAND()
+    : writeable
+      ? LL.CHANGE_VALUE()
+      : LL.VALUE(0);
+  const buttonLabel = isCommand ? LL.EXECUTE() : LL.UPDATE();
+  const helperText = showHelperText(editItem);
 
   const valueLabel = LL.VALUE(0);
 

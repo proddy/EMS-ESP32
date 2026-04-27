@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useState } from 'react';
 import {
   Navigate,
   Route,
@@ -40,26 +40,20 @@ const Network = () => {
 
   const [selectedNetwork, setSelectedNetwork] = useState<WiFiNetwork>();
 
-  const selectNetwork = useCallback(
-    (network: WiFiNetwork) => {
-      setSelectedNetwork(network);
-      void navigate('/settings/network/settings');
-    },
-    [navigate]
-  );
+  const selectNetwork = (network: WiFiNetwork) => {
+    setSelectedNetwork(network);
+    void navigate('/settings/network/settings');
+  };
 
-  const deselectNetwork = useCallback(() => {
+  const deselectNetwork = () => {
     setSelectedNetwork(undefined);
-  }, []);
+  };
 
-  const contextValue = useMemo(
-    () => ({
-      ...(selectedNetwork && { selectedNetwork }),
-      selectNetwork,
-      deselectNetwork
-    }),
-    [selectedNetwork, selectNetwork, deselectNetwork]
-  );
+  const contextValue = {
+    ...(selectedNetwork && { selectedNetwork }),
+    selectNetwork,
+    deselectNetwork
+  };
 
   return (
     <WiFiConnectionContext.Provider value={contextValue}>

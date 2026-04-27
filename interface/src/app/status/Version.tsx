@@ -1,4 +1,4 @@
-import { memo, useCallback, useContext, useMemo, useState } from 'react';
+import { memo, useContext, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'react-toastify';
 
@@ -105,9 +105,9 @@ const VersionInfoDialog = memo(
     onClose
   }: {
     showVersionInfo: number;
-    latestVersion?: VersionInfo;
-    latestDevVersion?: VersionInfo;
-    partitionVersion?: VersionInfo | undefined;
+    latestVersion: VersionInfo | undefined;
+    latestDevVersion: VersionInfo | undefined;
+    partitionVersion: VersionInfo | undefined;
     partition: string;
     currentPartition: string;
     size: number;
@@ -224,7 +224,7 @@ const VersionInfoDialog = memo(
                   </TableCell>
                 </TableRow>
               )}
-              {version.date && (
+              {version && version.date && (
                 <TableRow sx={{ height: 24, borderBottom: 'none' }}>
                   <TableCell
                     component="th"
@@ -283,8 +283,8 @@ const InstallDialog = memo(
   }: {
     openInstallDialog: boolean;
     fetchDevVersion: boolean;
-    latestVersion?: VersionInfo;
-    latestDevVersion?: VersionInfo;
+    latestVersion: VersionInfo | undefined;
+    latestDevVersion: VersionInfo | undefined;
     upgradeImportantMessageType: number;
     downloadOnly: boolean;
     platform: string;
@@ -292,16 +292,14 @@ const InstallDialog = memo(
     onClose: () => void;
     onInstall: (url: string) => void;
   }) => {
-    const binURL = useMemo(() => {
+    const binURL = (() => {
       if (!latestVersion || !latestDevVersion) return '';
-
       const version = fetchDevVersion ? latestDevVersion : latestVersion;
       const filename = `EMS-ESP-${version.version.replaceAll('.', '_')}-${platform}.bin`;
-
       return fetchDevVersion
         ? `${DEV_URL}${filename}`
         : `${STABLE_URL}v${version.version}/${filename}`;
-    }, [fetchDevVersion, latestVersion, latestDevVersion, platform]);
+    })();
 
     return (
       <Dialog sx={dialogStyle} open={openInstallDialog} onClose={onClose}>
@@ -532,396 +530,340 @@ const Version = () => {
       toast.error(String(error.error?.message || 'An error occurred'));
     });
 
-  const platform = useMemo(() => (data ? getPlatform(data) : ''), [data]);
+  const platform = data ? getPlatform(data) : '';
 
-  const otherPartitions = useMemo(
-    () => data?.partitions.filter((p) => p.partition !== data.partition) ?? [],
-    [data]
-  );
+  const otherPartitions =
+    data?.partitions.filter((p) => p.partition !== data.partition) ?? [];
 
-  const setPartitionVersionInfo = useCallback(
-    (partition: string) => {
-      setShowVersionInfo(3);
+  const setPartitionVersionInfo = (partition: string) => {
+    setShowVersionInfo(3);
+    const partitionData = data?.partitions.find((p) => p.partition === partition);
+    if (partitionData) {
+      setPartitionVersion({
+        version: partitionData.version,
+        date: partitionData.install_date ?? ''
+      });
+      setPartition(partitionData.partition);
+      setFirmwareSize(partitionData.size);
+    }
+  };
 
-      // search for the partition in the data.partitions array
-      const partitionData = data?.partitions.find((p) => p.partition === partition);
-      if (partitionData) {
-        setPartitionVersion({
-          version: partitionData.version,
-          date: partitionData.install_date ?? ''
-        });
-        setPartition(partitionData.partition);
-        setFirmwareSize(partitionData.size);
-      }
-    },
-    [data]
-  );
-
-  const doRestart = useCallback(async () => {
+  const doRestart = async () => {
     await sendAPI({ device: 'system', cmd: 'restart', id: 0 }).catch(
       (error: Error) => {
         toast.error(error.message);
       }
     );
     setRestarting(true);
-  }, [sendAPI]);
+  };
 
-  const installFirmwareURL = useCallback(
-    async (url: string) => {
-      await sendUploadURL(url).catch((error: Error) => {
-        toast.error(error.message);
-      });
-      await doRestart();
-    },
-    [sendUploadURL, doRestart]
-  );
+  const installFirmwareURL = async (url: string) => {
+    await sendUploadURL(url).catch((error: Error) => {
+      toast.error(error.message);
+    });
+    await doRestart();
+  };
 
-  const installPartitionFirmware = useCallback(
-    async (partition: string) => {
-      await sendSetPartition(partition).catch((error: Error) => {
-        toast.error(error.message);
-      });
-      setRestarting(true);
-    },
-    [sendSetPartition]
-  );
+  const installPartitionFirmware = async (partition: string) => {
+    await sendSetPartition(partition).catch((error: Error) => {
+      toast.error(error.message);
+    });
+    setRestarting(true);
+  };
 
-  const showPartitionDialog = useCallback(
-    (version: string, partition: string, install_date: string) => {
-      setOpenInstallPartitionDialog(true);
-      setPartitionVersion({ version: version, date: install_date });
-      setPartition(partition);
-    },
-    []
-  );
+  const showPartitionDialog = (
+    version: string,
+    partition: string,
+    install_date: string
+  ) => {
+    setOpenInstallPartitionDialog(true);
+    setPartitionVersion({ version: version, date: install_date });
+    setPartition(partition);
+  };
 
-  const showFirmwareDialog = useCallback(
-    (useDevVersion: boolean) => {
-      setFetchDevVersion(useDevVersion);
-      void checkUpgradeImportantMessages(
-        useDevVersion ? latestDevVersion?.version : latestVersion?.version
-      );
-      setOpenInstallDialog(true);
-    },
-    [latestDevVersion, latestVersion, fetchDevVersion]
-  );
+  const showFirmwareDialog = (useDevVersion: boolean) => {
+    setFetchDevVersion(useDevVersion);
+    const targetVersion = useDevVersion
+      ? latestDevVersion?.version
+      : latestVersion?.version;
+    if (targetVersion) {
+      void checkUpgradeImportantMessages(targetVersion);
+    }
+    setOpenInstallDialog(true);
+  };
 
-  const closeInstallDialog = useCallback(() => {
-    setOpenInstallDialog(false);
-  }, []);
+  const closeInstallDialog = () => setOpenInstallDialog(false);
+  const closeInstallPartitionDialog = () => setOpenInstallPartitionDialog(false);
 
-  const closeInstallPartitionDialog = useCallback(() => {
-    setOpenInstallPartitionDialog(false);
-  }, []);
-
-  const handleVersionInfoClose = useCallback(() => {
+  const handleVersionInfoClose = () => {
     setShowVersionInfo(0);
     setPartitionVersion(undefined);
     setPartition('');
-  }, []);
+  };
 
   useLayoutTitle('EMS-ESP Firmware');
 
-  const showButtons = useCallback(
-    (showingDev: boolean) => {
-      const choice = showingDev
-        ? !usingDevVersion
-          ? LL.SWITCH_RELEASE_TYPE(LL.DEVELOPMENT())
-          : devUpgradeAvailable
-            ? LL.UPDATE_AVAILABLE()
-            : undefined
-        : usingDevVersion
-          ? LL.SWITCH_RELEASE_TYPE(LL.STABLE())
-          : stableUpgradeAvailable
-            ? LL.UPDATE_AVAILABLE()
-            : undefined;
+  const showButtons = (showingDev: boolean) => {
+    const choice = showingDev
+      ? !usingDevVersion
+        ? LL.SWITCH_RELEASE_TYPE(LL.DEVELOPMENT())
+        : devUpgradeAvailable
+          ? LL.UPDATE_AVAILABLE()
+          : undefined
+      : usingDevVersion
+        ? LL.SWITCH_RELEASE_TYPE(LL.STABLE())
+        : stableUpgradeAvailable
+          ? LL.UPDATE_AVAILABLE()
+          : undefined;
 
-      if (!choice) {
-        return (
-          <>
-            <CheckIcon
-              color="success"
-              sx={{ verticalAlign: 'middle', ml: 0.5, mr: 0.5 }}
-            />
-            <span style={{ color: '#66bb6a', fontSize: '0.8em' }}>
-              {LL.LATEST_VERSION(usingDevVersion ? LL.DEVELOPMENT() : LL.STABLE())}
-            </span>
-            <Button
-              sx={{ ml: 1 }}
-              variant="outlined"
-              size="small"
-              onClick={() => showFirmwareDialog(showingDev)}
-            >
-              {LL.REINSTALL()}
-            </Button>
-          </>
-        );
-      }
-
-      if (!me.admin) return null;
-
+    if (!choice) {
       return (
-        <Button
-          sx={{ ml: 1 }}
-          variant="outlined"
-          color={choice === LL.UPDATE_AVAILABLE() ? 'success' : 'warning'}
-          size="small"
-          onClick={() => showFirmwareDialog(showingDev)}
-        >
-          {choice}
-        </Button>
+        <>
+          <CheckIcon
+            color="success"
+            sx={{ verticalAlign: 'middle', ml: 0.5, mr: 0.5 }}
+          />
+          <span style={{ color: '#66bb6a', fontSize: '0.8em' }}>
+            {LL.LATEST_VERSION(usingDevVersion ? LL.DEVELOPMENT() : LL.STABLE())}
+          </span>
+          <Button
+            sx={{ ml: 1 }}
+            variant="outlined"
+            size="small"
+            onClick={() => showFirmwareDialog(showingDev)}
+          >
+            {LL.REINSTALL()}
+          </Button>
+        </>
       );
-    },
-    [
-      usingDevVersion,
-      devUpgradeAvailable,
-      stableUpgradeAvailable,
-      me.admin,
-      LL,
-      showFirmwareDialog
-    ]
-  );
-
-  const content = useMemo(() => {
-    if (!data) {
-      return <FormLoader onRetry={loadData} errorMessage={error?.message || ''} />;
     }
 
+    if (!me.admin) return null;
+
     return (
-      <>
-        <Box sx={{ p: 2, border: '1px solid #565656', borderRadius: 2 }}>
-          <Typography sx={{ mb: 1 }} variant="h6" color="primary">
-            {LL.THIS_VERSION()}
-          </Typography>
+      <Button
+        sx={{ ml: 1 }}
+        variant="outlined"
+        color={choice === LL.UPDATE_AVAILABLE() ? 'success' : 'warning'}
+        size="small"
+        onClick={() => showFirmwareDialog(showingDev)}
+      >
+        {choice}
+      </Button>
+    );
+  };
 
-          <Grid
-            container
-            direction="row"
-            sx={{
-              justifyContent: 'flex-start',
-              alignItems: 'baseline'
-            }}
-          >
-            <Grid size={{ xs: 4, md: 2 }}>
-              <Typography color="secondary">{LL.VERSION()}</Typography>
-            </Grid>
-            <Grid size={{ xs: 8, md: 10 }}>
-              <Typography>
-                {data.emsesp_version}
-                {data.build_flags && (
-                  <Typography variant="caption">
-                    &nbsp; &#40;{data.build_flags}&#41;
-                  </Typography>
-                )}
-                <IconButton
-                  onClick={() => setPartitionVersionInfo(data.partition)}
-                  aria-label={LL.FIRMWARE_VERSION_INFO()}
-                >
-                  <InfoOutlinedIcon color="primary" sx={{ fontSize: 18 }} />
-                </IconButton>
-              </Typography>
-            </Grid>
+  if (restarting) {
+    return <SystemMonitor />;
+  }
 
-            <Grid size={{ xs: 4, md: 2 }}>
-              <Typography color="secondary">{LL.PLATFORM()}</Typography>
-            </Grid>
-            <Grid size={{ xs: 8, md: 10 }}>
-              <Typography>
-                {platform}
+  if (!data) {
+    return (
+      <SectionContent>
+        <FormLoader onRetry={loadData} errorMessage={error?.message || ''} />
+      </SectionContent>
+    );
+  }
+
+  return (
+    <SectionContent>
+      <Box sx={{ p: 2, border: '1px solid #565656', borderRadius: 2 }}>
+        <Typography sx={{ mb: 1 }} variant="h6" color="primary">
+          {LL.THIS_VERSION()}
+        </Typography>
+
+        <Grid
+          container
+          direction="row"
+          sx={{
+            justifyContent: 'flex-start',
+            alignItems: 'baseline'
+          }}
+        >
+          <Grid size={{ xs: 4, md: 2 }}>
+            <Typography color="secondary">{LL.VERSION()}</Typography>
+          </Grid>
+          <Grid size={{ xs: 8, md: 10 }}>
+            <Typography>
+              {data.emsesp_version}
+              {data.build_flags && (
                 <Typography variant="caption">
-                  &nbsp; &#40;
-                  {data.psram ? (
-                    <CheckIcon
-                      color="success"
-                      sx={{
-                        fontSize: '1.5em',
-                        verticalAlign: 'middle'
-                      }}
-                    />
-                  ) : (
-                    <CloseIcon
-                      color="error"
-                      sx={{
-                        fontSize: '1.5em',
-                        verticalAlign: 'middle'
-                      }}
-                    />
-                  )}
-                  PSRAM&#41;
+                  &nbsp; &#40;{data.build_flags}&#41;
                 </Typography>
-              </Typography>
-            </Grid>
+              )}
+              <IconButton
+                onClick={() => setPartitionVersionInfo(data.partition)}
+                aria-label={LL.FIRMWARE_VERSION_INFO()}
+              >
+                <InfoOutlinedIcon color="primary" sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Typography>
           </Grid>
 
-          {internetLive ? (
-            <>
-              <Typography sx={{ mt: 4, mb: 1 }} variant="h6" color="primary">
-                {LL.AVAILABLE_VERSION()}
-              </Typography>
-
-              <Grid
-                container
-                direction="row"
-                rowSpacing={1}
-                sx={{
-                  justifyContent: 'flex-start',
-                  alignItems: 'baseline'
-                }}
-              >
-                {otherPartitions.length > 0 && data.developer_mode && (
-                  <>
-                    <Grid size={{ xs: 4, md: 2 }}>
-                      <Typography color="secondary">
-                        {LL.STORED_VERSIONS()}
-                      </Typography>
-                    </Grid>
-                    <Grid size={{ xs: 8, md: 10 }}>
-                      {otherPartitions.map((partition) => (
-                        <Typography key={partition.partition} sx={{ mb: 1 }}>
-                          {partition.version}
-                          <IconButton
-                            onClick={() =>
-                              setPartitionVersionInfo(partition.partition)
-                            }
-                            aria-label={LL.FIRMWARE_VERSION_INFO()}
-                          >
-                            <InfoOutlinedIcon
-                              color="primary"
-                              sx={{ fontSize: 18 }}
-                            />
-                          </IconButton>
-                          <Button
-                            sx={{ ml: 0 }}
-                            variant="outlined"
-                            size="small"
-                            onClick={() =>
-                              showPartitionDialog(
-                                partition.version,
-                                partition.partition,
-                                partition.install_date ?? ''
-                              )
-                            }
-                          >
-                            {LL.INSTALL()}
-                          </Button>
-                        </Typography>
-                      ))}
-                    </Grid>
-                  </>
+          <Grid size={{ xs: 4, md: 2 }}>
+            <Typography color="secondary">{LL.PLATFORM()}</Typography>
+          </Grid>
+          <Grid size={{ xs: 8, md: 10 }}>
+            <Typography>
+              {platform}
+              <Typography variant="caption">
+                &nbsp; &#40;
+                {data.psram ? (
+                  <CheckIcon
+                    color="success"
+                    sx={{
+                      fontSize: '1.5em',
+                      verticalAlign: 'middle'
+                    }}
+                  />
+                ) : (
+                  <CloseIcon
+                    color="error"
+                    sx={{
+                      fontSize: '1.5em',
+                      verticalAlign: 'middle'
+                    }}
+                  />
                 )}
-                <Grid size={{ xs: 4, md: 2 }}>
-                  <Typography color="secondary">{LL.STABLE()}</Typography>
-                </Grid>
-                <Grid size={{ xs: 8, md: 10 }}>
-                  <Typography>
-                    {latestVersion?.version}
-                    <IconButton
-                      onClick={() => setShowVersionInfo(1)}
-                      aria-label={LL.FIRMWARE_VERSION_INFO()}
-                    >
-                      <InfoOutlinedIcon color="primary" sx={{ fontSize: 18 }} />
-                    </IconButton>
-                    {showButtons(false)}
-                  </Typography>
-                </Grid>
-
-                <Grid size={{ xs: 4, md: 2 }}>
-                  <Typography color="secondary">{LL.DEVELOPMENT()}</Typography>
-                </Grid>
-                <Grid size={{ xs: 8, md: 10 }}>
-                  <Typography>
-                    {latestDevVersion?.version}
-                    <IconButton
-                      onClick={() => setShowVersionInfo(2)}
-                      aria-label={LL.FIRMWARE_VERSION_INFO()}
-                    >
-                      <InfoOutlinedIcon color="primary" sx={{ fontSize: 18 }} />
-                    </IconButton>
-                    {showButtons(true)}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </>
-          ) : (
-            <Typography sx={{ mt: 2 }} color="warning">
-              <WarningIcon color="warning" sx={{ verticalAlign: 'middle', mr: 2 }} />
-              {LL.INTERNET_CONNECTION_REQUIRED()}
-            </Typography>
-          )}
-          {me.admin && (
-            <>
-              <VersionInfoDialog
-                showVersionInfo={showVersionInfo}
-                latestVersion={latestVersion}
-                latestDevVersion={latestDevVersion}
-                partitionVersion={partitionVersion}
-                locale={locale}
-                partition={partition}
-                currentPartition={data?.partition ?? ''}
-                size={firmwareSize}
-                LL={LL}
-                onClose={handleVersionInfoClose}
-              />
-              <InstallDialog
-                openInstallDialog={openInstallDialog}
-                fetchDevVersion={fetchDevVersion}
-                latestVersion={latestVersion}
-                latestDevVersion={latestDevVersion}
-                upgradeImportantMessageType={upgradeImportantMessageType}
-                downloadOnly={downloadOnly}
-                platform={platform}
-                LL={LL}
-                onClose={closeInstallDialog}
-                onInstall={installFirmwareURL}
-              />
-              <InstallPartitionDialog
-                openInstallPartitionDialog={openInstallPartitionDialog}
-                version={partitionVersion?.version || ''}
-                partition={partition}
-                LL={LL}
-                onClose={closeInstallPartitionDialog}
-                onInstall={installPartitionFirmware}
-              />
-              <Typography sx={{ pt: 2, pb: 2 }} variant="h6" color="primary">
-                {LL.UPLOAD()}
+                PSRAM&#41;
               </Typography>
-              <SingleUpload doRestart={doRestart} />
-            </>
-          )}
-        </Box>
-      </>
-    );
-  }, [
-    data,
-    error,
-    loadData,
-    LL,
-    platform,
-    internetLive,
-    latestVersion,
-    latestDevVersion,
-    showVersionInfo,
-    locale,
-    openInstallDialog,
-    fetchDevVersion,
-    downloadOnly,
-    me.admin,
-    showButtons,
-    handleVersionInfoClose,
-    closeInstallDialog,
-    installFirmwareURL,
-    doRestart,
-    otherPartitions,
-    setPartitionVersionInfo,
-    showPartitionDialog,
-    partitionVersion,
-    partition,
-    firmwareSize,
-    closeInstallPartitionDialog,
-    installPartitionFirmware
-  ]);
+            </Typography>
+          </Grid>
+        </Grid>
 
-  return restarting ? <SystemMonitor /> : <SectionContent>{content}</SectionContent>;
+        {internetLive ? (
+          <>
+            <Typography sx={{ mt: 4, mb: 1 }} variant="h6" color="primary">
+              {LL.AVAILABLE_VERSION()}
+            </Typography>
+
+            <Grid
+              container
+              direction="row"
+              rowSpacing={1}
+              sx={{
+                justifyContent: 'flex-start',
+                alignItems: 'baseline'
+              }}
+            >
+              {otherPartitions.length > 0 && data.developer_mode && (
+                <>
+                  <Grid size={{ xs: 4, md: 2 }}>
+                    <Typography color="secondary">{LL.STORED_VERSIONS()}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 8, md: 10 }}>
+                    {otherPartitions.map((partition) => (
+                      <Typography key={partition.partition} sx={{ mb: 1 }}>
+                        {partition.version}
+                        <IconButton
+                          onClick={() =>
+                            setPartitionVersionInfo(partition.partition)
+                          }
+                          aria-label={LL.FIRMWARE_VERSION_INFO()}
+                        >
+                          <InfoOutlinedIcon color="primary" sx={{ fontSize: 18 }} />
+                        </IconButton>
+                        <Button
+                          sx={{ ml: 0 }}
+                          variant="outlined"
+                          size="small"
+                          onClick={() =>
+                            showPartitionDialog(
+                              partition.version,
+                              partition.partition,
+                              partition.install_date ?? ''
+                            )
+                          }
+                        >
+                          {LL.INSTALL()}
+                        </Button>
+                      </Typography>
+                    ))}
+                  </Grid>
+                </>
+              )}
+              <Grid size={{ xs: 4, md: 2 }}>
+                <Typography color="secondary">{LL.STABLE()}</Typography>
+              </Grid>
+              <Grid size={{ xs: 8, md: 10 }}>
+                <Typography>
+                  {latestVersion?.version}
+                  <IconButton
+                    onClick={() => setShowVersionInfo(1)}
+                    aria-label={LL.FIRMWARE_VERSION_INFO()}
+                  >
+                    <InfoOutlinedIcon color="primary" sx={{ fontSize: 18 }} />
+                  </IconButton>
+                  {showButtons(false)}
+                </Typography>
+              </Grid>
+
+              <Grid size={{ xs: 4, md: 2 }}>
+                <Typography color="secondary">{LL.DEVELOPMENT()}</Typography>
+              </Grid>
+              <Grid size={{ xs: 8, md: 10 }}>
+                <Typography>
+                  {latestDevVersion?.version}
+                  <IconButton
+                    onClick={() => setShowVersionInfo(2)}
+                    aria-label={LL.FIRMWARE_VERSION_INFO()}
+                  >
+                    <InfoOutlinedIcon color="primary" sx={{ fontSize: 18 }} />
+                  </IconButton>
+                  {showButtons(true)}
+                </Typography>
+              </Grid>
+            </Grid>
+          </>
+        ) : (
+          <Typography sx={{ mt: 2 }} color="warning">
+            <WarningIcon color="warning" sx={{ verticalAlign: 'middle', mr: 2 }} />
+            {LL.INTERNET_CONNECTION_REQUIRED()}
+          </Typography>
+        )}
+        {me.admin && (
+          <>
+            <VersionInfoDialog
+              showVersionInfo={showVersionInfo}
+              latestVersion={latestVersion}
+              latestDevVersion={latestDevVersion}
+              partitionVersion={partitionVersion}
+              locale={locale}
+              partition={partition}
+              currentPartition={data?.partition ?? ''}
+              size={firmwareSize}
+              LL={LL}
+              onClose={handleVersionInfoClose}
+            />
+            <InstallDialog
+              openInstallDialog={openInstallDialog}
+              fetchDevVersion={fetchDevVersion}
+              latestVersion={latestVersion}
+              latestDevVersion={latestDevVersion}
+              upgradeImportantMessageType={upgradeImportantMessageType}
+              downloadOnly={downloadOnly}
+              platform={platform}
+              LL={LL}
+              onClose={closeInstallDialog}
+              onInstall={installFirmwareURL}
+            />
+            <InstallPartitionDialog
+              openInstallPartitionDialog={openInstallPartitionDialog}
+              version={partitionVersion?.version || ''}
+              partition={partition}
+              LL={LL}
+              onClose={closeInstallPartitionDialog}
+              onInstall={installPartitionFirmware}
+            />
+            <Typography sx={{ pt: 2, pb: 2 }} variant="h6" color="primary">
+              {LL.UPLOAD()}
+            </Typography>
+            <SingleUpload doRestart={doRestart} />
+          </>
+        )}
+      </Box>
+    </SectionContent>
+  );
 };
 
 export default memo(Version);

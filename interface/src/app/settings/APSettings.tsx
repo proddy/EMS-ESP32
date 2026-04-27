@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import CancelIcon from '@mui/icons-material/Cancel';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -63,22 +63,16 @@ const APSettings = () => {
 
   const [fieldErrors, setFieldErrors] = useState<ValidateFieldsError>();
 
-  const updateFormValue = useMemo(
-    () =>
-      updateValueDirty(
-        origData as unknown as Record<string, unknown>,
-        dirtyFlags,
-        setDirtyFlags,
-        updateDataValue as (value: unknown) => void
-      ),
-    [origData, dirtyFlags, setDirtyFlags, updateDataValue]
+  const updateFormValue = updateValueDirty(
+    origData as unknown as Record<string, unknown>,
+    dirtyFlags,
+    setDirtyFlags,
+    updateDataValue as (value: unknown) => void
   );
 
-  // Memoize AP enabled state
-  const apEnabled = useMemo(() => (data ? isAPEnabled(data) : false), [data]);
+  const apEnabled = data ? isAPEnabled(data) : false;
 
-  // Memoize validation and submit handler
-  const validateAndSubmit = useCallback(async () => {
+  const validateAndSubmit = async () => {
     if (!data) return;
 
     try {
@@ -88,7 +82,7 @@ const APSettings = () => {
     } catch (error) {
       setFieldErrors((error as ValidationError).fieldErrors);
     }
-  }, [data, saveData]);
+  };
 
   const content = () => {
     if (!data) {

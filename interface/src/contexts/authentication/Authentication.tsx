@@ -67,7 +67,6 @@ const Authentication: FC<RequiredChildrenProps> = ({ children }) => {
     void refresh();
   }, [refresh]);
 
-  // cache object to prevent re-renders
   const obj = useMemo(
     () => ({
       signIn,

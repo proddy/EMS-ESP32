@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 import { Navigate, Route, Routes, matchRoutes, useLocation } from 'react-router';
 
 import { Tab } from '@mui/material';
@@ -15,19 +15,15 @@ const Security = () => {
 
   const location = useLocation();
 
-  const matchedRoutes = useMemo(
-    () =>
-      matchRoutes(
-        [
-          {
-            path: '/settings/security/settings',
-            element: <ManageUsers />
-          },
-          { path: '/settings/security/users', element: <SecuritySettings /> }
-        ],
-        location
-      ),
-    [location]
+  const matchedRoutes = matchRoutes(
+    [
+      {
+        path: '/settings/security/settings',
+        element: <ManageUsers />
+      },
+      { path: '/settings/security/users', element: <SecuritySettings /> }
+    ],
+    location
   );
   const routerTab = matchedRoutes?.[0]?.route.path || false;
 

@@ -1,4 +1,4 @@
-import { memo, useCallback, useContext, useState } from 'react';
+import { memo, useContext, useState } from 'react';
 
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -22,9 +22,9 @@ const LayoutMenuComponent = () => {
   const { LL } = useI18nContext();
   const [menuOpen, setMenuOpen] = useState(true);
 
-  const handleMenuToggle = useCallback(() => {
+  const handleMenuToggle = () => {
     setMenuOpen((prev) => !prev);
-  }, []);
+  };
 
   return (
     <>

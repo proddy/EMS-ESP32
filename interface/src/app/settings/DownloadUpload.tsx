@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
 
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -57,7 +57,7 @@ const DownloadUpload = () => {
 
   const { data, send: loadData, error } = useRequest(SystemApi.readSystemStatus);
 
-  const doRestart = useCallback(async () => {
+  const doRestart = async () => {
     setRestarting(true);
     try {
       await sendAPI({ device: 'system', cmd: 'restart', id: 0 });
@@ -65,16 +65,33 @@ const DownloadUpload = () => {
       toast.error((error as Error).message);
       setRestarting(false);
     }
-  }, [sendAPI]);
+  };
 
   useLayoutTitle(LL.DOWNLOAD_UPLOAD());
 
-  const handleCloseBackupDialog = useCallback(() => {
+  const handleCloseBackupDialog = () => {
     setConfirmBackup(false);
-  }, []);
+  };
 
-  const renderBackupDialog = useMemo(
-    () => (
+  const handleDownload = (type: string) => () => {
+    void sendExportData(type);
+    setConfirmBackup(false);
+  };
+
+  if (restarting) {
+    return <SystemMonitor />;
+  }
+
+  if (!data) {
+    return (
+      <SectionContent>
+        <FormLoader onRetry={loadData} errorMessage={error?.message || ''} />
+      </SectionContent>
+    );
+  }
+
+  return (
+    <SectionContent>
       <Dialog
         sx={dialogStyle}
         open={confirmBackup}
@@ -98,40 +115,13 @@ const DownloadUpload = () => {
           <Button
             startIcon={<DownloadIcon />}
             variant="outlined"
-            onClick={() => handleDownload('systembackup')()}
+            onClick={handleDownload('systembackup')}
             color="primary"
           >
             {LL.DOWNLOAD(0)}
           </Button>
         </DialogActions>
       </Dialog>
-    ),
-    [confirmBackup, handleCloseBackupDialog, LL]
-  );
-
-  const handleDownload = useCallback(
-    (type: string) => () => {
-      void sendExportData(type);
-      setConfirmBackup(false);
-    },
-    [sendExportData]
-  );
-
-  if (restarting) {
-    return <SystemMonitor />;
-  }
-
-  if (!data) {
-    return (
-      <SectionContent>
-        <FormLoader onRetry={loadData} errorMessage={error?.message || ''} />
-      </SectionContent>
-    );
-  }
-
-  return (
-    <SectionContent>
-      {renderBackupDialog}
 
       <Typography sx={{ pb: 2 }} variant="h6" color="primary">
         {LL.DOWNLOAD(0)}

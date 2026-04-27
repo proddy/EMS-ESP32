@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import AddIcon from '@mui/icons-material/Add';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -68,6 +68,7 @@ const CustomEntitiesDialog = ({
   const { LL } = useI18nContext();
   const [editItem, setEditItem] = useState<EntityItem>(selectedItem);
   const [fieldErrors, setFieldErrors] = useState<ValidateFieldsError>();
+  // Stable handler reference so the memoized ValidatedTextField can skip re-renders
   const updateFormValue = useMemo(
     () =>
       updateValue(
@@ -105,16 +106,16 @@ const CustomEntitiesDialog = ({
     }
   }, [open, selectedItem]);
 
-  const handleClose = useCallback(
-    (_event: React.SyntheticEvent, reason: 'backdropClick' | 'escapeKeyDown') => {
-      if (reason !== 'backdropClick') {
-        onClose();
-      }
-    },
-    [onClose]
-  );
+  const handleClose = (
+    _event: React.SyntheticEvent,
+    reason: 'backdropClick' | 'escapeKeyDown'
+  ) => {
+    if (reason !== 'backdropClick') {
+      onClose();
+    }
+  };
 
-  const save = useCallback(async () => {
+  const save = async () => {
     try {
       setFieldErrors(undefined);
       await validate(validator, editItem);
@@ -138,27 +139,21 @@ const CustomEntitiesDialog = ({
     } catch (error) {
       setFieldErrors((error as ValidationError).fieldErrors);
     }
-  }, [validator, editItem, onSave]);
+  };
 
-  const remove = useCallback(() => {
-    const itemWithDeleted = { ...editItem, deleted: true };
-    onSave(itemWithDeleted);
-  }, [editItem, onSave]);
+  const remove = () => {
+    onSave({ ...editItem, deleted: true });
+  };
 
-  const dup = useCallback(() => {
+  const dup = () => {
     onDup(editItem);
-  }, [editItem, onDup]);
+  };
 
-  // Memoize UOM menu items to avoid recreating on every render
-  const uomMenuItems = useMemo(
-    () =>
-      DeviceValueUOM_s.map((val, i) => (
-        <MenuItem key={val} value={i}>
-          {val}
-        </MenuItem>
-      )),
-    []
-  );
+  const uomMenuItems = DeviceValueUOM_s.map((val, i) => (
+    <MenuItem key={val} value={i}>
+      {val}
+    </MenuItem>
+  ));
 
   return (
     <Dialog sx={dialogStyle} open={open} onClose={handleClose}>

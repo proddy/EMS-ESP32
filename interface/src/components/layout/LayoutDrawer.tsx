@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 
 import { Box, Divider, Drawer, Toolbar, Typography, styled } from '@mui/material';
 
@@ -24,22 +24,18 @@ interface LayoutDrawerProps {
 }
 
 const LayoutDrawerComponent = ({ mobileOpen, onClose }: LayoutDrawerProps) => {
-  // Memoize drawer content to prevent unnecessary re-renders
-  const drawer = useMemo(
-    () => (
-      <>
-        <Toolbar disableGutters>
-          <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
-            <LayoutDrawerLogo src="/app/icon.png" alt={PROJECT_NAME} />
-            <Typography variant="h6">{PROJECT_NAME}</Typography>
-          </Box>
-          <Divider absolute />
-        </Toolbar>
-        <Divider />
-        <LayoutMenu />
-      </>
-    ),
-    []
+  const drawer = (
+    <>
+      <Toolbar disableGutters>
+        <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
+          <LayoutDrawerLogo src="/app/icon.png" alt={PROJECT_NAME} />
+          <Typography variant="h6">{PROJECT_NAME}</Typography>
+        </Box>
+        <Divider absolute />
+      </Toolbar>
+      <Divider />
+      <LayoutMenu />
+    </>
   );
 
   return (

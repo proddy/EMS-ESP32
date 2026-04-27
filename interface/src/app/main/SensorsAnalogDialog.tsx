@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import CancelIcon from '@mui/icons-material/Cancel';
 import DoneIcon from '@mui/icons-material/Done';
@@ -53,6 +53,7 @@ const SensorsAnalogDialog = ({
   const [fieldErrors, setFieldErrors] = useState<ValidateFieldsError>();
   const [editItem, setEditItem] = useState<AnalogSensor>(selectedItem);
 
+  // Stable handler reference so the memoized ValidatedTextField can skip re-renders
   const updateFormValue = useMemo(
     () =>
       updateValue((updater) =>
@@ -66,71 +67,45 @@ const SensorsAnalogDialog = ({
     [setEditItem]
   );
 
-  // Memoize helper functions to check sensor type conditions
-  const isCounterOrRate = useMemo(
-    () =>
-      editItem.t === AnalogType.COUNTER ||
-      editItem.t === AnalogType.RATE ||
-      (editItem.t >= AnalogType.CNT_0 && editItem.t <= AnalogType.CNT_2),
-    [editItem.t]
-  );
-  const isCounter = useMemo(
-    () =>
-      editItem.t === AnalogType.COUNTER ||
-      (editItem.t >= AnalogType.CNT_0 && editItem.t <= AnalogType.CNT_2),
-    [editItem.t]
-  );
-  const isFreqType = useMemo(
-    () => editItem.t >= AnalogType.FREQ_0 && editItem.t <= AnalogType.FREQ_2,
-    [editItem.t]
-  );
-  const isPWM = useMemo(
-    () =>
-      editItem.t === AnalogType.PWM_0 ||
-      editItem.t === AnalogType.PWM_1 ||
-      editItem.t === AnalogType.PWM_2,
-    [editItem.t]
-  );
-  const isDACOutGPIO = useMemo(
-    () =>
-      editItem.t === AnalogType.DIGITAL_OUT &&
-      (editItem.g === 25 || editItem.g === 26),
-    [editItem.t, editItem.g]
-  );
-  const isDigitalOutGPIO = useMemo(
-    () =>
-      editItem.t === AnalogType.DIGITAL_OUT &&
-      editItem.g !== 25 &&
-      editItem.g !== 26,
-    [editItem.t, editItem.g]
-  );
+  const isCounterOrRate =
+    editItem.t === AnalogType.COUNTER ||
+    editItem.t === AnalogType.RATE ||
+    (editItem.t >= AnalogType.CNT_0 && editItem.t <= AnalogType.CNT_2);
+  const isCounter =
+    editItem.t === AnalogType.COUNTER ||
+    (editItem.t >= AnalogType.CNT_0 && editItem.t <= AnalogType.CNT_2);
+  const isFreqType =
+    editItem.t >= AnalogType.FREQ_0 && editItem.t <= AnalogType.FREQ_2;
+  const isPWM =
+    editItem.t === AnalogType.PWM_0 ||
+    editItem.t === AnalogType.PWM_1 ||
+    editItem.t === AnalogType.PWM_2;
+  const isDACOutGPIO =
+    editItem.t === AnalogType.DIGITAL_OUT &&
+    (editItem.g === 25 || editItem.g === 26);
+  const isDigitalOutGPIO =
+    editItem.t === AnalogType.DIGITAL_OUT && editItem.g !== 25 && editItem.g !== 26;
 
-  // Memoize menu items to avoid recreation on each render
-  const analogTypeMenuItems = useMemo(
-    () =>
-      AnalogTypeNames.map((val, i) => ({ name: val, value: i + 1 }))
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(({ name, value }) => (
-          <MenuItem
-            key={name}
-            value={value}
-            disabled={disabledTypeList?.includes(value)}
-          >
-            {name}
-          </MenuItem>
-        )),
-    [disabledTypeList]
-  );
+  const analogTypeMenuItems = AnalogTypeNames.map((val, i) => ({
+    name: val,
+    value: i + 1
+  }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(({ name, value }) => (
+      <MenuItem
+        key={name}
+        value={value}
+        disabled={disabledTypeList?.includes(value)}
+      >
+        {name}
+      </MenuItem>
+    ));
 
-  const uomMenuItems = useMemo(
-    () =>
-      DeviceValueUOM_s.map((val, i) => (
-        <MenuItem key={val} value={i}>
-          {val}
-        </MenuItem>
-      )),
-    []
-  );
+  const uomMenuItems = DeviceValueUOM_s.map((val, i) => (
+    <MenuItem key={val} value={i}>
+      {val}
+    </MenuItem>
+  ));
 
   const analogGPIOMenuItems = () =>
     // add selectedItem.g to the list
@@ -157,16 +132,16 @@ const SensorsAnalogDialog = ({
     }
   }, [open, selectedItem]);
 
-  const handleClose = useCallback(
-    (_event: React.SyntheticEvent, reason: 'backdropClick' | 'escapeKeyDown') => {
-      if (reason !== 'backdropClick') {
-        onClose();
-      }
-    },
-    [onClose]
-  );
+  const handleClose = (
+    _event: React.SyntheticEvent,
+    reason: 'backdropClick' | 'escapeKeyDown'
+  ) => {
+    if (reason !== 'backdropClick') {
+      onClose();
+    }
+  };
 
-  const save = useCallback(async () => {
+  const save = async () => {
     try {
       setFieldErrors(undefined);
       await validate(validator, editItem);
@@ -174,17 +149,13 @@ const SensorsAnalogDialog = ({
     } catch (error) {
       setFieldErrors((error as ValidationError).fieldErrors);
     }
-  }, [validator, editItem, onSave]);
+  };
 
-  const remove = useCallback(() => {
+  const remove = () => {
     onSave({ ...editItem, d: true });
-  }, [editItem, onSave]);
+  };
 
-  const dialogTitle = useMemo(
-    () =>
-      `${creating ? LL.ADD(1) + ' ' + LL.NEW(0) : LL.EDIT()} ${LL.ANALOG_SENSOR(0)}`,
-    [creating, LL]
-  );
+  const dialogTitle = `${creating ? LL.ADD(1) + ' ' + LL.NEW(0) : LL.EDIT()} ${LL.ANALOG_SENSOR(0)}`;
 
   return (
     <Dialog sx={dialogStyle} open={open} onClose={handleClose}>

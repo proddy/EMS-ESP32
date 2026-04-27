@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useBlocker } from 'react-router';
 import { toast } from 'react-toastify';
 
@@ -132,7 +132,7 @@ const Scheduler = () => {
     }
   );
 
-  const hasScheduleChanged = useCallback((si: ScheduleItem) => {
+  const hasScheduleChanged = (si: ScheduleItem) => {
     return (
       si.id !== si.o_id ||
       (si.name || '') !== (si.o_name || '') ||
@@ -143,15 +143,13 @@ const Scheduler = () => {
       si.cmd !== si.o_cmd ||
       si.value !== si.o_value
     );
-  }, []);
+  };
 
-  const intervalCallback = useCallback(() => {
+  useInterval(() => {
     if (numChanges === 0) {
       void fetchSchedule();
     }
-  }, [numChanges, fetchSchedule]);
-
-  useInterval(intervalCallback, INTERVAL_DELAY);
+  }, INTERVAL_DELAY);
 
   useEffect(() => {
     const formatter = new Intl.DateTimeFormat(locale, {
@@ -169,7 +167,7 @@ const Scheduler = () => {
 
   const schedule_theme = useTheme(scheduleTheme);
 
-  const saveSchedule = useCallback(async () => {
+  const saveSchedule = async () => {
     try {
       await updateSchedule({
         schedule: schedule
@@ -192,46 +190,43 @@ const Scheduler = () => {
       await fetchSchedule();
       setNumChanges(0);
     }
-  }, [LL, schedule, updateSchedule, fetchSchedule]);
+  };
 
-  const editScheduleItem = useCallback((si: ScheduleItem) => {
+  const editScheduleItem = (si: ScheduleItem) => {
     setCreating(false);
     setSelectedScheduleItem(si);
     setDialogOpen(true);
     if (si.o_name === undefined) {
       si.o_name = si.name;
     }
-  }, []);
+  };
 
-  const onDialogClose = useCallback(() => {
+  const onDialogClose = () => {
     setDialogOpen(false);
-  }, []);
+  };
 
-  const onDialogCancel = useCallback(async () => {
+  const onDialogCancel = async () => {
     await fetchSchedule().then(() => {
       setNumChanges(0);
     });
-  }, [fetchSchedule]);
+  };
 
-  const onDialogSave = useCallback(
-    (updatedItem: ScheduleItem) => {
-      setDialogOpen(false);
-      void updateState(readSchedule(), (data: ScheduleItem[]) => {
-        const new_data = creating
-          ? [...data, updatedItem]
-          : data.map((si) =>
-              si.id === updatedItem.id ? { ...si, ...updatedItem } : si
-            );
+  const onDialogSave = (updatedItem: ScheduleItem) => {
+    setDialogOpen(false);
+    void updateState(readSchedule(), (data: ScheduleItem[]) => {
+      const new_data = creating
+        ? [...data, updatedItem]
+        : data.map((si) =>
+            si.id === updatedItem.id ? { ...si, ...updatedItem } : si
+          );
 
-        setNumChanges(new_data.filter((si) => hasScheduleChanged(si)).length);
+      setNumChanges(new_data.filter((si) => hasScheduleChanged(si)).length);
 
-        return new_data;
-      });
-    },
-    [creating, hasScheduleChanged]
-  );
+      return new_data;
+    });
+  };
 
-  const addScheduleItem = useCallback(() => {
+  const addScheduleItem = () => {
     setCreating(true);
     const newItem: ScheduleItem = {
       id: Math.floor(Math.random() * (MAX_ID - MIN_ID) + MIN_ID),
@@ -239,36 +234,29 @@ const Scheduler = () => {
     };
     setSelectedScheduleItem(newItem);
     setDialogOpen(true);
-  }, []);
+  };
 
-  const filteredAndSortedSchedule = useMemo(
-    () =>
-      schedule
-        .filter((si: ScheduleItem) => !si.deleted)
-        .sort((a: ScheduleItem, b: ScheduleItem) => a.flags - b.flags),
-    [schedule]
-  );
+  const filteredAndSortedSchedule = schedule
+    .filter((si: ScheduleItem) => !si.deleted)
+    .sort((a: ScheduleItem, b: ScheduleItem) => a.flags - b.flags);
 
-  const dayBox = useCallback(
-    (si: ScheduleItem, flag: number) => {
-      const dayIndex = Math.log(flag) / LOG_2;
-      const isActive = (si.flags & flag) === flag;
+  const dayBox = (si: ScheduleItem, flag: number) => {
+    const dayIndex = Math.log(flag) / LOG_2;
+    const isActive = (si.flags & flag) === flag;
 
-      return (
-        <>
-          <Box>
-            <Typography sx={{ fontSize: 11 }} color={isActive ? 'primary' : 'grey'}>
-              {dow[dayIndex]}
-            </Typography>
-          </Box>
-          <Divider orientation="vertical" flexItem />
-        </>
-      );
-    },
-    [dow]
-  );
+    return (
+      <>
+        <Box>
+          <Typography sx={{ fontSize: 11 }} color={isActive ? 'primary' : 'grey'}>
+            {dow[dayIndex]}
+          </Typography>
+        </Box>
+        <Divider orientation="vertical" flexItem />
+      </>
+    );
+  };
 
-  const scheduleType = useCallback((si: ScheduleItem) => {
+  const scheduleType = (si: ScheduleItem) => {
     const label = scheduleTypeLabels[si.flags];
 
     return (
@@ -278,9 +266,9 @@ const Scheduler = () => {
         </Typography>
       </Box>
     );
-  }, []);
+  };
 
-  const renderSchedule = useCallback(() => {
+  const renderSchedule = () => {
     if (!schedule) {
       return (
         <FormLoader onRetry={fetchSchedule} errorMessage={error?.message || ''} />
@@ -343,17 +331,7 @@ const Scheduler = () => {
         )}
       </Table>
     );
-  }, [
-    schedule,
-    error,
-    fetchSchedule,
-    filteredAndSortedSchedule,
-    schedule_theme,
-    editScheduleItem,
-    LL,
-    dayBox,
-    scheduleType
-  ]);
+  };
 
   return (
     <SectionContent>

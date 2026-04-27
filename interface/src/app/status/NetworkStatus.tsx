@@ -1,5 +1,3 @@
-import { useMemo } from 'react';
-
 import DeviceHubIcon from '@mui/icons-material/DeviceHub';
 import DnsIcon from '@mui/icons-material/Dns';
 import GiteIcon from '@mui/icons-material/Gite';
@@ -124,16 +122,20 @@ const NetworkStatus = () => {
 
   const theme = useTheme();
 
-  const content = useMemo(() => {
-    if (!data) {
-      return <FormLoader onRetry={loadData} errorMessage={error?.message || ''} />;
-    }
-
-    const statusText = getNetworkStatusText(data.status, data.reconnect_count, LL);
-    const statusColor = networkStatusHighlight(data, theme);
-    const qualityColor = networkQualityHighlight(data, theme);
-
+  if (!data) {
     return (
+      <SectionContent>
+        <FormLoader onRetry={loadData} errorMessage={error?.message || ''} />
+      </SectionContent>
+    );
+  }
+
+  const statusText = getNetworkStatusText(data.status, data.reconnect_count, LL);
+  const statusColor = networkStatusHighlight(data, theme);
+  const qualityColor = networkQualityHighlight(data, theme);
+
+  return (
+    <SectionContent>
       <List>
         <ListItem>
           <ListItemAvatar>
@@ -227,10 +229,8 @@ const NetworkStatus = () => {
           </>
         )}
       </List>
-    );
-  }, [data, error, loadData, LL, theme]);
-
-  return <SectionContent>{content}</SectionContent>;
+    </SectionContent>
+  );
 };
 
 export default NetworkStatus;

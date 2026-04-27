@@ -1,4 +1,4 @@
-import { useCallback, useContext, useMemo, useState } from 'react';
+import { useContext, useState } from 'react';
 import { toast } from 'react-toastify';
 
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -43,7 +43,6 @@ import { formatDateTime } from 'utils/time';
 
 import SystemMonitor from './SystemMonitor';
 
-// Pure functions moved outside component to avoid recreation on each render
 const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
 
 const formatDurationSec = (
@@ -97,10 +96,8 @@ const SystemStatus = () => {
 
   const theme = useTheme();
 
-  // Memoize derived status values to avoid recalculation on every render
-  const busStatus = useMemo(() => {
+  const busStatus = (() => {
     if (!data) return 'EMS state unknown';
-
     switch (data.bus_status) {
       case busConnectionStatus.BUS_STATUS_CONNECTED:
         return `EMS ${LL.CONNECTED(0)} (${formatDurationSec(data.bus_uptime, LL)})`;
@@ -111,12 +108,10 @@ const SystemStatus = () => {
       default:
         return 'EMS state unknown';
     }
-  }, [data?.bus_status, data?.bus_uptime, LL]);
+  })();
 
-  // Memoize derived status values to avoid recalculation on every render
-  const systemStatus = useMemo(() => {
+  const systemStatus = (() => {
     if (!data) return '??';
-
     switch (data.status) {
       case SystemStatusCodes.SYSTEM_STATUS_PENDING_UPLOAD:
       case SystemStatusCodes.SYSTEM_STATUS_UPLOADING:
@@ -129,14 +124,12 @@ const SystemStatus = () => {
       case SystemStatusCodes.SYSTEM_STATUS_INVALID_GPIO:
         return LL.GPIO_OF(LL.FAILED(0));
       default:
-        // SystemStatusCodes.SYSTEM_STATUS_NORMAL
         return 'OK';
     }
-  }, [data?.status, LL]);
+  })();
 
-  const busStatusHighlight = useMemo(() => {
+  const busStatusHighlight = (() => {
     if (!data) return theme.palette.warning.main;
-
     switch (data.bus_status) {
       case busConnectionStatus.BUS_STATUS_TX_ERRORS:
         return theme.palette.warning.main;
@@ -147,11 +140,10 @@ const SystemStatus = () => {
       default:
         return theme.palette.warning.main;
     }
-  }, [data?.bus_status, theme.palette]);
+  })();
 
-  const ntpStatus = useMemo(() => {
+  const ntpStatus = (() => {
     if (!data) return LL.UNKNOWN();
-
     switch (data.ntp_status) {
       case NTPSyncStatus.NTP_DISABLED:
         return LL.NOT_ENABLED();
@@ -164,11 +156,10 @@ const SystemStatus = () => {
       default:
         return LL.UNKNOWN();
     }
-  }, [data?.ntp_status, data?.ntp_time, LL]);
+  })();
 
-  const ntpStatusHighlight = useMemo(() => {
+  const ntpStatusHighlight = (() => {
     if (!data) return theme.palette.error.main;
-
     switch (data.ntp_status) {
       case NTPSyncStatus.NTP_DISABLED:
         return theme.palette.info.main;
@@ -179,11 +170,10 @@ const SystemStatus = () => {
       default:
         return theme.palette.error.main;
     }
-  }, [data?.ntp_status, theme.palette]);
+  })();
 
-  const networkStatusHighlight = useMemo(() => {
+  const networkStatusHighlight = (() => {
     if (!data) return theme.palette.warning.main;
-
     switch (data.network_status) {
       case NetworkConnectionStatus.WIFI_STATUS_IDLE:
       case NetworkConnectionStatus.WIFI_STATUS_DISCONNECTED:
@@ -198,11 +188,10 @@ const SystemStatus = () => {
       default:
         return theme.palette.warning.main;
     }
-  }, [data?.network_status, theme.palette]);
+  })();
 
-  const networkStatus = useMemo(() => {
+  const networkStatus = (() => {
     if (!data) return LL.UNKNOWN();
-
     switch (data.network_status) {
       case NetworkConnectionStatus.WIFI_STATUS_NO_SHIELD:
         return LL.INACTIVE(1);
@@ -223,15 +212,12 @@ const SystemStatus = () => {
       default:
         return LL.UNKNOWN();
     }
-  }, [data?.network_status, data?.wifi_rssi, LL]);
+  })();
 
-  const activeHighlight = useCallback(
-    (value: boolean) =>
-      value ? theme.palette.success.main : theme.palette.info.main,
-    [theme.palette]
-  );
+  const activeHighlight = (value: boolean) =>
+    value ? theme.palette.success.main : theme.palette.info.main;
 
-  const doRestart = useCallback(async () => {
+  const doRestart = async () => {
     setConfirmRestart(false);
     setRestarting(true);
     await sendAPI({ device: 'system', cmd: 'restart', id: 0 }).catch(
@@ -239,14 +225,123 @@ const SystemStatus = () => {
         toast.error(error.message);
       }
     );
-  }, [sendAPI]);
+  };
 
-  const handleCloseRestartDialog = useCallback(() => {
-    setConfirmRestart(false);
-  }, []);
+  const handleCloseRestartDialog = () => setConfirmRestart(false);
 
-  const renderRestartDialog = useMemo(
-    () => (
+  if (restarting) {
+    return <SystemMonitor />;
+  }
+
+  if (!data || !LL) {
+    return (
+      <SectionContent>
+        <FormLoader onRetry={loadData} errorMessage={error?.message || ''} />
+      </SectionContent>
+    );
+  }
+
+  return (
+    <SectionContent>
+      <List>
+        <ListMenuItem
+          icon={BuildIcon}
+          bgcolor="#72caf9"
+          label="EMS-ESP Firmware"
+          text={`v${data.emsesp_version || ''}`}
+          to="version"
+        />
+
+        <ListItem>
+          <ListItemAvatar>
+            <Avatar sx={{ bgcolor: '#c5572c', color: 'white' }}>
+              <MonitorHeartIcon />
+            </Avatar>
+          </ListItemAvatar>
+          <ListItemText
+            primary={LL.STATUS_OF(LL.SYSTEM(0))}
+            secondary={`${systemStatus} (${LL.UPTIME()}: ${formatDurationSec(data.uptime, LL)})`}
+          />
+          {me.admin && (
+            <Button
+              startIcon={<PowerSettingsNewIcon />}
+              variant="outlined"
+              color="error"
+              onClick={() => setConfirmRestart(true)}
+            >
+              {LL.RESTART()}
+            </Button>
+          )}
+        </ListItem>
+
+        <ListMenuItem
+          disabled={!me.admin}
+          icon={MemoryIcon}
+          bgcolor="#68374d"
+          label={LL.HARDWARE()}
+          text={`${formatNumber(data.free_heap)} KB ${LL.FREE_MEMORY()}`}
+          to="/status/hardwarestatus"
+        />
+
+        <ListMenuItem
+          disabled={!me.admin}
+          icon={DirectionsBusIcon}
+          bgcolor={busStatusHighlight}
+          label={LL.DATA_TRAFFIC()}
+          text={busStatus}
+          to="/status/activity"
+        />
+
+        <ListMenuItem
+          disabled={!me.admin}
+          icon={
+            data.network_status === NetworkConnectionStatus.WIFI_STATUS_CONNECTED
+              ? WifiIcon
+              : RouterIcon
+          }
+          bgcolor={networkStatusHighlight}
+          label={LL.NETWORK(1)}
+          text={networkStatus}
+          to="/status/network"
+        />
+
+        <ListMenuItem
+          disabled={!me.admin}
+          icon={DeviceHubIcon}
+          bgcolor={activeHighlight(data.mqtt_status)}
+          label="MQTT"
+          text={data.mqtt_status ? LL.CONNECTED(0) : LL.INACTIVE(0)}
+          to="/status/mqtt"
+        />
+
+        <ListMenuItem
+          disabled={!me.admin}
+          icon={AccessTimeIcon}
+          bgcolor={ntpStatusHighlight}
+          label="NTP"
+          text={ntpStatus}
+          to="/status/ntp"
+        />
+
+        <ListMenuItem
+          disabled={!me.admin}
+          icon={SettingsInputAntennaIcon}
+          bgcolor={activeHighlight(data.ap_status)}
+          label={LL.ACCESS_POINT(0)}
+          text={data.ap_status ? LL.ACTIVE() : LL.INACTIVE(0)}
+          to="/status/ap"
+        />
+
+        <ListMenuItem
+          disabled={!me.admin}
+          icon={LogoDevIcon}
+          bgcolor="#40828f"
+          label={LL.LOG_OF(LL.SYSTEM(0))}
+          text={LL.VIEW_LOG()}
+          to="/status/log"
+        />
+      </List>
+
       <Dialog
         sx={dialogStyle}
         open={confirmRestart}
@@ -273,177 +368,8 @@ const SystemStatus = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    ),
-    [confirmRestart, handleCloseRestartDialog, doRestart, LL]
+    </SectionContent>
   );
-
-  // Memoize formatted values
-  const firmwareVersion = useMemo(
-    () => `v${data?.emsesp_version || ''}`,
-    [data?.emsesp_version]
-  );
-
-  const uptimeText = useMemo(
-    () => (data ? formatDurationSec(data.uptime, LL) : ''),
-    [data?.uptime, LL]
-  );
-
-  const freeMemoryText = useMemo(
-    () => (data ? `${formatNumber(data.free_heap)} KB ${LL.FREE_MEMORY()}` : ''),
-    [data?.free_heap, LL]
-  );
-
-  const networkIcon = useMemo(
-    () =>
-      data?.network_status === NetworkConnectionStatus.WIFI_STATUS_CONNECTED
-        ? WifiIcon
-        : RouterIcon,
-    [data?.network_status]
-  );
-
-  const mqttStatusText = useMemo(
-    () => (data?.mqtt_status ? LL.CONNECTED(0) : LL.INACTIVE(0)),
-    [data?.mqtt_status, LL]
-  );
-
-  const apStatusText = useMemo(
-    () => (data?.ap_status ? LL.ACTIVE() : LL.INACTIVE(0)),
-    [data?.ap_status, LL]
-  );
-
-  const handleRestartClick = useCallback(() => {
-    setConfirmRestart(true);
-  }, []);
-
-  const content = useMemo(() => {
-    if (!data || !LL) {
-      return <FormLoader onRetry={loadData} errorMessage={error?.message || ''} />;
-    }
-
-    return (
-      <>
-        <List>
-          <ListMenuItem
-            icon={BuildIcon}
-            bgcolor="#72caf9"
-            label="EMS-ESP Firmware"
-            text={firmwareVersion}
-            to="version"
-          />
-
-          <ListItem>
-            <ListItemAvatar>
-              <Avatar sx={{ bgcolor: '#c5572c', color: 'white' }}>
-                <MonitorHeartIcon />
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText
-              primary={LL.STATUS_OF(LL.SYSTEM(0))}
-              secondary={`${systemStatus} (${LL.UPTIME()}: ${uptimeText})`}
-            />
-            {me.admin && (
-              <Button
-                startIcon={<PowerSettingsNewIcon />}
-                variant="outlined"
-                color="error"
-                onClick={handleRestartClick}
-              >
-                {LL.RESTART()}
-              </Button>
-            )}
-          </ListItem>
-
-          <ListMenuItem
-            disabled={!me.admin}
-            icon={MemoryIcon}
-            bgcolor="#68374d"
-            label={LL.HARDWARE()}
-            text={freeMemoryText}
-            to="/status/hardwarestatus"
-          />
-
-          <ListMenuItem
-            disabled={!me.admin}
-            icon={DirectionsBusIcon}
-            bgcolor={busStatusHighlight}
-            label={LL.DATA_TRAFFIC()}
-            text={busStatus}
-            to="/status/activity"
-          />
-
-          <ListMenuItem
-            disabled={!me.admin}
-            icon={networkIcon}
-            bgcolor={networkStatusHighlight}
-            label={LL.NETWORK(1)}
-            text={networkStatus}
-            to="/status/network"
-          />
-
-          <ListMenuItem
-            disabled={!me.admin}
-            icon={DeviceHubIcon}
-            bgcolor={activeHighlight(data.mqtt_status)}
-            label="MQTT"
-            text={mqttStatusText}
-            to="/status/mqtt"
-          />
-
-          <ListMenuItem
-            disabled={!me.admin}
-            icon={AccessTimeIcon}
-            bgcolor={ntpStatusHighlight}
-            label="NTP"
-            text={ntpStatus}
-            to="/status/ntp"
-          />
-
-          <ListMenuItem
-            disabled={!me.admin}
-            icon={SettingsInputAntennaIcon}
-            bgcolor={activeHighlight(data.ap_status)}
-            label={LL.ACCESS_POINT(0)}
-            text={apStatusText}
-            to="/status/ap"
-          />
-
-          <ListMenuItem
-            disabled={!me.admin}
-            icon={LogoDevIcon}
-            bgcolor="#40828f"
-            label={LL.LOG_OF(LL.SYSTEM(0))}
-            text={LL.VIEW_LOG()}
-            to="/status/log"
-          />
-        </List>
-
-        {renderRestartDialog}
-      </>
-    );
-  }, [
-    data,
-    LL,
-    firmwareVersion,
-    uptimeText,
-    freeMemoryText,
-    networkIcon,
-    mqttStatusText,
-    apStatusText,
-    busStatus,
-    busStatusHighlight,
-    networkStatusHighlight,
-    networkStatus,
-    ntpStatusHighlight,
-    ntpStatus,
-    activeHighlight,
-    me.admin,
-    handleRestartClick,
-    error,
-    loadData,
-    renderRestartDialog
-  ]);
-
-  return restarting ? <SystemMonitor /> : <SectionContent>{content}</SectionContent>;
 };
 
 export default SystemStatus;
