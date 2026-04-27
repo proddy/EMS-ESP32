@@ -6,9 +6,6 @@ import { Plugin, PluginOption, defineConfig } from 'vite';
 import viteImagemin from 'vite-plugin-imagemin';
 import zlib from 'zlib';
 
-// @ts-expect-error - mock server doesn't have type declarations
-import mockServer from '../mock-api/mockServer.js';
-
 // Constants
 const KB_DIVISOR = 1024;
 const REPEAT_CHAR = '=';
@@ -100,6 +97,10 @@ const createPreactPlugin = (devToolsEnabled: boolean) =>
 
 // Patch preact/compat to export stub React 19 APIs (use, useOptimistic) so that
 // react-router v7 doesn't trigger IMPORT_IS_UNDEFINED warnings from Rolldown.
+// Rolldown tracks the constant strings used in `React[REACT_USE]` /
+// `React[USE_OPTIMISTIC]` lookups inside react-router and resolves them
+// statically, so simply relying on a runtime guard is not enough — we need
+// matching (stub) exports on the aliased preact/compat module.
 const preactCompatPatchPlugin = (): Plugin => ({
   name: 'preact-compat-react19-patch',
   transform(code, id) {
@@ -210,9 +211,11 @@ const imageOptimizationPlugin = {
 };
 
 export default defineConfig(
-  ({ command, mode }: { command: string; mode: string }) => {
+  async ({ command, mode }: { command: string; mode: string }) => {
     if (command === 'serve') {
       console.log(`Preparing for standalone build with server, mode=${mode}`);
+      // @ts-expect-error - mock server doesn't have type declarations
+      const { default: mockServer } = await import('../mock-api/mockServer.js');
       return {
         plugins: [...createBasePlugins(true, true), mockServer()],
         resolve: {
