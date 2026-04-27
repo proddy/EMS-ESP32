@@ -261,7 +261,7 @@ uint8_t WebStatusService::upgradeImportantMessages(std::string & version) {
 
     // it's a filename with a .bin or .md extension, try and extract the version from it
     // e.g. EMS-ESP-3_8_2-dev_13-ESP32-16MB+.bin -> major=3 minor=8 patch=2
-    version::EMSESP_Version latest_version;
+    FirmwareVersion latest_version;
     if ((version.find(".bin") != std::string::npos) || (version.find(".md") != std::string::npos)) {
         std::string filename = version;
         auto        pos      = filename.find("EMS-ESP-");
@@ -282,18 +282,18 @@ uint8_t WebStatusService::upgradeImportantMessages(std::string & version) {
         std::string major_version = filename.substr(pos, underscore1 - pos);
         std::string minor_version = filename.substr(underscore1 + 1, underscore2 - underscore1 - 1);
         std::string patch_version = filename.substr(underscore2 + 1, dash - underscore2 - 1);
-        latest_version            = version::EMSESP_Version(major_version + "." + minor_version + "." + patch_version);
+        latest_version            = FirmwareVersion(major_version + "." + minor_version + "." + patch_version);
     } else {
         // if it's .json file exit
         if (version.find(".json") != std::string::npos) {
             return 0;
         } else {
             // treat it like a version string like "3.9.0"
-            latest_version = version::EMSESP_Version(version);
+            latest_version = FirmwareVersion(version);
         }
     }
 
-    version::EMSESP_Version current_version(current_version_s); // get current version
+    FirmwareVersion current_version(current_version_s); // get current version
 
     if ((current_version.major() <= 3 && current_version.minor() <= 8) && (latest_version.major() == 3 && latest_version.minor() == 9)) {
         return 1; // if moving from below 3.8.x to 3.9.x return 1
@@ -311,16 +311,13 @@ uint8_t WebStatusService::upgradeImportantMessages(std::string & version) {
 }
 
 // action = getVersions
-// returns the device's current version info plus the cached "stable" and "dev"
-// entries from emsesp.org/versions.json. The remote fetch is NOT done here: it
-// runs from the main loop task via WebStatusService::loop() so we never block
-// the AsyncTCP callback (which has a tiny ~6 KB stack — far too small for an
-// HTTPS handshake). If we have no cached data yet (no internet, fetch still
-// pending, parse error) the "stable" and "dev" sections are simply omitted so
-// the client can detect the offline case.
+// returns the device's current version for dev and stable
+// The remote fetch runs from the main loop task via WebStatusService::loop() so that we never block the AsyncTCP callback
 void WebStatusService::getVersions(JsonObject root) {
-    version::EMSESP_Version current_version(current_version_s);
-    bool                    is_dev = current_version.prerelease().find("dev") != std::string::npos;
+    schedule_versions_refresh(); // force a refresh
+
+    FirmwareVersion current_version(current_version_s);
+    bool            is_dev = current_version.prerelease().find("dev") != std::string::npos;
 
     JsonObject current     = root["current"].to<JsonObject>();
     current["version"]     = current_version_s;
@@ -347,8 +344,7 @@ void WebStatusService::getVersions(JsonObject root) {
         return;
     }
 
-    // copies a cached entry into root[key]. The upgradeable bool was computed
-    // once during refresh_versions_cache() so we just read it here.
+    // copies a cached entry into root[key]
     auto add_section = [&](const char * key, const VersionInfo & info) {
         if (info.version.empty()) {
             return;
@@ -366,17 +362,17 @@ void WebStatusService::getVersions(JsonObject root) {
     JsonObject stable_out     = root["stable"].to<JsonObject>();
     stable_out["version"]     = "3.8.2";
     stable_out["date"]        = "2026-04-25";
-    stable_out["upgradeable"] = version::EMSESP_Version("3.8.2") > current_version;
+    stable_out["upgradeable"] = FirmwareVersion("3.8.2") > current_version;
 
     JsonObject dev_out     = root["dev"].to<JsonObject>();
     dev_out["version"]     = "3.8.3-dev.2";
     dev_out["date"]        = "2026-04-25";
-    dev_out["upgradeable"] = version::EMSESP_Version("3.8.3-dev.2") > current_version;
+    dev_out["upgradeable"] = FirmwareVersion("3.8.3-dev.2") > current_version;
 #endif
 }
 
-// periodic refresh (1 hour) of the cached versions.json. Runs on the main loop task,
-// which has a much bigger stack than AsyncTCP, so it's safe to do HTTPS here.
+// periodic refresh (1 hour) of the cached versions.json
+// runs on the main loop task, which has a much bigger stack than AsyncTCP needed for https
 void WebStatusService::loop() {
 #ifndef EMSESP_STANDALONE
     // need a network
@@ -384,25 +380,17 @@ void WebStatusService::loop() {
         return;
     }
 
-    uint32_t now = uuid::get_uptime();
-
-    // first call after we have a network: schedule the initial fetch a little
-    // later so we give NTP / DNS a chance to settle
+    // 0 = idle, nothing scheduled
     if (versions_next_fetch_ms_ == 0) {
-        versions_next_fetch_ms_ = now + VERSIONS_INITIAL_DELAY_MS;
-        if (versions_next_fetch_ms_ == 0) {
-            versions_next_fetch_ms_ = 1; // avoid the "never scheduled" sentinel
-        }
         return;
     }
 
     // not time yet (signed difference handles uint32 wrap)
-    if ((int32_t)(now - versions_next_fetch_ms_) < 0) {
+    if ((int32_t)(uuid::get_uptime() - versions_next_fetch_ms_) < 0) {
         return;
     }
 
-    bool ok = refresh_versions_cache();
-
+    bool     ok   = refresh_versions_cache();
     uint32_t next = uuid::get_uptime() + (ok ? VERSIONS_REFRESH_INTERVAL_MS : VERSIONS_RETRY_INTERVAL_MS);
     if (next == 0) {
         next = 1;
@@ -421,14 +409,18 @@ bool WebStatusService::refresh_versions_cache() {
     http.setTimeout(5000);
     http.useHTTP10(true);
 
-    if (!http.begin("https://emsesp.org/versions.json")) {
+    if (!http.begin(EMSESP_VERSIONS_URL)) {
+#if defined(EMSESP_DEBUG)
         EMSESP::logger().debug("versions.json: failed to start HTTPS request");
+#endif
         return false;
     }
 
     int httpCode = http.GET();
     if (httpCode != HTTP_CODE_OK) {
+#if defined(EMSESP_DEBUG)
         EMSESP::logger().debug("versions.json: HTTP %d", httpCode);
+#endif
         http.end();
         return false;
     }
@@ -437,11 +429,13 @@ bool WebStatusService::refresh_versions_cache() {
     DeserializationError err = deserializeJson(doc, http.getStream());
     http.end();
     if (err) {
+#if defined(EMSESP_DEBUG)
         EMSESP::logger().debug("versions.json: parse error (%s)", err.c_str());
+#endif
         return false;
     }
 
-    version::EMSESP_Version current_version(current_version_s);
+    FirmwareVersion current_version(current_version_s);
 
     auto read_section = [&doc, &current_version](const char * key, VersionInfo & out) {
         JsonObjectConst section = doc[key];
@@ -451,7 +445,7 @@ bool WebStatusService::refresh_versions_cache() {
         }
         out.version     = section["version"] | "";
         out.date        = section["date"] | "";
-        out.upgradeable = !out.version.empty() && version::EMSESP_Version(out.version) > current_version;
+        out.upgradeable = !out.version.empty() && FirmwareVersion(out.version) > current_version;
     };
 
     read_section("stable", versions_stable_);
@@ -459,7 +453,10 @@ bool WebStatusService::refresh_versions_cache() {
 
     versions_cache_valid_ = true;
 #if defined(EMSESP_DEBUG)
-    EMSESP::logger().debug("versions.json refreshed (stable=%s dev=%s)", versions_stable_.version.c_str(), versions_dev_.version.c_str());
+    EMSESP::logger().debug("versions.json: refreshed (stable=%s dev=%s), current=%s",
+                           versions_stable_.version.c_str(),
+                           versions_dev_.version.c_str(),
+                           current_version_s.c_str());
 #endif
     return true;
 #endif
@@ -470,8 +467,8 @@ bool WebStatusService::current_upgradeable() const {
     if (!versions_cache_valid_) {
         return false;
     }
-    version::EMSESP_Version current_version(current_version_s);
-    bool                    is_dev = current_version.prerelease().find("dev") != std::string::npos;
+    FirmwareVersion current_version(current_version_s);
+    bool            is_dev = current_version.prerelease().find("dev") != std::string::npos;
     return is_dev ? versions_dev_.upgradeable : versions_stable_.upgradeable;
 }
 
