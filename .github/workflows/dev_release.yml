@@ -79,6 +79,7 @@ jobs:
             ./build/firmware/*.*
 
       - name: Update version in Cloudflare KV store
+        if: github.repository == 'emsesp/EMS-ESP32'
         env:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CF_NAMESPACE_ID: ${{ secrets.CF_NAMESPACE_ID }}
