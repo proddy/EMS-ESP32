@@ -482,10 +482,8 @@ const Version = () => {
     { immediate: false }
   );
 
-  // Fetch latest stable/dev versions via the device. The ESP32 calls
-  // emsesp.org/versions.json itself and includes its own `current` info plus
-  // upgradeable flags. If the device has no internet, `stable`/`dev` are
-  // absent and we surface that as "internet not live".
+  // fetch latest stable/dev versions via the device. The C++ code makes a call to emsesp.org/versions.json itself
+  // if the device has no internet, stable/dev are omitted and the internetLive flag is set to false
   useRequest(() => callAction({ action: 'getVersions' }))
     .onSuccess((event) => {
       const versions = event.data as VersionsResponse;

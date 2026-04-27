@@ -415,10 +415,6 @@ function upgradeImportantMessages(version: string) {
 }
 
 // called by Action endpoint getVersions
-// Mirrors the C++ WebStatusService::getVersions() payload:
-//   { current: { version, type, date },
-//     stable?: { version, date, upgradeable },
-//     dev?:    { version, date, upgradeable } }
 // Set MOCK_OFFLINE = true to simulate a device with no internet (omits stable/dev).
 const MOCK_OFFLINE = false;
 function get_versions() {
