@@ -144,10 +144,10 @@ let LATEST_STABLE_VERSION = '3.8.2';
 let LATEST_DEV_VERSION = '3.8.3-dev.2';
 
 // scenarios for testing versioning
-let version_test = 0; // on latest stable, or switch to dev
+// let version_test = 0; // on latest stable, or switch to dev
 // let version_test = 1; // on latest dev, or switch back to stable
 // let version_test = 2; // upgrade an older stable to latest stable or switch to latest dev
-// let version_test = 3; // upgrade dev to latest, or switch to stable
+let version_test = 3; // upgrade dev to latest, or switch to stable
 // let version_test = 4; // downgrade to an older dev, or switch back to stable
 
 switch (version_test as number) {
@@ -419,15 +419,25 @@ function upgradeImportantMessages(version: string) {
 const MOCK_OFFLINE = false;
 function get_versions() {
   const isDev = THIS_VERSION.includes('dev');
+  const currentUpgradeable =
+    !MOCK_OFFLINE &&
+    (isDev ? DEV_VERSION_IS_UPGRADEABLE : STABLE_VERSION_IS_UPGRADEABLE);
+
   const data: {
-    current: { version: string; type: 'stable' | 'dev'; date: string };
+    current: {
+      version: string;
+      type: 'stable' | 'dev';
+      date: string;
+      upgradeable: boolean;
+    };
     stable?: { version: string; date: string; upgradeable: boolean };
     dev?: { version: string; date: string; upgradeable: boolean };
   } = {
     current: {
       version: THIS_VERSION,
       type: isDev ? 'dev' : 'stable',
-      date: '2026-04-25T12:00:00'
+      date: '2026-04-25T12:00:00',
+      upgradeable: currentUpgradeable
     }
   };
 

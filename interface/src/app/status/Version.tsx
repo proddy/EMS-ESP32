@@ -1,4 +1,4 @@
-import { memo, useContext, useState } from 'react';
+import { memo, useContext, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'react-toastify';
 
@@ -40,6 +40,7 @@ import {
 import { AuthenticatedContext } from 'contexts/authentication';
 import { useI18nContext } from 'i18n/i18n-react';
 import type { TranslationFunctions } from 'i18n/i18n-types';
+import type { VersionInfo } from 'types';
 import { prettyDateTime } from 'utils/time';
 
 // Constants moved outside component to avoid recreation
@@ -68,26 +69,6 @@ interface VersionData {
   partition: string;
   partitions: PartitionData[];
   developer_mode: boolean;
-}
-
-interface VersionInfo {
-  version: string;
-  date: string;
-}
-
-interface RemoteVersionInfo extends VersionInfo {
-  upgradeable: boolean;
-}
-
-interface CurrentVersionInfo extends VersionInfo {
-  type: 'stable' | 'dev';
-}
-
-// Response payload from the `getVersions` action
-interface VersionsResponse {
-  current: CurrentVersionInfo;
-  stable?: RemoteVersionInfo;
-  dev?: RemoteVersionInfo;
 }
 
 // Memoized components for better performance
@@ -432,10 +413,7 @@ const getPlatform = (data: VersionData): string => {
 
 const Version = () => {
   const { LL, locale } = useI18nContext();
-  const { me } = useContext(AuthenticatedContext);
-
-  const [latestVersion, setLatestVersion] = useState<VersionInfo>();
-  const [latestDevVersion, setLatestDevVersion] = useState<VersionInfo>();
+  const { me, versions } = useContext(AuthenticatedContext);
 
   const [restarting, setRestarting] = useState<boolean>(false);
   const [openInstallDialog, setOpenInstallDialog] = useState<boolean>(false);
@@ -447,15 +425,29 @@ const Version = () => {
   const [openInstallPartitionDialog, setOpenInstallPartitionDialog] =
     useState<boolean>(false);
 
-  const [usingDevVersion, setUsingDevVersion] = useState<boolean>(false);
   const [fetchDevVersion, setFetchDevVersion] = useState<boolean>(false);
-  const [devUpgradeAvailable, setDevUpgradeAvailable] = useState<boolean>(false);
-  const [stableUpgradeAvailable, setStableUpgradeAvailable] =
-    useState<boolean>(false);
-  const [internetLive, setInternetLive] = useState<boolean>(false);
   const [downloadOnly, setDownloadOnly] = useState<boolean>(false);
   const [showVersionInfo, setShowVersionInfo] = useState<number>(0); // 1 = stable, 2 = dev, 3 = partition
   const [firmwareSize, setFirmwareSize] = useState<number>(0);
+
+  const latestVersion = useMemo<VersionInfo | undefined>(
+    () =>
+      versions?.stable
+        ? { version: versions.stable.version, date: versions.stable.date }
+        : undefined,
+    [versions?.stable]
+  );
+  const latestDevVersion = useMemo<VersionInfo | undefined>(
+    () =>
+      versions?.dev
+        ? { version: versions.dev.version, date: versions.dev.date }
+        : undefined,
+    [versions?.dev]
+  );
+  const usingDevVersion = versions?.current?.type === 'dev';
+  const stableUpgradeAvailable = versions?.stable?.upgradeable ?? false;
+  const devUpgradeAvailable = versions?.dev?.upgradeable ?? false;
+  const internetLive = Boolean(versions?.stable || versions?.dev);
 
   const { send: sendSetPartition } = useRequest(
     (partition: string) => callAction({ action: 'setPartition', param: partition }),
@@ -479,32 +471,6 @@ const Version = () => {
     (url: string) => callAction({ action: 'uploadURL', param: url }),
     { immediate: false }
   );
-
-  // fetch latest stable/dev versions via the device. The C++ code makes a call to emsesp.org/versions.json itself
-  // if the device has no internet, stable/dev are omitted and the internetLive flag is set to false
-  useRequest(() => callAction({ action: 'getVersions' }))
-    .onSuccess((event) => {
-      const versions = event.data as VersionsResponse;
-      setUsingDevVersion(versions.current?.type === 'dev');
-      if (versions.stable) {
-        setLatestVersion({
-          version: versions.stable.version,
-          date: versions.stable.date
-        });
-        setStableUpgradeAvailable(versions.stable.upgradeable);
-      }
-      if (versions.dev) {
-        setLatestDevVersion({
-          version: versions.dev.version,
-          date: versions.dev.date
-        });
-        setDevUpgradeAvailable(versions.dev.upgradeable);
-      }
-      setInternetLive(Boolean(versions.stable || versions.dev));
-    })
-    .onError(() => {
-      setInternetLive(false);
-    });
 
   const { send: sendAPI } = useRequest((data: APIcall) => API(data), {
     immediate: false
@@ -640,15 +606,33 @@ const Version = () => {
 
     if (!me.admin) return null;
 
+    const isUpdateAvailable = choice === LL.UPDATE_AVAILABLE();
+
     return (
       <Button
         sx={{ ml: 1 }}
         variant="outlined"
-        color={choice === LL.UPDATE_AVAILABLE() ? 'success' : 'warning'}
+        color={isUpdateAvailable ? 'success' : 'warning'}
         size="small"
         onClick={() => showFirmwareDialog(showingDev)}
       >
         {choice}
+        {isUpdateAvailable && (
+          <Box
+            component="span"
+            aria-label="update available"
+            sx={{
+              display: 'inline-block',
+              width: 8,
+              height: 8,
+              ml: 1,
+              verticalAlign: 'middle',
+              borderRadius: '50%',
+              backgroundColor: '#ffeb3b',
+              boxShadow: '0 0 6px rgba(255, 235, 59, 0.8)'
+            }}
+          />
+        )}
       </Button>
     );
   };

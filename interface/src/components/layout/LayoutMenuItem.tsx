@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Link, useLocation } from 'react-router';
 
-import { ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import type { SvgIconProps, SxProps, Theme } from '@mui/material';
 
 import { routeMatches } from 'utils';
@@ -11,13 +11,15 @@ interface LayoutMenuItemProps {
   label: string;
   to: string;
   disabled?: boolean;
+  badge?: boolean;
 }
 
 const LayoutMenuItemComponent = ({
   icon: Icon,
   label,
   to,
-  disabled
+  disabled,
+  badge
 }: LayoutMenuItemProps) => {
   const { pathname } = useLocation();
 
@@ -68,6 +70,20 @@ const LayoutMenuItemComponent = ({
         <Icon />
       </ListItemIcon>
       <ListItemText sx={textStyles}>{label}</ListItemText>
+      {badge && (
+        <Box
+          aria-label="update available"
+          sx={{
+            width: 8,
+            height: 8,
+            ml: 1,
+            borderRadius: '50%',
+            backgroundColor: '#ffeb3b',
+            boxShadow: '0 0 6px rgba(255, 235, 59, 0.8)',
+            flexShrink: 0
+          }}
+        />
+      )}
     </ListItemButton>
   );
 };

@@ -1,12 +1,14 @@
 import { createContext } from 'react';
 
-import type { Me } from 'types';
+import type { Me, VersionsResponse } from 'types';
 
 export interface AuthenticationContextValue {
   refresh: () => Promise<void>;
   signIn: (accessToken: string) => void;
   signOut: (redirect: boolean) => void;
   me?: Me;
+  versions?: VersionsResponse;
+  refreshVersions: () => Promise<void>;
 }
 
 const AuthenticationContextDefaultValue = {} as AuthenticationContextValue;

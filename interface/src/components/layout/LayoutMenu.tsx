@@ -18,9 +18,11 @@ import { AuthenticatedContext } from 'contexts/authentication';
 import { useI18nContext } from 'i18n/i18n-react';
 
 const LayoutMenuComponent = () => {
-  const { me } = useContext(AuthenticatedContext);
+  const { me, versions } = useContext(AuthenticatedContext);
   const { LL } = useI18nContext();
   const [menuOpen, setMenuOpen] = useState(true);
+
+  const upgradeAvailable = versions?.current?.upgradeable ?? false;
 
   const handleMenuToggle = () => {
     setMenuOpen((prev) => !prev);
@@ -105,6 +107,7 @@ const LayoutMenuComponent = () => {
           label={LL.SETTINGS(0)}
           disabled={!me.admin}
           to="/settings"
+          badge={upgradeAvailable}
         />
         <LayoutMenuItem icon={LiveHelpIcon} label={LL.HELP()} to={`/help`} />
         <Divider />

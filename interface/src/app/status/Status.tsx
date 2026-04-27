@@ -1,25 +1,16 @@
-import { useContext, useState } from 'react';
-import { toast } from 'react-toastify';
+import { useContext } from 'react';
 
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import BuildIcon from '@mui/icons-material/Build';
-import CancelIcon from '@mui/icons-material/Cancel';
 import DeviceHubIcon from '@mui/icons-material/DeviceHub';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import LogoDevIcon from '@mui/icons-material/LogoDev';
 import MemoryIcon from '@mui/icons-material/Memory';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
-import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import RouterIcon from '@mui/icons-material/Router';
 import SettingsInputAntennaIcon from '@mui/icons-material/SettingsInputAntenna';
 import WifiIcon from '@mui/icons-material/Wifi';
 import {
   Avatar,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   List,
   ListItem,
   ListItemAvatar,
@@ -27,12 +18,10 @@ import {
   useTheme
 } from '@mui/material';
 
-import { API } from 'api/app';
 import { readSystemStatus } from 'api/system';
 
-import { dialogStyle } from 'CustomTheme';
 import { useRequest } from 'alova/client';
-import { type APIcall, busConnectionStatus } from 'app/main/types';
+import { busConnectionStatus } from 'app/main/types';
 import { FormLoader, SectionContent, useLayoutTitle } from 'components';
 import ListMenuItem from 'components/layout/ListMenuItem';
 import { AuthenticatedContext } from 'contexts/authentication';
@@ -40,8 +29,6 @@ import { useI18nContext } from 'i18n/i18n-react';
 import { NTPSyncStatus, NetworkConnectionStatus, SystemStatusCodes } from 'types';
 import { useInterval } from 'utils';
 import { formatDateTime } from 'utils/time';
-
-import SystemMonitor from './SystemMonitor';
 
 const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
 
@@ -71,24 +58,7 @@ const SystemStatus = () => {
 
   const { me } = useContext(AuthenticatedContext);
 
-  const [confirmRestart, setConfirmRestart] = useState<boolean>(false);
-  const [restarting, setRestarting] = useState<boolean>();
-
-  const { send: sendAPI } = useRequest((data: APIcall) => API(data), {
-    immediate: false
-  });
-
-  const {
-    data,
-    send: loadData,
-    error
-  } = useRequest(readSystemStatus, {
-    async middleware(_, next) {
-      if (!restarting) {
-        await next();
-      }
-    }
-  });
+  const { data, send: loadData, error } = useRequest(readSystemStatus);
 
   useInterval(() => {
     void loadData();
@@ -217,22 +187,6 @@ const SystemStatus = () => {
   const activeHighlight = (value: boolean) =>
     value ? theme.palette.success.main : theme.palette.info.main;
 
-  const doRestart = async () => {
-    setConfirmRestart(false);
-    setRestarting(true);
-    await sendAPI({ device: 'system', cmd: 'restart', id: 0 }).catch(
-      (error: Error) => {
-        toast.error(error.message);
-      }
-    );
-  };
-
-  const handleCloseRestartDialog = () => setConfirmRestart(false);
-
-  if (restarting) {
-    return <SystemMonitor />;
-  }
-
   if (!data || !LL) {
     return (
       <SectionContent>
@@ -244,14 +198,6 @@ const SystemStatus = () => {
   return (
     <SectionContent>
       <List>
-        <ListMenuItem
-          icon={BuildIcon}
-          bgcolor="#72caf9"
-          label="EMS-ESP Firmware"
-          text={`v${data.emsesp_version || ''}`}
-          to="version"
-        />
-
         <ListItem>
           <ListItemAvatar>
             <Avatar sx={{ bgcolor: '#c5572c', color: 'white' }}>
@@ -262,16 +208,6 @@ const SystemStatus = () => {
             primary={LL.STATUS_OF(LL.SYSTEM(0))}
             secondary={`${systemStatus} (${LL.UPTIME()}: ${formatDurationSec(data.uptime, LL)})`}
           />
-          {me.admin && (
-            <Button
-              startIcon={<PowerSettingsNewIcon />}
-              variant="outlined"
-              color="error"
-              onClick={() => setConfirmRestart(true)}
-            >
-              {LL.RESTART()}
-            </Button>
-          )}
         </ListItem>
 
         <ListMenuItem
@@ -341,33 +277,6 @@ const SystemStatus = () => {
           to="/status/log"
         />
       </List>
-
-      <Dialog
-        sx={dialogStyle}
-        open={confirmRestart}
-        onClose={handleCloseRestartDialog}
-      >
-        <DialogTitle>{LL.RESTART()}</DialogTitle>
-        <DialogContent dividers>{LL.RESTART_CONFIRM()}</DialogContent>
-        <DialogActions>
-          <Button
-            startIcon={<CancelIcon />}
-            variant="outlined"
-            onClick={handleCloseRestartDialog}
-            color="secondary"
-          >
-            {LL.CANCEL()}
-          </Button>
-          <Button
-            startIcon={<PowerSettingsNewIcon />}
-            variant="outlined"
-            onClick={doRestart}
-            color="error"
-          >
-            {LL.RESTART()}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </SectionContent>
   );
 };
