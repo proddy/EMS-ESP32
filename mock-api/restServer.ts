@@ -127,7 +127,7 @@ let system_status = {
     }
   ],
   // partitions: [],
-  developer_mode: true,
+  developer_mode: settings.developer_mode,
   model: '',
   board: '',
   // model: 'BBQKees Electronics EMS Gateway E32 V2 (E32 V2.0 P3/2024011)',
@@ -4602,6 +4602,7 @@ router
   .post(EMSESP_SETTINGS_ENDPOINT, async (request: any) => {
     settings = await request.json();
     console.log('application settings saved', settings);
+    system_status.developer_mode = settings.developer_mode;
     return status(200); // no restart needed
     // return status(205); // reboot required
   })

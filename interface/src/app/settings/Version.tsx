@@ -7,6 +7,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Done';
 import DownloadIcon from '@mui/icons-material/GetApp';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
+import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import WarningIcon from '@mui/icons-material/Warning';
 import {
   Box,
@@ -15,6 +17,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   Grid,
   IconButton,
   Table,
@@ -416,6 +419,8 @@ const Version = () => {
   const { me, versions } = useContext(AuthenticatedContext);
 
   const [restarting, setRestarting] = useState<boolean>(false);
+  const [confirmFactoryReset, setConfirmFactoryReset] = useState<boolean>(false);
+  const [confirmRestart, setConfirmRestart] = useState<boolean>(false);
   const [openInstallDialog, setOpenInstallDialog] = useState<boolean>(false);
 
   const [partitionVersion, setPartitionVersion] = useState<VersionInfo | undefined>(
@@ -515,6 +520,7 @@ const Version = () => {
   };
 
   const doRestart = async () => {
+    setConfirmRestart(false);
     await sendAPI({ device: 'system', cmd: 'restart', id: 0 }).catch(
       (error: Error) => {
         toast.error(error.message);
@@ -522,6 +528,18 @@ const Version = () => {
     );
     setRestarting(true);
   };
+
+  const doFormat = async () => {
+    await sendAPI({ device: 'system', cmd: 'format', id: 0 }).then(() => {
+      setRestarting(true);
+      setConfirmFactoryReset(false);
+    });
+  };
+
+  const handleFactoryResetClose = () => setConfirmFactoryReset(false);
+  const handleFactoryResetClick = () => setConfirmFactoryReset(true);
+  const handleRestartClose = () => setConfirmRestart(false);
+  const handleRestartClick = () => setConfirmRestart(true);
 
   const installFirmwareURL = async (url: string) => {
     await sendUploadURL(url).catch((error: Error) => {
@@ -846,6 +864,96 @@ const Version = () => {
           </>
         )}
       </Box>
+
+      {me.admin && (
+        <>
+          <Dialog
+            sx={dialogStyle}
+            open={confirmFactoryReset}
+            onClose={handleFactoryResetClose}
+          >
+            <DialogTitle>{LL.FACTORY_RESET()}</DialogTitle>
+            <DialogContent dividers>{LL.SYSTEM_FACTORY_TEXT_DIALOG()}</DialogContent>
+            <DialogActions>
+              <Button
+                startIcon={<CancelIcon />}
+                variant="outlined"
+                onClick={handleFactoryResetClose}
+                color="secondary"
+              >
+                {LL.CANCEL()}
+              </Button>
+              <Button
+                startIcon={<SettingsBackupRestoreIcon />}
+                variant="outlined"
+                onClick={doFormat}
+                color="error"
+              >
+                {LL.FACTORY_RESET()}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
+            sx={dialogStyle}
+            open={confirmRestart}
+            onClose={handleRestartClose}
+          >
+            <DialogTitle>{LL.RESTART()}</DialogTitle>
+            <DialogContent dividers>{LL.RESTART_CONFIRM()}</DialogContent>
+            <DialogActions>
+              <Button
+                startIcon={<CancelIcon />}
+                variant="outlined"
+                onClick={handleRestartClose}
+                color="secondary"
+              >
+                {LL.CANCEL()}
+              </Button>
+              <Button
+                startIcon={<PowerSettingsNewIcon />}
+                variant="outlined"
+                onClick={doRestart}
+                color="error"
+              >
+                {LL.RESTART()}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* <Divider sx={{ mt: 2 }} /> */}
+
+          <Box
+            sx={{
+              mt: 2,
+              display: 'flex',
+              justifyContent: 'flex-end',
+              flexWrap: 'nowrap',
+              whiteSpace: 'nowrap',
+              gap: 1
+            }}
+          >
+            <Button
+              startIcon={<PowerSettingsNewIcon />}
+              variant="outlined"
+              onClick={handleRestartClick}
+              color="error"
+            >
+              {LL.RESTART()}
+            </Button>
+            {data.developer_mode && (
+              <Button
+                startIcon={<SettingsBackupRestoreIcon />}
+                variant="outlined"
+                onClick={handleFactoryResetClick}
+                color="error"
+              >
+                {LL.FACTORY_RESET()}
+              </Button>
+            )}
+          </Box>
+        </>
+      )}
     </SectionContent>
   );
 };
