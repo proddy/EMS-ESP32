@@ -428,7 +428,7 @@ bool WebStatusService::refresh_versions_cache() {
     http.end();
     if (err) {
 #if defined(EMSESP_DEBUG)
-        EMSESP::logger().debug("versions.json: parse error (%s)", err.c_str());
+        EMSESP::logger().debug("versions.json: parse error");
 #endif
         return false;
     }
