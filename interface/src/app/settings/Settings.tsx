@@ -41,10 +41,10 @@ const Settings = () => {
   const { versions } = useContext(AuthenticatedContext);
   useLayoutTitle(LL.SETTINGS(0));
 
-  const firmwareText = versions?.current?.version
-    ? `v${versions.current.version}`
-    : '';
   const upgradeAvailable = versions?.current?.upgradeable ?? false;
+  const firmwareText = versions?.current?.version
+    ? `v${versions.current.version}${upgradeAvailable ? ` (${LL.UPDATE_AVAILABLE()})` : ''}`
+    : '';
 
   const [confirmFactoryReset, setConfirmFactoryReset] = useState(false);
   const [confirmRestart, setConfirmRestart] = useState(false);
@@ -99,7 +99,7 @@ const Settings = () => {
           bgcolor="#72caf9"
           label="EMS-ESP Firmware"
           text={firmwareText}
-          to="/status/version"
+          to="/settings/version"
           badge={upgradeAvailable}
         />
 
