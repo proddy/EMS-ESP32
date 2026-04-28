@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import CancelIcon from '@mui/icons-material/Cancel';
 import DoneIcon from '@mui/icons-material/Done';
@@ -50,17 +50,12 @@ const SensorsTemperatureDialog = ({
   const [fieldErrors, setFieldErrors] = useState<ValidateFieldsError>();
   const [editItem, setEditItem] = useState<TemperatureSensor>(selectedItem);
 
-  // Stable handler reference so the memoized ValidatedTextField can skip re-renders
-  const updateFormValue = useMemo(
-    () =>
-      updateValue(
-        setEditItem as unknown as (
-          updater: (
-            prevState: Readonly<Record<string, unknown>>
-          ) => Record<string, unknown>
-        ) => void
-      ),
-    [setEditItem]
+  const updateFormValue = updateValue(
+    setEditItem as unknown as (
+      updater: (
+        prevState: Readonly<Record<string, unknown>>
+      ) => Record<string, unknown>
+    ) => void
   );
 
   useEffect(() => {

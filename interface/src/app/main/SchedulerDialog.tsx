@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import AddIcon from '@mui/icons-material/Add';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -90,15 +90,10 @@ const SchedulerDialog = ({
   const [fieldErrors, setFieldErrors] = useState<ValidateFieldsError>();
   const [scheduleType, setScheduleType] = useState<ScheduleFlag>();
 
-  // Stable handler reference so the memoized ValidatedTextField can skip re-renders
-  const updateFormValue = useMemo(
-    () =>
-      updateValue(
-        setEditItem as unknown as React.Dispatch<
-          React.SetStateAction<Record<string, unknown>>
-        >
-      ),
-    []
+  const updateFormValue = updateValue(
+    setEditItem as unknown as React.Dispatch<
+      React.SetStateAction<Record<string, unknown>>
+    >
   );
 
   useEffect(() => {

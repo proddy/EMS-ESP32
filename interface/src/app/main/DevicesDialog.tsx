@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import CancelIcon from '@mui/icons-material/Cancel';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -52,8 +52,7 @@ const DevicesDialog = ({
   const [editItem, setEditItem] = useState<DeviceValue>(selectedItem);
   const [fieldErrors, setFieldErrors] = useState<ValidateFieldsError>();
 
-  // Stable handler reference so the memoized ValidatedTextField can skip re-renders
-  const updateFormValue = useMemo(() => updateValue(setEditItem), [setEditItem]);
+  const updateFormValue = updateValue(setEditItem);
 
   useEffect(() => {
     if (open) {

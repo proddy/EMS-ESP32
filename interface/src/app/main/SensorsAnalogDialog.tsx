@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import CancelIcon from '@mui/icons-material/Cancel';
 import DoneIcon from '@mui/icons-material/Done';
@@ -53,18 +53,13 @@ const SensorsAnalogDialog = ({
   const [fieldErrors, setFieldErrors] = useState<ValidateFieldsError>();
   const [editItem, setEditItem] = useState<AnalogSensor>(selectedItem);
 
-  // Stable handler reference so the memoized ValidatedTextField can skip re-renders
-  const updateFormValue = useMemo(
-    () =>
-      updateValue((updater) =>
-        setEditItem(
-          (prev) =>
-            updater(
-              prev as unknown as Record<string, unknown>
-            ) as unknown as AnalogSensor
-        )
-      ),
-    [setEditItem]
+  const updateFormValue = updateValue((updater) =>
+    setEditItem(
+      (prev) =>
+        updater(
+          prev as unknown as Record<string, unknown>
+        ) as unknown as AnalogSensor
+    )
   );
 
   const isCounterOrRate =
