@@ -363,9 +363,9 @@ void WebStatusService::getVersions(JsonObject root) {
     stable_out["upgradeable"] = FirmwareVersion("3.8.2") > current_version;
 
     JsonObject dev_out     = root["dev"].to<JsonObject>();
-    dev_out["version"]     = "3.8.3-dev.2";
+    dev_out["version"]     = "3.9.0-dev.1";
     dev_out["date"]        = "2026-04-25";
-    dev_out["upgradeable"] = FirmwareVersion("3.8.3-dev.2") > current_version;
+    dev_out["upgradeable"] = FirmwareVersion("3.9.0-dev.1") > current_version;
 #endif
 }
 
