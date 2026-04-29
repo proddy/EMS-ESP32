@@ -921,8 +921,6 @@ const Version = () => {
             </DialogActions>
           </Dialog>
 
-          {/* <Divider sx={{ mt: 2 }} /> */}
-
           <Box
             sx={{
               mt: 2,
