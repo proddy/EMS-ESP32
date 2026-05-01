@@ -1645,6 +1645,15 @@ bool System::check_upgrade() {
             EMSESP::network_.reconnect();
         }
 
+        // changes going to v3.9 from an earlier version
+        if (settings_version.major() == 3 && settings_version.minor() < 9) {
+            EMSESP::esp32React.getAPSettingsService()->update([&](APSettings & apSettings) {
+                apSettings.provisionMode = AP_MODE_DISCONNECTED; // AP_MODE_ALWAYS has been removed
+                LOG_INFO("Upgrade: Setting AP provision mode to auto");
+                return StateUpdateResult::CHANGED;
+            });
+        }
+
         // changes to application settings
         EMSESP::webSettingsService.update([&](WebSettings & settings) {
             // force web buffer to 25 for those boards without psram
