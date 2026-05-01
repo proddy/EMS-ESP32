@@ -2,6 +2,7 @@
 .vscode/c_cpp_properties.json
 .vscode/extensions.json
 .vscode/launch.json
+.vscode/settings.json
 
 # c++ compiling
 .clang_complete
@@ -75,3 +76,4 @@ pnpm-lock.yaml
 .cache/
 interface/.tsbuildinfo
 test/test_api/package-lock.json
+.clangd
