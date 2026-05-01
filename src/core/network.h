@@ -35,7 +35,7 @@
 
 namespace emsesp {
 
-#define NETWORK_RECONNECTION_DELAY_SHORT 2000 // 2 seconds
+#define NETWORK_RECONNECTION_DELAY_SHORT 3000 // 3 seconds
 #define NETWORK_RECONNECTION_DELAY_LONG 60000 // 60 seconds
 
 #define MAX_NETWORK_RECONNECTION_ATTEMPTS 3 // maximum number of network reconnection attempts
@@ -172,6 +172,7 @@ class Network {
     bool             eth_started_            = false; // true after ETH.begin() has succeeded once; prevents repeated re-init while DHCP is still running
     volatile uint8_t last_disconnect_reason_ = 0;
     uint16_t         connnect_retry_         = 0; // number of network re-connection attempts
+    volatile bool    wifi_connect_pending_   = false;
 
     // Network and AP settings
     bool      enableMDNS_;

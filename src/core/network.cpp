@@ -65,31 +65,38 @@ void Network::begin() {
         ap_subnetMask_    = settings.subnetMask;
     });
 
-    // Initialise WiFi - we only do this once, when the network service is started
-    // We want the device to come up in opmode=0 (WIFI_OFF), when erasing the flash this is not the default.
-    // If needed, we save opmode=0 before disabling persistence so the device boots with WiFi disabled in the future.
-    if (WiFi.getMode() != WIFI_OFF) {
-        WiFi.mode(WIFI_OFF);
-    }
+    // Initialise WiFi - we only do this once, when the network service is started.
+    // We want the device to come up in opmode=0 (WIFI_OFF), which is not the default after a flash erase.
+    // Persistence is true by default, so this WiFi.mode() call writes opmode=0 to NVS for future boots.
+    WiFi.mode(WIFI_OFF);
 
-    // Disable WiFi config persistance and auto reconnect
+    // From here on, mode changes stay in RAM only and don't touch NVS
     WiFi.persistent(false);
     WiFi.setAutoReconnect(false);
-
     WiFi.mode(WIFI_STA);
-    WiFi.mode(WIFI_OFF);
 
     // scan settings give connect issues since arduino 2.0.14 and arduino 3.x.x with some wifi systems
     // WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN); // default is FAST_SCAN
     // WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL); // is default, no need to set
 
     // capture the WIFI_REASON_* code on every STA disconnect event so check_connection() can
-    // log a meaningful reason when its periodic poll notices we're no longer associated
-    WiFi.onEvent([this](WiFiEvent_t /*event*/, WiFiEventInfo_t info) { last_disconnect_reason_ = info.wifi_sta_disconnected.reason; },
-                 ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+    // log a meaningful reason when its periodic poll notices we're no longer associated.
+    // Also release the connect-pending guard so the next loop tick can issue a fresh WiFi.begin()
+    WiFi.onEvent(
+        [this](WiFiEvent_t /*event*/, WiFiEventInfo_t info) {
+            last_disconnect_reason_ = info.wifi_sta_disconnected.reason;
+            wifi_connect_pending_   = false;
+            LOG_WARNING("WiFi lost connection. Reason: %s", disconnectReason(last_disconnect_reason_));
+        },
+        ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
 
-    // clear the saved reason on a fresh STA association so we don't log a stale code on the next disconnect
-    WiFi.onEvent([this](WiFiEvent_t /*event*/, WiFiEventInfo_t /*info*/) { last_disconnect_reason_ = 0; }, ARDUINO_EVENT_WIFI_STA_GOT_IP);
+    // clear the saved reason and the connect-pending guard on a fresh STA association
+    WiFi.onEvent(
+        [this](WiFiEvent_t /*event*/, WiFiEventInfo_t /*info*/) {
+            last_disconnect_reason_ = 0;
+            wifi_connect_pending_   = false;
+        },
+        ARDUINO_EVENT_WIFI_STA_GOT_IP);
 #endif
 }
 
@@ -169,12 +176,13 @@ void Network::reconnect() {
 #endif
 
     // reset network state
-    network_ip_    = 0;
-    network_iface_ = NetIface::NONE;
-    has_ipv6_      = false;
-    juststopped_   = true;
+    network_ip_           = 0;
+    network_iface_        = NetIface::NONE;
+    has_ipv6_             = false;
+    juststopped_          = true;
+    wifi_connect_pending_ = false;
 
-    // reload the network settings
+    // reload the network settings, as this could be called from the console
     begin();
 }
 
@@ -410,12 +418,10 @@ const char * Network::disconnectReason(uint8_t code) {
 // WiFi management
 void Network::startWIFI() {
 #ifndef EMSESP_STANDALONE
-    // Abort if already connected, or if we have no SSID
-    if (WiFi.isConnected() || ssid_.length() == 0) {
+    // Abort if already connected, or if we have no SSID or another Wifi.begin() is already in progress
+    if (WiFi.isConnected() || ssid_.length() == 0 || wifi_connect_pending_) {
         return;
     }
-
-    LOG_DEBUG("Managing WiFi"); // TODO remove
 
     WiFi.setHostname(hostname_.c_str());     // updates shared default_hostname buffer
     WiFi.enableSTA(true);                    // creates the STA netif
@@ -438,13 +444,15 @@ void Network::startWIFI() {
     // attempt to connect to the network
     uint8_t     bssid[6];
     wl_status_t status;
+    wifi_connect_pending_ = true; // set before begin() so the event handlers can race-clear it safely
+
     if (formatBSSID(bssid_, bssid)) {
         status = WiFi.begin(ssid_.c_str(), password_.c_str(), 0, bssid);
     } else {
-        LOG_DEBUG("Connecting to WiFi SSID %s with password %s, hostname %s", ssid_.c_str(), password_.c_str(), hostname_.c_str()); // TODO remove
         status = WiFi.begin(ssid_.c_str(), password_.c_str());
     }
     if (status == WL_CONNECT_FAILED) {
+        wifi_connect_pending_ = false; // begin() didn't actually start anything, allow next tick to retry
         LOG_ERROR("WiFi connection failed (code %d)", status);
     }
 
@@ -477,8 +485,6 @@ void Network::startEthernet() {
     if (phy_type_ == PHY_type::PHY_TYPE_NONE || (ssid_.length() > 0)) {
         return;
     }
-
-    LOG_DEBUG("Managing Ethernet"); // TODO remove
 
     // configure Ethernet
     int            mdc      = 23;            // Pin# of the I²C clock signal for the Ethernet PHY - hardcoded
@@ -581,7 +587,6 @@ bool Network::findNetworks() {
     }
 
     auto previous_iface = NetIface::NONE;
-    // LOG_DEBUG("best_iface: %d, previous_iface: %d, network_iface_: %d", best_iface, previous_iface, network_iface_); // TODO remove
 
     // if we have a connection and it's a new one, set it up
     if (best_iface != NetIface::NONE && best_iface != previous_iface) {
