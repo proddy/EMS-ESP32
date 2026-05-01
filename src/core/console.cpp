@@ -202,7 +202,7 @@ static void setup_commands(std::shared_ptr<Commands> const & commands) {
     commands->add_command(ShellContext::MAIN,
                           CommandFlags::ADMIN,
                           string_vector{F_(wifi), F_(reconnect)},
-                          [](Shell & shell, const std::vector<std::string> & arguments) { EMSESP::system_.wifi_reconnect(); });
+                          [](Shell & shell, const std::vector<std::string> & arguments) { EMSESP::network_.reconnect(); });
 
     //
     // SET commands
@@ -250,12 +250,12 @@ static void setup_commands(std::shared_ptr<Commands> const & commands) {
                                       shell.enter_password(F_(new_password_prompt2), [password1](Shell & shell, bool completed, const std::string & password2) {
                                           if (completed) {
                                               if (password1 == password2) {
-                                                  EMSESP::esp32React.getNetworkSettingsService()->updateWithoutPropagation([&](NetworkSettings & networkSettings) {
+                                                  EMSESP::esp32React.getNetworkSettingsService()->update([&](NetworkSettings & networkSettings) {
                                                       networkSettings.password = password2.c_str();
                                                       return StateUpdateResult::CHANGED;
                                                   });
                                                   shell.println("WiFi password updated. Reconnecting...");
-                                                  EMSESP::system_.wifi_reconnect();
+                                                  EMSESP::network_.reconnect();
                                               } else {
                                                   shell.println("Passwords do not match");
                                               }
@@ -277,6 +277,7 @@ static void setup_commands(std::shared_ptr<Commands> const & commands) {
                                   networkSettings.hostname = arguments.front().c_str();
                                   return StateUpdateResult::CHANGED;
                               });
+                              EMSESP::network_.reconnect();
                           });
 
     commands->add_command(ShellContext::MAIN,
@@ -284,12 +285,14 @@ static void setup_commands(std::shared_ptr<Commands> const & commands) {
                           string_vector{F_(set), F_(wifi), F_(ssid)},
                           {F_(name_mandatory)},
                           [](Shell & shell, const std::vector<std::string> & arguments) {
-                              EMSESP::esp32React.getNetworkSettingsService()->updateWithoutPropagation([&](NetworkSettings & networkSettings) {
+                              shell.println("The network connection will be reset...");
+                              Shell::loop_all();
+                              delay(1000); // wait a second
+                              EMSESP::esp32React.getNetworkSettingsService()->update([&](NetworkSettings & networkSettings) {
                                   networkSettings.ssid = arguments.front().c_str();
                                   return StateUpdateResult::CHANGED;
                               });
-                              shell.println("WiFi ssid updated. Reconnecting...");
-                              EMSESP::system_.wifi_reconnect();
+                              EMSESP::network_.reconnect();
                           });
 
 

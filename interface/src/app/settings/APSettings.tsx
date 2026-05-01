@@ -24,7 +24,6 @@ import { numberValue, updateValueDirty, useRest } from 'utils';
 import { ValidationError, createAPSettingsValidator, validate } from 'validators';
 
 export const isAPEnabled = ({ provision_mode }: APSettingsType) =>
-  provision_mode === APProvisionMode.AP_MODE_ALWAYS ||
   provision_mode === APProvisionMode.AP_MODE_DISCONNECTED;
 
 // Efficient range function without recursion
@@ -108,9 +107,6 @@ const APSettings = () => {
           onChange={updateFormValue}
           margin="normal"
         >
-          <MenuItem value={APProvisionMode.AP_MODE_ALWAYS}>
-            {LL.AP_PROVIDE_TEXT_1()}
-          </MenuItem>
           <MenuItem value={APProvisionMode.AP_MODE_DISCONNECTED}>
             {LL.AP_PROVIDE_TEXT_2()}
           </MenuItem>

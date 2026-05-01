@@ -63,6 +63,7 @@
 #include "mqtt.h"
 #include "modbus.h"
 #include "system.h"
+#include "network.h"
 #include "temperaturesensor.h"
 #include "analogsensor.h"
 #include "console.h"
@@ -228,6 +229,7 @@ class EMSESP {
     static Mqtt              mqtt_;
     static Modbus *          modbus_;
     static System            system_;
+    static Network           network_;
     static TemperatureSensor temperaturesensor_;
     static AnalogSensor      analogsensor_;
     static Shower            shower_;

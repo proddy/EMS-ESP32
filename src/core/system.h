@@ -141,7 +141,6 @@ class System {
     static bool uploadFirmwareURL(const char * url = nullptr);
 
     void led_init();
-    void network_init();
     void button_init();
     void commands_init();
     void uart_init();
@@ -260,32 +259,8 @@ class System {
         hostname_ = hostname;
     }
 
-    bool ethernet_connected() {
-        return ethernet_connected_;
-    }
-
-    void ethernet_connected(bool b) {
-        ethernet_connected_ = b;
-    }
-
-    void has_ipv6(bool b) {
-        has_ipv6_ = b;
-    }
-
-    bool has_ipv6() {
-        return has_ipv6_;
-    }
-
     void ntp_connected(bool b);
     bool ntp_connected();
-
-    bool network_connected() {
-#ifndef EMSESP_STANDALONE
-        return (ethernet_connected() || WiFi.isConnected());
-#else
-        return true;
-#endif
-    }
 
     void fahrenheit(bool b) {
         fahrenheit_ = b;
@@ -311,8 +286,6 @@ class System {
 
     void show_system(uuid::console::Shell & shell);
     void show_users(uuid::console::Shell & shell);
-
-    void wifi_reconnect();
 
     static std::string languages_string();
 
@@ -442,14 +415,10 @@ class System {
     uint8_t  healthcheck_       = HEALTHCHECK_NO_NETWORK | HEALTHCHECK_NO_BUS; // start with all flags set, no wifi and no ems bus connection
     uint32_t last_system_check_ = 0;
 
-    bool upload_isrunning_   = false; // true if we're in the middle of a OTA firmware upload
-    bool ethernet_connected_ = false;
-    bool has_ipv6_           = false;
+    bool upload_isrunning_ = false; // true if we're in the middle of a OTA firmware upload
 
     bool     ntp_connected_  = false;
     uint32_t ntp_last_check_ = 0;
-
-    bool eth_present_ = false;
 
     // EMS-ESP settings
     std::string hostname_;
@@ -482,17 +451,10 @@ class System {
     uint8_t     modbus_max_clients_;
     uint32_t    modbus_timeout_;
     bool        developer_mode_;
-
-    // ethernet
-    uint8_t phy_type_;
-    int8_t  eth_power_;
-    uint8_t eth_phy_addr_;
-    uint8_t eth_clock_mode_;
-
-    uint32_t fstotal_;
-    uint32_t psram_;
-    uint32_t appused_;
-    uint32_t appfree_;
+    uint32_t    fstotal_;
+    uint32_t    psram_;
+    uint32_t    appused_;
+    uint32_t    appfree_;
 
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
     temperature_sensor_handle_t temperature_handle_ = NULL;

@@ -563,7 +563,7 @@ void Mqtt::ha_status() {
 // create the HA sensors - must match the MQTT payload keys in the heartbeat topic
 // Note we don't use camelCase as it would change the HA entity_id and impact historic data
 #ifndef EMSESP_STANDALONE
-    if (!EMSESP::system_.ethernet_connected() || WiFi.isConnected()) {
+    if (EMSESP::network_.wifi_connected()) {
         publish_system_ha_sensor_config(DeviceValueType::INT8, "RSSI", "rssi", DeviceValueUOM::DBM);
         publish_system_ha_sensor_config(DeviceValueType::INT8, "Signal", "wifistrength", DeviceValueUOM::PERCENT);
     }
@@ -585,7 +585,7 @@ void Mqtt::ha_status() {
     publish_system_ha_sensor_config(DeviceValueType::INT8, "CPU temperature", "temperature", DeviceValueUOM::DEGREES);
 #endif
 
-    if (!EMSESP::system_.ethernet_connected()) {
+    if (!EMSESP::network_.ethernet_connected()) {
         publish_system_ha_sensor_config(DeviceValueType::INT16, "WiFi reconnects", "wifireconnects", DeviceValueUOM::NONE);
     }
     // This one comes from the info MQTT topic - and handled in the publish_ha_sensor_config function
