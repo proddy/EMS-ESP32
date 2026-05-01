@@ -163,6 +163,11 @@ class Network {
     const char * disconnectReason(uint8_t code);
     void         stopAP();
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-private-field"
+#endif
+
     unsigned long    lastConnectionAttempt_  = 0;
     uint16_t         connectcount_           = 0; // number of network reconnects
     uint32_t         network_ip_             = 0;
@@ -204,6 +209,10 @@ class Network {
     IPAddress ap_localIP_;
     IPAddress ap_gatewayIP_;
     IPAddress ap_subnetMask_;
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 // for the captive portal in AP mode
 #ifndef EMSESP_STANDALONE
