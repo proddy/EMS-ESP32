@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { ToastContainer, Zoom } from 'react-toastify';
 
 import AppRouting from 'AppRouting';
@@ -46,19 +46,17 @@ const App = memo(() => {
   const [wasLoaded, setWasLoaded] = useState(false);
   const [locale, setLocale] = useState<Locales>('en');
 
-  // Memoize locale initialization to prevent unnecessary re-runs
-  const initializeLocale = useCallback(async () => {
-    const browserLocale = detectLocale('en', AVAILABLE_LOCALES, navigatorDetector);
-    const newLocale = (localStorage.getItem('lang') || browserLocale) as Locales;
-    localStorage.setItem('lang', newLocale);
-    setLocale(newLocale);
-    await loadLocaleAsync(newLocale);
-    setWasLoaded(true);
-  }, []);
-
   useEffect(() => {
+    const initializeLocale = async () => {
+      const browserLocale = detectLocale('en', AVAILABLE_LOCALES, navigatorDetector);
+      const newLocale = (localStorage.getItem('lang') || browserLocale) as Locales;
+      localStorage.setItem('lang', newLocale);
+      setLocale(newLocale);
+      await loadLocaleAsync(newLocale);
+      setWasLoaded(true);
+    };
     void initializeLocale();
-  }, [initializeLocale]);
+  }, []);
 
   if (!wasLoaded) return null;
 

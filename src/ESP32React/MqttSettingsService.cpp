@@ -79,7 +79,7 @@ void MqttSettingsService::startClient() {
 }
 
 void MqttSettingsService::loop() {
-    if (_state.enabled && _mqttClient && _mqttClient->connected() && !emsesp::EMSESP::system_.network_connected()) {
+    if (_state.enabled && _mqttClient && _mqttClient->connected() && !emsesp::EMSESP::network_.network_connected()) {
         // emsesp::EMSESP::logger().info("Network connection dropped, stopping MQTT client");
         _mqttClient->disconnect(true);
     }
@@ -154,7 +154,7 @@ bool MqttSettingsService::configureMqtt() {
     }
 
     // only connect if WiFi is connected and MQTT is enabled
-    if (_state.enabled && emsesp::EMSESP::system_.network_connected() && !_state.host.isEmpty()) {
+    if (_state.enabled && emsesp::EMSESP::network_.network_connected() && !_state.host.isEmpty()) {
         // create the Last Will Testament topic (LWT) with the base prefixed. It has to be static because the client destroys the reference
         static char will_topic[FACTORY_MQTT_MAX_TOPIC_LENGTH];
         if (_state.base.isEmpty()) {

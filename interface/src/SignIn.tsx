@@ -43,7 +43,6 @@ const SignIn = memo(() => {
     }
   });
 
-  // Memoize callback to prevent recreation on every render
   const updateLoginRequestValue = useMemo(
     () =>
       updateValue((updater) =>
@@ -65,7 +64,7 @@ const SignIn = memo(() => {
     });
   }, [callSignIn, signInRequest, LL]);
 
-  const validateAndSignIn = useCallback(async () => {
+  const validateAndSignIn = async () => {
     setProcessing(true);
     SIGN_IN_REQUEST_VALIDATOR.messages({
       required: LL.IS_REQUIRED('%s')
@@ -77,7 +76,7 @@ const SignIn = memo(() => {
       setFieldErrors((error as ValidationError).fieldErrors);
       setProcessing(false);
     }
-  }, [signInRequest, signIn, LL]);
+  };
 
   const submitOnEnter = useMemo(() => onEnterCallback(signIn), [signIn]);
 

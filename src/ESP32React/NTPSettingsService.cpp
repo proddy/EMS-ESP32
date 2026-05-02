@@ -19,8 +19,8 @@ void NTPSettingsService::begin() {
 }
 
 void NTPSettingsService::loop() {
-    if (_connected != emsesp::EMSESP::system_.network_connected()) {
-        _connected = emsesp::EMSESP::system_.network_connected();
+    if (_connected != emsesp::EMSESP::network_.network_connected()) {
+        _connected = emsesp::EMSESP::network_.network_connected();
         configureNTP();
     }
 }

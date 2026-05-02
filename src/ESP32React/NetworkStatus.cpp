@@ -16,11 +16,10 @@ void NetworkStatus::networkStatus(AsyncWebServerRequest * request) {
     auto *     response = new AsyncJsonResponse(false);
     JsonObject root     = response->getRoot();
 
-    bool        ethernet_connected = emsesp::EMSESP::system_.ethernet_connected();
-    wl_status_t wifi_status        = WiFi.status();
+    wl_status_t wifi_status = WiFi.status();
 
     // see if Ethernet is connected
-    if (ethernet_connected) {
+    if (emsesp::EMSESP::network_.ethernet_connected()) {
         root["status"]   = 10; // custom code #10 - ETHERNET_STATUS_CONNECTED
         root["hostname"] = ETH.getHostname();
     } else {
@@ -29,7 +28,7 @@ void NetworkStatus::networkStatus(AsyncWebServerRequest * request) {
     }
 
     // for both connections show ethernet
-    if (ethernet_connected) {
+    if (emsesp::EMSESP::network_.ethernet_connected()) {
         // Ethernet
         root["local_ip"]    = ETH.localIP().toString();
         root["local_ipv6"]  = ETH.linkLocalIPv6().toString();
@@ -52,7 +51,7 @@ void NetworkStatus::networkStatus(AsyncWebServerRequest * request) {
         root["ssid"]            = WiFi.SSID();
         root["bssid"]           = WiFi.BSSIDstr();
         root["channel"]         = WiFi.channel();
-        root["reconnect_count"] = emsesp::EMSESP::esp32React.getWifiReconnects();
+        root["reconnect_count"] = emsesp::EMSESP::network_.getWifiReconnects();
         root["subnet_mask"]     = WiFi.subnetMask().toString();
 
         if (WiFi.gatewayIP() != INADDR_NONE) {

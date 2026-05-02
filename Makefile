@@ -113,7 +113,7 @@ CXX := /usr/bin/g++
 CPPFLAGS  += $(DEFINES) $(DEFAULTS) $(INCLUDE)
 CPPFLAGS  += -ggdb -g3 -MMD
 CPPFLAGS  += -flto=auto
-CPPFLAGS  += -Wall -Wextra -Werror -Wswitch-enum
+CPPFLAGS  += -Wall -Wextra -Werror -Wno-switch-enum
 CPPFLAGS  += -Wno-unused-parameter -Wno-missing-braces -Wno-vla-cxx-extension
 CPPFLAGS  += -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fno-threadsafe-statics
 CPPFLAGS  += -Os -DNDEBUG

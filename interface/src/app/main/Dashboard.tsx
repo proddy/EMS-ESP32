@@ -1,4 +1,4 @@
-import { memo, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { memo, useContext, useEffect, useState } from 'react';
 import { IconContext } from 'react-icons/lib';
 import { Link } from 'react-router';
 import { toast } from 'react-toastify';
@@ -77,40 +77,35 @@ const Dashboard = memo(() => {
     }
   );
 
-  const deviceValueDialogSave = useCallback(
-    async (devicevalue: DeviceValue) => {
-      if (!selectedDashboardItem) {
-        return;
-      }
-      const id = selectedDashboardItem.parentNode.id; // this is the parent ID
-      await sendDeviceValue({ id, c: devicevalue.c ?? '', v: devicevalue.v })
-        .then(() => {
-          toast.success(LL.WRITE_CMD_SENT());
-        })
-        .catch((error: Error) => {
-          toast.error(error.message);
-        })
-        .finally(() => {
-          setDeviceValueDialogOpen(false);
-          setSelectedDashboardItem(undefined);
-        });
-    },
-    [selectedDashboardItem, sendDeviceValue, LL]
-  );
+  const deviceValueDialogSave = async (devicevalue: DeviceValue) => {
+    if (!selectedDashboardItem) {
+      return;
+    }
+    const id = selectedDashboardItem.parentNode.id; // this is the parent ID
+    await sendDeviceValue({ id, c: devicevalue.c ?? '', v: devicevalue.v })
+      .then(() => {
+        toast.success(LL.WRITE_CMD_SENT());
+      })
+      .catch((error: Error) => {
+        toast.error(error.message);
+      })
+      .finally(() => {
+        setDeviceValueDialogOpen(false);
+        setSelectedDashboardItem(undefined);
+      });
+  };
 
-  const dashboard_theme = useMemo(
-    () =>
-      useTheme({
-        Table: `
+  const dashboard_theme = useTheme({
+    Table: `
       --data-table-library_grid-template-columns: minmax(80px, auto) 120px 32px;
     `,
-        BaseRow: `
+    BaseRow: `
       font-size: 14px;
       .td {
         height: 28px;
       }
     `,
-        Row: `
+    Row: `
       cursor: pointer;
       background-color: #1e1e1e;
       &:nth-of-type(odd) .td {
@@ -120,7 +115,7 @@ const Dashboard = memo(() => {
         background-color: #177ac9;
       },
     `,
-        BaseCell: `
+    BaseCell: `
       &:nth-of-type(2) {
         text-align: right;
       }
@@ -128,9 +123,7 @@ const Dashboard = memo(() => {
         text-align: right;
       }
     `
-      }),
-    []
-  );
+  });
 
   const tree = useTree(
     { nodes: [...data.nodes] },
@@ -164,79 +157,64 @@ const Dashboard = memo(() => {
     }
   });
 
-  const nodeIds = useMemo(
-    () => data.nodes.map((item: DashboardItem) => item.id),
-    [data.nodes]
-  );
-
   useEffect(() => {
+    const nodeIds = data.nodes.map((item: DashboardItem) => item.id);
     showAll
       ? tree.fns.onAddAll(nodeIds) // expand tree
       : tree.fns.onRemoveAll(); // collapse tree
   }, [parentNodes]);
 
-  const showType = useCallback(
-    (n?: string, t?: number) => {
-      // if we have a name show it
-      if (n) {
-        return n;
+  const showType = (n?: string, t?: number) => {
+    // if we have a name show it
+    if (n) {
+      return n;
+    }
+    if (t) {
+      // otherwise pick translation based on type
+      switch (t) {
+        case DeviceType.CUSTOM:
+          return LL.CUSTOM_ENTITIES(0);
+        case DeviceType.ANALOGSENSOR:
+          return LL.ANALOG_SENSORS();
+        case DeviceType.TEMPERATURESENSOR:
+          return LL.TEMP_SENSORS();
+        case DeviceType.SCHEDULER:
+          return LL.SCHEDULER();
+        default:
+          break;
       }
-      if (t) {
-        // otherwise pick translation based on type
-        switch (t) {
-          case DeviceType.CUSTOM:
-            return LL.CUSTOM_ENTITIES(0);
-          case DeviceType.ANALOGSENSOR:
-            return LL.ANALOG_SENSORS();
-          case DeviceType.TEMPERATURESENSOR:
-            return LL.TEMP_SENSORS();
-          case DeviceType.SCHEDULER:
-            return LL.SCHEDULER();
-          default:
-            break;
-        }
-      }
-      return '';
-    },
-    [LL]
-  );
+    }
+    return '';
+  };
 
-  const showName = useCallback(
-    (di: DashboardItem) => {
-      if (di.id < 100) {
-        // if its a device (parent node) and has entities
-        if (di.nodes?.length) {
-          return (
-            <span style={{ fontSize: '15px' }}>
-              <DeviceIcon type_id={di.t ?? 0} />
-              &nbsp;&nbsp;{showType(di.n, di.t)}
-              <span style={{ color: 'lightblue' }}>&nbsp;({di.nodes?.length})</span>
-            </span>
-          );
-        }
+  const showName = (di: DashboardItem) => {
+    if (di.id < 100) {
+      // if its a device (parent node) and has entities
+      if (di.nodes?.length) {
+        return (
+          <span style={{ fontSize: '15px' }}>
+            <DeviceIcon type_id={di.t ?? 0} />
+            &nbsp;&nbsp;{showType(di.n, di.t)}
+            <span style={{ color: 'lightblue' }}>&nbsp;({di.nodes?.length})</span>
+          </span>
+        );
       }
-      if (di.dv) {
-        return <span>{di.dv.id.slice(2)}</span>;
-      }
-      return null;
-    },
-    [showType]
-  );
+    }
+    if (di.dv) {
+      return <span>{di.dv.id.slice(2)}</span>;
+    }
+    return null;
+  };
 
-  const hasMask = useCallback(
-    (id: string, mask: number) => (parseInt(id.slice(0, 2), 16) & mask) === mask,
-    []
-  );
+  const hasMask = (id: string, mask: number) =>
+    (parseInt(id.slice(0, 2), 16) & mask) === mask;
 
-  const editDashboardValue = useCallback(
-    (di: DashboardItem) => {
-      if (me.admin && di.dv?.c) {
-        setSelectedDashboardItem(di);
-        setDeviceValueDialogOpen(true);
-      }
-    },
-    [me.admin]
-  );
+  const editDashboardValue = (di: DashboardItem) => {
+    if (me.admin && di.dv?.c) {
+      setSelectedDashboardItem(di);
+      setDeviceValueDialogOpen(true);
+    }
+  };
 
   const handleShowAll = (
     _event: React.MouseEvent<HTMLElement>,
@@ -248,10 +226,9 @@ const Dashboard = memo(() => {
     }
   };
 
-  const hasFavEntities = useMemo(
-    () => data.nodes.filter((item: DashboardItem) => item.id <= 90).length,
-    [data.nodes]
-  );
+  const hasFavEntities = data.nodes.filter(
+    (item: DashboardItem) => item.id <= 90
+  ).length;
 
   const renderContent = () => {
     if (!data) {

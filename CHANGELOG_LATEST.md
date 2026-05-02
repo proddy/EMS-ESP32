@@ -2,7 +2,7 @@
 
 For more details go to [emsesp.org](https://emsesp.org/).
 
-## [3.8.2]
+## [3.9.0]
 
 ## Added
 
@@ -15,6 +15,7 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - e-mail notification using ReadyMail Client
 - 2.nd freshwater module (dhw4, dhw5) [#2991](https://github.com/emsesp/EMS-ESP32/issues/2991)
 - full system backup and restore
+- updated version check [#3047](https://github.com/emsesp/EMS-ESP32/issues/3047)
 
 ## Fixed
 
@@ -37,3 +38,4 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - fetch telegrams: set length to fetch [#3017](https://github.com/emsesp/EMS-ESP32/issues/3017)
 - move http client from stack to heap
 - heap optimizations [#3021](https://github.com/emsesp/EMS-ESP32/discussions/3021)
+- refactored network code into a single class [#3052](https://github.com/emsesp/EMS-ESP32/pull/3052)

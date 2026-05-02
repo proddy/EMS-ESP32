@@ -17,6 +17,7 @@
  */
 
 #include "system.h"
+#include "network.h"
 #include "emsesp.h" // for send_raw_telegram() command
 
 #ifndef EMSESP_STANDALONE
@@ -31,7 +32,7 @@
 #include <HTTPClient.h>
 #include <map>
 
-#include "EMSESP_Version.h"
+#include "firmwareVersion.h"
 
 #if defined(EMSESP_TEST)
 #include "../test/test.h"
@@ -485,7 +486,7 @@ void System::set_partition_install_date() {
     snprintf(c, sizeof(c), "d_%s", current_partition);
     time_t d = EMSESP::nvs_.getULong(c, 0);
     if (d < 1500000000L) {
-        LOG_DEBUG("Setting the install date in partition %s", current_partition);
+        LOG_DEBUG("Setting the NTP install date in partition %s", current_partition);
         auto t = time(nullptr) - uuid::get_uptime_sec();
         EMSESP::nvs_.putULong(c, t);
     }
@@ -586,15 +587,6 @@ void System::system_restart(const char * partitionname) {
 #endif
 }
 
-// saves all settings
-void System::wifi_reconnect() {
-    EMSESP::esp32React.getNetworkSettingsService()->read(
-        [](NetworkSettings & networkSettings) { LOG_INFO("WiFi reconnecting to SSID '%s'...", networkSettings.ssid.c_str()); });
-    delay(500);                                                           // wait
-    EMSESP::webSettingsService.save();                                    // save local settings
-    EMSESP::esp32React.getNetworkSettingsService()->callUpdateHandlers(); // in case we've changed ssid or password
-}
-
 void System::syslog_init() {
     EMSESP::webSettingsService.read([&](WebSettings & settings) {
         syslog_enabled_       = settings.syslog_enabled;
@@ -673,14 +665,9 @@ void System::store_settings(WebSettings & settings) {
     bool_dashboard_ = settings.bool_dashboard;
     enum_format_    = settings.enum_format;
     readonly_mode_  = settings.readonly_mode;
-
-    phy_type_       = settings.phy_type;
-    eth_power_      = settings.eth_power;
-    eth_phy_addr_   = settings.eth_phy_addr;
-    eth_clock_mode_ = settings.eth_clock_mode;
-
     locale_         = settings.locale;
     developer_mode_ = settings.developer_mode;
+
     // start services
     if (settings.modbus_enabled) {
         if (EMSESP::modbus_ == nullptr) {
@@ -736,9 +723,10 @@ void System::start() {
     commands_init(); // console & api commands
     led_init();      // init LED
     button_init();   // button
-    network_init();  // network
-    uart_init();     // start UART
-    syslog_init();   // start syslog
+
+    last_system_check_ = 0; // force the LED to go from fast flash to pulse
+    uart_init();            // start UART
+    syslog_init();          // start syslog
 }
 
 // button single click
@@ -756,9 +744,10 @@ void System::button_OnClick(PButton & b) {
 // button double click
 void System::button_OnDblClick(PButton & b) {
     LOG_NOTICE("Button pressed - double click - wifi reconnect to AP");
+#ifndef EMSESP_STANDALONE
     // set AP mode to always so will join AP if wifi ssid fails to connect
     EMSESP::esp32React.getAPSettingsService()->update([&](APSettings & apSettings) {
-        apSettings.provisionMode = AP_MODE_ALWAYS;
+        apSettings.provisionMode = AP_MODE_DISCONNECTED;
         return StateUpdateResult::CHANGED;
     });
     // remove SSID from network settings
@@ -766,7 +755,8 @@ void System::button_OnDblClick(PButton & b) {
         networkSettings.ssid = "";
         return StateUpdateResult::CHANGED;
     });
-    EMSESP::esp32React.getNetworkSettingsService()->callUpdateHandlers(); // in case we've changed ssid or password
+    EMSESP::network_.reconnect(); // reconnect to the network
+#endif
 }
 
 // LED flash every 100ms
@@ -904,7 +894,8 @@ bool System::loop() {
 // this is only done once when the connection is established
 void System::send_info_mqtt() {
     static uint8_t _connection = 0;
-    uint8_t        connection  = (ethernet_connected() ? 1 : 0) + ((WiFi.status() == WL_CONNECTED) ? 2 : 0) + (ntp_connected_ ? 4 : 0) + (has_ipv6_ ? 8 : 0);
+    uint8_t        connection  = (EMSESP::network_.ethernet_connected() ? 1 : 0) + (EMSESP::network_.wifi_connected() ? 2 : 0) + (ntp_connected_ ? 4 : 0)
+                         + (EMSESP::network_.has_ipv6() ? 8 : 0);
     // check if connection status has changed
     if (!Mqtt::connected() || connection == _connection) {
         return;
@@ -924,7 +915,7 @@ void System::send_info_mqtt() {
     }
 
 #ifndef EMSESP_STANDALONE
-    if (EMSESP::system_.ethernet_connected()) {
+    if (EMSESP::network_.ethernet_connected()) {
         doc["network"]  = "ethernet";
         doc["hostname"] = ETH.getHostname();
         /*
@@ -937,7 +928,7 @@ void System::send_info_mqtt() {
     }
             */
 
-    } else if (WiFi.status() == WL_CONNECTED) {
+    } else if (EMSESP::network_.wifi_connected()) {
         doc["network"]         = "wifi";
         doc["hostname"]        = WiFi.getHostname();
         doc["SSID"]            = WiFi.SSID();
@@ -997,19 +988,24 @@ void System::heartbeat_json(JsonObject output) {
 #ifndef EMSESP_STANDALONE
     output["freemem"]   = getHeapMem();
     output["max_alloc"] = getMaxAllocMem();
+#endif
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
     output["temperature"] = (int)temperature_;
 #endif
-#endif
 
 #ifndef EMSESP_STANDALONE
-    if (!ethernet_connected_) {
+    if (!EMSESP::network_.ethernet_connected()) {
         int8_t rssi              = WiFi.RSSI();
         output["rssi"]           = rssi;
         output["wifistrength"]   = wifi_quality(rssi);
-        output["wifireconnects"] = EMSESP::esp32React.getWifiReconnects();
+        output["wifireconnects"] = EMSESP::network_.getWifiReconnects();
     }
 #endif
+
+    // see if there is a newer version available
+    if (EMSESP::webStatusService.versions_cache_valid()) {
+        output["upgradeable"] = EMSESP::webStatusService.current_upgradeable();
+    }
 }
 
 // send periodic MQTT message with system information
@@ -1021,49 +1017,6 @@ void System::send_heartbeat() {
 
     heartbeat_json(json);
     Mqtt::queue_publish(F_(heartbeat), json); // send to MQTT with retain off. This will add to MQTT queue.
-}
-
-// initializes network
-void System::network_init() {
-    last_system_check_ = 0; // force the LED to go from fast flash to pulse
-
-#if CONFIG_IDF_TARGET_ESP32
-    bool disableEth;
-    EMSESP::esp32React.getNetworkSettingsService()->read([&](NetworkSettings & settings) { disableEth = settings.ssid.length() > 0; });
-
-    // no ethernet present or disabled
-    if (phy_type_ == PHY_type::PHY_TYPE_NONE || disableEth) {
-        return;
-    } // no ethernet present
-
-    // configure Ethernet
-    int            mdc      = 23;            // Pin# of the I²C clock signal for the Ethernet PHY - hardcoded
-    int            mdio     = 18;            // Pin# of the I²C IO signal for the Ethernet PHY - hardcoded
-    uint8_t        phy_addr = eth_phy_addr_; // I²C-address of Ethernet PHY (0 or 1 for LAN8720, 31 for TLK110)
-    int8_t         power    = eth_power_;    // Pin# of the enable signal for the external crystal oscillator (-1 to disable for internal APLL source)
-    eth_phy_type_t type     = (phy_type_ == PHY_type::PHY_TYPE_LAN8720)  ? ETH_PHY_LAN8720
-                              : (phy_type_ == PHY_type::PHY_TYPE_TLK110) ? ETH_PHY_TLK110
-                                                                         : ETH_PHY_RTL8201; // Type of the Ethernet PHY (LAN8720 or TLK110)
-    // clock mode:
-    //  ETH_CLOCK_GPIO0_IN   = 0  RMII clock input to GPIO0
-    //  ETH_CLOCK_GPIO0_OUT  = 1  RMII clock output from GPIO0
-    //  ETH_CLOCK_GPIO16_OUT = 2  RMII clock output from GPIO16
-    //  ETH_CLOCK_GPIO17_OUT = 3  RMII clock output from GPIO17, for 50hz inverted clock
-    auto clock_mode = (eth_clock_mode_t)eth_clock_mode_;
-
-    // reset power and add a delay as ETH doesn't not always start up correctly after a warm boot
-    if (eth_power_ != -1) {
-        pinMode(eth_power_, OUTPUT);
-        digitalWrite(eth_power_, LOW);
-        delay(500);
-        digitalWrite(eth_power_, HIGH);
-    }
-    eth_present_ = ETH.begin(type, phy_addr, mdc, mdio, power, clock_mode);
-    if (eth_present_) {
-        // Push hostname to the ETH netif immediately after it's created
-        ETH.setHostname(hostname_.c_str());
-    }
-#endif
 }
 
 // check health of system, done every 5 seconds
@@ -1084,7 +1037,7 @@ void System::system_check() {
 #endif
 
         // check if we have a valid network connection
-        if (!ethernet_connected() && (WiFi.status() != WL_CONNECTED)) {
+        if (!EMSESP::network_.network_connected()) {
             healthcheck_ |= HEALTHCHECK_NO_NETWORK;
         } else {
             healthcheck_ &= ~HEALTHCHECK_NO_NETWORK;
@@ -1402,7 +1355,7 @@ void System::show_system(uuid::console::Shell & shell) {
     }
 
     // show Ethernet if connected
-    if (ethernet_connected_) {
+    if (EMSESP::network_.ethernet_connected()) {
         shell.println();
         shell.printfln(" Ethernet Status: connected");
         shell.printfln(" Ethernet MAC address: %s", ETH.macAddress().c_str());
@@ -1622,8 +1575,8 @@ bool System::check_upgrade() {
         settingsVersion = "3.5.0"; // this was the last stable version without version info
     }
 
-    version::EMSESP_Version settings_version(settingsVersion);
-    version::EMSESP_Version this_version(EMSESP_APP_VERSION);
+    FirmwareVersion settings_version(settingsVersion);
+    FirmwareVersion this_version(EMSESP_APP_VERSION);
 
     std::string settings_version_type = settings_version.prerelease().empty() ? "" : ("-" + settings_version.prerelease());
     std::string this_version_type     = this_version.prerelease().empty() ? "" : ("-" + this_version.prerelease());
@@ -1694,6 +1647,21 @@ bool System::check_upgrade() {
                 }
                 return changed;
             });
+            EMSESP::network_.reconnect();
+        }
+
+        // changes going to v3.9 from an earlier version
+        if (settings_version.major() == 3 && settings_version.minor() < 9) {
+#ifndef EMSESP_STANDALONE
+            EMSESP::esp32React.getAPSettingsService()->update([&](APSettings & apSettings) {
+                if (apSettings.provisionMode == 0) {
+                    apSettings.provisionMode = AP_MODE_DISCONNECTED; // AP_MODE_ALWAYS has been removed
+                    LOG_INFO("Upgrade: Setting AP provision mode to auto");
+                    return StateUpdateResult::CHANGED;
+                }
+                return StateUpdateResult::UNCHANGED;
+            });
+#endif
         }
 
         // changes to application settings
@@ -2348,7 +2316,6 @@ std::string System::get_metrics_prometheus() {
             }
 
             result += info_metric;
-            // TODO fix, as local_info_labels is always empty here
             if (!local_info_labels.empty()) {
                 result += "{";
                 bool first = true;
@@ -2379,14 +2346,14 @@ String System::get_ip_or_hostname() {
 #ifndef EMSESP_STANDALONE
     EMSESP::esp32React.getNetworkSettingsService()->read([&](NetworkSettings & settings) {
         if (settings.enableMDNS) {
-            if (EMSESP::system_.ethernet_connected()) {
+            if (EMSESP::network_.ethernet_connected()) {
                 result = ETH.getHostname();
             } else if (WiFi.status() == WL_CONNECTED) {
                 result = WiFi.getHostname();
             }
         } else {
             // no DNS, use the IP
-            if (EMSESP::system_.ethernet_connected()) {
+            if (EMSESP::network_.ethernet_connected()) {
                 result = ETH.localIP().toString();
             } else if (WiFi.status() == WL_CONNECTED) {
                 result = WiFi.localIP().toString();
@@ -2470,7 +2437,7 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
     // Network Status
     node = output["network"].to<JsonObject>();
 #ifndef EMSESP_STANDALONE
-    if (EMSESP::system_.ethernet_connected()) {
+    if (EMSESP::network_.ethernet_connected()) {
         node["network"]  = "Ethernet";
         node["hostname"] = ETH.getHostname();
         // node["MAC"]             = ETH.macAddress();
@@ -2484,7 +2451,7 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
         node["network"]        = "WiFi";
         node["hostname"]       = WiFi.getHostname();
         node["RSSI"]           = WiFi.RSSI();
-        node["WIFIReconnects"] = EMSESP::esp32React.getWifiReconnects();
+        node["WIFIReconnects"] = EMSESP::network_.getWifiReconnects();
         // node["MAC"]             = WiFi.macAddress();
         // node["IPv4 address"]    = uuid::printable_to_string(WiFi.localIP()) + "/" + uuid::printable_to_string(WiFi.subnetMask());
         // node["IPv4 gateway"]    = uuid::printable_to_string(WiFi.gatewayIP());

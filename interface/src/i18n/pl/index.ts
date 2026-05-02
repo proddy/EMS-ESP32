@@ -247,7 +247,6 @@ const pl: BaseTranslation = {
   TIME_ZONE: 'Strefa czasowa',
   ACCESS_POINT: '{{Punkt|punktu|}} {{dostępowy|dostępowego|}}',
   AP_PROVIDE: 'Punkt dostępowy',
-  AP_PROVIDE_TEXT_1: 'zawsze aktywny',
   AP_PROVIDE_TEXT_2: 'aktywny jeśli brak połączenia z siecią',
   AP_PROVIDE_TEXT_3: 'nieaktywny',
   AP_PREFERRED_CHANNEL: 'Preferowany kanał',

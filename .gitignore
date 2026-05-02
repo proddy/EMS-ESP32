@@ -2,6 +2,7 @@
 .vscode/c_cpp_properties.json
 .vscode/extensions.json
 .vscode/launch.json
+.vscode/settings.json
 
 # c++ compiling
 .clang_complete
@@ -63,7 +64,7 @@ words-found-verbose.txt
 # sonarlint
 compile_commands.json
 
-# pioarduino + hybrid
+# other files
 managed_components
 dependencies.lock
 CMakeLists.txt
@@ -75,3 +76,4 @@ pnpm-lock.yaml
 .cache/
 interface/.tsbuildinfo
 test/test_api/package-lock.json
+.clangd

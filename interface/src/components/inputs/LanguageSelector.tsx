@@ -1,4 +1,4 @@
-import { memo, useCallback, useContext, useMemo } from 'react';
+import { memo, useContext } from 'react';
 import type { ChangeEventHandler } from 'react';
 import type { CSSProperties } from 'react';
 
@@ -44,27 +44,14 @@ const LANGUAGE_OPTIONS: LanguageOption[] = [
 const LanguageSelector = () => {
   const { setLocale, locale, LL } = useContext(I18nContext);
 
-  const onLocaleSelected: ChangeEventHandler<HTMLInputElement> = useCallback(
-    async ({ target }) => {
-      const loc = target.value as Locales;
-      localStorage.setItem('lang', loc);
-      await loadLocaleAsync(loc);
-      setLocale(loc);
-    },
-    [setLocale]
-  );
-
-  // Memoize menu items to prevent recreation on every render
-  const menuItems = useMemo(
-    () =>
-      LANGUAGE_OPTIONS.map(({ key, flag, label }) => (
-        <MenuItem key={key} value={key}>
-          <img src={flag} style={flagStyle} alt={label} />
-          &nbsp;{label}
-        </MenuItem>
-      )),
-    []
-  );
+  const onLocaleSelected: ChangeEventHandler<HTMLInputElement> = async ({
+    target
+  }) => {
+    const loc = target.value as Locales;
+    localStorage.setItem('lang', loc);
+    await loadLocaleAsync(loc);
+    setLocale(loc);
+  };
 
   return (
     <TextField
@@ -76,7 +63,12 @@ const LanguageSelector = () => {
       size="small"
       select
     >
-      {menuItems}
+      {LANGUAGE_OPTIONS.map(({ key, flag, label }) => (
+        <MenuItem key={key} value={key}>
+          <img src={flag} style={flagStyle} alt={label} />
+          &nbsp;{label}
+        </MenuItem>
+      ))}
     </TextField>
   );
 };

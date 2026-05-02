@@ -86,6 +86,7 @@ TxService         EMSESP::txservice_;         // outgoing Telegram Tx handler
 Mqtt              EMSESP::mqtt_;              // mqtt handler
 Modbus *          EMSESP::modbus_ = nullptr;  // modbus handler
 System            EMSESP::system_;            // core system services
+Network           EMSESP::network_;           // network services
 TemperatureSensor EMSESP::temperaturesensor_; // Temperature sensors
 AnalogSensor      EMSESP::analogsensor_;      // Analog sensors
 Shower            EMSESP::shower_;            // Shower logic
@@ -1721,13 +1722,13 @@ void EMSESP::start() {
     // start web log service. now we can start capturing logs to the web log
     webLogService.begin();
 
-    // loads core system services settings (network, mqtt, ap, ntp etc)
+    // loads core system services settings (mqtt, ap, ntp etc)
     esp32React.begin();
 
 #ifndef EMSESP_STANDALONE
     if (factory_settings) {
         LOG_WARNING("No settings found on filesystem. Using factory settings.");
-        // make sure OTAdata is updated with core3 format
+        // make sure OTAdata is updated with core3 (v3.9.0) format
         esp_ota_set_boot_partition(esp_ota_get_running_partition());
     }
 #endif
@@ -1777,6 +1778,9 @@ void EMSESP::start() {
 
     webSettingsService.begin(); // load EMS-ESP Application settings
 
+    // start network services. This will initialise WiFi or Ethernet depending on the settings.
+    network_.begin();
+
     // perform any system upgrades
     if (!factory_settings) {
         if (system_.check_upgrade()) {
@@ -1813,10 +1817,10 @@ void EMSESP::start() {
     analogsensor_.start(factory_settings);      // Analog external sensors
 
     // start web services
+    LOG_INFO("Starting Web Server");
     webLogService.start();     // apply settings to weblog service
     webModulesService.begin(); // setup the external library modules
     webServer.begin();         // start the web server
-    LOG_INFO("Starting Web Server");
 }
 
 void EMSESP::start_serial_console() {
@@ -1847,6 +1851,9 @@ void EMSESP::shell_prompt() {
 void EMSESP::loop() {
     uuid::loop(); // store system uptime
 
+    // handle network
+    network_.loop();
+
     // handles LED and checks system health, and syslog service
     if (system_.loop()) {
         return; // LED flashing is active, skip the rest of the loop
@@ -1867,6 +1874,7 @@ void EMSESP::loop() {
         }
 
         // loop through the services
+        webStatusService.loop();    // periodic refresh of cached versions.json
         rxservice_.loop();          // process any incoming Rx telegrams
         shower_.loop();             // check for shower on/off
         temperaturesensor_.loop();  // read sensor temperatures
