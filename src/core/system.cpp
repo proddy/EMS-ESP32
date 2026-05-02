@@ -32,7 +32,7 @@
 #include <HTTPClient.h>
 #include <map>
 
-#include "EMSESP_Version.h"
+#include "firmwareVersion.h"
 
 #if defined(EMSESP_TEST)
 #include "../test/test.h"
@@ -991,7 +991,6 @@ void System::heartbeat_json(JsonObject output) {
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
     output["temperature"] = (int)temperature_;
 #endif
-#endif
 
 #ifndef EMSESP_STANDALONE
     if (!EMSESP::network_.ethernet_connected()) {
@@ -1001,6 +1000,11 @@ void System::heartbeat_json(JsonObject output) {
         output["wifireconnects"] = EMSESP::network_.getWifiReconnects();
     }
 #endif
+
+    // see if there is a newer version available
+    if (EMSESP::webStatusService.versions_cache_valid()) {
+        output["upgradeable"] = EMSESP::webStatusService.current_upgradeable();
+    }
 }
 
 // send periodic MQTT message with system information
@@ -1570,8 +1574,8 @@ bool System::check_upgrade() {
         settingsVersion = "3.5.0"; // this was the last stable version without version info
     }
 
-    version::EMSESP_Version settings_version(settingsVersion);
-    version::EMSESP_Version this_version(EMSESP_APP_VERSION);
+    FirmwareVersion settings_version(settingsVersion);
+    FirmwareVersion this_version(EMSESP_APP_VERSION);
 
     std::string settings_version_type = settings_version.prerelease().empty() ? "" : ("-" + settings_version.prerelease());
     std::string this_version_type     = this_version.prerelease().empty() ? "" : ("-" + this_version.prerelease());

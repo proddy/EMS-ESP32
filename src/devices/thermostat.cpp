@@ -173,7 +173,7 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
         for (uint8_t i = 0; i < monitor_size; i++) {
             register_telegram_type(monitor_typeids[i], "RC300Monitor", false, MAKE_PF_CB(process_RC300Monitor), 33);
             register_telegram_type(set_typeids[i], "RC300Set", false, MAKE_PF_CB(process_RC300Set), 29);
-            register_telegram_type(summer_typeids[i], "RC300Summer", false, MAKE_PF_CB(process_RC300Summer), 13);
+            register_telegram_type(summer_typeids[i], "RC300Summer", false, MAKE_PF_CB(process_RC300Summer), 14);
             register_telegram_type(curve_typeids[i], "RC300Curves", false, MAKE_PF_CB(process_RC300Curve), 9);
             register_telegram_type(summer2_typeids[i], "RC300Summer2", false, MAKE_PF_CB(process_RC300Summer2), 8);
         }

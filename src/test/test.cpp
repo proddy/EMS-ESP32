@@ -1329,16 +1329,6 @@ void Test::run_test(uuid::console::Shell & shell, const std::string & cmd, const
             // request.url("/rest/action");
             // EMSESP::webStatusService.action(&request, doc.as<JsonVariant>());
 
-            // test version checks
-            // use same data as in restServer.ts
-            // log shows first if you can upgrade to dev, and then if you can upgrade to stable
-            // request.url("/rest/action");
-            // std::string LATEST_STABLE_VERSION = "3.8.0";
-            // std::string LATEST_DEV_VERSION    = "3.8.1-dev.3";
-            // std::string param                 = LATEST_DEV_VERSION + "," + LATEST_STABLE_VERSION;
-            // std::string action                = "{\"action\":\"checkUpgrade\", \"param\":\"" + param + "\"}";
-            // deserializeJson(doc, action);
-
             // // case 0: on latest stable, can upgrade to dev only. So true, false
             // EMSESP::webStatusService.set_current_version(LATEST_STABLE_VERSION);
             // EMSESP::webStatusService.action(&request, doc.as<JsonVariant>());

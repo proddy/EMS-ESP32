@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
 
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -61,14 +61,11 @@ const NTPSettings = () => {
   const { LL } = useI18nContext();
   useLayoutTitle('NTP');
 
-  // Memoized timezone select items for better performance
   const timeZoneItems = useTimeZoneSelectItems();
 
-  // Memoized selected timezone value
-  const selectedTzValue = useMemo(
-    () => (data ? selectedTimeZone(data.tz_label, data.tz_format) : undefined),
-    [data?.tz_label, data?.tz_format]
-  );
+  const selectedTzValue = data
+    ? selectedTimeZone(data.tz_label, data.tz_format)
+    : undefined;
 
   const [localTime, setLocalTime] = useState<string>('');
   const [settingTime, setSettingTime] = useState<boolean>(false);
@@ -82,32 +79,22 @@ const NTPSettings = () => {
     }
   );
 
-  // Memoize updateFormValue to prevent recreation on every render
-  const updateFormValue = useMemo(
-    () =>
-      updateValueDirty(
-        origData as unknown as Record<string, unknown>,
-        dirtyFlags,
-        setDirtyFlags,
-        updateDataValue as (value: unknown) => void
-      ),
-    [origData, dirtyFlags, setDirtyFlags, updateDataValue]
+  const updateFormValue = updateValueDirty(
+    origData as unknown as Record<string, unknown>,
+    dirtyFlags,
+    setDirtyFlags,
+    updateDataValue as (value: unknown) => void
   );
 
-  // Memoize updateLocalTime handler
-  const updateLocalTime = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => setLocalTime(event.target.value),
-    []
-  );
+  const updateLocalTime = (event: React.ChangeEvent<HTMLInputElement>) =>
+    setLocalTime(event.target.value);
 
-  // Memoize openSetTime handler
-  const openSetTime = useCallback(() => {
+  const openSetTime = () => {
     setLocalTime(formatLocalDateTime(new Date()));
     setSettingTime(true);
-  }, []);
+  };
 
-  // Memoize configureTime handler
-  const configureTime = useCallback(async () => {
+  const configureTime = async () => {
     setProcessing(true);
 
     try {
@@ -120,13 +107,11 @@ const NTPSettings = () => {
     } finally {
       setProcessing(false);
     }
-  }, [localTime, updateTime, LL, loadData]);
+  };
 
-  // Memoize close dialog handler
-  const handleCloseSetTime = useCallback(() => setSettingTime(false), []);
+  const handleCloseSetTime = () => setSettingTime(false);
 
-  // Memoize validate and submit handler
-  const validateAndSubmit = useCallback(async () => {
+  const validateAndSubmit = async () => {
     if (!data) return;
     try {
       setFieldErrors(undefined);
@@ -135,23 +120,18 @@ const NTPSettings = () => {
     } catch (error) {
       setFieldErrors((error as ValidationError).fieldErrors);
     }
-  }, [data, saveData]);
+  };
 
-  // Memoize timezone change handler
-  const changeTimeZone = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      void updateState(readNTPSettings(), (settings: NTPSettingsType) => ({
-        ...settings,
-        tz_label: event.target.value,
-        tz_format: TIME_ZONES[event.target.value]
-      }));
-      updateFormValue(event);
-    },
-    [updateFormValue]
-  );
+  const changeTimeZone = (event: React.ChangeEvent<HTMLInputElement>) => {
+    void updateState(readNTPSettings(), (settings: NTPSettingsType) => ({
+      ...settings,
+      tz_label: event.target.value,
+      tz_format: TIME_ZONES[event.target.value]
+    }));
+    updateFormValue(event);
+  };
 
-  // Memoize render content to prevent unnecessary re-renders
-  const renderContent = useMemo(() => {
+  const renderContent = () => {
     if (!data) {
       return <FormLoader onRetry={loadData} errorMessage={errorMessage || ''} />;
     }
@@ -236,26 +216,12 @@ const NTPSettings = () => {
         )}
       </>
     );
-  }, [
-    data,
-    errorMessage,
-    loadData,
-    updateFormValue,
-    fieldErrors,
-    selectedTzValue,
-    changeTimeZone,
-    timeZoneItems,
-    dirtyFlags,
-    openSetTime,
-    saving,
-    validateAndSubmit,
-    LL
-  ]);
+  };
 
   return (
     <SectionContent>
       {blocker ? <BlockNavigation blocker={blocker} /> : null}
-      {renderContent}
+      {renderContent()}
       <Dialog sx={dialogStyle} open={settingTime} onClose={handleCloseSetTime}>
         <DialogTitle>{LL.SET_TIME(1)}</DialogTitle>
         <DialogContent dividers>

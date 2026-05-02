@@ -77,3 +77,23 @@ jobs:
           files: |
             CHANGELOG_LATEST.md
             ./build/firmware/*.*
+
+      - name: Update version in Cloudflare KV store
+        if: github.repository == 'emsesp/EMS-ESP32'
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_NAMESPACE_ID: ${{ secrets.CF_NAMESPACE_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          VERSION: ${{ steps.build_info.outputs.VERSION }}
+        run: |
+          JSON_DATA=$(jq -n \
+            --arg version "$VERSION" \
+            --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{version: $version, date: $date}')
+          echo "JSON_DATA: $JSON_DATA"
+          curl -sS --fail-with-body \
+            -X PUT "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_NAMESPACE_ID}/values/dev" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$JSON_DATA"
+          echo

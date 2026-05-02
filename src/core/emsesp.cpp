@@ -1817,10 +1817,10 @@ void EMSESP::start() {
     analogsensor_.start(factory_settings);      // Analog external sensors
 
     // start web services
+    LOG_INFO("Starting Web Server");
     webLogService.start();     // apply settings to weblog service
     webModulesService.begin(); // setup the external library modules
     webServer.begin();         // start the web server
-    LOG_INFO("Starting Web Server");
 }
 
 void EMSESP::start_serial_console() {
@@ -1874,6 +1874,7 @@ void EMSESP::loop() {
         }
 
         // loop through the services
+        webStatusService.loop();    // periodic refresh of cached versions.json
         rxservice_.loop();          // process any incoming Rx telegrams
         shower_.loop();             // check for shower on/off
         temperaturesensor_.loop();  // read sensor temperatures

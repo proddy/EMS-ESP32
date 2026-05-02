@@ -91,7 +91,9 @@ const DragNdrop = ({ text, onFileSelected }: DragNdropProps) => {
       ).upgradeImportantMessageType;
       setUpgradeImportantMessageType(upgradeImportantMessageType_n);
       if (upgradeImportantMessageType_n === 0) {
-        onFileSelected(file);
+        if (file) {
+          onFileSelected(file);
+        }
       }
     })
     .onError((error) => {

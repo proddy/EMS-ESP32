@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 
 import CancelIcon from '@mui/icons-material/Cancel';
 import CloseIcon from '@mui/icons-material/Close';
@@ -57,23 +57,16 @@ const CustomizationsDialog = ({
   const [editItem, setEditItem] = useState<DeviceEntity>(selectedItem);
   const [error, setError] = useState<boolean>(false);
 
-  const updateFormValue = useMemo(
-    () =>
-      updateValue(
-        setEditItem as unknown as React.Dispatch<
-          React.SetStateAction<Record<string, unknown>>
-        >
-      ),
-    []
+  const updateFormValue = updateValue(
+    setEditItem as unknown as React.Dispatch<
+      React.SetStateAction<Record<string, unknown>>
+    >
   );
 
-  const isWriteableNumber = useMemo(
-    () =>
-      typeof editItem.v === 'number' &&
-      editItem.w &&
-      !(editItem.m & DeviceEntityMask.DV_READONLY),
-    [editItem.v, editItem.w, editItem.m]
-  );
+  const isWriteableNumber =
+    typeof editItem.v === 'number' &&
+    editItem.w &&
+    !(editItem.m & DeviceEntityMask.DV_READONLY);
 
   useEffect(() => {
     if (open) {
@@ -82,16 +75,16 @@ const CustomizationsDialog = ({
     }
   }, [open, selectedItem]);
 
-  const handleClose = useCallback(
-    (_event: React.SyntheticEvent, reason: 'backdropClick' | 'escapeKeyDown') => {
-      if (reason !== 'backdropClick') {
-        onClose();
-      }
-    },
-    [onClose]
-  );
+  const handleClose = (
+    _event: React.SyntheticEvent,
+    reason: 'backdropClick' | 'escapeKeyDown'
+  ) => {
+    if (reason !== 'backdropClick') {
+      onClose();
+    }
+  };
 
-  const save = useCallback(() => {
+  const save = () => {
     if (
       isWriteableNumber &&
       editItem.mi &&
@@ -102,34 +95,31 @@ const CustomizationsDialog = ({
     } else {
       onSave(editItem);
     }
-  }, [isWriteableNumber, editItem, onSave]);
+  };
 
-  const updateDeviceEntity = useCallback((updatedItem: DeviceEntity) => {
+  const updateDeviceEntity = (updatedItem: DeviceEntity) => {
     setEditItem((prev) => ({ ...prev, m: updatedItem.m }));
-  }, []);
-
-  const dialogTitle = useMemo(() => `${LL.EDIT()} ${LL.ENTITY()}`, [LL]);
-
-  const writeableIcon = useMemo(
-    () =>
-      editItem.w ? (
-        <DoneIcon color="success" sx={{ fontSize: ICON_SIZE }} />
-      ) : (
-        <CloseIcon color="error" sx={{ fontSize: ICON_SIZE }} />
-      ),
-    [editItem.w]
-  );
+  };
 
   return (
     <Dialog sx={dialogStyle} open={open} onClose={handleClose}>
-      <DialogTitle>{dialogTitle}</DialogTitle>
+      <DialogTitle>{`${LL.EDIT()} ${LL.ENTITY()}`}</DialogTitle>
       <DialogContent dividers>
         <LabelValue label={LL.ID_OF(LL.ENTITY())} value={editItem.id} />
         <LabelValue
           label={`${LL.DEFAULT(1)} ${LL.ENTITY_NAME(1)}`}
           value={editItem.n}
         />
-        <LabelValue label={LL.WRITEABLE()} value={writeableIcon} />
+        <LabelValue
+          label={LL.WRITEABLE()}
+          value={
+            editItem.w ? (
+              <DoneIcon color="success" sx={{ fontSize: ICON_SIZE }} />
+            ) : (
+              <CloseIcon color="error" sx={{ fontSize: ICON_SIZE }} />
+            )
+          }
+        />
 
         <Box sx={{ mt: 1, mb: 2 }}>
           <EntityMaskToggle onUpdate={updateDeviceEntity} de={editItem} />

@@ -121,19 +121,19 @@ const NetworkSettings = () => {
     deselectNetwork();
   }, [data, saveData, deselectNetwork]);
 
-  const setCancel = useCallback(async () => {
+  const setCancel = async () => {
     deselectNetwork();
     await loadData();
-  }, [deselectNetwork, loadData]);
+  };
 
-  const doRestart = useCallback(async () => {
+  const doRestart = async () => {
     setRestarting(true);
     await sendAPI({ device: 'system', cmd: 'restart', id: 0 }).catch(
       (error: Error) => {
         toast.error(error.message);
       }
     );
-  }, [sendAPI]);
+  };
 
   const content = () => {
     if (!data) {

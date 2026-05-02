@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import type { FC } from 'react';
 
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -62,7 +62,7 @@ const User: FC<UserFormProps> = ({
     }
   }, [open]);
 
-  const validateAndDone = useCallback(async () => {
+  const validateAndDone = async () => {
     if (user) {
       try {
         setFieldErrors(undefined);
@@ -72,7 +72,7 @@ const User: FC<UserFormProps> = ({
         setFieldErrors((error as ValidationError).fieldErrors);
       }
     }
-  }, [user, validator, onDoneEditing]);
+  };
 
   return (
     <Dialog

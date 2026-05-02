@@ -79,7 +79,7 @@ const SecuritySettings = () => {
           onChange={updateFormValue}
           margin="normal"
         />
-        <MessageBox level="info" message={LL.SU_TEXT()} mt={1} />
+        <MessageBox level="info" message={LL.SU_TEXT()} sx={{ mt: 1 }} />
         {dirtyFlags && dirtyFlags.length !== 0 && (
           <ButtonRow>
             <Button

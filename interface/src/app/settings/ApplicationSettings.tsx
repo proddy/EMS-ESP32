@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
 
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -107,49 +107,36 @@ const ApplicationSettings = () => {
     });
   });
 
-  // Memoized input props to prevent recreation on every render
-  const SecondsInputProps = useMemo(
-    () => ({
-      endAdornment: <InputAdornment position="end">{LL.SECONDS()}</InputAdornment>
-    }),
-    [LL]
-  );
+  const SecondsInputProps = {
+    endAdornment: <InputAdornment position="end">{LL.SECONDS()}</InputAdornment>
+  };
 
-  const MinutesInputProps = useMemo(
-    () => ({
-      endAdornment: <InputAdornment position="end">{LL.MINUTES()}</InputAdornment>
-    }),
-    [LL]
-  );
+  const MinutesInputProps = {
+    endAdornment: <InputAdornment position="end">{LL.MINUTES()}</InputAdornment>
+  };
 
-  const HoursInputProps = useMemo(
-    () => ({
-      endAdornment: <InputAdornment position="end">{LL.HOURS()}</InputAdornment>
-    }),
-    [LL]
-  );
+  const HoursInputProps = {
+    endAdornment: <InputAdornment position="end">{LL.HOURS()}</InputAdornment>
+  };
 
-  const doRestart = useCallback(async () => {
+  const doRestart = async () => {
     setRestarting(true);
     await sendAPI({ device: 'system', cmd: 'restart', id: 0 }).catch(
       (error: Error) => {
         toast.error(error.message);
       }
     );
-  }, [sendAPI]);
+  };
 
-  const updateBoardProfile = useCallback(
-    async (board_profile: string) => {
-      await readBoardProfile(board_profile).catch((error: Error) => {
-        toast.error(error.message);
-      });
-    },
-    [readBoardProfile]
-  );
+  const updateBoardProfile = async (board_profile: string) => {
+    await readBoardProfile(board_profile).catch((error: Error) => {
+      toast.error(error.message);
+    });
+  };
 
   useLayoutTitle(LL.APPLICATION());
 
-  const validateAndSubmit = useCallback(async () => {
+  const validateAndSubmit = async () => {
     try {
       setFieldErrors(undefined);
       await validate(createSettingsValidator(data), data);
@@ -158,31 +145,27 @@ const ApplicationSettings = () => {
     } finally {
       await saveData();
     }
-  }, [data, saveData]);
+  };
 
-  const changeBoardProfile = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const boardProfile = event.target.value;
-      updateFormValue(event);
-      if (boardProfile === 'CUSTOM') {
-        updateDataValue({
-          ...data,
-          board_profile: boardProfile
-        });
-      } else {
-        void updateBoardProfile(boardProfile);
-      }
-    },
-    [data, updateBoardProfile, updateFormValue, updateDataValue]
-  );
+  const changeBoardProfile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const boardProfile = event.target.value;
+    updateFormValue(event);
+    if (boardProfile === 'CUSTOM') {
+      updateDataValue({
+        ...data,
+        board_profile: boardProfile
+      });
+    } else {
+      void updateBoardProfile(boardProfile);
+    }
+  };
 
-  const restart = useCallback(async () => {
+  const restart = async () => {
     await validateAndSubmit();
     await doRestart();
-  }, [validateAndSubmit, doRestart]);
+  };
 
-  // Memoize board profile select items to prevent recreation
-  const boardProfileItems = useMemo(() => boardProfileSelectItems(), []);
+  const boardProfileItems = boardProfileSelectItems();
 
   const content = () => {
     if (!data || !hardwareData) {

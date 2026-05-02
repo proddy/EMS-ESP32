@@ -1,5 +1,3 @@
-import { useMemo } from 'react';
-
 import { MenuItem } from '@mui/material';
 
 export const TIME_ZONES: Record<string, string> = {
@@ -472,25 +470,15 @@ export function selectedTimeZone(label: string, format: string) {
   return TIME_ZONES[label] === format ? label : undefined;
 }
 
-// Memoized version for use in components
-export function useTimeZoneSelectItems() {
-  return useMemo(
-    () =>
-      TIME_ZONE_LABELS.map((label) => (
-        <MenuItem key={label} value={label}>
-          {label}
-        </MenuItem>
-      )),
-    []
-  );
-}
-
-// Fallback export for backward compatibility - now memoized
 const precomputedTimeZoneItems = TIME_ZONE_LABELS.map((label) => (
   <MenuItem key={label} value={label}>
     {label}
   </MenuItem>
 ));
+
+export function useTimeZoneSelectItems() {
+  return precomputedTimeZoneItems;
+}
 
 export function timeZoneSelectItems() {
   return precomputedTimeZoneItems;

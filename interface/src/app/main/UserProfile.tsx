@@ -1,4 +1,4 @@
-import { memo, useCallback, useContext } from 'react';
+import { memo, useContext } from 'react';
 
 import PersonIcon from '@mui/icons-material/Person';
 import {
@@ -23,9 +23,9 @@ const UserProfileComponent = () => {
 
   useLayoutTitle(LL.USER_PROFILE());
 
-  const handleSignOut = useCallback(() => {
+  const handleSignOut = () => {
     signOut(true);
-  }, [signOut]);
+  };
 
   return (
     <SectionContent>

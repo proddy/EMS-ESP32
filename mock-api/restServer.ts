@@ -6,7 +6,6 @@ const router = AutoRouter();
 
 const REST_ENDPOINT_ROOT = '/rest/';
 const API_ENDPOINT_ROOT = '/api/';
-const GH_ENDPOINT_ROOT = '/gh/'; // for mock GitHub API for version checking
 
 // HTTP HEADERS for msgpack
 const headers = {
@@ -128,7 +127,7 @@ let system_status = {
     }
   ],
   // partitions: [],
-  developer_mode: true,
+  developer_mode: settings.developer_mode,
   model: '',
   board: '',
   // model: 'BBQKees Electronics EMS Gateway E32 V2 (E32 V2.0 P3/2024011)',
@@ -142,13 +141,13 @@ let DEV_VERSION_IS_UPGRADEABLE: boolean;
 let STABLE_VERSION_IS_UPGRADEABLE: boolean;
 let THIS_VERSION: string;
 let LATEST_STABLE_VERSION = '3.8.2';
-let LATEST_DEV_VERSION = '3.8.3-dev.2';
+let LATEST_DEV_VERSION = '3.9.0-dev.1';
 
 // scenarios for testing versioning
-let version_test = 0; // on latest stable, or switch to dev
+// let version_test = 0; // on latest stable, or switch to dev
 // let version_test = 1; // on latest dev, or switch back to stable
 // let version_test = 2; // upgrade an older stable to latest stable or switch to latest dev
-// let version_test = 3; // upgrade dev to latest, or switch to stable
+let version_test = 3; // upgrade dev to latest, or switch to stable
 // let version_test = 4; // downgrade to an older dev, or switch back to stable
 
 switch (version_test as number) {
@@ -415,36 +414,60 @@ function upgradeImportantMessages(version: string) {
   return { upgradeImportantMessageType: upgradeImportantMessageType_n };
 }
 
-// called by Action endpoint checkUpgrade
-function check_upgrade(version: string) {
-  let data = {};
-  if (version) {
-    const dev_version = version.split(',')[0];
-    const stable_version = version.split(',')[1];
+// called by Action endpoint getVersions
+// Set MOCK_OFFLINE = true to simulate a device with no internet (omits stable/dev).
+const MOCK_OFFLINE = false;
+function get_versions() {
+  const isDev = THIS_VERSION.includes('dev');
+  const currentUpgradeable =
+    !MOCK_OFFLINE &&
+    (isDev ? DEV_VERSION_IS_UPGRADEABLE : STABLE_VERSION_IS_UPGRADEABLE);
 
-    console.log(
-      'Upgrade this version (' +
-        THIS_VERSION +
-        ') to dev (' +
-        dev_version +
-        ') is ' +
-        (DEV_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO') +
-        ' and to stable (' +
-        stable_version +
-        ') is ' +
-        (STABLE_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO')
-    );
-    data = {
-      emsesp_version: THIS_VERSION,
-      dev_upgradeable: DEV_VERSION_IS_UPGRADEABLE,
-      stable_upgradeable: STABLE_VERSION_IS_UPGRADEABLE
+  const data: {
+    current: {
+      version: string;
+      type: 'stable' | 'dev';
+      date: string;
+      upgradeable: boolean;
     };
-  } else {
-    console.log('requesting ems-esp version (' + THIS_VERSION + ')');
-    data = {
-      emsesp_version: THIS_VERSION
+    stable?: { version: string; date: string; upgradeable: boolean };
+    dev?: { version: string; date: string; upgradeable: boolean };
+  } = {
+    current: {
+      version: THIS_VERSION,
+      type: isDev ? 'dev' : 'stable',
+      date: '2026-04-25T12:00:00',
+      upgradeable: currentUpgradeable
+    }
+  };
+
+  if (!MOCK_OFFLINE) {
+    data.stable = {
+      version: LATEST_STABLE_VERSION,
+      date: '2026-04-25',
+      upgradeable: STABLE_VERSION_IS_UPGRADEABLE
+    };
+    data.dev = {
+      version: LATEST_DEV_VERSION,
+      date: '2026-04-25',
+      upgradeable: DEV_VERSION_IS_UPGRADEABLE
     };
   }
+
+  console.log(
+    'getVersions: current=' +
+      THIS_VERSION +
+      ' stable=' +
+      LATEST_STABLE_VERSION +
+      ' (upgradeable=' +
+      (STABLE_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO') +
+      ') dev=' +
+      LATEST_DEV_VERSION +
+      ' (upgradeable=' +
+      (DEV_VERSION_IS_UPGRADEABLE ? 'YES' : 'NO') +
+      ')' +
+      (MOCK_OFFLINE ? ' [offline]' : '')
+  );
   return data;
 }
 
@@ -4579,6 +4602,7 @@ router
   .post(EMSESP_SETTINGS_ENDPOINT, async (request: any) => {
     settings = await request.json();
     console.log('application settings saved', settings);
+    system_status.developer_mode = settings.developer_mode;
     return status(200); // no restart needed
     // return status(205); // reboot required
   })
@@ -5172,13 +5196,9 @@ router
       } else if (action === 'getCustomSupport') {
         // send custom support
         return custom_support();
-      } else if (action === 'checkUpgrade') {
-        // check upgrade
-        // check if content has a param
-        if (!content.param) {
-          return check_upgrade('');
-        }
-        return check_upgrade(content.param);
+      } else if (action === 'getVersions') {
+        // get versions
+        return get_versions();
       } else if (action === 'uploadURL') {
         // upload URL
         console.log('upload File from URL', content.param);
@@ -5231,27 +5251,6 @@ router
       }
     }
     return status(404); // not found
-  });
-
-// Mock GitHub API
-// https://api.github.com/repos/emsesp/EMS-ESP32/releases
-
-router
-  .get(GH_ENDPOINT_ROOT + '/tags/latest', () => {
-    const data = {
-      name: 'v' + LATEST_DEV_VERSION,
-      published_at: new Date().toISOString() // use todays date
-    };
-    console.log('returning latest development version (today): ', data);
-    return data;
-  })
-  .get(GH_ENDPOINT_ROOT + '/latest', () => {
-    const data = {
-      name: 'v' + LATEST_STABLE_VERSION,
-      published_at: '2025-03-01T13:29:13.999Z'
-    };
-    console.log('returning latest stable version: ', data);
-    return data;
   });
 
 // const logger: ResponseHandler = (response, request) => {
