@@ -621,6 +621,9 @@ bool Network::findNetworks() {
             startmDNS();
         }
 
+        // fetch the versions.json file from emsesp.org
+        EMSESP::webStatusService.schedule_versions_refresh();
+
         return true; // we have a network connection
     }
 
