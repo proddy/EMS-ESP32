@@ -374,9 +374,11 @@ void WebStatusService::getVersions(JsonObject root) {
 void WebStatusService::loop() {
 #ifndef EMSESP_STANDALONE
     // need a network
-    if (!EMSESP::system_.ethernet_connected() && (WiFi.status() != WL_CONNECTED)) {
+    if (!EMSESP::network_.network_connected()) {
         return;
     }
+
+    // TODO handle a network re-connect to fetch the values again (set versions_next_fetch_ms_ to 1)
 
     // 0 = idle, nothing scheduled
     if (versions_next_fetch_ms_ == 0) {
