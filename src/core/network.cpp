@@ -591,11 +591,11 @@ bool Network::findNetworks() {
 
     // if we have a connection and it's a new one, set it up
     if (best_iface != NetIface::NONE && best_iface != previous_iface) {
-        previous_iface  = network_iface_; // save the previous interface for comparison next time
-        network_ip_     = info.ip.addr;
-        network_iface_  = iface_from_desc(info.desc); // "sta"/"ap"/"eth*"
-        has_ipv6_       = info.has_ipv6;
-        connnect_retry_ = 0;
+        previous_iface = network_iface_; // save the previous interface for comparison next time
+        network_ip_    = info.ip.addr;
+        network_iface_ = iface_from_desc(info.desc); // "sta"/"ap"/"eth*"
+        has_ipv6_      = info.has_ipv6;
+        connect_retry_ = 0;
 
         LOG_INFO("Network connected via %s (IP: " IPSTR ")",
                  network_iface_ == NetIface::ETHERNET ? "Ethernet"
@@ -628,8 +628,8 @@ bool Network::findNetworks() {
     network_ip_    = 0;
     network_iface_ = NetIface::NONE;
     has_ipv6_      = false;
-    connnect_retry_++;
-    LOG_DEBUG("No active network interfaces found yet, re-connection count %d", connnect_retry_);
+    connect_retry_++;
+    LOG_DEBUG("No active network interfaces found yet, re-connection count %d", connect_retry_);
 #endif
     return false; // no connection found yet
 }
@@ -638,7 +638,7 @@ bool Network::findNetworks() {
 void Network::startAP() {
 #ifndef EMSESP_STANDALONE
     // Only start AP as a fallback if the Network has failed
-    if (connnect_retry_ < MAX_NETWORK_RECONNECTION_ATTEMPTS) {
+    if (connect_retry_ < MAX_NETWORK_RECONNECTION_ATTEMPTS) {
         return;
     }
 

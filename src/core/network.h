@@ -176,7 +176,7 @@ class Network {
     bool             juststopped_            = false;
     bool             eth_started_            = false; // true after ETH.begin() has succeeded once; prevents repeated re-init while DHCP is still running
     volatile uint8_t last_disconnect_reason_ = 0;
-    uint16_t         connnect_retry_         = 0; // number of network re-connection attempts
+    uint16_t         connect_retry_          = 0; // number of network re-connection attempts
     volatile bool    wifi_connect_pending_   = false;
 
     // Network and AP settings
