@@ -81,8 +81,6 @@ const Authentication: FC<RequiredChildrenProps> = ({ children }) => {
       setMe(undefined);
       setInitialized(true);
     }
-    // refreshVersions and sendVerifyAuthorization are stable
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
