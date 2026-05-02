@@ -988,6 +988,7 @@ void System::heartbeat_json(JsonObject output) {
 #ifndef EMSESP_STANDALONE
     output["freemem"]   = getHeapMem();
     output["max_alloc"] = getMaxAllocMem();
+#endif
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
     output["temperature"] = (int)temperature_;
 #endif
