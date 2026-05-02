@@ -928,7 +928,7 @@ void System::send_info_mqtt() {
     }
             */
 
-    } else if (WiFi.status() == WL_CONNECTED) {
+    } else if (EMSESP::network_.wifi_connected()) {
         doc["network"]         = "wifi";
         doc["hostname"]        = WiFi.getHostname();
         doc["SSID"]            = WiFi.SSID();
@@ -1647,7 +1647,7 @@ bool System::check_upgrade() {
 
         // changes going to v3.9 from an earlier version
         if (settings_version.major() == 3 && settings_version.minor() < 9) {
-            #ifndef EMSESP_STANDALONE
+#ifndef EMSESP_STANDALONE
             EMSESP::esp32React.getAPSettingsService()->update([&](APSettings & apSettings) {
                 if (apSettings.provisionMode == 0) {
                     apSettings.provisionMode = AP_MODE_DISCONNECTED; // AP_MODE_ALWAYS has been removed
@@ -1656,7 +1656,7 @@ bool System::check_upgrade() {
                 }
                 return StateUpdateResult::UNCHANGED;
             });
-            #endif
+#endif
         }
 
         // changes to application settings

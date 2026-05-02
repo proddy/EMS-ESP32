@@ -86,7 +86,6 @@ void Network::begin() {
         [this](WiFiEvent_t /*event*/, WiFiEventInfo_t info) {
             last_disconnect_reason_ = info.wifi_sta_disconnected.reason;
             wifi_connect_pending_   = false;
-            LOG_WARNING("WiFi lost connection. Reason: %s", disconnectReason(last_disconnect_reason_));
         },
         ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
 
@@ -169,18 +168,18 @@ void Network::reconnect() {
     }
 
     // disconnect AP
-
     if (WiFi.getMode() & WIFI_AP) {
         stopAP();
     }
 #endif
 
     // reset network state
-    network_ip_           = 0;
-    network_iface_        = NetIface::NONE;
-    has_ipv6_             = false;
-    juststopped_          = true;
-    wifi_connect_pending_ = false;
+    network_ip_             = 0;
+    network_iface_          = NetIface::NONE;
+    has_ipv6_               = false;
+    juststopped_            = true;
+    wifi_connect_pending_   = false;
+    last_disconnect_reason_ = 0;
 
     // reload the network settings, as this could be called from the console
     begin();
@@ -201,8 +200,10 @@ void Network::loop() {
         startWIFI();     // WiFi
         startEthernet(); // Ethernet
 
-        if (network_ip_ != 0) {
-            checkConnection(); // already have a connection: verify it's still alive
+        // already have a connection: verify it's still alive
+        // or trigger if the WiFi handshaked failed on the WiFi.begin() call
+        if (network_ip_ != 0 || last_disconnect_reason_ != 0) {
+            checkConnection();
         }
         findNetworks(); // detect new connections
     }
