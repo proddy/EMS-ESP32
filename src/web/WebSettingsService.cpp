@@ -359,7 +359,6 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
 // either via the Web UI or via the Console
 void WebSettingsService::onUpdate() {
     // skip if we're restarting anyway
-
     if (WebSettings::has_flags(WebSettings::ChangeFlags::RESTART)) {
         return;
     }

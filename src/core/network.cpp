@@ -26,8 +26,8 @@ uuid::log::Logger Network::logger_{F_(network), uuid::log::Facility::KERN};
 
 void Network::begin() {
 #ifndef EMSESP_STANDALONE
-    // pull Network settings and store locally on stack
-    EMSESP::esp32React.getNetworkSettingsService()->read([&](auto & settings) {
+    // pull all settings and store locally
+    EMSESP::esp32React.getNetworkSettingsService()->read([&](NetworkSettings & settings) {
         enableMDNS_     = settings.enableMDNS;
         staticIPConfig_ = settings.staticIPConfig;
         localIP_        = settings.localIP;
@@ -66,36 +66,96 @@ void Network::begin() {
     });
 
     // Initialise WiFi - we only do this once, when the network service is started.
+
     // We want the device to come up in opmode=0 (WIFI_OFF), which is not the default after a flash erase.
     // Persistence is true by default, so this WiFi.mode() call writes opmode=0 to NVS for future boots.
-    WiFi.mode(WIFI_OFF);
+    // WiFi.mode(WIFI_OFF);
 
-    // From here on, mode changes stay in RAM only and don't touch NVS
+    // if Wifi is disabled, with no SSID, stop here
+    if (ssid_.isEmpty()) {
+        WiFi.mode(WIFI_OFF);
+        return;
+    }
+
     WiFi.persistent(false);
     WiFi.setAutoReconnect(false);
     WiFi.mode(WIFI_STA);
+    WiFi.disconnect(true);                   // wipe old settings in NVS
+    WiFi.setHostname(hostname_.c_str());     // updates shared default_hostname buffer
+    WiFi.enableSTA(true);                    // creates the STA netif
+    WiFi.STA.setHostname(hostname_.c_str()); // pushes to esp_netif_set_hostname
+    WiFi.enableIPv6(true);
+    if (staticIPConfig_) {
+        WiFi.config(localIP_, gatewayIP_, subnetMask_, dnsIP1_, dnsIP2_); // configure for static IP
+    }
+
+    // www.esp32.com/viewtopic.php?t=12055
+    if (bandwidth20_) {
+        esp_wifi_set_bandwidth(static_cast<wifi_interface_t>(ESP_IF_WIFI_STA), WIFI_BW_HT20);
+    } else {
+        esp_wifi_set_bandwidth(static_cast<wifi_interface_t>(ESP_IF_WIFI_STA), WIFI_BW_HT40);
+    }
+    if (nosleep_) {
+        WiFi.setSleep(false); // turn off sleep - WIFI_PS_NONE
+    }
+
+    wifi_connect_pending_ = false; // set before begin() so the event handlers can race-clear it safely
 
     // scan settings give connect issues since arduino 2.0.14 and arduino 3.x.x with some wifi systems
     // WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN); // default is FAST_SCAN
     // WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL); // is default, no need to set
 
-    // capture the WIFI_REASON_* code on every STA disconnect event so check_connection() can
-    // log a meaningful reason when its periodic poll notices we're no longer associated.
-    // Also release the connect-pending guard so the next loop tick can issue a fresh WiFi.begin()
-    WiFi.onEvent(
-        [this](WiFiEvent_t /*event*/, WiFiEventInfo_t info) {
-            last_disconnect_reason_ = info.wifi_sta_disconnected.reason;
-            wifi_connect_pending_   = false;
-        },
-        ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+    // arduino-esp32's WiFi.onEvent() simply appends to an internal callback list with no
+    // de-duplication, so register the lambdas only once across the lifetime of this Network instance
+    if (!wifi_events_registered_) {
+        wifi_events_registered_ = true;
 
-    // clear the saved reason and the connect-pending guard on a fresh STA association
-    WiFi.onEvent(
-        [this](WiFiEvent_t /*event*/, WiFiEventInfo_t /*info*/) {
-            last_disconnect_reason_ = 0;
-            wifi_connect_pending_   = false;
-        },
-        ARDUINO_EVENT_WIFI_STA_GOT_IP);
+        // Defer Tx power setting until STA is actually started. Calling WiFi.setTxPower() before
+        // WIFI_EVENT_STA_START fires would fail with "Neither AP or STA has been started" because
+        // WiFi.STA.started() only flips after esp_wifi_start() raises the event asynchronously.
+        WiFi.onEvent(
+            [this](WiFiEvent_t /*event*/, WiFiEventInfo_t /*info*/) {
+#ifdef BOARD_C3_MINI_V1
+                // always hardcode Tx power for Wemos C3 Mini v1
+                // v1 needs this value, see https://github.com/emsesp/EMS-ESP32/pull/620#discussion_r993173979
+                // https://www.wemos.cc/en/latest/c3/c3_mini_1_0_0.html#about-wifi
+                WiFi.setTxPower(WIFI_POWER_8_5dBm);
+#else
+                setWiFiPower(tx_power_);
+#endif
+            },
+            ARDUINO_EVENT_WIFI_STA_START);
+
+        // capture the WIFI_REASON_* code on every STA disconnect event so check_connection() can
+        // log a meaningful reason when its periodic poll notices we're no longer associated.
+        // Also release the connect-pending guard so the next loop tick can issue a fresh WiFi.begin().
+        // The first STA_DISCONNECTED after boot is suppressed because arduino-esp32 hard-codes a
+        // "retry once on first_connect" inside its own STA event handler (see STA.cpp), so a
+        // transient initial AUTH_FAIL / NO_AP_FOUND / etc. is automatically retried and almost
+        // always succeeds; logging it as a WARNING is misleading noise.
+        WiFi.onEvent(
+            [this](WiFiEvent_t /*event*/, WiFiEventInfo_t info) {
+                last_disconnect_reason_ = info.wifi_sta_disconnected.reason;
+                wifi_connect_pending_   = false;
+                if (wifi_ever_connected_) {
+                    LOG_WARNING("WiFi disconnected (reason: %s)", disconnectReason(last_disconnect_reason_));
+                } else {
+                    LOG_WARNING("WiFi initial connect attempt failed (reason: %s)", disconnectReason(last_disconnect_reason_));
+                }
+            },
+            ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+
+        // clear the saved reason and the connect-pending guard on a fresh STA association,
+        // and latch wifi_ever_connected_ so future disconnects log as warnings
+        WiFi.onEvent(
+            [this](WiFiEvent_t /*event*/, WiFiEventInfo_t /*info*/) {
+                last_disconnect_reason_ = 0;
+                wifi_connect_pending_   = false;
+                wifi_ever_connected_    = true;
+            },
+            ARDUINO_EVENT_WIFI_STA_GOT_IP);
+    }
+
 #endif
 }
 
@@ -159,12 +219,13 @@ uint8_t Network::getStationNum() const {
 // disconnect all WiFi, Eth and AP
 // so we can starts searching again to reconnect
 void Network::reconnect() {
-    LOG_DEBUG("Disconnecting all networks");
+    LOG_DEBUG("Reconnecting all networks");
 
 #ifndef EMSESP_STANDALONE
     // disconnect WiFi
     if (wifi_connected()) {
-        WiFi.disconnect(true);
+        WiFi.disconnect(true, true);
+        WiFi.mode(WIFI_STA); // reset mode
     }
 
     // disconnect AP
@@ -177,11 +238,13 @@ void Network::reconnect() {
     network_ip_             = 0;
     network_iface_          = NetIface::NONE;
     has_ipv6_               = false;
-    juststopped_            = true;
+    juststopped_            = false;
     wifi_connect_pending_   = false;
     last_disconnect_reason_ = 0;
+    connect_retry_          = 0;
+    reconnect_count_        = 0;
 
-    // reload the network settings, as this could be called from the console
+    // reload the network settings and apply them
     begin();
 }
 
@@ -196,16 +259,17 @@ void Network::loop() {
         lastConnectionAttempt_ = currentMillis;
 
         // manage network interfaces
-        startAP();       // Captive Portal (AP)
-        startWIFI();     // WiFi
         startEthernet(); // Ethernet
+        startWIFI();     // WiFi
+        startAP();       // Captive Portal (AP)
 
         // already have a connection: verify it's still alive
         // or trigger if the WiFi handshaked failed on the WiFi.begin() call
         if (network_ip_ != 0 || last_disconnect_reason_ != 0) {
             checkConnection();
         }
-        findNetworks(); // detect new connections
+
+        findNetworks(); // detect any new network connections
     }
 
     // process DNS requests for the captive portal while the soft-AP is up
@@ -219,6 +283,10 @@ void Network::loop() {
 // if a netif is no longer up or has lost its IP (cable unplugged, AP gone, DHCP lease lost, ...) we drop our state so
 // find_networks() can pick up a new one
 void Network::checkConnection() {
+    if (network_iface_ == NetIface::NONE) {
+        return;
+    }
+
 #ifndef EMSESP_STANDALONE
     bool still_up = false;
     for (esp_netif_t * netif = esp_netif_next_unsafe(NULL); netif != NULL; netif = esp_netif_next_unsafe(netif)) {
@@ -238,11 +306,15 @@ void Network::checkConnection() {
             if (reason == 0) {
                 reason = WIFI_REASON_UNSPECIFIED; // event hasn't fired yet (or was cleared); avoid logging "0"
             }
+            wifi_connect_pending_ = false;
             LOG_INFO("WiFi connection lost (reason %u: %s)", reason, disconnectReason(reason));
-        } else {
+        } else if (network_iface_ == NetIface::ETHERNET) {
             LOG_INFO("Ethernet connection lost");
         }
-        reconnect();
+        juststopped_   = true;
+        network_iface_ = NetIface::NONE;
+        network_ip_    = 0;
+        has_ipv6_      = false;
     }
 #endif
 }
@@ -309,7 +381,7 @@ void Network::setWiFiPower(uint8_t tx_power) {
 #endif
 
     if (!WiFi.setTxPower(p)) {
-        emsesp::EMSESP::logger().warning("Failed to set WiFi Tx Power");
+        emsesp::EMSESP::logger().warning("Failed to set WiFi Tx Power!!");
     }
 #endif
 }
@@ -419,53 +491,23 @@ const char * Network::disconnectReason(uint8_t code) {
 // WiFi management
 void Network::startWIFI() {
 #ifndef EMSESP_STANDALONE
-    // Abort if already connected, or if we have no SSID or another Wifi.begin() is already in progress
-    if (WiFi.isConnected() || ssid_.length() == 0 || wifi_connect_pending_) {
+    // exit if WiFi is already connected, or if we have no SSID or another Wifi.begin() is already in progress
+    if (WiFi.isConnected() || ssid_.isEmpty() || wifi_connect_pending_) {
         return;
     }
 
-    WiFi.setHostname(hostname_.c_str());     // updates shared default_hostname buffer
-    WiFi.enableSTA(true);                    // creates the STA netif
-    WiFi.STA.setHostname(hostname_.c_str()); // pushes to esp_netif_set_hostname
-    WiFi.enableIPv6(true);
-    if (staticIPConfig_) {
-        WiFi.config(localIP_, gatewayIP_, subnetMask_, dnsIP1_, dnsIP2_); // configure for static IP
-    }
+    wifi_connect_pending_ = true;
 
-    // www.esp32.com/viewtopic.php?t=12055
-    if (bandwidth20_) {
-        esp_wifi_set_bandwidth(static_cast<wifi_interface_t>(ESP_IF_WIFI_STA), WIFI_BW_HT20);
-    } else {
-        esp_wifi_set_bandwidth(static_cast<wifi_interface_t>(ESP_IF_WIFI_STA), WIFI_BW_HT40);
-    }
-    if (nosleep_) {
-        WiFi.setSleep(false); // turn off sleep - WIFI_PS_NONE
-    }
+    // LOG_DEBUG("WiFi connection with %s and %s", ssid_.c_str(), password_.c_str());
 
-    // attempt to connect to the network
-    uint8_t     bssid[6];
-    wl_status_t status;
-    wifi_connect_pending_ = true; // set before begin() so the event handlers can race-clear it safely
-
+    // attempt to connect to the wifi network
+    // the event handlers handle error handling and retries
+    uint8_t bssid[6];
     if (formatBSSID(bssid_, bssid)) {
-        status = WiFi.begin(ssid_.c_str(), password_.c_str(), 0, bssid);
+        WiFi.begin(ssid_.c_str(), password_.c_str(), 0, bssid);
     } else {
-        status = WiFi.begin(ssid_.c_str(), password_.c_str());
+        WiFi.begin(ssid_.c_str(), password_.c_str());
     }
-    if (status == WL_CONNECT_FAILED) {
-        wifi_connect_pending_ = false; // begin() didn't actually start anything, allow next tick to retry
-        LOG_ERROR("WiFi connection failed (code %d)", status);
-    }
-
-#ifdef BOARD_C3_MINI_V1
-    // always hardcode Tx power for Wemos CS Mini v1
-    // v1 needs this value, see https://github.com/emsesp/EMS-ESP32/pull/620#discussion_r993173979
-    // https://www.wemos.cc/en/latest/c3/c3_mini_1_0_0.html#about-wifi
-    WiFi.setTxPower(WIFI_POWER_8_5dBm);
-#else
-    setWiFiPower(tx_power_);
-#endif
-
 #endif
 }
 
@@ -482,25 +524,10 @@ void Network::startEthernet() {
 
 #ifndef EMSESP_STANDALONE
 
-    // no ethernet present or wifi takes precedence
-    if (phy_type_ == PHY_type::PHY_TYPE_NONE || (ssid_.length() > 0)) {
+    // no ethernet present
+    if (phy_type_ == PHY_type::PHY_TYPE_NONE) {
         return;
     }
-
-    // configure Ethernet
-    int            mdc      = 23;            // Pin# of the I²C clock signal for the Ethernet PHY - hardcoded
-    int            mdio     = 18;            // Pin# of the I²C IO signal for the Ethernet PHY - hardcoded
-    uint8_t        phy_addr = eth_phy_addr_; // I²C-address of Ethernet PHY (0 or 1 for LAN8720, 31 for TLK110)
-    int8_t         power    = eth_power_;    // Pin# of the enable signal for the external crystal oscillator (-1 to disable for internal APLL source)
-    eth_phy_type_t type     = (phy_type_ == PHY_type::PHY_TYPE_LAN8720)  ? ETH_PHY_LAN8720
-                              : (phy_type_ == PHY_type::PHY_TYPE_TLK110) ? ETH_PHY_TLK110
-                                                                         : ETH_PHY_RTL8201; // Type of the Ethernet PHY (LAN8720 or TLK110)
-    // clock mode:
-    //  ETH_CLOCK_GPIO0_IN   = 0  RMII clock input to GPIO0
-    //  ETH_CLOCK_GPIO0_OUT  = 1  RMII clock output from GPIO0
-    //  ETH_CLOCK_GPIO16_OUT = 2  RMII clock output from GPIO16
-    //  ETH_CLOCK_GPIO17_OUT = 3  RMII clock output from GPIO17, for 50hz inverted clock
-    auto clock_mode = (eth_clock_mode_t)eth_clock_mode_;
 
     // reset power and add a delay as ETH doesn't not always start up correctly after a warm boot
     if (eth_power_ != -1) {
@@ -510,7 +537,22 @@ void Network::startEthernet() {
         digitalWrite(eth_power_, HIGH);
     }
 
-    if (ETH.begin(type, phy_addr, mdc, mdio, power, clock_mode)) {
+    // call to ETH.begin(type, phy_addr, mdc, mdio, power, clock_mode)
+    // mdc = 23 =  Pin# of the I²C clock signal for the Ethernet PHY - hardcoded
+    // mdio = 18 = Pin# of the I²C IO signal for the Ethernet PHY - hardcoded
+    // phy_addr = eth_phy_addr_ = I²C-address of Ethernet PHY (0 or 1 for LAN8720, 31 for TLK110)
+    // power = eth_power_ = Pin# of the enable signal for the external crystal oscillator (-1 to disable for internal APLL source)
+    // type = Type of the Ethernet PHY (LAN8720 or TLK110)
+    // clock_mode =
+    //  ETH_CLOCK_GPIO0_IN   = 0  RMII clock input to GPIO0
+    //  ETH_CLOCK_GPIO0_OUT  = 1  RMII clock output from GPIO0
+    //  ETH_CLOCK_GPIO16_OUT = 2  RMII clock output from GPIO16
+    //  ETH_CLOCK_GPIO17_OUT = 3  RMII clock output from GPIO17, for 50hz inverted clock
+    eth_phy_type_t type = (phy_type_ == PHY_type::PHY_TYPE_LAN8720)  ? ETH_PHY_LAN8720
+                          : (phy_type_ == PHY_type::PHY_TYPE_TLK110) ? ETH_PHY_TLK110
+                                                                     : ETH_PHY_RTL8201; // Type of the Ethernet PHY (LAN8720 or TLK110)
+    if (ETH.begin(type, eth_phy_addr_, 23, 18, eth_power_, (eth_clock_mode_t)eth_clock_mode_)) {
+        LOG_DEBUG("Ethernet started");
         eth_started_ = true;                // mark up; do not re-enter this block until reboot / explicit teardown
         ETH.setHostname(hostname_.c_str()); // Push hostname to the ETH netif immediately after it's created
         ETH.enableIPv6(true);
@@ -526,16 +568,18 @@ void Network::startEthernet() {
 
 // check if the network is connected and set network_ip_ / network_iface_ / has_ipv6_
 // Iterates over every esp-netif that exists, prioritizing Ethernet > WiFi > AP
-bool Network::findNetworks() {
+void Network::findNetworks() {
 #ifndef EMSESP_STANDALONE
 
     // exit if already have a connection, unless in AP mode
     // when in AP mode, it will always try and connect to the WiFi
-    if (network_ip_ != 0 && !(WiFi.getMode() & WIFI_AP)) {
-        // const esp_ip4_addr_t ip4 = {.addr = network_ip_};
-        // LOG_DEBUG("Network already connected via IPv4: " IPSTR, IP2STR(&ip4));
-        return true;
-    }
+    // TODO what about if Eth drops and then comes back - we want to auto-switch?
+    // if (network_ip_ != 0 && !(WiFi.getMode() & WIFI_AP)) {
+    //     // for debugging only
+    //     // const esp_ip4_addr_t ip4 = {.addr = network_ip_};
+    //     // LOG_DEBUG("Network already connected via IPv4: " IPSTR, IP2STR(&ip4));
+    //     return;
+    // }
 
     struct NetInfo {
         esp_ip4_addr_t ip;
@@ -580,18 +624,17 @@ bool Network::findNetworks() {
             strlcpy(info.desc, desc, sizeof(info.desc));
         }
         info.has_ipv6 = (esp_netif_get_ip6_linklocal(netif, &info.ip6) == ESP_OK);
-        best_iface    = candidate;
 
+        best_iface = candidate;
         if (best_iface == NetIface::ETHERNET) {
             break; // top priority, can't be beaten by anything later in the list
         }
     }
 
-    auto previous_iface = NetIface::NONE;
+    // LOG_DEBUG("best_iface: %d, network_iface_: %d", best_iface, network_iface_);
 
     // if we have a connection and it's a new one, set it up
-    if (best_iface != NetIface::NONE && best_iface != previous_iface) {
-        previous_iface = network_iface_; // save the previous interface for comparison next time
+    if (best_iface != NetIface::NONE && best_iface != network_iface_) {
         network_ip_    = info.ip.addr;
         network_iface_ = iface_from_desc(info.desc); // "sta"/"ap"/"eth*"
         has_ipv6_      = info.has_ipv6;
@@ -612,8 +655,7 @@ bool Network::findNetworks() {
         // count the number of restarts (for Wifi and Eth)
         if (juststopped_) {
             juststopped_ = false;
-            connectcount_++;
-            LOG_DEBUG("Network re-connection count %d", connectcount_);
+            reconnect_count_++;
         }
 
         // start mDNS for any real network interface (skip the SoftAP since the captive portal handles its own DNS)
@@ -624,17 +666,20 @@ bool Network::findNetworks() {
         // fetch the versions.json file from emsesp.org
         EMSESP::webStatusService.schedule_versions_refresh();
 
-        return true; // we have a network connection
+        return;
     }
 
-    // fallback
-    network_ip_    = 0;
-    network_iface_ = NetIface::NONE;
-    has_ipv6_      = false;
-    connect_retry_++;
-    LOG_DEBUG("No active network interfaces found yet, re-connection count %d", connect_retry_);
+    // fallback, reset network state if nothing found
+    if (best_iface == NetIface::NONE) {
+        network_ip_    = 0;
+        network_iface_ = NetIface::NONE;
+        has_ipv6_      = false;
+        connect_retry_++;
+        LOG_DEBUG("No active network interfaces found yet (retry #%d)", connect_retry_);
+    }
+
 #endif
-    return false; // no connection found yet
+    return;
 }
 
 // access point (soft-AP) and the captive portal
