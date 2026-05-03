@@ -2993,9 +2993,9 @@ packages:
     resolution: {integrity: sha512-ji9qxRnOVfcuLDySj9qzhGSEFVobyt1kIOSkj1qZzYLzq7Tos/oUUWvotUPQLlrsidqsK6tBH89Bc9kL5zHA6w==}
     deprecated: 'Modern JS already guarantees Array#sort() is a stable sort, so this library is deprecated. See the compatibility table on MDN: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#browser_compatibility'
 
-  stack-trace@1.0.0-pre2:
-    resolution: {integrity: sha512-2ztBJRek8IVofG9DBJqdy2N5kulaacX30Nz7xmkYF6ale9WBVmIy6mFBchvGX7Vx/MyjBhx+Rcxqrj+dbOnQ6A==}
-    engines: {node: '>=16'}
+  stack-trace@1.0.0:
+    resolution: {integrity: sha512-H6D7134xi6qONvh7ZHKgviXf+rd3vhGBSvebPZCaUkd8zvQ+7PtDw6CljPTe4cXWNf2IKZGNqw6VJXSb9IgBpA==}
+    engines: {node: '>=20.0.0'}
 
   strict-uri-encode@1.1.0:
     resolution: {integrity: sha512-R3f198pcvnB+5IpnBlRkphuE9n46WyVl8I39W/ZUTZLz4nqSP/oLYUrcnJrw462Ds8he4YKMov2efsTIw1BDGQ==}
@@ -6178,7 +6178,7 @@ snapshots:
 
   stable@0.1.8: {}
 
-  stack-trace@1.0.0-pre2: {}
+  stack-trace@1.0.0: {}
 
   strict-uri-encode@1.1.0: {}
 
@@ -6420,7 +6420,7 @@ snapshots:
       node-html-parser: 6.1.13
       simple-code-frame: 1.3.0
       source-map: 0.7.6
-      stack-trace: 1.0.0-pre2
+      stack-trace: 1.0.0
       vite: 8.0.10(@types/node@25.6.0)(esbuild@0.27.4)(terser@5.46.2)
 
   vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.4)(terser@5.46.2):
