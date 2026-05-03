@@ -261,7 +261,6 @@ const pl: BaseTranslation = {
   SCAN_AGAIN: 'Skanuj ponownie',
   NETWORK_SCANNER: 'Skaner sieci WiFi',
   NETWORK_NO_WIFI: 'Brak sieci WiFi w zasięgu',
-  NETWORK_BLANK_SSID: 'pozostaw puste aby wyłączyć WiFi i włączyć ETH',
   NETWORK_BLANK_BSSID: 'pozostaw puste aby używać tylko SSID',
   TX_POWER: 'Moc nadawania',
   HOSTNAME: 'Nazwa w sieci',

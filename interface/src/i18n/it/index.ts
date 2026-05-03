@@ -261,7 +261,6 @@ const it: Translation = {
   SCAN_AGAIN: 'Scansiona ancora',
   NETWORK_SCANNER: 'Scansione Rete',
   NETWORK_NO_WIFI: 'Nessuana rete WiFi trovata',
-  NETWORK_BLANK_SSID: 'lasciare vuoto per disattivare WiFi',
   NETWORK_BLANK_BSSID: 'lasciare vuoto per usare solo SSID',
   TX_POWER: 'Potenza Tx',
   HOSTNAME: 'Nome ospite',

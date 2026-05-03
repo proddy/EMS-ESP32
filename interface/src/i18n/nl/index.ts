@@ -261,7 +261,6 @@ const nl: Translation = {
   SCAN_AGAIN: 'Opnieuw scannen',
   NETWORK_SCANNER: 'Netwerk Scannen',
   NETWORK_NO_WIFI: 'Geen WiFi netwerken gevonden',
-  NETWORK_BLANK_SSID: 'laat leeg om WiFi uit te schakelen',
   NETWORK_BLANK_BSSID: 'laat leeg om alleen SSID te bebruiken',
   TX_POWER: 'Tx Vermogen',
   HOSTNAME: 'Hostnaam',

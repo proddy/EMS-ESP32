@@ -261,7 +261,6 @@ const sk: Translation = {
   SCAN_AGAIN: 'Skenovať znova',
   NETWORK_SCANNER: 'Sieťový skener',
   NETWORK_NO_WIFI: 'WiFi siete nenájdené',
-  NETWORK_BLANK_SSID: 'nechajte prázdne, ak chcete zakázať WiFi a povoliť ETH',
   NETWORK_BLANK_BSSID: 'ponechajte prázdne, ak chcete používať iba SSID',
   TX_POWER: 'Tx výkon',
   HOSTNAME: 'Hostname',
