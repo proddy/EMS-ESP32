@@ -165,6 +165,21 @@ const ApplicationSettings = () => {
     await doRestart();
   };
 
+  const sendmail = async () => {
+    await sendAPI({
+      device: 'system',
+      cmd: 'sendmail',
+      data: 'testmail',
+      id: 0
+    })
+      .then(() => {
+        toast.success(LL.SUCCESSFUL());
+      })
+      .catch((error: Error) => {
+        toast.error(error.message);
+      });
+  };
+
   const boardProfileItems = boardProfileSelectItems();
 
   const content = () => {
@@ -362,8 +377,7 @@ const ApplicationSettings = () => {
               container
               spacing={2}
               direction="row"
-              justifyContent="flex-start"
-              alignItems="flex-start"
+              sx={{ justifyContent: 'flex-start', alignItems: 'flex-start' }}
             >
               <Grid>
                 <ValidatedTextField
@@ -389,7 +403,10 @@ const ApplicationSettings = () => {
                   margin="normal"
                 />
               </Grid>
-              <Grid size={4} mt={!data.email_ssl && !data.email_starttls ? 0 : 3}>
+              <Grid
+                size={4}
+                sx={{ mt: !data.email_ssl && !data.email_starttls ? 0 : 3 }}
+              >
                 {!data.email_starttls && (
                   <BlockFormControlLabel
                     sx={{ width: '12ch' }}
@@ -481,6 +498,17 @@ const ApplicationSettings = () => {
                   onChange={updateFormValue}
                   margin="normal"
                 />
+              </Grid>
+              <Grid>
+                <Button
+                  sx={{ mt: 3 }}
+                  variant="outlined"
+                  color="primary"
+                  disabled={dirtyFlags.length !== 0}
+                  onClick={sendmail}
+                >
+                  Send Testmail
+                </Button>
               </Grid>
             </Grid>
           </>

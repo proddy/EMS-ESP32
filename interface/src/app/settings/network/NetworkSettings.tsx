@@ -89,7 +89,7 @@ const NetworkSettings = () => {
             static_ip_config: false,
             bandwidth20: false,
             tx_power: 0,
-            nosleep: false,
+            nosleep: true,
             enableMDNS: true,
             enableCORS: false,
             CORSOrigin: '*'
