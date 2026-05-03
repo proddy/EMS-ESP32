@@ -20,6 +20,13 @@
 
 #include "emsesp.h"
 
+#ifndef NETWORK_FALLBACK_AP_SSID
+#define NETWORK_FALLBACK_AP_SSID "ems-esp"
+#endif
+#ifndef NETWORK_FALLBACK_AP_PASSWORD
+#define NETWORK_FALLBACK_AP_PASSWORD "ems-esp-neo"
+#endif
+
 namespace emsesp {
 
 uuid::log::Logger Network::logger_{F_(network), uuid::log::Facility::KERN};
@@ -65,22 +72,13 @@ void Network::begin() {
         ap_subnetMask_    = settings.subnetMask;
     });
 
-    // Initialise WiFi - we only do this once, when the network service is started.
+    // set before begin() so the event handlers can race-clear it safely
+    wifi_connect_pending_     = false;
+    ethernet_connect_pending_ = false;
 
-    // WiFi.mode(WIFI_OFF);  // we want the device to come up in opmode=0 (WIFI_OFF), which is not the default after a flash erase
-
-    // pick the first usable phase based on what's actually configured on this device.
-    // done up-front so the early-return paths below still leave us in a sane phase
-    // (e.g. on a board with no SSID and no Ethernet PHY we want to land in AP without
-    // burning a 4-tick Ethernet timeout first)
     phase_ = initialPhase();
 
-    // if Wifi is disabled, or with no SSID, don't initialise WiFi
-    if (ssid_.isEmpty()) {
-        WiFi.mode(WIFI_OFF);
-        return;
-    }
-
+    // Initialise WiFi once when the Network service starts
     WiFi.persistent(false);
     WiFi.setAutoReconnect(false);
     WiFi.mode(WIFI_STA);
@@ -102,10 +100,6 @@ void Network::begin() {
     if (nosleep_) {
         WiFi.setSleep(false); // turn off sleep - WIFI_PS_NONE
     }
-
-    // set before begin() so the event handlers can race-clear it safely
-    wifi_connect_pending_     = false;
-    ethernet_connect_pending_ = false;
 
     // scan settings give connect issues since arduino 2.0.14 and arduino 3.x.x with some wifi systems
     // WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN); // default is FAST_SCAN
@@ -144,7 +138,6 @@ void Network::begin() {
             ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
 
         // clear the saved reason and the connect-pending guard on a fresh STA association,
-        // and latch wifi_ever_connected_ so future disconnects log as warnings
         WiFi.onEvent(
             [this](WiFiEvent_t /*event*/, WiFiEventInfo_t /*info*/) {
                 last_disconnect_reason_ = 0;
@@ -205,7 +198,7 @@ std::string Network::getMacAddress() const {
     }
 }
 
-// get the number of stations connected to the AP
+// get the number of sessions connected to the AP
 uint8_t Network::getStationNum() const {
 #ifndef EMSESP_STANDALONE
     return network_iface_ == NetIface::AP ? WiFi.softAPgetStationNum() : 0;
@@ -249,16 +242,14 @@ void Network::reconnect() {
 }
 
 // pick the first phase that has the hardware/config to even be attempted on this device.
-// boards without an Ethernet PHY skip straight to WIFI; without a configured SSID, straight to AP.
+// boards without an Ethernet PHY skip straight to WIFI; without a configured SSID, straight to AP
 NetPhase Network::initialPhase() const {
-#ifndef EMSESP_STANDALONE
     if (phy_type_ != PHY_type::PHY_TYPE_NONE) {
         return NetPhase::ETHERNET;
     }
     if (!ssid_.isEmpty()) {
         return NetPhase::WIFI;
     }
-#endif
     return NetPhase::AP;
 }
 
@@ -293,8 +284,7 @@ void Network::loop() {
 }
 
 // Re-validate the currently active connection
-// if a netif is no longer up or has lost its IP (cable unplugged, AP gone, DHCP lease lost, ...) we drop our state so
-// find_networks() can pick up a new one
+// if a netif is no longer up or has lost its IP (cable unplugged, AP gone, DHCP lease lost, ...) we drop our state so find_networks() can pick up a new one
 void Network::checkConnection() {
     if (network_iface_ == NetIface::NONE) {
         return;
@@ -602,16 +592,6 @@ void Network::startEthernet() {
 void Network::findNetworks() {
 #ifndef EMSESP_STANDALONE
 
-    // exit if already have a connection, unless in AP mode
-    // when in AP mode, it will always try and connect to the WiFi
-    // TODO what about if Eth drops and then comes back - we want to auto-switch?
-    // if (network_ip_ != 0 && !(WiFi.getMode() & WIFI_AP)) {
-    //     // for debugging only
-    //     // const esp_ip4_addr_t ip4 = {.addr = network_ip_};
-    //     // LOG_DEBUG("Network already connected via IPv4: " IPSTR, IP2STR(&ip4));
-    //     return;
-    // }
-
     struct NetInfo {
         esp_ip4_addr_t ip;
         esp_ip6_addr_t ip6;
@@ -754,23 +734,46 @@ void Network::startAP() {
         return;
     }
 
-    // don't start the soft-AP if it is disabled, or Ethernet has taken over or we have a real WiFi connection or it's already running
-    if (ap_provisionMode_ == AP_MODE_NEVER || network_connected() || WiFi.getMode() & WIFI_AP) {
+    // Don't start AP if wired/Wi-Fi STA is serving the network
+    if (ap_provisionMode_ == AP_MODE_NEVER || network_connected()) {
         return;
     }
 
-    WiFi.softAPenableIPv6(); // force IPv6, same as for STA - fixes https://github.com/emsesp/EMS-ESP32/issues/1922
-    WiFi.softAPConfig(ap_localIP_, ap_gatewayIP_, ap_subnetMask_);
+    // Captive-portal DNS is already bound to the softAP interface
+    if (ap_dnsServer_) {
+        return;
+    }
+
+    if (!WiFi.softAPConfig(ap_localIP_, ap_gatewayIP_, ap_subnetMask_)) {
+        LOG_DEBUG("softAPConfig failed");
+        return;
+    }
     esp_wifi_set_bandwidth(static_cast<wifi_interface_t>(ESP_IF_WIFI_AP), WIFI_BW_HT20);
-    WiFi.softAP(ap_ssid_.c_str(), ap_password_.c_str(), ap_channel_, ap_ssid_hidden_, ap_max_clients_);
+
+    // WiFi.softAPenableIPv6();
+
+    if (!WiFi.softAP(ap_ssid_.c_str(), ap_password_.c_str(), ap_channel_, ap_ssid_hidden_, ap_max_clients_)) {
+        LOG_ERROR("softAP failed; check SSID/password in AP settings");
+        WiFi.softAPdisconnect(true);
+        return;
+    }
 #if CONFIG_IDF_TARGET_ESP32C3
     WiFi.setTxPower(WIFI_POWER_8_5dBm); // https://www.wemos.cc/en/latest/c3/c3_mini_1_0_0.html#about-wifi
 #endif
     const IPAddress apIp = WiFi.softAPIP();
+    if (static_cast<uint32_t>(apIp) == 0) {
+        LOG_DEBUG("SoftAP has no IPv4 yet; skipping captive-portal DNS for now.");
+        WiFi.softAPdisconnect(true);
+        return;
+    }
     LOG_INFO("Starting Access Point with captive portal on %u.%u.%u.%u", apIp[0], apIp[1], apIp[2], apIp[3]);
 
-    // start DNS server for Captive Portal
     ap_dnsServer_ = new DNSServer;
+    if (!ap_dnsServer_) {
+        LOG_DEBUG("Out of memory starting captive-portal DNSServer");
+        WiFi.softAPdisconnect(true);
+        return;
+    }
     ap_dnsServer_->start(DNS_PORT, "*", apIp);
 #endif
 }

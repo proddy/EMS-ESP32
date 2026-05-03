@@ -43,7 +43,7 @@ namespace emsesp {
 #define NETWORK_RECONNECTION_DELAY_LONG 10000 // 10 seconds - for debugging
 #endif
 
-#define MAX_NETWORK_RECONNECTION_ATTEMPTS 4 // maximum number of network reconnection attempts before going to AP fallback
+#define MAX_NETWORK_RECONNECTION_ATTEMPTS 3 // maximum number of network reconnection attempts before going to AP fallback
 
 #define DNS_PORT 53 // dns server port for captive portal
 
@@ -88,9 +88,6 @@ enum class NetIface : uint8_t {
     AP,       // 3
 };
 
-// Connection bring-up state machine. We try the "real" interfaces first (Ethernet, then WiFi)
-// each with its own MAX_NETWORK_RECONNECTION_ATTEMPTS budget, before falling back to the soft-AP
-// captive portal. Phase is advanced in find_networks() once retries are exhausted.
 enum class NetPhase : uint8_t {
     ETHERNET = 0,
     WIFI     = 1,
@@ -247,7 +244,7 @@ class Network {
 
 // for the captive portal in AP mode
 #ifndef EMSESP_STANDALONE
-    DNSServer * ap_dnsServer_;
+    DNSServer * ap_dnsServer_ = nullptr;
 #endif
 };
 
