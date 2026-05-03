@@ -463,7 +463,7 @@ bool WebStatusService::refresh_versions_cache() {
 
     versions_cache_valid_ = true;
 #if defined(EMSESP_DEBUG)
-    EMSESP::logger().debug("versions.json: refreshed (stable=%s dev=%s), current=%s",
+    EMSESP::logger().debug("versions.json: fetched stable=%s, dev=%s, current=%s",
                            versions_stable_.version.c_str(),
                            versions_dev_.version.c_str(),
                            current_version_s.c_str());
