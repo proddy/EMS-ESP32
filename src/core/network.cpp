@@ -67,11 +67,15 @@ void Network::begin() {
 
     // Initialise WiFi - we only do this once, when the network service is started.
 
-    // We want the device to come up in opmode=0 (WIFI_OFF), which is not the default after a flash erase.
-    // Persistence is true by default, so this WiFi.mode() call writes opmode=0 to NVS for future boots.
-    // WiFi.mode(WIFI_OFF);
+    // WiFi.mode(WIFI_OFF);  // we want the device to come up in opmode=0 (WIFI_OFF), which is not the default after a flash erase
 
-    // if Wifi is disabled, with no SSID, stop here
+    // pick the first usable phase based on what's actually configured on this device.
+    // done up-front so the early-return paths below still leave us in a sane phase
+    // (e.g. on a board with no SSID and no Ethernet PHY we want to land in AP without
+    // burning a 4-tick Ethernet timeout first)
+    phase_ = initialPhase();
+
+    // if Wifi is disabled, or with no SSID, don't initialise WiFi
     if (ssid_.isEmpty()) {
         WiFi.mode(WIFI_OFF);
         return;
@@ -99,20 +103,19 @@ void Network::begin() {
         WiFi.setSleep(false); // turn off sleep - WIFI_PS_NONE
     }
 
-    wifi_connect_pending_ = false; // set before begin() so the event handlers can race-clear it safely
+    // set before begin() so the event handlers can race-clear it safely
+    wifi_connect_pending_     = false;
+    ethernet_connect_pending_ = false;
 
     // scan settings give connect issues since arduino 2.0.14 and arduino 3.x.x with some wifi systems
     // WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN); // default is FAST_SCAN
     // WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL); // is default, no need to set
 
-    // arduino-esp32's WiFi.onEvent() simply appends to an internal callback list with no
-    // de-duplication, so register the lambdas only once across the lifetime of this Network instance
+    // avoid duplicate registration, so register the lambdas only once across the lifetime of this Network instance
     if (!wifi_events_registered_) {
         wifi_events_registered_ = true;
 
-        // Defer Tx power setting until STA is actually started. Calling WiFi.setTxPower() before
-        // WIFI_EVENT_STA_START fires would fail with "Neither AP or STA has been started" because
-        // WiFi.STA.started() only flips after esp_wifi_start() raises the event asynchronously.
+        // Defer Tx power setting until STA is actually started
         WiFi.onEvent(
             [this](WiFiEvent_t /*event*/, WiFiEventInfo_t /*info*/) {
 #ifdef BOARD_C3_MINI_V1
@@ -128,11 +131,6 @@ void Network::begin() {
 
         // capture the WIFI_REASON_* code on every STA disconnect event so check_connection() can
         // log a meaningful reason when its periodic poll notices we're no longer associated.
-        // Also release the connect-pending guard so the next loop tick can issue a fresh WiFi.begin().
-        // The first STA_DISCONNECTED after boot is suppressed because arduino-esp32 hard-codes a
-        // "retry once on first_connect" inside its own STA event handler (see STA.cpp), so a
-        // transient initial AUTH_FAIL / NO_AP_FOUND / etc. is automatically retried and almost
-        // always succeeds; logging it as a WARNING is misleading noise.
         WiFi.onEvent(
             [this](WiFiEvent_t /*event*/, WiFiEventInfo_t info) {
                 last_disconnect_reason_ = info.wifi_sta_disconnected.reason;
@@ -235,17 +233,33 @@ void Network::reconnect() {
 #endif
 
     // reset network state
-    network_ip_             = 0;
-    network_iface_          = NetIface::NONE;
-    has_ipv6_               = false;
-    juststopped_            = false;
-    wifi_connect_pending_   = false;
-    last_disconnect_reason_ = 0;
-    connect_retry_          = 0;
-    reconnect_count_        = 0;
+    network_ip_               = 0;
+    network_iface_            = NetIface::NONE;
+    has_ipv6_                 = false;
+    juststopped_              = false;
+    wifi_connect_pending_     = false;
+    ethernet_connect_pending_ = false;
+    last_disconnect_reason_   = 0;
+    connect_retry_            = 0;
+    reconnect_count_          = 0;
+    phase_                    = NetPhase::ETHERNET; // begin() will refine this once settings are reloaded
 
     // reload the network settings and apply them
     begin();
+}
+
+// pick the first phase that has the hardware/config to even be attempted on this device.
+// boards without an Ethernet PHY skip straight to WIFI; without a configured SSID, straight to AP.
+NetPhase Network::initialPhase() const {
+#ifndef EMSESP_STANDALONE
+    if (phy_type_ != PHY_type::PHY_TYPE_NONE) {
+        return NetPhase::ETHERNET;
+    }
+    if (!ssid_.isEmpty()) {
+        return NetPhase::WIFI;
+    }
+#endif
+    return NetPhase::AP;
 }
 
 // network loop, looking for new and disconnecting networks
@@ -258,13 +272,12 @@ void Network::loop() {
     if (!lastConnectionAttempt_ || static_cast<uint32_t>(currentMillis - lastConnectionAttempt_) >= reconnectDelay) {
         lastConnectionAttempt_ = currentMillis;
 
-        // manage network interfaces
+        // manage the network interfaces: Ethernet, WiFi and AP in that order
         startEthernet(); // Ethernet
         startWIFI();     // WiFi
         startAP();       // Captive Portal (AP)
 
         // already have a connection: verify it's still alive
-        // or trigger if the WiFi handshaked failed on the WiFi.begin() call
         if (network_ip_ != 0 || last_disconnect_reason_ != 0) {
             checkConnection();
         }
@@ -306,15 +319,18 @@ void Network::checkConnection() {
             if (reason == 0) {
                 reason = WIFI_REASON_UNSPECIFIED; // event hasn't fired yet (or was cleared); avoid logging "0"
             }
-            wifi_connect_pending_ = false;
             LOG_INFO("WiFi connection lost (reason %u: %s)", reason, disconnectReason(reason));
+            wifi_connect_pending_ = false;
         } else if (network_iface_ == NetIface::ETHERNET) {
             LOG_INFO("Ethernet connection lost");
+            ethernet_connect_pending_ = false;
         }
         juststopped_   = true;
         network_iface_ = NetIface::NONE;
         network_ip_    = 0;
         has_ipv6_      = false;
+        connect_retry_ = 0;
+        phase_         = initialPhase();
     }
 #endif
 }
@@ -322,12 +338,12 @@ void Network::checkConnection() {
 // set the WiFi TxPower based on the RSSI (signal strength), picking the lowest value
 // code is based of RSSI (signal strength) and copied from Tasmota's WiFiSetTXpowerBasedOnRssi() which is copied ESPEasy's ESPEasyWifi.SetWiFiTXpower() function
 // Range ESP32  : 2dBm - 20dBm
-// 802.11b - wifi1
-// 802.11a - wifi2
-// 802.11g - wifi3
-// 802.11n - wifi4
-// 802.11ac - wifi5
-// 802.11ax - wifi6
+//  802.11b - wifi1
+//  802.11a - wifi2
+//  802.11g - wifi3
+//  802.11n - wifi4
+//  802.11ac - wifi5
+//  802.11ax - wifi6
 // tx_power is the Tx power to set, 0 for auto
 void Network::setWiFiPower(uint8_t tx_power) {
 #ifndef EMSESP_STANDALONE
@@ -341,7 +357,7 @@ void Network::setWiFiPower(uint8_t tx_power) {
     int max_tx_pwr = MAX_TX_PWR_DBM_n;         // assume wifi4
     int threshold  = WIFI_SENSITIVITY_n + 120; // Margin in dBm * 10 on top of threshold
 
-    // Assume AP sends with max set by ETSI standard.
+    // Assume AP sends with max set by ETSI standard
     // 2.4 GHz: 100 mWatt (20 dBm)
     // US and some other countries allow 1000 mW (30 dBm)
     int rssi    = WiFi.RSSI() * 10;
@@ -381,7 +397,7 @@ void Network::setWiFiPower(uint8_t tx_power) {
 #endif
 
     if (!WiFi.setTxPower(p)) {
-        emsesp::EMSESP::logger().warning("Failed to set WiFi Tx Power!!");
+        LOG_DEBUG("Failed to set WiFi Tx Power");
     }
 #endif
 }
@@ -491,14 +507,19 @@ const char * Network::disconnectReason(uint8_t code) {
 // WiFi management
 void Network::startWIFI() {
 #ifndef EMSESP_STANDALONE
-    // exit if WiFi is already connected, or if we have no SSID or another Wifi.begin() is already in progress
-    if (WiFi.isConnected() || ssid_.isEmpty() || wifi_connect_pending_) {
+    // only run during the WIFI phase; ETHERNET phase keeps WiFi quiet, AP phase has its own bring-up
+    if (phase_ != NetPhase::WIFI) {
+        return;
+    }
+
+    // exit if WiFi or Ethernet is already connected, or if we have no SSID or another Wifi.begin() is already in progress
+    if (WiFi.isConnected() || ssid_.isEmpty() || ethernet_connected() || wifi_connect_pending_) {
         return;
     }
 
     wifi_connect_pending_ = true;
 
-    // LOG_DEBUG("WiFi connection with %s and %s", ssid_.c_str(), password_.c_str());
+    LOG_DEBUG("WiFi connection with %s and %s", ssid_.c_str(), password_.c_str());
 
     // attempt to connect to the wifi network
     // the event handlers handle error handling and retries
@@ -513,12 +534,17 @@ void Network::startWIFI() {
 
 // Ethernet management
 // Brings up the ETH driver / netif exactly once. After ETH.begin() returns true the driver
-// continues to run autonomously (link negotiation, DHCP, etc); the loop must NOT call ETH.begin()
-// again on every iteration because that thrashes the netif and can prevent DHCP from completing
+// continues to run autonomously (link negotiation, DHCP, etc)
 void Network::startEthernet() {
 #if CONFIG_IDF_TARGET_ESP32
+    // only run during the ETHERNET phase; once we've given up on Ethernet, the driver is left
+    // running in case the link comes up later, but we no longer try to (re)start it here
+    if (phase_ != NetPhase::ETHERNET) {
+        return;
+    }
+
     // already up and running, nothing to do
-    if (eth_started_) {
+    if (ethernet_connect_pending_ || ethernet_connected()) {
         return;
     }
 
@@ -526,6 +552,12 @@ void Network::startEthernet() {
 
     // no ethernet present
     if (phy_type_ == PHY_type::PHY_TYPE_NONE) {
+        return;
+    }
+
+    // disabled Ethernet for boards with only 4MB flash and no PSRAM
+    if (ESP.getFlashChipSize() < 4194304 && !ESP.getPsramSize()) { // 4MB
+        LOG_NOTICE("Ethernet disabled for boards with only 4MB flash");
         return;
     }
 
@@ -537,11 +569,10 @@ void Network::startEthernet() {
         digitalWrite(eth_power_, HIGH);
     }
 
-    // call to ETH.begin(type, phy_addr, mdc, mdio, power, clock_mode)
-    // mdc = 23 =  Pin# of the I²C clock signal for the Ethernet PHY - hardcoded
-    // mdio = 18 = Pin# of the I²C IO signal for the Ethernet PHY - hardcoded
-    // phy_addr = eth_phy_addr_ = I²C-address of Ethernet PHY (0 or 1 for LAN8720, 31 for TLK110)
-    // power = eth_power_ = Pin# of the enable signal for the external crystal oscillator (-1 to disable for internal APLL source)
+    // mdc = 23 = Pin# of the I²C clock signal for the Ethernet PHY
+    // mdio = 18 = Pin# of the I²C IO signal for the Ethernet PHY
+    // phy_addr = I²C-address of Ethernet PHY (0 or 1 for LAN8720, 31 for TLK110)
+    // power = Pin# of the enable signal for the external crystal oscillator (-1 to disable for internal APLL source)
     // type = Type of the Ethernet PHY (LAN8720 or TLK110)
     // clock_mode =
     //  ETH_CLOCK_GPIO0_IN   = 0  RMII clock input to GPIO0
@@ -552,15 +583,15 @@ void Network::startEthernet() {
                           : (phy_type_ == PHY_type::PHY_TYPE_TLK110) ? ETH_PHY_TLK110
                                                                      : ETH_PHY_RTL8201; // Type of the Ethernet PHY (LAN8720 or TLK110)
     if (ETH.begin(type, eth_phy_addr_, 23, 18, eth_power_, (eth_clock_mode_t)eth_clock_mode_)) {
-        LOG_DEBUG("Ethernet started");
-        eth_started_ = true;                // mark up; do not re-enter this block until reboot / explicit teardown
+        LOG_DEBUG("Ethernet module found - starting");
+        ethernet_connect_pending_ = true;
         ETH.setHostname(hostname_.c_str()); // Push hostname to the ETH netif immediately after it's created
         ETH.enableIPv6(true);
         if (staticIPConfig_) {
             ETH.config(localIP_, gatewayIP_, subnetMask_, dnsIP1_, dnsIP2_);
         }
     } else {
-        LOG_ERROR("Failed to start Ethernet");
+        LOG_ERROR("Failed to start Ethernet module");
     }
 #endif
 #endif
@@ -631,14 +662,23 @@ void Network::findNetworks() {
         }
     }
 
-    // LOG_DEBUG("best_iface: %d, network_iface_: %d", best_iface, network_iface_);
-
     // if we have a connection and it's a new one, set it up
     if (best_iface != NetIface::NONE && best_iface != network_iface_) {
         network_ip_    = info.ip.addr;
         network_iface_ = iface_from_desc(info.desc); // "sta"/"ap"/"eth*"
         has_ipv6_      = info.has_ipv6;
         connect_retry_ = 0;
+
+        // sync the phase to the interface that actually came up. ETH can come up late
+        // (e.g. cable plugged in after we'd already moved on to WiFi/AP) and we want the
+        // next disconnect-driven retry cycle to start from the right place.
+        if (network_iface_ == NetIface::ETHERNET) {
+            phase_ = NetPhase::ETHERNET;
+        } else if (network_iface_ == NetIface::WIFI) {
+            phase_ = NetPhase::WIFI;
+        } else if (network_iface_ == NetIface::AP) {
+            phase_ = NetPhase::AP;
+        }
 
         LOG_INFO("Network connected via %s (IP: " IPSTR ")",
                  network_iface_ == NetIface::ETHERNET ? "Ethernet"
@@ -675,7 +715,31 @@ void Network::findNetworks() {
         network_iface_ = NetIface::NONE;
         has_ipv6_      = false;
         connect_retry_++;
-        LOG_DEBUG("No active network interfaces found yet (retry #%d)", connect_retry_);
+        LOG_DEBUG("Looking for network interfaces (retry #%d, phase=%s)",
+                  connect_retry_,
+                  phase_ == NetPhase::ETHERNET ? "Ethernet"
+                  : phase_ == NetPhase::WIFI   ? "WiFi"
+                                               : "AP");
+
+        // give up on this interface and try the next one. ETHERNET -> WIFI (or straight to AP if no SSID configured); WIFI -> AP.
+        if (connect_retry_ >= MAX_NETWORK_RECONNECTION_ATTEMPTS && phase_ != NetPhase::AP) {
+            if (phase_ == NetPhase::ETHERNET) {
+                if (ssid_.isEmpty()) {
+                    LOG_WARNING("Ethernet failed to connect after %u attempts, falling back to AP", connect_retry_);
+                    phase_ = NetPhase::AP;
+                } else {
+                    LOG_WARNING("Ethernet failed to connect after %u attempts, switching to WiFi", connect_retry_);
+                    phase_ = NetPhase::WIFI;
+                }
+                ethernet_connect_pending_ = false;
+            } else if (phase_ == NetPhase::WIFI) {
+                LOG_WARNING("WiFi failed to connect after %u attempts, falling back to AP", connect_retry_);
+                phase_                = NetPhase::AP;
+                wifi_connect_pending_ = false;
+                WiFi.disconnect(true);
+            }
+            connect_retry_ = 0;
+        }
     }
 
 #endif
@@ -685,8 +749,8 @@ void Network::findNetworks() {
 // access point (soft-AP) and the captive portal
 void Network::startAP() {
 #ifndef EMSESP_STANDALONE
-    // Only start AP as a fallback if the Network has failed
-    if (connect_retry_ < MAX_NETWORK_RECONNECTION_ATTEMPTS) {
+    // only start AP as a fallback once both the Ethernet and WiFi phases have given up
+    if (phase_ != NetPhase::AP) {
         return;
     }
 

@@ -36,7 +36,12 @@
 namespace emsesp {
 
 #define NETWORK_RECONNECTION_DELAY_SHORT 5000 // 5 seconds
+
+#ifndef EMSESP_DEBUG
 #define NETWORK_RECONNECTION_DELAY_LONG 60000 // 1 minute
+#else
+#define NETWORK_RECONNECTION_DELAY_LONG 10000 // 10 seconds - for debugging
+#endif
 
 #define MAX_NETWORK_RECONNECTION_ATTEMPTS 4 // maximum number of network reconnection attempts before going to AP fallback
 
@@ -75,13 +80,21 @@ namespace emsesp {
 
 // which physical interface we are currently using for the active network connection.
 // Mapped from the esp-netif description string returned by esp_netif_get_desc(): "sta" -> WIFI,
-// "ap" -> AP, "eth"/"eth1"/"eth2"/... (arduino-esp32 v3.x suffixes ETH netifs because it supports
-// multiple ETH instances) -> ETHERNET. Anything else stays as NONE.
+// "ap" -> AP, "eth"/"eth1"/"eth2"/...
 enum class NetIface : uint8_t {
-    NONE = 0,
+    NONE = 0, // 0
     WIFI,     // 1
     ETHERNET, // 2
     AP,       // 3
+};
+
+// Connection bring-up state machine. We try the "real" interfaces first (Ethernet, then WiFi)
+// each with its own MAX_NETWORK_RECONNECTION_ATTEMPTS budget, before falling back to the soft-AP
+// captive portal. Phase is advanced in find_networks() once retries are exhausted.
+enum class NetPhase : uint8_t {
+    ETHERNET = 0,
+    WIFI     = 1,
+    AP       = 2,
 };
 
 class Network {
@@ -173,6 +186,7 @@ class Network {
     void         setWiFiPower(uint8_t tx_power);
     const char * disconnectReason(uint8_t code);
     void         stopAP();
+    NetPhase     initialPhase() const;
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -185,14 +199,16 @@ class Network {
     NetIface         network_iface_          = NetIface::NONE;
     bool             has_ipv6_               = false;
     bool             juststopped_            = false;
-    bool             eth_started_            = false; // true after ETH.begin() has succeeded once; prevents repeated re-init while DHCP is still running
     volatile uint8_t last_disconnect_reason_ = 0;
     uint16_t         connect_retry_          = 0; // number of network re-connection attempts
 
-    volatile bool wifi_connect_pending_ = false;
+    volatile bool wifi_connect_pending_     = false;
+    volatile bool ethernet_connect_pending_ = false;
+
+    NetPhase phase_ = NetPhase::ETHERNET;
 
     bool wifi_events_registered_ = false; // ensure WiFi.onEvent() handlers are registered only once across begin()/reconnect() cycles
-    bool wifi_ever_connected_    = false; // set true once we've successfully obtained an IP; used to silence the harmless first-attempt disconnect emitted by arduino-esp32's built-in retry-once behaviour
+    bool wifi_ever_connected_    = false; // set true once we've successfully obtained an IP
 
     // Network and AP settings
     bool      enableMDNS_;
