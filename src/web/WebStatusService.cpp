@@ -370,9 +370,7 @@ void WebStatusService::getVersions(JsonObject root) {
 }
 
 // schedule the next versions.json fetch a few seconds out so the network stack has time to settle
-// (DHCP completion, default-netif assignment and DNS server propagation through lwip) before
-// HTTPClient::begin() does the hostByName() lookup. Without this delay the very first fetch races
-// with the link-up event and arduino-esp32 logs a noisy "DNS Failed ... error '-54'".
+// (DHCP completion, default-netif assignment and DNS server propagation through lwip)
 void WebStatusService::schedule_versions_refresh() {
 #ifndef EMSESP_STANDALONE
     uint32_t next = uuid::get_uptime() + VERSIONS_INITIAL_FETCH_DELAY_MS;
