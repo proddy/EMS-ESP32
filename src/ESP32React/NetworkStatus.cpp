@@ -51,7 +51,7 @@ void NetworkStatus::networkStatus(AsyncWebServerRequest * request) {
         root["ssid"]            = WiFi.SSID();
         root["bssid"]           = WiFi.BSSIDstr();
         root["channel"]         = WiFi.channel();
-        root["reconnect_count"] = emsesp::EMSESP::network_.getWifiReconnects();
+        root["reconnect_count"] = emsesp::EMSESP::network_.getNetworkReconnects();
         root["subnet_mask"]     = WiFi.subnetMask().toString();
 
         if (WiFi.gatewayIP() != INADDR_NONE) {

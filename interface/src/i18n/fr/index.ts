@@ -261,7 +261,6 @@ const fr: Translation = {
   SCAN_AGAIN: 'Rescanner',
   NETWORK_SCANNER: 'Scan réseau',
   NETWORK_NO_WIFI: 'Pas de réseau WiFi trouvé',
-  NETWORK_BLANK_SSID: 'laisser vide pour désactiver le WiFi',
   NETWORK_BLANK_BSSID: 'laisser vide pour utiliser uniquement le SSID',
   TX_POWER: 'Puissance Tx',
   HOSTNAME: "Nom d'hôte",

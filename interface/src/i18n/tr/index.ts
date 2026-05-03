@@ -261,7 +261,6 @@ const tr: Translation = {
   SCAN_AGAIN: 'Tekrar tara',
   NETWORK_SCANNER: 'Ağ Tarayıcısı',
   NETWORK_NO_WIFI: 'Hiçbir Kablosuz Ağ bulunamadı',
-  NETWORK_BLANK_SSID: 'Kablosuz ağı devre dışı bırakmak için boş bırakın',
   NETWORK_BLANK_BSSID: 'sadece SSID kullanmak için boş bırakın',
   TX_POWER: 'Aktarım gücü',
   HOSTNAME: 'Ana Makine Adı',

@@ -742,6 +742,8 @@ void System::button_OnClick(PButton & b) {
 }
 
 // button double click
+// reconnect to AP by removing the SSID from the network settings
+// note: in v3.9 this is normal behaviour to fallback to AP if the Wifi or Ethernet connection fails
 void System::button_OnDblClick(PButton & b) {
     LOG_NOTICE("Button pressed - double click - wifi reconnect to AP");
 #ifndef EMSESP_STANDALONE
@@ -998,7 +1000,7 @@ void System::heartbeat_json(JsonObject output) {
         int8_t rssi              = WiFi.RSSI();
         output["rssi"]           = rssi;
         output["wifistrength"]   = wifi_quality(rssi);
-        output["wifireconnects"] = EMSESP::network_.getWifiReconnects();
+        output["wifireconnects"] = EMSESP::network_.getNetworkReconnects();
     }
 #endif
 
@@ -1307,19 +1309,19 @@ void System::show_system(uuid::console::Shell & shell) {
     shell.println("Network:");
     switch (WiFi.status()) {
     case WL_IDLE_STATUS:
-        shell.printfln(" Status: Idle");
+        shell.printfln(" WiFi Status: Idle");
         break;
 
     case WL_NO_SSID_AVAIL:
-        shell.printfln(" Status: Network not found");
+        shell.printfln(" WiFi Status: Network not found");
         break;
 
     case WL_SCAN_COMPLETED:
-        shell.printfln(" Status: Network scan complete");
+        shell.printfln(" WiFi Status: Network scan complete");
         break;
 
     case WL_CONNECTED:
-        shell.printfln(" Status: WiFi connected");
+        shell.printfln(" WiFi Status: Connected");
         shell.printfln(" SSID: %s", WiFi.SSID().c_str());
         shell.printfln(" BSSID: %s", WiFi.BSSIDstr().c_str());
         shell.printfln(" RSSI: %d dBm (%d %%)", WiFi.RSSI(), wifi_quality(WiFi.RSSI()));
@@ -1367,8 +1369,13 @@ void System::show_system(uuid::console::Shell & shell) {
             shell.printfln(" IPv6 address: %s", uuid::printable_to_string(ETH.linkLocalIPv6()).c_str());
         }
     }
-    shell.println();
 
+    // show AP is connected
+    if (EMSESP::network_.ap_connected()) {
+        shell.printfln(" AP Status: connected");
+    }
+
+    shell.println();
     shell.println("Syslog:");
     if (!syslog_enabled_) {
         shell.printfln(" Syslog: disabled");
@@ -2451,7 +2458,7 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
         node["network"]        = "WiFi";
         node["hostname"]       = WiFi.getHostname();
         node["RSSI"]           = WiFi.RSSI();
-        node["WIFIReconnects"] = EMSESP::network_.getWifiReconnects();
+        node["WIFIReconnects"] = EMSESP::network_.getNetworkReconnects();
         // node["MAC"]             = WiFi.macAddress();
         // node["IPv4 address"]    = uuid::printable_to_string(WiFi.localIP()) + "/" + uuid::printable_to_string(WiFi.subnetMask());
         // node["IPv4 gateway"]    = uuid::printable_to_string(WiFi.gatewayIP());

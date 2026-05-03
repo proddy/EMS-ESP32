@@ -30,10 +30,11 @@ class WebStatusService {
         return versions_cache_valid_;
     }
 
-    // refresh the versions.json cache
-    void schedule_versions_refresh() {
-        versions_next_fetch_ms_ = 1;
-    }
+    // schedule a refresh of the versions.json cache. Defers the fetch by
+    // VERSIONS_INITIAL_FETCH_DELAY_MS so the network stack (DHCP, default netif, DNS server)
+    // has time to settle after the link first comes up — otherwise hostByName() can fail
+    // immediately on boot with a noisy "DNS Failed ... error '-54'".
+    void schedule_versions_refresh();
 
     bool current_upgradeable() const; // true if a newer version is available
 
@@ -71,8 +72,9 @@ class WebStatusService {
 
     bool refresh_versions_cache(); // does the actual HTTPS fetch + parse, returns true on success
 
-    static constexpr uint32_t VERSIONS_REFRESH_INTERVAL_MS = 60UL * 60UL * 1000UL; // 1 hour on success
-    static constexpr uint32_t VERSIONS_RETRY_INTERVAL_MS   = 5UL * 60UL * 1000UL;  // 5 min after failure
+    static constexpr uint32_t VERSIONS_REFRESH_INTERVAL_MS    = 60UL * 60UL * 1000UL; // 1 hour on success
+    static constexpr uint32_t VERSIONS_RETRY_INTERVAL_MS      = 5UL * 60UL * 1000UL;  // 5 min after failure
+    static constexpr uint32_t VERSIONS_INITIAL_FETCH_DELAY_MS = 5UL * 1000UL;         // 5 s after a link comes up
 };
 
 } // namespace emsesp

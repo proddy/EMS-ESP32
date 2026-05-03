@@ -35,12 +35,17 @@
 
 namespace emsesp {
 
-#define NETWORK_RECONNECTION_DELAY_SHORT 3000 // 3 seconds
-#define NETWORK_RECONNECTION_DELAY_LONG 60000 // 60 seconds
+#define NETWORK_RECONNECTION_DELAY_SHORT 5000 // 5 seconds
 
-#define MAX_NETWORK_RECONNECTION_ATTEMPTS 3 // maximum number of network reconnection attempts
+#ifndef EMSESP_DEBUG
+#define NETWORK_RECONNECTION_DELAY_LONG 60000 // 1 minute
+#else
+#define NETWORK_RECONNECTION_DELAY_LONG 10000 // 10 seconds - for debugging
+#endif
 
-#define DNS_PORT 53
+#define MAX_NETWORK_RECONNECTION_ATTEMPTS 3 // maximum number of network reconnection attempts before going to AP fallback
+
+#define DNS_PORT 53 // dns server port for captive portal
 
 // copied from Tasmota
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -75,23 +80,24 @@ namespace emsesp {
 
 // which physical interface we are currently using for the active network connection.
 // Mapped from the esp-netif description string returned by esp_netif_get_desc(): "sta" -> WIFI,
-// "ap" -> AP, "eth"/"eth1"/"eth2"/... (arduino-esp32 v3.x suffixes ETH netifs because it supports
-// multiple ETH instances) -> ETHERNET. Anything else stays as NONE.
+// "ap" -> AP, "eth"/"eth1"/"eth2"/...
 enum class NetIface : uint8_t {
-    NONE = 0,
-    WIFI,
-    ETHERNET,
-    AP,
+    NONE = 0, // 0
+    WIFI,     // 1
+    ETHERNET, // 2
+    AP,       // 3
+};
+
+enum class NetPhase : uint8_t {
+    ETHERNET = 0,
+    WIFI     = 1,
+    AP       = 2,
 };
 
 class Network {
   public:
     void begin();
     void loop();
-
-    uint16_t getWifiReconnects() const {
-        return connectcount_;
-    }
 
     uint32_t network_ip() const {
         return network_ip_;
@@ -121,8 +127,8 @@ class Network {
         return has_ipv6_ && (network_iface_ == NetIface::WIFI || network_iface_ == NetIface::ETHERNET);
     }
 
-    uint16_t getWifiReconnects() {
-        return connectcount_;
+    uint16_t getNetworkReconnects() {
+        return reconnect_count_;
     }
 
     std::string getLocalIP() const;
@@ -149,10 +155,25 @@ class Network {
         return NetIface::NONE;
     }
 
+    static const char * network_iface_to_string(NetIface iface) {
+        switch (iface) {
+        case NetIface::WIFI:
+            return "WiFi";
+        case NetIface::ETHERNET:
+            return "Ethernet";
+        case NetIface::AP:
+            return "AP";
+        case NetIface::NONE:
+        default:
+            return "None";
+        }
+        return "unknown";
+    }
+
   private:
     static uuid::log::Logger logger_;
 
-    bool         findNetworks();
+    void         findNetworks();
     void         checkConnection();
     void         startmDNS() const;
     bool         formatBSSID(const String & bssid, uint8_t (&mac)[6]);
@@ -162,6 +183,7 @@ class Network {
     void         setWiFiPower(uint8_t tx_power);
     const char * disconnectReason(uint8_t code);
     void         stopAP();
+    NetPhase     initialPhase() const;
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -169,15 +191,21 @@ class Network {
 #endif
 
     unsigned long    lastConnectionAttempt_  = 0;
-    uint16_t         connectcount_           = 0; // number of network reconnects
+    uint16_t         reconnect_count_        = 0; // number of network reconnects
     uint32_t         network_ip_             = 0;
     NetIface         network_iface_          = NetIface::NONE;
     bool             has_ipv6_               = false;
     bool             juststopped_            = false;
-    bool             eth_started_            = false; // true after ETH.begin() has succeeded once; prevents repeated re-init while DHCP is still running
     volatile uint8_t last_disconnect_reason_ = 0;
     uint16_t         connect_retry_          = 0; // number of network re-connection attempts
-    volatile bool    wifi_connect_pending_   = false;
+
+    volatile bool wifi_connect_pending_     = false;
+    volatile bool ethernet_connect_pending_ = false;
+
+    NetPhase phase_ = NetPhase::ETHERNET;
+
+    bool wifi_events_registered_ = false; // ensure WiFi.onEvent() handlers are registered only once across begin()/reconnect() cycles
+    bool wifi_ever_connected_    = false; // set true once we've successfully obtained an IP
 
     // Network and AP settings
     bool      enableMDNS_;
@@ -216,7 +244,7 @@ class Network {
 
 // for the captive portal in AP mode
 #ifndef EMSESP_STANDALONE
-    DNSServer * ap_dnsServer_;
+    DNSServer * ap_dnsServer_ = nullptr;
 #endif
 };
 

@@ -72,12 +72,6 @@ StateUpdateResult NetworkSettings::update(JsonObject root, NetworkSettings & set
         settings.staticIPConfig = false;
     }
 
-    // see if we need to inform the user of a restart
-    // if tx power, enableCORS, CORSOrigin, ssid changes, we need to restart
-    if (tx_power != settings.tx_power || enableCORS != settings.enableCORS || CORSOrigin != settings.CORSOrigin
-        || (ssid != settings.ssid && settings.ssid.isEmpty())) {
-        return StateUpdateResult::CHANGED_RESTART; // tell WebUI that a restart is needed
-    }
-
-    return StateUpdateResult::CHANGED;
+    // always best to do a restart after changing network settings
+    return StateUpdateResult::CHANGED_RESTART;
 }

@@ -261,7 +261,6 @@ const sv: Translation = {
   SCAN_AGAIN: 'Sök igen',
   NETWORK_SCANNER: 'Hittade nätverk',
   NETWORK_NO_WIFI: 'Inga WiFi-nätverk hittades',
-  NETWORK_BLANK_SSID: 'lämna blankt för att inaktivera WiFi',
   NETWORK_BLANK_BSSID: 'lämna blankt för att bara använda SSID',
   TX_POWER: 'Tx effekt',
   HOSTNAME: 'Värdnamn',

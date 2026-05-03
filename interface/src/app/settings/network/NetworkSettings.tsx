@@ -173,7 +173,7 @@ const NetworkSettings = () => {
           <ValidatedTextField
             fieldErrors={fieldErrors || {}}
             name="ssid"
-            label={'SSID (' + LL.NETWORK_BLANK_SSID() + ')'}
+            label="SSID"
             fullWidth
             variant="outlined"
             value={data.ssid}

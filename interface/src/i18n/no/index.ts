@@ -261,7 +261,6 @@ const no: Translation = {
   SCAN_AGAIN: 'Søk igjen',
   NETWORK_SCANNER: 'Nettverk Scanner',
   NETWORK_NO_WIFI: 'Ingen trådløse nett funnet',
-  NETWORK_BLANK_SSID: 'la feltet være blankt for å deaktivisere trådløst nettverk',
   NETWORK_BLANK_BSSID: 'la feltet være blankt for å bruke kun SSID',
   TX_POWER: 'Tx Effekt',
   HOSTNAME: 'Hostname',

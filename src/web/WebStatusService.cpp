@@ -369,6 +369,18 @@ void WebStatusService::getVersions(JsonObject root) {
 #endif
 }
 
+// schedule the next versions.json fetch a few seconds out so the network stack has time to settle
+// (DHCP completion, default-netif assignment and DNS server propagation through lwip)
+void WebStatusService::schedule_versions_refresh() {
+#ifndef EMSESP_STANDALONE
+    uint32_t next = uuid::get_uptime() + VERSIONS_INITIAL_FETCH_DELAY_MS;
+    if (next == 0) {
+        next = 1; // 0 is the "idle" sentinel — never let the wrap land there
+    }
+    versions_next_fetch_ms_ = next;
+#endif
+}
+
 // periodic refresh (1 hour) of the cached versions.json
 // runs on the main loop task, which has a much bigger stack than AsyncTCP needed for https
 void WebStatusService::loop() {
@@ -377,8 +389,6 @@ void WebStatusService::loop() {
     if (!EMSESP::network_.network_connected()) {
         return;
     }
-
-    // TODO handle a network re-connect to fetch the values again (set versions_next_fetch_ms_ to 1)
 
     // 0 = idle, nothing scheduled
     if (versions_next_fetch_ms_ == 0) {
@@ -419,7 +429,7 @@ bool WebStatusService::refresh_versions_cache() {
     int httpCode = http.GET();
     if (httpCode != HTTP_CODE_OK) {
 #if defined(EMSESP_DEBUG)
-        EMSESP::logger().debug("versions.json: HTTP %d", httpCode);
+        EMSESP::logger().debug("versions.json: HTTP error code %d", httpCode);
 #endif
         http.end();
         return false;
@@ -453,7 +463,7 @@ bool WebStatusService::refresh_versions_cache() {
 
     versions_cache_valid_ = true;
 #if defined(EMSESP_DEBUG)
-    EMSESP::logger().debug("versions.json: refreshed (stable=%s dev=%s), current=%s",
+    EMSESP::logger().debug("versions.json: fetched stable=%s, dev=%s, current=%s",
                            versions_stable_.version.c_str(),
                            versions_dev_.version.c_str(),
                            current_version_s.c_str());
