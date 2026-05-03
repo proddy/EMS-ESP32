@@ -89,10 +89,6 @@ class Network {
     void begin();
     void loop();
 
-    uint16_t getWifiReconnects() const {
-        return connectcount_;
-    }
-
     uint32_t network_ip() const {
         return network_ip_;
     }
@@ -121,7 +117,7 @@ class Network {
         return has_ipv6_ && (network_iface_ == NetIface::WIFI || network_iface_ == NetIface::ETHERNET);
     }
 
-    uint16_t getWifiReconnects() {
+    uint16_t getNetworkReconnects() {
         return connectcount_;
     }
 

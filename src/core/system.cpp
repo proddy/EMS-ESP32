@@ -998,7 +998,7 @@ void System::heartbeat_json(JsonObject output) {
         int8_t rssi              = WiFi.RSSI();
         output["rssi"]           = rssi;
         output["wifistrength"]   = wifi_quality(rssi);
-        output["wifireconnects"] = EMSESP::network_.getWifiReconnects();
+        output["wifireconnects"] = EMSESP::network_.getNetworkReconnects();
     }
 #endif
 
@@ -2451,7 +2451,7 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
         node["network"]        = "WiFi";
         node["hostname"]       = WiFi.getHostname();
         node["RSSI"]           = WiFi.RSSI();
-        node["WIFIReconnects"] = EMSESP::network_.getWifiReconnects();
+        node["WIFIReconnects"] = EMSESP::network_.getNetworkReconnects();
         // node["MAC"]             = WiFi.macAddress();
         // node["IPv4 address"]    = uuid::printable_to_string(WiFi.localIP()) + "/" + uuid::printable_to_string(WiFi.subnetMask());
         // node["IPv4 gateway"]    = uuid::printable_to_string(WiFi.gatewayIP());
