@@ -840,11 +840,6 @@ void System::button_init() {
 
 // set the LED to on or off when in normal operating mode
 void System::led_init() {
-    // RGB: drive strip low before init. Standard GPIO LED: pinMode must precede digitalWrite (ESP32 Arduino hal).
-    if (led_type_) {
-        EMSESP_RGB_WRITE(led_gpio_, 0, 0, 0);
-    }
-
     if (!led_gpio_) { // 0 means disabled
         LOG_INFO("LED disabled");
         return;
