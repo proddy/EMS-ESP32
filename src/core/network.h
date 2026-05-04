@@ -43,7 +43,7 @@ namespace emsesp {
 #define NETWORK_RECONNECTION_DELAY_LONG 10000 // 10 seconds - for debugging
 #endif
 
-#define MAX_NETWORK_RECONNECTION_ATTEMPTS 3 // maximum number of network reconnection attempts before going to AP fallback
+#define MAX_NETWORK_RECONNECTION_ATTEMPTS 4 // maximum number of network reconnection attempts before going to AP fallback
 
 #define DNS_PORT 53 // dns server port for captive portal
 
