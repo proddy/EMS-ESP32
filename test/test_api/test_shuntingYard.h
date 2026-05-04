@@ -92,7 +92,7 @@ void shuntingYard_test21() {
 }
 
 void shuntingYard_test22() {
-    run_shuntingYard_test("", "boiler/storagetemp2 == ''");
+    run_shuntingYard_test("0", "boiler/storagetemp2 == ''");
 }
 
 void shuntingYard_test23() {
