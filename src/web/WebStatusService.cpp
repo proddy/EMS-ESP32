@@ -372,13 +372,11 @@ void WebStatusService::getVersions(JsonObject root) {
 // schedule the next versions.json fetch a few seconds out so the network stack has time to settle
 // (DHCP completion, default-netif assignment and DNS server propagation through lwip)
 void WebStatusService::schedule_versions_refresh() {
-#ifndef EMSESP_STANDALONE
     uint32_t next = uuid::get_uptime() + VERSIONS_INITIAL_FETCH_DELAY_MS;
     if (next == 0) {
         next = 1; // 0 is the "idle" sentinel — never let the wrap land there
     }
     versions_next_fetch_ms_ = next;
-#endif
 }
 
 // periodic refresh (1 hour) of the cached versions.json
