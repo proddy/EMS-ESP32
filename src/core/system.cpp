@@ -840,19 +840,16 @@ void System::button_init() {
 
 // set the LED to on or off when in normal operating mode
 void System::led_init() {
-    // disabled old led port before setting new one
-    led_type_ ? EMSESP_RGB_WRITE(led_gpio_, 0, 0, 0) : digitalWrite(led_gpio_, !LED_ON);
-
-    if ((led_gpio_)) { // 0 means disabled
-        if (led_type_) {
-            // rgb LED WS2812B, use Neopixel
-            EMSESP_RGB_WRITE(led_gpio_, 0, 0, 0);
-        } else {
-            pinMode(led_gpio_, OUTPUT);
-            digitalWrite(led_gpio_, !LED_ON); // start with LED off
-        }
-    } else {
+    if (!led_gpio_) { // 0 means disabled
         LOG_INFO("LED disabled");
+        return;
+    }
+
+    if (led_type_) {
+        EMSESP_RGB_WRITE(led_gpio_, 0, 0, 0);
+    } else {
+        pinMode(led_gpio_, OUTPUT);
+        digitalWrite(led_gpio_, !LED_ON); // start with LED off
     }
 }
 
