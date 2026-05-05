@@ -1335,3 +1335,5 @@ juststopped
 handshaked
 startm
 netifs
+testemail
+sendemail

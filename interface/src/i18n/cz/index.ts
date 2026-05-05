@@ -362,8 +362,8 @@ const cz: Translation = {
   UPGRADE_IMPORTANT_MESSAGES: 'Aktualizovat důležité zprávy',
   UPGRADE_IMPORTANT_MESSAGES_1: 'Tato aktualizace vyžaduje obnovení továrního nastavení. Ujistěte se, že nejprve stáhnete systémovou zálohu před pokračováním a poté nahrajte tento soubor po instalaci nové verze.',
   UPGRADE_IMPORTANT_MESSAGES_2: 'Aktualizujete se na novou hlavní verzi. Ujistěte se, že jste přečetli ChangeLog pro jakékoliv závažné změny.',
-  WARNING_SYSTEM_BACKUP: 'Toto vytvoří zálohu vašich celých systémových konfigurací a nastavení. Všechna hesla budou v zálohovém souboru čitelná. Buďte opatrní při sdílení! Opravdu chcete pokračovat?'
-
+  WARNING_SYSTEM_BACKUP: 'Toto vytvoří zálohu vašich celých systémových konfigurací a nastavení. Všechna hesla budou v zálohovém souboru čitelná. Buďte opatrní při sdílení! Opravdu chcete pokračovat?',
+  TEST_EMAIL_SUCCESSFUL: 'Test email byl úspěšně odeslán'
 };
 
 export default cz;

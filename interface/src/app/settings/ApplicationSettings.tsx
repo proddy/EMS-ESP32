@@ -165,15 +165,15 @@ const ApplicationSettings = () => {
     await doRestart();
   };
 
-  const sendmail = async () => {
+  const sendemail = async () => {
     await sendAPI({
       device: 'system',
-      cmd: 'sendmail',
-      data: 'testmail',
+      cmd: 'sendemail',
+      data: 'Email notification test successful!',
       id: 0
     })
       .then(() => {
-        toast.success(LL.SUCCESSFUL());
+        toast.success(LL.TEST_EMAIL_SUCCESSFUL());
       })
       .catch((error: Error) => {
         toast.error(error.message);
@@ -505,9 +505,9 @@ const ApplicationSettings = () => {
                   variant="outlined"
                   color="primary"
                   disabled={dirtyFlags.length !== 0}
-                  onClick={sendmail}
+                  onClick={sendemail}
                 >
-                  Send Testmail
+                  Send test email
                 </Button>
               </Grid>
             </Grid>
