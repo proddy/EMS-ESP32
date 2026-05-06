@@ -34,3 +34,4 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - fetch telegrams: set length to fetch [#3017](https://github.com/emsesp/EMS-ESP32/issues/3017)
 - move http client from stack to heap
 - heap optimizations [#3021](https://github.com/emsesp/EMS-ESP32/discussions/3021)
+- check and read 0x470 as summer2_typeids[0] only if received [#2686](https://github.com/emsesp/EMS-ESP32/issues/2686), [#3055](https://github.com/emsesp/EMS-ESP32/issues/3055)

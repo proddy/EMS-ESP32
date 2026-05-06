@@ -166,7 +166,7 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
         set2_typeids              = {0x0421, 0x0422, 0x0423, 0x0424};
         summer_typeids            = {0x02AF, 0x02B0, 0x02B1, 0x02B2, 0x02B3, 0x02B4, 0x02B5, 0x02B6};
         curve_typeids             = {0x029B, 0x029C, 0x029D, 0x029E, 0x029F, 0x02A0, 0x02A1, 0x02A2};
-        summer2_typeids           = {0x0470, 0x0471, 0x0472, 0x0473, 0x0474, 0x0475, 0x0476, 0x0477, 0x0478};
+        summer2_typeids           = {0x0471, 0x0472, 0x0473, 0x0474, 0x0475, 0x0476, 0x0477, 0x0478};
         hp_typeids                = {0x0467, 0x0468, 0x0469, 0x046A};
         hpmode_typeids            = {0x0291, 0x0292, 0x0293, 0x0294};
         const size_t monitor_size = monitor_typeids.size();
@@ -207,6 +207,7 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
         register_telegram_type(0x16E, "Absent", true, MAKE_PF_CB(process_Absent), 1);
         register_telegram_type(0xBF, "ErrorMessage", false, MAKE_PF_CB(process_ErrorMessageBF));
         register_telegram_type(0xC0, "RCErrorMessage", false, MAKE_PF_CB(process_RCErrorMessage2));
+        register_telegram_type(0x470, "RC300Summer2", true, MAKE_PF_CB(process_RC300Summer2), 8);
         EMSESP::send_read_request(0xC0, device_id, 0, 20); // read last errorcode on start (only published on errors)
 
         // JUNKERS/HT3
@@ -1268,7 +1269,13 @@ void Thermostat::process_RC300Summer(std::shared_ptr<const Telegram> telegram) {
 void Thermostat::process_RC300Summer2(std::shared_ptr<const Telegram> telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
-        return;
+        // telegram 0x470 see https://github.com/emsesp/EMS-ESP32/issues/2686
+        if (telegram->type_id == 0x470 && telegram->message_length > 2) {
+            hc                 = heating_circuit(1);
+            summer2_typeids[0] = 0x470;
+        } else {
+            return;
+        }
     }
     if (hc->statusbyte & 1) {
         has_update(telegram, hc->summersetmode, 0);
