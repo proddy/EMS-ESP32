@@ -39,3 +39,4 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - move http client from stack to heap
 - heap optimizations [#3021](https://github.com/emsesp/EMS-ESP32/discussions/3021)
 - refactored network code into a single class [#3052](https://github.com/emsesp/EMS-ESP32/pull/3052)
+- check and read 0x470 as summer2_typeids[0] only if received [#2686](https://github.com/emsesp/EMS-ESP32/issues/2686), [#3055](https://github.com/emsesp/EMS-ESP32/issues/3055)
