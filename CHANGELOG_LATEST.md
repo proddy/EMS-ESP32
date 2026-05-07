@@ -20,6 +20,7 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - SRC climate creation [#2936](https://github.com/emsesp/EMS-ESP32/issues/2936) and [#2960](https://github.com/emsesp/EMS-ESP32/issues/2960)
 - missing translations [#3015](https://github.com/emsesp/EMS-ESP32/issues/3015)
 - custom entities check fetch length
+- modbus initialization [#3064](https://github.com/emsesp/EMS-ESP32/issues/3064)
 
 ## Changed
 

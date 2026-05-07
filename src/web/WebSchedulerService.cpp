@@ -465,7 +465,9 @@ void WebSchedulerService::condition() {
             } else if (match.length() == 1 && match[0] == '0' && scheduleItem.retry_cnt == 1) {
                 scheduleItem.retry_cnt = 0xFF;
             } else if (match.length() != 1) { // the match is not boolean
+#if defined(EMSESP_DEBUG)
                 EMSESP::logger().debug("condition result: %s", match.c_str());
+#endif
             }
         }
     }

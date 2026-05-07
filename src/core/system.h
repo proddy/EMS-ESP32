@@ -122,6 +122,7 @@ class System {
     void show_mem(const char * note);
     void store_settings(class WebSettings & settings);
     void syslog_init();
+    void modbus_init();
     bool check_upgrade();
     bool check_restore();
     void heartbeat_json(JsonObject output);
@@ -376,6 +377,8 @@ class System {
 #endif
 
     static void remove_gpio(uint8_t pin, bool also_system = false); // remove a gpio from both valid (optional) and used lists
+    static void remove_optional_gpio(uint8_t pin);
+    static void reset_unused_gpios();
 
     // Partition info map: partition name -> {version, size, install_date}
     std::map<std::string, PartitionInfo, std::less<>, AllocatorPSRAM<std::pair<const std::string, PartitionInfo>>> partition_info_;

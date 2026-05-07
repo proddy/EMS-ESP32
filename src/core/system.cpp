@@ -526,6 +526,29 @@ void System::syslog_init() {
 #endif
 }
 
+// start or reconfigure modbus
+void System::modbus_init() {
+    EMSESP::webSettingsService.read([&](WebSettings & settings) {
+        if (settings.modbus_enabled) {
+            if (EMSESP::modbus_ == nullptr) {
+                EMSESP::modbus_ = new Modbus;
+                EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
+            } else if (settings.modbus_port != modbus_port_ || settings.modbus_max_clients != modbus_max_clients_ || settings.modbus_timeout != modbus_timeout_) {
+                EMSESP::modbus_->stop();
+                EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
+            }
+        } else if (EMSESP::modbus_ != nullptr) {
+            EMSESP::modbus_->stop();
+            delete EMSESP::modbus_;
+            EMSESP::modbus_ = nullptr;
+        }
+        modbus_enabled_     = settings.modbus_enabled;
+        modbus_port_        = settings.modbus_port;
+        modbus_max_clients_ = settings.modbus_max_clients;
+        modbus_timeout_     = settings.modbus_timeout;
+    });
+}
+
 // read specific major system settings to store locally for faster access
 void System::store_settings(WebSettings & settings) {
     version_ = settings.version;
@@ -563,25 +586,6 @@ void System::store_settings(WebSettings & settings) {
 
     locale_         = settings.locale;
     developer_mode_ = settings.developer_mode;
-
-    // start services
-    if (settings.modbus_enabled) {
-        if (EMSESP::modbus_ == nullptr) {
-            EMSESP::modbus_ = new Modbus;
-            EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
-        } else if (settings.modbus_port != modbus_port_ || settings.modbus_max_clients != modbus_max_clients_ || settings.modbus_timeout != modbus_timeout_) {
-            EMSESP::modbus_->stop();
-            EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
-        }
-    } else if (EMSESP::modbus_ != nullptr) {
-        EMSESP::modbus_->stop();
-        delete EMSESP::modbus_;
-        EMSESP::modbus_ = nullptr;
-    }
-    modbus_enabled_     = settings.modbus_enabled;
-    modbus_port_        = settings.modbus_port;
-    modbus_max_clients_ = settings.modbus_max_clients;
-    modbus_timeout_     = settings.modbus_timeout;
 }
 
 // Starts up core services
@@ -631,6 +635,7 @@ void System::start() {
     network_init();  // network
     uart_init();     // start UART
     syslog_init();   // start syslog
+    modbus_init();   // start modbus
 }
 
 // button single click
@@ -1713,7 +1718,7 @@ void System::exportSystemBackup(JsonObject output) {
     output["version"] = EMSESP_APP_VERSION; // add the version to the output
 
 #ifndef EMSESP_STANDALONE
-        // add date/time if NTP enabled and active
+    // add date/time if NTP enabled and active
     if ((esp_sntp_enabled()) && (EMSESP::system_.ntp_connected())) {
         time_t now = time(nullptr);
         if (now > 1500000000L) {
@@ -3266,7 +3271,7 @@ void System::set_valid_system_gpios() {
     valid_system_gpios_ = string_range_to_vector("0-21", "2, 8, 12-17, 18-19");
 
 #elif CONFIG_IDF_TARGET_ESP32S2
-        // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-reference/peripherals/gpio.html
+    // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-reference/peripherals/gpio.html
     // excluded:
     // GPIO26 - GPIO32 = SPI flash and PSRAM
     // GPIO45 - GPIO46 = strapping pins
@@ -3279,7 +3284,7 @@ void System::set_valid_system_gpios() {
     valid_system_gpios_ = string_range_to_vector("0-46", "19, 20, 26-32, 45-46, 39-42, 22-25");
 
 #elif CONFIG_IDF_TARGET_ESP32S3
-        // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/peripherals/gpio.html
+    // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/peripherals/gpio.html
     // excluded:
     // GPIO3, GPIO45 - GPIO46 = strapping pins
     // GPIO26 - GPIO32 = SPI flash and PSRAM and not recommended
@@ -3298,7 +3303,7 @@ void System::set_valid_system_gpios() {
     }
 
 #elif CONFIG_IDF_TARGET_ESP32
-        // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html
+    // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html
     // excluded:
     // GPIO6 - GPIO11, GPIO16 - GPIO17 = used for SPI flash and PSRAM (dio mode only GPIO06-GPIO08, GPIO11)
     // GPIO20, GPIO24, GPIO28 - GPIO31 = don't exist
@@ -3374,6 +3379,24 @@ void System::remove_gpio(uint8_t pin, bool also_system) {
         if (it_sys != valid_system_gpios_.end()) {
             LOG_DEBUG("GPIO %d removed from valid gpio list", pin);
             valid_system_gpios_.erase(it_sys);
+        }
+    }
+}
+
+// remove a gpio that has 0 for disable
+void System::remove_optional_gpio(uint8_t pin) {
+    if (pin) {
+        remove_gpio(pin, false);
+    }
+}
+
+// set unused gpios to default state input high-Z
+void System::reset_unused_gpios() {
+    for (const auto & pin : valid_system_gpios_) {
+        auto it = std::find_if(used_gpios_.begin(), used_gpios_.end(), [pin](const GpioUsage & usage) { return usage.pin == pin; });
+        if (it == used_gpios_.end()) {
+            LOG_DEBUG("reset pin %d", pin);
+            pinMode(pin, INPUT);
         }
     }
 }

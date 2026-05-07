@@ -185,10 +185,14 @@ bool MqttSettingsService::configureMqtt() {
 #ifndef TASMOTA_SDK
         if (_state.enableTLS) {
             if (_state.rootCA == "insecure") {
+#if defined(EMSESP_DEBUG)
                 emsesp::EMSESP::logger().debug("Start insecure MQTT");
+#endif
                 static_cast<espMqttClientSecure *>(_mqttClient)->setInsecure();
             } else {
+#if defined(EMSESP_DEBUG)
                 emsesp::EMSESP::logger().debug("Start secure MQTT with rootCA");
+#endif
                 String certificate = "-----BEGIN CERTIFICATE-----\n" + _state.rootCA + "\n-----END CERTIFICATE-----\n";
                 static_cast<espMqttClientSecure *>(_mqttClient)->setCACert(certificate.c_str());
             }

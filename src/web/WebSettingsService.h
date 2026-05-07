@@ -88,7 +88,7 @@ class WebSettings {
     static void              read(WebSettings & settings, JsonObject root);
     static StateUpdateResult update(JsonObject root, WebSettings & settings);
 
-    enum ChangeFlags : uint8_t {
+    enum ChangeFlags : uint16_t {
         NONE               = 0,
         UART               = (1 << 0), // 1 - uart
         SYSLOG             = (1 << 1), // 2 - syslog
@@ -98,19 +98,20 @@ class WebSettings {
         LED                = (1 << 5), // 32 - led
         BUTTON             = (1 << 6), // 64 - button
         MQTT               = (1 << 7), // 128 - mqtt
-        RESTART            = 0xFF      // 255 - restart request (all changes)
+        MODBUS             = (1 << 8), // 256 - modbus
+        RESTART            = 0xFFFF    // restart request (all changes)
     };
 
-    static bool    check_flag(int prev_v, int new_v, uint8_t flag);
-    static void    add_flags(uint8_t flags);
-    static bool    has_flags(uint8_t flags);
-    static void    reset_flags();
-    static uint8_t get_flags();
+    static bool     check_flag(int prev_v, int new_v, uint16_t flag);
+    static void     add_flags(uint16_t flags);
+    static bool     has_flags(uint16_t flags);
+    static void     reset_flags();
+    static uint16_t get_flags();
 
   private:
     static void set_board_profile(WebSettings & settings);
 
-    static uint8_t flags_;
+    static uint16_t flags_;
 };
 
 class WebSettingsService : public StatefulService<WebSettings> {
