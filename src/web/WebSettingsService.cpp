@@ -20,7 +20,7 @@
 
 namespace emsesp {
 
-uint8_t WebSettings::flags_ = 0;
+uint16_t WebSettings::flags_ = 0;
 
 WebSettingsService::WebSettingsService(AsyncWebServer * server, FS * fs, SecurityManager * securityManager)
     : _httpEndpoint(WebSettings::read, WebSettings::update, this, server, EMSESP_SETTINGS_SERVICE_PATH, securityManager)
@@ -128,11 +128,11 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     reset_flags();
 
     // before loading new board profile free old gpios from used list to allow remapping
-    EMSESP::system_.remove_gpio(original_settings.led_gpio);
-    EMSESP::system_.remove_gpio(original_settings.dallas_gpio);
+    EMSESP::system_.remove_optional_gpio(original_settings.led_gpio);
+    EMSESP::system_.remove_optional_gpio(original_settings.dallas_gpio);
     EMSESP::system_.remove_gpio(original_settings.pbutton_gpio);
-    EMSESP::system_.remove_gpio(original_settings.rx_gpio);
-    EMSESP::system_.remove_gpio(original_settings.tx_gpio);
+    EMSESP::system_.remove_optional_gpio(original_settings.rx_gpio);
+    EMSESP::system_.remove_optional_gpio(original_settings.tx_gpio);
 
     // see if the user has changed the board profile
     // this will set: led_gpio, dallas_gpio, rx_gpio, tx_gpio, pbutton_gpio, phy_type, eth_power, eth_phy_addr, eth_clock_mode, led_type
@@ -256,10 +256,14 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     check_flag(original_settings.low_clock, settings.low_clock, ChangeFlags::RESTART);
 
     // Modbus settings
-    settings.modbus_enabled     = root["modbus_enabled"] | EMSESP_DEFAULT_MODBUS_ENABLED;
-    settings.modbus_port        = root["modbus_port"] | EMSESP_DEFAULT_MODBUS_PORT;
+    settings.modbus_enabled = root["modbus_enabled"] | EMSESP_DEFAULT_MODBUS_ENABLED;
+    check_flag(original_settings.modbus_enabled, settings.modbus_enabled, ChangeFlags::MODBUS);
+    settings.modbus_port = root["modbus_port"] | EMSESP_DEFAULT_MODBUS_PORT;
+    check_flag(original_settings.modbus_port, settings.modbus_port, ChangeFlags::MODBUS);
     settings.modbus_max_clients = root["modbus_max_clients"] | EMSESP_DEFAULT_MODBUS_MAX_CLIENTS;
-    settings.modbus_timeout     = root["modbus_timeout"] | EMSESP_DEFAULT_MODBUS_TIMEOUT;
+    check_flag(original_settings.modbus_max_clients, settings.modbus_max_clients, ChangeFlags::MODBUS);
+    settings.modbus_timeout = root["modbus_timeout"] | EMSESP_DEFAULT_MODBUS_TIMEOUT;
+    check_flag(original_settings.modbus_timeout, settings.modbus_timeout, ChangeFlags::MODBUS);
 
     //
     // these may need mqtt restart to rebuild HA discovery topics
@@ -395,7 +399,11 @@ void WebSettingsService::onUpdate() {
         Mqtt::reset_mqtt(); // reload MQTT, init HA etc
     }
 
+    if (WebSettings::has_flags(WebSettings::ChangeFlags::MODBUS)) {
+        EMSESP::system_.modbus_init();
+    }
     WebSettings::reset_flags();
+    EMSESP::system_.reset_unused_gpios();
 }
 
 void WebSettingsService::begin() {
@@ -537,7 +545,7 @@ void WebSettings::set_board_profile(WebSettings & settings) {
 }
 
 // returns true if the value was changed
-bool WebSettings::check_flag(int prev_v, int new_v, uint8_t flag) {
+bool WebSettings::check_flag(int prev_v, int new_v, uint16_t flag) {
     if (prev_v != new_v) {
         add_flags(flag);
 #if defined(EMSESP_DEBUG)
@@ -548,11 +556,11 @@ bool WebSettings::check_flag(int prev_v, int new_v, uint8_t flag) {
     return false;
 }
 
-void WebSettings::add_flags(uint8_t flags) {
+void WebSettings::add_flags(uint16_t flags) {
     flags_ |= flags;
 }
 
-bool WebSettings::has_flags(uint8_t flags) {
+bool WebSettings::has_flags(uint16_t flags) {
     return (flags_ & flags) == flags;
 }
 
@@ -560,7 +568,7 @@ void WebSettings::reset_flags() {
     flags_ = ChangeFlags::NONE;
 }
 
-uint8_t WebSettings::get_flags() {
+uint16_t WebSettings::get_flags() {
     return flags_;
 }
 

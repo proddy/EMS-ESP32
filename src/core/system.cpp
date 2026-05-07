@@ -637,6 +637,29 @@ void System::syslog_init() {
 #endif
 }
 
+// start or reconfigure modbus
+void System::modbus_init() {
+    EMSESP::webSettingsService.read([&](WebSettings & settings) {
+        if (settings.modbus_enabled) {
+            if (EMSESP::modbus_ == nullptr) {
+                EMSESP::modbus_ = new Modbus;
+                EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
+            } else if (settings.modbus_port != modbus_port_ || settings.modbus_max_clients != modbus_max_clients_ || settings.modbus_timeout != modbus_timeout_) {
+                EMSESP::modbus_->stop();
+                EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
+            }
+        } else if (EMSESP::modbus_ != nullptr) {
+            EMSESP::modbus_->stop();
+            delete EMSESP::modbus_;
+            EMSESP::modbus_ = nullptr;
+        }
+        modbus_enabled_     = settings.modbus_enabled;
+        modbus_port_        = settings.modbus_port;
+        modbus_max_clients_ = settings.modbus_max_clients;
+        modbus_timeout_     = settings.modbus_timeout;
+    });
+}
+
 // read specific major system settings to store locally for faster access
 void System::store_settings(WebSettings & settings) {
     version_ = settings.version;
@@ -668,25 +691,6 @@ void System::store_settings(WebSettings & settings) {
     readonly_mode_  = settings.readonly_mode;
     locale_         = settings.locale;
     developer_mode_ = settings.developer_mode;
-
-    // start services
-    if (settings.modbus_enabled) {
-        if (EMSESP::modbus_ == nullptr) {
-            EMSESP::modbus_ = new Modbus;
-            EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
-        } else if (settings.modbus_port != modbus_port_ || settings.modbus_max_clients != modbus_max_clients_ || settings.modbus_timeout != modbus_timeout_) {
-            EMSESP::modbus_->stop();
-            EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
-        }
-    } else if (EMSESP::modbus_ != nullptr) {
-        EMSESP::modbus_->stop();
-        delete EMSESP::modbus_;
-        EMSESP::modbus_ = nullptr;
-    }
-    modbus_enabled_     = settings.modbus_enabled;
-    modbus_port_        = settings.modbus_port;
-    modbus_max_clients_ = settings.modbus_max_clients;
-    modbus_timeout_     = settings.modbus_timeout;
 }
 
 // Starts up core services
@@ -728,6 +732,7 @@ void System::start() {
     last_system_check_ = 0; // force the LED to go from fast flash to pulse
     uart_init();            // start UART
     syslog_init();          // start syslog
+    modbus_init();   // start modbus
 }
 
 // button single click
@@ -3417,6 +3422,24 @@ void System::remove_gpio(uint8_t pin, bool also_system) {
         if (it_sys != valid_system_gpios_.end()) {
             LOG_DEBUG("GPIO %d removed from valid gpio list", pin);
             valid_system_gpios_.erase(it_sys);
+        }
+    }
+}
+
+// remove a gpio that has 0 for disable
+void System::remove_optional_gpio(uint8_t pin) {
+    if (pin) {
+        remove_gpio(pin, false);
+    }
+}
+
+// set unused gpios to default state input high-Z
+void System::reset_unused_gpios() {
+    for (const auto & pin : valid_system_gpios_) {
+        auto it = std::find_if(used_gpios_.begin(), used_gpios_.end(), [pin](const GpioUsage & usage) { return usage.pin == pin; });
+        if (it == used_gpios_.end()) {
+            LOG_DEBUG("reset pin %d", pin);
+            pinMode(pin, INPUT);
         }
     }
 }
