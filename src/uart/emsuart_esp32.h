@@ -42,10 +42,11 @@
 
 #define EMS_TXMODE_INIT 0xFF
 #define EMS_TXMODE_OFF 0
-#define EMS_TXMODE_DEFAULT 1
+#define EMS_TXMODE_EMS 1
 #define EMS_TXMODE_EMSPLUS 2
 #define EMS_TXMODE_HT3 3
 #define EMS_TXMODE_HW 4
+#define EMS_TXMODE_AUTO 5
 
 // LEGACY
 #define EMSUART_TX_BIT_TIME 104 // bit time @9600 baud

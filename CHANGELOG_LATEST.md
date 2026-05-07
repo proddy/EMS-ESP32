@@ -14,6 +14,7 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - heatpump reset [#2933](https://github.com/emsesp/EMS-ESP32/issues/2933)
 - 2.nd freshwater module (dhw4, dhw5) [#2991](https://github.com/emsesp/EMS-ESP32/issues/2991)
 - full system backup and restore
+- auto-logic to set ht3/ems+ tx-mode
 
 ## Fixed
 
@@ -36,3 +37,4 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - move http client from stack to heap
 - heap optimizations [#3021](https://github.com/emsesp/EMS-ESP32/discussions/3021)
 - check and read 0x470 as summer2_typeids[0] only if received [#2686](https://github.com/emsesp/EMS-ESP32/issues/2686), [#3055](https://github.com/emsesp/EMS-ESP32/issues/3055)
+- default bus-id: gateway1(0x49), tx-mode: auto

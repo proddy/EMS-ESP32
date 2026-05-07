@@ -168,6 +168,14 @@ class EMSbus {
         return (ems_mask_ == EMS_MASK_HT3);
     }
 
+    static bool is_ems2() {
+        return isEMS2_;
+    }
+
+    static void set_ems2() {
+        isEMS2_ = true;;
+    }
+
     static uint8_t ems_mask() {
         return ems_mask_;
     }
@@ -242,6 +250,7 @@ class EMSbus {
     static uint8_t  ems_bus_id_;        // the bus id, which configurable and stored in settings
     static uint8_t  tx_mode_;           // local copy of the tx mode
     static uint8_t  tx_state_;          // state of the Tx line (NONE or waiting on a TX_READ or TX_WRITE)
+    static bool     isEMS2_;
 };
 
 class RxService : public EMSbus {

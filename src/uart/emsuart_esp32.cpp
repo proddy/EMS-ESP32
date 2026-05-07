@@ -149,8 +149,10 @@ uint8_t EMSuart::transmit(const uint8_t * buf, const uint8_t len) {
         return EMS_TX_STATUS_OK;
     }
 
+   auto tx_mode = tx_mode_ != EMS_TXMODE_AUTO ? tx_mode_ : EMSbus::is_ht3() ? EMS_TXMODE_HT3 : EMSbus::is_ems2() ? EMS_TXMODE_EMSPLUS : EMS_TXMODE_EMS;
+
     // TXMODE is EMS+ with long delay
-    if (tx_mode_ == EMS_TXMODE_EMSPLUS) {
+    if (tx_mode == EMS_TXMODE_EMSPLUS) {
         for (uint8_t i = 0; i < len; i++) {
             uart_write_bytes(EMSUART_NUM, &buf[i], 1);
             delayMicroseconds(EMSUART_TX_WAIT_PLUS);
@@ -160,7 +162,7 @@ uint8_t EMSuart::transmit(const uint8_t * buf, const uint8_t len) {
     }
 
     // TXMODE is HT3 with 7 bittimes delay
-    if (tx_mode_ == EMS_TXMODE_HT3) {
+    if (tx_mode == EMS_TXMODE_HT3) {
         for (uint8_t i = 0; i < len; i++) {
             uart_write_bytes(EMSUART_NUM, &buf[i], 1);
             delayMicroseconds(EMSUART_TX_WAIT_HT3);

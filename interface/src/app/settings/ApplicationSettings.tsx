@@ -677,6 +677,7 @@ const ApplicationSettings = () => {
               <MenuItem value={2}>EMS+</MenuItem>
               <MenuItem value={3}>HT3</MenuItem>
               <MenuItem value={4}>{LL.HARDWARE()}</MenuItem>
+              <MenuItem value={5}>Auto</MenuItem>
             </TextField>
           </Grid>
           <Grid>
