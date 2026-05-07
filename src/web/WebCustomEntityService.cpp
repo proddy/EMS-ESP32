@@ -166,7 +166,9 @@ StateUpdateResult WebCustomEntity::update(JsonObject root, WebCustomEntity & web
 bool WebCustomEntityService::command_setvalue(const char * value, const int8_t id, const char * name) {
     // don't write if there is no value, to prevent setting an empty value by mistake when parsing attributes
     if (!strlen(value)) {
+#if defined(EMSESP_DEBUG)
         EMSESP::logger().debug("can't set empty value!");
+#endif
         return false;
     }
 
