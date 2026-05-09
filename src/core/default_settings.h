@@ -30,7 +30,7 @@
 #endif
 
 #ifndef EMSESP_DEFAULT_EMS_BUS_ID
-#define EMSESP_DEFAULT_EMS_BUS_ID 0x49 // gateway 1
+#define EMSESP_DEFAULT_EMS_BUS_ID 0x49 // gateway 2
 #endif
 
 #ifndef EMSESP_DEFAULT_SYSLOG_ENABLED

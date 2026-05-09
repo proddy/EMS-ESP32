@@ -448,6 +448,14 @@ class EMSdevice {
     static constexpr uint8_t EMS_DEVICE_ID_DHW2           = 0x29; // MM100 module as water station
     static constexpr uint8_t EMS_DEVICE_ID_DHW8           = 0x2F; // last DHW module id?
     static constexpr uint8_t EMS_DEVICE_ID_IPM_DHW        = 0x41; // IPM module as water station
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY1       = 0x48; // KM200, MX300, MX400
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY2       = 0x49;
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY3       = 0x4A;
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY4       = 0x4B;
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY5       = 0x4C;
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY6       = 0x4D;
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY7       = 0x4E;
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY8       = 0x4F;
 
     // generic type IDs
     static constexpr uint16_t EMS_TYPE_NAME        = 0x01; // device config for ems devices, name ascii on offset 27ff  for ems+
