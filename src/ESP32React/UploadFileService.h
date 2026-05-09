@@ -22,13 +22,14 @@ class UploadFileService {
   private:
     SecurityManager *    _securityManager;
     bool                 _is_firmware;
+    bool                 _is_filesystem;
     std::array<char, 33> _md5;
 
     void handleUpload(AsyncWebServerRequest * request, const String & filename, size_t index, uint8_t * data, size_t len, bool final);
     void uploadComplete(AsyncWebServerRequest * request);
     void handleError(AsyncWebServerRequest * request, int code);
 
-    void handleEarlyDisconnect();
+    void handleDisconnect();
 };
 
 #endif

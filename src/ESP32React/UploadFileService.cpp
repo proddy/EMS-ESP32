@@ -4,6 +4,7 @@
 
 #include <esp_app_format.h>
 #include <esp_ota_ops.h>
+// #include <esp_partition.h>
 
 static String getFilenameExtension(const String & filename) {
     const auto pos = filename.lastIndexOf('.');
@@ -16,8 +17,8 @@ static String getFilenameExtension(const String & filename) {
 UploadFileService::UploadFileService(AsyncWebServer * server, SecurityManager * securityManager)
     : _securityManager(securityManager)
     , _is_firmware(false)
+    , _is_filesystem(false)
     , _md5() {
-    // upload a file via a form
     server->on(
         UPLOAD_FILE_PATH,
         HTTP_POST,
@@ -41,8 +42,14 @@ void UploadFileService::handleUpload(AsyncWebServerRequest * request, const Stri
         const String      extension = getFilenameExtension(filename);
         const std::size_t filesize  = request->contentLength();
 
-        _is_firmware = false;
-        if ((extension == "bin") && (filesize > 1000000)) {
+        _is_firmware   = false;
+        _is_filesystem = false;
+
+        if (extension == "bin" && filename.endsWith("littlefs.bin")) {
+            // LittleFS filesystem image
+            _is_filesystem = true;
+            _md5[0]        = '\0'; // clear any stale md5 so Update.end() doesn't compare against it
+        } else if ((extension == "bin") && (filesize > 2000000)) {
             _is_firmware = true;
         } else if (extension == "json") {
             _md5[0] = '\0'; // clear md5
@@ -88,6 +95,7 @@ void UploadFileService::handleUpload(AsyncWebServerRequest * request, const Stri
 #endif
             // it's firmware - initialize the ArduinoOTA updater
             emsesp::EMSESP::logger().info("Uploading firmware file %s (size: %d KB). Please wait...", filename.c_str(), filesize / 1024);
+
             // turn off UART to prevent interference with the upload
             emsesp::EMSuart::stop();
 
@@ -96,9 +104,26 @@ void UploadFileService::handleUpload(AsyncWebServerRequest * request, const Stri
                     Update.setMD5(_md5.data());
                     _md5.front() = '\0';
                 }
-                request->onDisconnect([this] { handleEarlyDisconnect(); }); // success, let's make sure we end the update if the client hangs up
+                request->onDisconnect([this] { handleDisconnect(); }); // success, let's make sure we end the update if the client hangs up
             } else {
                 handleError(request, 507); // failed to begin, send an error response Insufficient Storage
+                return;
+            }
+        } else if (_is_filesystem) {
+            // LittleFS filesystem image - flash directly to the spiffs/littlefs partition
+            emsesp::EMSESP::logger().info("Uploading filesystem image %s (size: %u KB). Please wait...", filename.c_str(), static_cast<unsigned>(filesize / 1024));
+            emsesp::EMSuart::stop();
+            LittleFS.end(); // unmount LittleFS before we overwrite the partition under it
+
+            // request->contentLength() is the multipart HTTP body size, not the file size,
+            // so it can exceed the partition by a few hundred bytes. Use UPDATE_SIZE_UNKNOWN
+            // and let the Update library size against the whole partition.
+            if (Update.begin(UPDATE_SIZE_UNKNOWN, U_SPIFFS)) {
+                // emsesp::EMSESP::logger().info("Update.begin(U_SPIFFS) ok, partition size %u bytes", static_cast<unsigned>(Update.size()));
+                request->onDisconnect([this] { handleDisconnect(); });
+            } else {
+                emsesp::EMSESP::logger().err("Update.begin(U_SPIFFS) failed: %s", Update.errorString());
+                handleError(request, 507);
                 return;
             }
         } else {
@@ -107,17 +132,27 @@ void UploadFileService::handleUpload(AsyncWebServerRequest * request, const Stri
         }
     }
 
-    if (!_is_firmware) {
-        if (len && len != request->_tempFile.write(data, len)) { // stream the incoming chunk to the opened file
-            handleError(request, 507);                           // 507-Insufficient Storage
-        }
-    } else if (!request->_tempObject) { // if we haven't delt with an error, continue with the firmware update
-        if (Update.write(data, len) != len) {
-            handleError(request, 500); // internal error, failed
-            return;
-        }
-        if (final && !Update.end(true)) {
-            handleError(request, 500); // internal error, failed
+    if (_is_firmware || _is_filesystem) {
+        if (!request->_tempObject) { // if we haven't delt with an error, continue with the OTA update
+            if (Update.write(data, len) != len) {
+                emsesp::EMSESP::logger().err("Update.write failed at offset %u (chunk %u): %s",
+                                             static_cast<unsigned>(Update.progress()),
+                                             static_cast<unsigned>(len),
+                                             Update.errorString());
+                handleError(request, 500); // internal error, failed
+                return;
+            }
+            if (final) {
+                if (!Update.end(true)) {
+                    emsesp::EMSESP::logger().err("Update.end failed: %s", Update.errorString());
+                    handleError(request, 500);
+                    return;
+                }
+            }
+        } else {
+            if (len && len != request->_tempFile.write(data, len)) { // stream the incoming chunk to the opened file
+                handleError(request, 507);                           // 507-Insufficient Storage
+            }
         }
     }
 }
@@ -135,11 +170,13 @@ void UploadFileService::uploadComplete(AsyncWebServerRequest * request) {
         return;
     }
 
-    // check if it was a firmware upgrade
-    // if no error, send the success response as a JSON
-    if (_is_firmware && !request->_tempObject) {
-        // set NVS to tell EMS-ESP this is a new fresh firmware on next restart
-        emsesp::EMSESP::nvs_.putBool(emsesp::EMSESP_NVS_BOOT_NEW_FIRMWARE, true);
+    // check if it was a firmware or filesystem image upgrade
+    // if no error, send the success response and request a restart
+    if ((_is_firmware || _is_filesystem) && !request->_tempObject) {
+        if (_is_firmware) {
+            // set NVS to tell EMS-ESP this is a new fresh firmware on next restart
+            emsesp::EMSESP::nvs_.putBool(emsesp::EMSESP_NVS_BOOT_NEW_FIRMWARE, true);
+        }
 
         AsyncWebServerResponse * response = request->beginResponse(200);
         request->send(response);
@@ -178,15 +215,21 @@ void UploadFileService::handleError(AsyncWebServerRequest * request, int code) {
     // that is caught by the web code. Unfortunately the http error code is not sent to the client on fast network connections
     if (code == 406) {
         request->client()->close();
-        _is_firmware = false;
+        _is_firmware   = false;
+        _is_filesystem = false;
         Update.abort();
+    }
+
+    // if we aborted a filesystem upload, remount LittleFS so the device keeps working
+    if (_is_filesystem) {
+        LittleFS.begin();
     }
 }
 
-void UploadFileService::handleEarlyDisconnect() {
+void UploadFileService::handleDisconnect() {
     emsesp::EMSESP::logger().info("Upload finished");
     emsesp::EMSESP::system_.uart_init(); // re-enable UART
 
-    _is_firmware = false;
-    Update.abort();
+    _is_firmware   = false;
+    _is_filesystem = false;
 }

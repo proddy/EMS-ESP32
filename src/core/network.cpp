@@ -412,7 +412,7 @@ void Network::startmDNS() const {
     MDNS.addService("telnet", "tcp", 23); // add our telnet console
     MDNS.addServiceTxt("http", "tcp", "address", address_s.c_str());
 
-    emsesp::EMSESP::logger().info("Starting mDNS Responder service");
+    emsesp::EMSESP::logger().info("Starting mDNS Responder service for %s", address_s.c_str());
 #endif
 }
 
