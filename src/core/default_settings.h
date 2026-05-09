@@ -26,11 +26,11 @@
 #endif
 
 #ifndef EMSESP_DEFAULT_TX_MODE
-#define EMSESP_DEFAULT_TX_MODE 1 // EMS1.0
+#define EMSESP_DEFAULT_TX_MODE 5 // Auto
 #endif
 
 #ifndef EMSESP_DEFAULT_EMS_BUS_ID
-#define EMSESP_DEFAULT_EMS_BUS_ID 0x0B // service key
+#define EMSESP_DEFAULT_EMS_BUS_ID 0x49 // gateway 2
 #endif
 
 #ifndef EMSESP_DEFAULT_SYSLOG_ENABLED
