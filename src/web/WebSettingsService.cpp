@@ -88,8 +88,7 @@ void WebSettings::read(WebSettings & settings, JsonObject root) {
 #else
     root["email_enabled"] = false;
 #endif
-    root["email_ssl"]      = settings.email_ssl;
-    root["email_starttls"] = settings.email_starttls;
+    root["email_security"] = settings.email_security;
     root["email_server"]   = settings.email_server;
     root["email_port"]     = settings.email_port;
     root["email_login"]    = settings.email_login;
@@ -315,8 +314,7 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     settings.weblog_compact = root["weblog_compact"] | EMSESP_DEFAULT_WEBLOG_COMPACT;
 
     settings.email_enabled  = root["email_enabled"] | FACTORY_EMAIL_ENABLE;
-    settings.email_ssl      = root["email_ssl"] | FACTORY_EMAIL_SSL;
-    settings.email_starttls = root["email_starttls"] | FACTORY_EMAIL_STARTTLS;
+    settings.email_security = root["email_security"] | FACTORY_EMAIL_SECURITY;
     settings.email_server   = root["email_server"] | FACTORY_EMAIL_SERVER;
     settings.email_port     = root["email_port"] | FACTORY_EMAIL_PORT;
     settings.email_login    = root["email_login"] | FACTORY_EMAIL_LOGIN;
@@ -325,9 +323,6 @@ StateUpdateResult WebSettings::update(JsonObject root, WebSettings & settings) {
     settings.email_recp     = root["email_recp"] | FACTORY_EMAIL_TO;
     settings.email_subject  = root["email_subject"] | FACTORY_EMAIL_SUBJECT;
 
-    if (settings.email_ssl && settings.email_starttls) {
-        settings.email_ssl = false;
-    }
     // if no psram limit weblog buffer to 25 messages
     if (EMSESP::system_.PSram() > 0) {
         settings.weblog_buffer = root["weblog_buffer"] | EMSESP_DEFAULT_WEBLOG_BUFFER;

@@ -29,11 +29,8 @@
 #ifndef FACTORY_EMAIL_ENABLE
 #define FACTORY_EMAIL_ENABLE false
 #endif
-#ifndef FACTORY_EMAIL_SSL
-#define FACTORY_EMAIL_SSL false
-#endif
-#ifndef FACTORY_EMAIL_STARTTLS
-#define FACTORY_EMAIL_STARTTLS true
+#ifndef FACTORY_EMAIL_SECURITY
+#define FACTORY_EMAIL_SECURITY 2
 #endif
 #ifndef FACTORY_EMAIL_PORT
 #define FACTORY_EMAIL_PORT 587
@@ -108,8 +105,7 @@ class WebSettings {
     uint8_t  modbus_max_clients;
     uint32_t modbus_timeout;
     bool     email_enabled;
-    bool     email_ssl;
-    bool     email_starttls;
+    uint8_t  email_security;
     String   email_server;
     uint16_t email_port;
     String   email_login;
