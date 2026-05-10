@@ -39,11 +39,11 @@ Connect::Connect(uint8_t device_type, uint8_t device_id, uint8_t product_id, con
                           DeviceValueUOM::DEGREES);
     // Roomthermostats
     for (uint8_t i = 0; i < 16; i++) {
-        register_telegram_type(0x0BDD + i, "Room", false, MAKE_PF_CB(process_roomThermostat));                 // broadcasted
-        register_telegram_type(0x0B3D + i, "Roomname", false, MAKE_PF_CB(process_roomThermostatName), 100);         // fetch for active circuits
+        register_telegram_type(0x0BDD + i, "Room", false, MAKE_PF_CB(process_roomThermostat));                    // broadcasted
+        register_telegram_type(0x0B3D + i, "Roomname", false, MAKE_PF_CB(process_roomThermostatName), 100);       // fetch for active circuits
         register_telegram_type(0x0BB5 + i, "Roomsettings", false, MAKE_PF_CB(process_roomThermostatSettings), 8); // fetch for active circuits
-        register_telegram_type(0x1230 + i, "Roomparams", false, MAKE_PF_CB(process_roomThermostatParam));      // fetch for active circuits
-        register_telegram_type(0x1244 + i, "Roomdata", false, MAKE_PF_CB(process_roomThermostatData));         // broadcasted
+        register_telegram_type(0x1230 + i, "Roomparams", false, MAKE_PF_CB(process_roomThermostatParam));         // fetch for active circuits
+        register_telegram_type(0x1244 + i, "Roomdata", false, MAKE_PF_CB(process_roomThermostatData));            // broadcasted
     }
     register_telegram_type(0xDB65, "Roomschedule", true, MAKE_PF_CB(process_roomSchedule));
     // 0x2040, broadcast 36 bytes:

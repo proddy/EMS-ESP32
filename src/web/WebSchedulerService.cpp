@@ -352,8 +352,8 @@ bool WebSchedulerService::command(const char * name, const std::string & command
     // parse json
     JsonDocument doc;
     if (deserializeJson(doc, cmd) == DeserializationError::Ok) {
-        HTTPClient  * http = new HTTPClient;
-        std::string url = doc["url"] | "";
+        HTTPClient * http = new HTTPClient;
+        std::string  url  = doc["url"] | "";
         // for a GET with parameters replace commands with values
         // don't search the complete url, it may contain a devicename in path
         auto q = url.find_first_of('?');
