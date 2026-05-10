@@ -72,6 +72,7 @@ enum SYSTEM_STATUS : uint8_t {
 
 enum FUSE_VALUE : uint8_t { ALL = 0, MFG = 1, MODEL = 2, BOARD = 3, REV = 4, BATCH = 5, FUSE = 6 };
 
+enum EMAIL_SECURITY : uint8_t { NONE = 0, SSL = 1, STARTTLS = 2 };
 struct PartitionInfo {
     std::string version;
     size_t      size;
@@ -95,7 +96,7 @@ class System {
     static bool command_info(const char * value, const int8_t id, JsonObject output);
     static bool command_response(const char * value, const int8_t id, JsonObject output);
     static bool command_service(const char * cmd, const char * value);
-    static bool command_sendemail(const char * value, const int8_t id);
+    static bool command_sendmail(const char * value, const int8_t id);
     static bool command_txpause(const char * value, const int8_t id);
 
     static bool        get_value_info(JsonObject root, const char * cmd);
