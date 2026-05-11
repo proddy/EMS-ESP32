@@ -17,6 +17,7 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - full system backup and restore
 - updated version check [#3047](https://github.com/emsesp/EMS-ESP32/issues/3047)
 - auto-logic to set ht3/ems+ tx-mode
+- polarity for digital_in sensors [#3070](https://github.com/emsesp/EMS-ESP32/discussions/3070)
 
 ## Fixed
 
