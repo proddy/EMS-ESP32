@@ -287,8 +287,8 @@ void AnalogSensor::reload(bool get_nvs) {
 #endif
         } else if (sensor.type() == AnalogType::DIGITAL_IN) {
             LOG_DEBUG("Digital Read on GPIO %02d", sensor.gpio());
-            sensor.set_value(digitalRead(sensor.gpio())); // initial value
-            sensor.set_uom(0);                            // no uom, just for safe measures
+            sensor.set_value(sensor.factor() == 0 ? !digitalRead(sensor.gpio()) : digitalRead(sensor.gpio())); // initial value
+            sensor.set_uom(0);                                                                                 // no uom, just for safe measures
             sensor.polltime_ = 0;
             sensor.poll_     = digitalRead(sensor.gpio());
             publish_sensor(sensor);
@@ -465,7 +465,7 @@ void AnalogSensor::measure() {
             if (uuid::get_uptime() - sensor.polltime_ >= 15 && sensor.poll_ != sensor.last_reading_) {
                 sensor.last_reading_ = sensor.poll_;
                 if (sensor.type() == AnalogType::DIGITAL_IN) {
-                    sensor.set_value(sensor.poll_);
+                    sensor.set_value(sensor.factor() == 0 ? !sensor.poll_ : sensor.poll_);
                 } else if (!sensor.poll_) { // falling edge
                     if (sensor.type() == AnalogType::COUNTER) {
                         sensor.set_value(old_value + sensor.factor());

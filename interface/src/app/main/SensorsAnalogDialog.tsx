@@ -242,6 +242,23 @@ const SensorsAnalogDialog = ({
               </ValidatedTextField>
             </Grid>
           )}
+          {editItem.t === AnalogType.DIGITAL_IN && (
+            <Grid>
+              <ValidatedTextField
+                name="f"
+                label={LL.POLARITY()}
+                value={editItem.f}
+                sx={{ width: '15ch' }}
+                fullWidth
+                select
+                onChange={updateFormValue}
+                disabled={editItem.s}
+              >
+                <MenuItem value={1}>{LL.ACTIVEHIGH()}</MenuItem>
+                <MenuItem value={0}>{LL.ACTIVELOW()}</MenuItem>
+              </ValidatedTextField>
+            </Grid>
+          )}
           {editItem.t === AnalogType.ADC && (
             <Grid>
               <ValidatedTextField
@@ -447,7 +464,7 @@ const SensorsAnalogDialog = ({
                   name="o"
                   label={LL.POLARITY()}
                   value={editItem.o}
-                  sx={{ width: '11ch' }}
+                  sx={{ width: '15ch' }}
                   select
                   onChange={updateFormValue}
                   disabled={editItem.s}
