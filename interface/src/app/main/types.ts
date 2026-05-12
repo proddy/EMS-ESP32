@@ -44,8 +44,7 @@ export interface Settings {
   modbus_max_clients: number;
   modbus_timeout: number;
   email_enabled: boolean;
-  email_ssl?: boolean;
-  email_starttls?: boolean;
+  email_security:number;
   email_server: string;
   email_port: number;
   email_login: string;

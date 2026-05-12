@@ -165,10 +165,10 @@ const ApplicationSettings = () => {
     await doRestart();
   };
 
-  const sendemail = async () => {
+  const sendmail = async () => {
     await sendAPI({
       device: 'system',
-      cmd: 'sendemail',
+      cmd: 'sendmail',
       data: 'Email notification test successful!',
       id: 0
     })
@@ -403,42 +403,21 @@ const ApplicationSettings = () => {
                   margin="normal"
                 />
               </Grid>
-              <Grid
-                size={4}
-                sx={{ mt: !data.email_ssl && !data.email_starttls ? 0 : 3 }}
-              >
-                {!data.email_starttls && (
-                  <BlockFormControlLabel
-                    sx={{ width: '12ch' }}
-                    control={
-                      <Checkbox
-                        checked={data.email_ssl}
-                        onChange={updateFormValue}
-                        name="email_ssl"
-                        disabled={
-                          data.email_starttls || data.email_ssl === undefined
-                        }
-                      />
-                    }
-                    label="SSL/TLS"
-                  />
-                )}
-                {!data.email_ssl && (
-                  <BlockFormControlLabel
-                    sx={{ width: '12ch' }}
-                    control={
-                      <Checkbox
-                        checked={data.email_starttls}
-                        onChange={updateFormValue}
-                        name="email_starttls"
-                        disabled={
-                          data.email_ssl || data.email_starttls === undefined
-                        }
-                      />
-                    }
-                    label="STARTTLS"
-                  />
-                )}
+              <Grid>
+                <TextField
+                  sx={{ width: '20ch' }}
+                  name="email_security"
+                  label={LL.SECURITY(0)}
+                  value={data.email_security}
+                  variant="outlined"
+                  onChange={updateFormValue}
+                  margin="normal"
+                  select
+                >
+                  <MenuItem value={0}>{LL.OFF()}</MenuItem>
+                  <MenuItem value={1}>SSL</MenuItem>
+                  <MenuItem value={2}>StartTLS</MenuItem>
+                </TextField>
               </Grid>
             </Grid>
             <Grid container spacing={2} rowSpacing={0}>
@@ -505,7 +484,7 @@ const ApplicationSettings = () => {
                   variant="outlined"
                   color="primary"
                   disabled={dirtyFlags.length !== 0}
-                  onClick={sendemail}
+                  onClick={sendmail}
                 >
                   Send test email
                 </Button>
@@ -839,6 +818,7 @@ const ApplicationSettings = () => {
               <MenuItem value={2}>EMS+</MenuItem>
               <MenuItem value={3}>HT3</MenuItem>
               <MenuItem value={4}>{LL.HARDWARE()}</MenuItem>
+              <MenuItem value={5}>Auto</MenuItem>
             </TextField>
           </Grid>
           <Grid>

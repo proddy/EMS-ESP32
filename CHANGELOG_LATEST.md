@@ -16,6 +16,8 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - 2.nd freshwater module (dhw4, dhw5) [#2991](https://github.com/emsesp/EMS-ESP32/issues/2991)
 - full system backup and restore
 - updated version check [#3047](https://github.com/emsesp/EMS-ESP32/issues/3047)
+- auto-logic to set ht3/ems+ tx-mode
+- polarity for digital_in sensors [#3070](https://github.com/emsesp/EMS-ESP32/discussions/3070)
 
 ## Fixed
 
@@ -41,3 +43,4 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - heap optimizations [#3021](https://github.com/emsesp/EMS-ESP32/discussions/3021)
 - refactored network code into a single class [#3052](https://github.com/emsesp/EMS-ESP32/pull/3052)
 - check and read 0x470 as summer2_typeids[0] only if received [#2686](https://github.com/emsesp/EMS-ESP32/issues/2686), [#3055](https://github.com/emsesp/EMS-ESP32/issues/3055)
+- default bus-id: gateway1(0x49), tx-mode: auto

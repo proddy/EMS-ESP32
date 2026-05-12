@@ -43,6 +43,7 @@ uint8_t  EMSbus::ems_mask_          = EMS_MASK_UNSET; // unset so its triggered 
 uint8_t  EMSbus::ems_bus_id_        = EMSESP_DEFAULT_EMS_BUS_ID;
 uint8_t  EMSbus::tx_mode_           = EMSESP_DEFAULT_TX_MODE;
 uint8_t  EMSbus::tx_state_          = Telegram::Operation::NONE;
+bool     EMSbus::isEMS2_            = false;
 
 uuid::log::Logger EMSbus::logger_{F_(telegram), uuid::log::Facility::CONSOLE};
 
@@ -206,7 +207,9 @@ void RxService::add(uint8_t * data, uint8_t length) {
         message_data   = data + 6;
         message_length = length - 7;
     }
-
+    if (type_id > 0x0FF && message_length > 1) { // used for auto tx_mode
+        set_ems2();
+    }
     // if we're watching and "raw" print out actual telegram as bytes to the console
     // including the CRC at the end
     if (EMSESP::watch() == EMSESP::Watch::WATCH_RAW) {
