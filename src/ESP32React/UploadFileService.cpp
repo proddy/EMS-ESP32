@@ -133,9 +133,10 @@ void UploadFileService::handleUpload(AsyncWebServerRequest * request, const Stri
     }
 
     if (_is_firmware || _is_filesystem) {
-        if (!request->_tempObject) { // if we haven't delt with an error, continue with the OTA update
+        if (!request->_tempObject) {
+            //continue with the OTA update
             if (Update.write(data, len) != len) {
-                emsesp::EMSESP::logger().err("Update.write failed at offset %u (chunk %u): %s",
+                emsesp::EMSESP::logger().err("OTA update failed at offset %u (chunk %u): %s",
                                              static_cast<unsigned>(Update.progress()),
                                              static_cast<unsigned>(len),
                                              Update.errorString());
@@ -144,15 +145,16 @@ void UploadFileService::handleUpload(AsyncWebServerRequest * request, const Stri
             }
             if (final) {
                 if (!Update.end(true)) {
-                    emsesp::EMSESP::logger().err("Update.end failed: %s", Update.errorString());
-                    handleError(request, 500);
+                    emsesp::EMSESP::logger().err("OTA update failed: %s", Update.errorString());
+                    handleError(request, 500); // internal error, failed
                     return;
                 }
             }
-        } else {
-            if (len && len != request->_tempFile.write(data, len)) { // stream the incoming chunk to the opened file
-                handleError(request, 507);                           // 507-Insufficient Storage
-            }
+        }
+    } else {
+        // stream the incoming chunk to the opened file
+        if (len && len != request->_tempFile.write(data, len)) {
+            handleError(request, 507); // 507-Insufficient Storage
         }
     }
 }
