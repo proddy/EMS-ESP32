@@ -15,6 +15,7 @@ For more details go to [emsesp.org](https://emsesp.org/).
 - 2.nd freshwater module (dhw4, dhw5) [#2991](https://github.com/emsesp/EMS-ESP32/issues/2991)
 - full system backup and restore
 - auto-logic to set ht3/ems+ tx-mode
+- polariity for digital_in sensors [#3070](https://github.com/emsesp/EMS-ESP32/discussions/3070)
 
 ## Fixed
 
