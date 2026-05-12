@@ -77,3 +77,4 @@ pnpm-lock.yaml
 interface/.tsbuildinfo
 test/test_api/package-lock.json
 .clangd
+mklittlefs
