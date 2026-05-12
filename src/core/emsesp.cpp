@@ -1711,6 +1711,11 @@ void EMSESP::start() {
     bool factory_settings = false;
 #endif
 
+#if defined(EMSESP_DEBUG)
+    // LOG_DEBUG("Listing root directory before:");
+    // system_.listDir("/", 3); // show the contents of the root directory
+#endif
+
     // start NVS storage
     if (!nvs_.begin("ems-esp", false, "nvs1")) { // try bigger nvs partition on 16M flash first
         nvs_.begin("ems-esp", false, "nvs");     // fallback to small nvs
@@ -1724,6 +1729,11 @@ void EMSESP::start() {
 
     // loads core system services settings (mqtt, ap, ntp etc)
     esp32React.begin();
+
+#if defined(EMSESP_DEBUG)
+    // LOG_DEBUG("Listing root directory after:");
+    // system_.listDir("/", 3); // show the contents of the root directory
+#endif
 
 #ifndef EMSESP_STANDALONE
     if (factory_settings) {

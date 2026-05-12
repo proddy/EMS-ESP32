@@ -740,18 +740,16 @@ void System::start() {
     last_system_check_ = 0; // force the LED to go from fast flash to pulse
     uart_init();            // start UART
     syslog_init();          // start syslog
-    modbus_init();   // start modbus
+    modbus_init();          // start modbus
 }
 
 // button single click
 void System::button_OnClick(PButton & b) {
     LOG_NOTICE("Button pressed - single click");
 
-#if defined(EMSESP_TEST)
 #ifndef EMSESP_STANDALONE
     // show filesystem
-    Test::listDir(LittleFS, "/", 3);
-#endif
+    listDir("/", 3);
 #endif
 }
 
@@ -3484,6 +3482,41 @@ void System::restore_snapshot_gpios(std::vector<int8_t> & u_gpios, std::vector<i
     for (const auto & gpio : s_gpios) {
         valid_system_gpios_.push_back(gpio);
     }
+}
+
+// show the contents of a directory in the LittleFS filesystem
+void System::listDir(const char * dirname, uint8_t levels) {
+#if defined(EMSESP_DEBUG)
+#ifndef EMSESP_STANDALONE
+
+    File root = LittleFS.open(dirname);
+    if (!root) {
+        LOG_DEBUG("Failed to open directory %s", dirname);
+        return;
+    }
+    if (!root.isDirectory()) {
+        LOG_DEBUG("%s is not a directory", dirname);
+        return;
+    }
+
+    LOG_DEBUG("(directory) %s", dirname);
+
+    File file = root.openNextFile();
+    while (file) {
+        if (file.isDirectory()) {
+            std::string line = std::string(file.name()) + "/";
+            if (levels) {
+                // prefix a / to the name to make it a full path
+                listDir(("/" + String(file.name())).c_str(), levels - 1);
+            }
+        } else {
+            std::string line = "  (file) " + std::string(file.name()) + " (" + std::to_string(file.size()) + " bytes)";
+            LOG_DEBUG("%s", line.c_str());
+        }
+        file = root.openNextFile();
+    }
+#endif
+#endif
 }
 
 } // namespace emsesp
