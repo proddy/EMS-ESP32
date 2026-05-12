@@ -68,6 +68,8 @@ class WebCustomEntityService : public StatefulService<WebCustomEntity> {
     void show_values(JsonObject output);
     void generate_value_web(JsonObject output, const bool is_dashboard = false);
 
+    std::string get_metrics_prometheus();
+
     uint8_t count_entities();
     void    ha_reset() {
         ha_configdone_ = false;

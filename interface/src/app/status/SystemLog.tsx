@@ -38,8 +38,6 @@ import type { LogEntry, LogSettings } from 'types';
 import { LogLevel } from 'types';
 import { updateValueDirty, useRest } from 'utils';
 
-const MAX_LOG_ENTRIES = 1000; // Limit log entries to prevent memory issues
-
 const TextColors: Record<LogLevel, string> = {
   [LogLevel.ERROR]: '#ff0000', // red
   [LogLevel.WARNING]: '#ff0000', // red
@@ -200,10 +198,6 @@ const SystemLog = () => {
         }
       }
       const newLog = [...log, logentry];
-      // Limit log entries to prevent memory issues - only slice when necessary
-      if (newLog.length > MAX_LOG_ENTRIES) {
-        return newLog.slice(-MAX_LOG_ENTRIES);
-      }
       return newLog;
     });
   }, []);
@@ -272,7 +266,7 @@ const SystemLog = () => {
 
     return (
       <>
-        <Grid container spacing={2} alignItems="center">
+        <Grid container spacing={2} sx={{ alignItems: 'center' }}>
           <Grid>
             <TextField
               name="level"
@@ -308,6 +302,8 @@ const SystemLog = () => {
                 <MenuItem value={50}>50</MenuItem>
                 <MenuItem value={75}>75</MenuItem>
                 <MenuItem value={100}>100</MenuItem>
+                <MenuItem value={500}>500</MenuItem>
+                <MenuItem value={1000}>1000</MenuItem>
               </TextField>
             </Grid>
           )}

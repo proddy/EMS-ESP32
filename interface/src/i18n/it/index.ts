@@ -186,7 +186,8 @@ const it: Translation = {
   BUFFER_SIZE: 'Max Buffer Size',
   COMPACT: 'Compatto',
   DOWNLOAD_SETTINGS_TEXT: 'Create a backup of your configuration and settings',
-  DOWNLOAD_SETTINGS_TEXT2: 'Esporta tutti i dati',
+  DOWNLOAD_SETTINGS_TEXT2: 'Esporta tutti i valori',
+  DOWNLOAD_SYSTEM_BACKUP: 'Backup sistema',
   UPLOAD_TEXT: 'Upload a new firmware file (.bin) or a backup file (.json)',
   UPLOAD_DROP_TEXT: 'Drop a firmware .bin file or click here',
   ERROR: 'Errore Inaspettato, prego tenta ancora',
@@ -349,6 +350,7 @@ const it: Translation = {
   NO_DATA_1: 'Nessuna entità EMS preferita trovata. Usa il',
   NO_DATA_2: 'modulo per marcarle.',
   NO_DATA_3: 'Per vedere tutte le entità disponibili vai a',
+  NO_GPIO: 'Non è stato trovato alcun GPIO disponibile',
   THIS_VERSION: 'Questa versione',
   PLATFORM: 'Piattaforma',
   RELEASE_TYPE: 'Tipo di rilascio',
@@ -357,7 +359,13 @@ const it: Translation = {
   FIRMWARE_VERSION_INFO: 'Informazioni sulla versione del firmware',
   NO_DATA: 'Nessun dato',
   USER_PROFILE: 'Profilo utente',
-  STORED_VERSIONS: 'Versioni memorizzate'
+  STORED_VERSIONS: 'Versioni memorizzate',
+  ONLINE_HELP: 'aiuto online',
+  UPGRADE_IMPORTANT_MESSAGES: 'Aggiorna Messaggi Importanti',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Questa aggiornamento richiede un ripristino di fabbrica. Assicurati di prima scaricare un backup del sistema prima di continuare, e poi caricare questo file dopo l\'installazione della nuova versione.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Stai aggiornando a una nuova versione principale. Assicurati di aver letto il ChangeLog per qualsiasi cambiamento importante.',
+  WARNING_SYSTEM_BACKUP: 'Questo creerà un backup delle tue configurazioni e impostazioni complete. Tutte le password saranno leggibili nel file di backup. Sei sicuro di voler continuare?'
+
 };
 
 export default it;

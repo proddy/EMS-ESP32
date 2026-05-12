@@ -141,8 +141,8 @@ let system_status = {
 let DEV_VERSION_IS_UPGRADEABLE: boolean;
 let STABLE_VERSION_IS_UPGRADEABLE: boolean;
 let THIS_VERSION: string;
-let LATEST_STABLE_VERSION = '3.8.0';
-let LATEST_DEV_VERSION = '3.8.1-dev.2';
+let LATEST_STABLE_VERSION = '3.8.2';
+let LATEST_DEV_VERSION = '3.8.3-dev.2';
 
 // scenarios for testing versioning
 let version_test = 0; // on latest stable, or switch to dev
@@ -363,6 +363,8 @@ function export_data(type: string) {
       return emsesp_modules;
     case 'allvalues':
       return emsesp_allvalues;
+    case 'systembackup':
+      return emsesp_systembackup;
     default:
       return status(404);
   }
@@ -386,13 +388,34 @@ function custom_support() {
         '',
         "For help and questions please <a target='_blank' href='https://emsesp.org'>contact</a> your installer."
       ],
-      img_url: 'https://emsesp.org/_media/images/designer.png'
+      img_url: 'https://emsesp.org/media/images/designer.png'
       // img_url: 'https://picsum.photos/200/300'
     }
   };
 }
 
-// called by Action endpoint
+// called by Action endpoint upgradeImportantMessages
+function upgradeImportantMessages(version: string) {
+  // 0 is do nothing
+  // 1 means 3.9 and factory reset required
+  // 2 means a major version upgrade
+  let upgradeImportantMessageType_n = 0;
+
+  // see if its a filename with a .bin extension
+  if (version.endsWith('.bin')) {
+    upgradeImportantMessageType_n = 1; // 1 means 3.9 and factory reset required
+  } else if (version.endsWith('.md')) {
+    upgradeImportantMessageType_n = 0;
+  } else {
+    // this is a version string like "3.9.0"
+    upgradeImportantMessageType_n = 2;
+  }
+
+  console.log('upgradeImportantMessageType: ' + upgradeImportantMessageType_n);
+  return { upgradeImportantMessageType: upgradeImportantMessageType_n };
+}
+
+// called by Action endpoint checkUpgrade
 function check_upgrade(version: string) {
   let data = {};
   if (version) {
@@ -731,6 +754,8 @@ const emsesp_info = {
     }
   ]
 };
+
+const emsesp_systembackup = {};
 
 const emsesp_allvalues = {
   'Boiler Nefit Trendline HRC30 (DeviceID:0x08, ProductID:123, Version:06.01)': {
@@ -4564,7 +4589,7 @@ router
     let sorted_devices = [...emsesp_coredata.devices].sort((a, b) => a.t - b.t);
     // append emsesp_coredata to sorted_devices so Custom is always at the end of the list
     sorted_devices.push(emsesp_coredata_custom);
-    // sorted_devices = []; // uncomment if simulating no devices...
+    // return { connected: false, devices: [] }; // uncomment if simulating no devices...
     return { connected: true, devices: sorted_devices };
   })
   .get(EMSESP_SENSOR_DATA_ENDPOINT, () => {
@@ -5166,6 +5191,9 @@ router
         // set partition
         console.log('setting partition to', content.param);
         return status(200);
+      } else if (action === 'upgradeImportantMessages') {
+        // check upgrade important messages
+        return upgradeImportantMessages(content.param);
       }
     }
     return status(404); // cmd not found

@@ -56,6 +56,7 @@ void IRAM_ATTR AnalogSensor::freqIrq2() {
 #endif
 
 void AnalogSensor::start(const bool factory_settings) {
+    // add hardcoded sensors for BBQKees gateway boards
     if (factory_settings && EMSESP::system_.board_profile() == "E32V2_2") {
         EMSESP::webCustomizationService.update([&](WebCustomization & settings) {
             auto newSensor = AnalogCustomization();
@@ -286,8 +287,8 @@ void AnalogSensor::reload(bool get_nvs) {
 #endif
         } else if (sensor.type() == AnalogType::DIGITAL_IN) {
             LOG_DEBUG("Digital Read on GPIO %02d", sensor.gpio());
-            sensor.set_value(digitalRead(sensor.gpio())); // initial value
-            sensor.set_uom(0);                            // no uom, just for safe measures
+            sensor.set_value(sensor.factor() == 0 ? !digitalRead(sensor.gpio()) : digitalRead(sensor.gpio())); // initial value
+            sensor.set_uom(0);                                                                                 // no uom, just for safe measures
             sensor.polltime_ = 0;
             sensor.poll_     = digitalRead(sensor.gpio());
             publish_sensor(sensor);
@@ -464,7 +465,7 @@ void AnalogSensor::measure() {
             if (uuid::get_uptime() - sensor.polltime_ >= 15 && sensor.poll_ != sensor.last_reading_) {
                 sensor.last_reading_ = sensor.poll_;
                 if (sensor.type() == AnalogType::DIGITAL_IN) {
-                    sensor.set_value(sensor.poll_);
+                    sensor.set_value(sensor.factor() == 0 ? !sensor.poll_ : sensor.poll_);
                 } else if (!sensor.poll_) { // falling edge
                     if (sensor.type() == AnalogType::COUNTER) {
                         sensor.set_value(old_value + sensor.factor());
@@ -852,6 +853,15 @@ bool AnalogSensor::get_value_info(JsonObject output, const char * cmd, const int
         return true;
     }
 
+    if (!strcmp(cmd, F_(metrics))) {
+        std::string metrics = get_metrics_prometheus();
+        if (!metrics.empty()) {
+            output["api_data"] = metrics;
+            return true;
+        }
+        return false;
+    }
+
     // this is for a specific sensor, return the value
     const char * attribute_s = Command::get_attribute(cmd);
 
@@ -864,6 +874,35 @@ bool AnalogSensor::get_value_info(JsonObject output, const char * cmd, const int
     }
 
     return false; // not found
+}
+
+// generate Prometheus metrics format from analog values
+std::string AnalogSensor::get_metrics_prometheus() {
+    std::string result;
+    result.reserve(sensors_.size() * 140);
+    char val[10];
+    for (auto & sensor : sensors_) {
+        result += (std::string) "# HELP emsesp_" + sensor.name() + " " + sensor.name();
+        if (sensor.type() != AnalogType::DIGITAL_OUT && sensor.type() != AnalogType::DIGITAL_IN) {
+            result += (std::string) ", " + EMSdevice::uom_to_string(sensor.uom());
+        } else {
+            result += (std::string) ", boolean";
+        }
+        result += (std::string) ", readable, visible";
+        if (sensor.type() == AnalogType::COUNTER || sensor.type() == AnalogType::RGB || sensor.type() == AnalogType::PULSE
+            || (sensor.type() >= AnalogType::DIGITAL_OUT && sensor.type() <= AnalogType::PWM_2)
+            || (sensor.type() >= AnalogType::CNT_0 && sensor.type() <= AnalogType::CNT_2)) {
+            result += (std::string) ", writable";
+        }
+        result += (std::string) "\n# TYPE emsesp_" + sensor.name() + " gauge\n";
+        result += (std::string) "emsesp_" + sensor.name() + " ";
+        if (sensor.type() != AnalogType::DIGITAL_OUT && sensor.type() != AnalogType::DIGITAL_IN) {
+            result += (std::string)Helpers::render_value(val, sensor.value(), 2) + "\n";
+        } else {
+            result += (std::string)(sensor.value() == 0 ? "0\n" : "1\n");
+        }
+    }
+    return result;
 }
 
 // note we don't add the device and state classes here, as we do in the custom entity service

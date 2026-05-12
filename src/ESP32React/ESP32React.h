@@ -68,6 +68,7 @@ class ESP32React {
     }
 
   private:
+    AsyncWebServer *        _server;
     SecuritySettingsService _securitySettingsService;
     NetworkSettingsService  _networkSettingsService;
     WiFiScanner             _wifiScanner;

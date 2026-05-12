@@ -186,7 +186,8 @@ const pl: BaseTranslation = {
   BUFFER_SIZE: 'Maksymalna pojemność bufora (ilość wpisów)',
   COMPACT: 'Kompaktowy',
   DOWNLOAD_SETTINGS_TEXT: 'Utwórz kopię swoich ustawień i konfiguracji',
-  DOWNLOAD_SETTINGS_TEXT2: 'Eksportuj wszystkie dane',
+  DOWNLOAD_SETTINGS_TEXT2: 'Eksportuj wszystkie wartości',
+  DOWNLOAD_SYSTEM_BACKUP: 'Kopia zapasowa systemu',
   UPLOAD_TEXT: 'Wgraj nowy plik firmware (.bin) lub kopię ustawień (.json)',
   UPLOAD_DROP_TEXT: 'Upuść plik firmware .bin lub kliknij tutaj',
   ERROR: 'Nieoczekiwany błąd, spróbuj ponownie!',
@@ -349,6 +350,7 @@ const pl: BaseTranslation = {
   NO_DATA_1: 'Brak ulubionych encji EMS. Użyj',
   NO_DATA_2: 'moduł do ich oznaczenia.',
   NO_DATA_3: 'Aby zobaczyć wszystkie dostępne encje przejdź do',
+  NO_GPIO: 'Nie znaleziono dostępnych pinów GPIO',
   THIS_VERSION: 'Ta wersja',
   PLATFORM: 'Platforma',
   RELEASE_TYPE: 'Typ wydania',
@@ -357,7 +359,13 @@ const pl: BaseTranslation = {
   FIRMWARE_VERSION_INFO: 'Informacje o wersji firmware',
   NO_DATA: 'Brak danych',
   USER_PROFILE: 'Profil użytkownika',
-  STORED_VERSIONS: 'Zapisane wersje'
+  STORED_VERSIONS: 'Zapisane wersje',
+  ONLINE_HELP: 'pomoc online',
+  UPGRADE_IMPORTANT_MESSAGES: 'Aktualizuj ważne wiadomości',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Ta aktualizacja wymaga resetu fabrycznego. Upewnij się, że najpierw pobierzesz kopię zapasową systemu przed kontynuowaniem, a następnie przesuń tę plik po zainstalowaniu nowej wersji.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Aktualizujesz się do nowej głównej wersji. Upewnij się, że przeczytałeś ChangeLog dla wszelkich istotnych zmian.',
+  WARNING_SYSTEM_BACKUP: 'To spowoduje utworzenie kopii zapasowej całej konfiguracji i ustawień systemu. Wszystkie hasła będą widoczne w pliku kopii zapasowej. Bądź ostrożny przy udostępnianiu! Chcesz kontynuować?'
+
 };
 
 export default pl;

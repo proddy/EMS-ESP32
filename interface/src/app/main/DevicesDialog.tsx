@@ -24,7 +24,7 @@ import type { ValidateFieldsError } from 'async-validator';
 import { ValidatedTextField } from 'components';
 import { useI18nContext } from 'i18n/i18n-react';
 import { numberValue, updateValue } from 'utils';
-import { validate } from 'validators';
+import { ValidationError, validate } from 'validators';
 
 import { DeviceValueUOM, DeviceValueUOM_s } from './types';
 import type { DeviceValue } from './types';
@@ -67,7 +67,7 @@ const DevicesDialog = ({
       await validate(validator, editItem);
       onSave(editItem);
     } catch (error) {
-      setFieldErrors(error as ValidateFieldsError);
+      setFieldErrors((error as ValidationError).fieldErrors);
     }
   }, [validator, editItem, onSave]);
 
@@ -128,9 +128,9 @@ const DevicesDialog = ({
     <Dialog sx={dialogStyle} open={open} onClose={onClose}>
       <DialogTitle>{dialogTitle}</DialogTitle>
       <DialogContent dividers>
-        <Box color="warning.main" mb={2}>
-          <Typography variant="body2">{editItem.id.slice(2)}</Typography>
-        </Box>
+        <Typography sx={{ mb: 2 }} color="warning" variant="body2">
+          {editItem.id.slice(2)}
+        </Typography>
         <Grid container>
           <Grid size={12}>
             {editItem.l ? (

@@ -19,7 +19,7 @@
 #ifndef EMSESP_COMMAND_H_
 #define EMSESP_COMMAND_H_
 
-#include <unordered_map>
+#include <map>
 
 #include "console.h"
 #include <esp32-psram.h>
@@ -153,8 +153,8 @@ class Command {
 
 class SUrlParser {
   private:
-    std::unordered_map<std::string, std::string> m_keysvalues;
-    std::vector<std::string>                     m_folders;
+    std::map<std::string, std::string> m_keysvalues;
+    std::vector<std::string>           m_folders;
 
   public:
     SUrlParser() = default;
@@ -166,7 +166,7 @@ class SUrlParser {
         return m_folders;
     };
 
-    std::unordered_map<std::string, std::string> & params() {
+    std::map<std::string, std::string> & params() {
         return m_keysvalues;
     };
 

@@ -37,6 +37,7 @@ class Solar : public EMSdevice {
     int16_t cylTopTemp_;        // TS10: Temperature sensor 1 cylinder, Top
     int16_t heatExchangerTemp_; // TS6: Heat exchanger temperature sensor
     int16_t collector2Temp_;    // TS7: Temperature sensor for collector array 2
+    int16_t ts3_;               // TS3: Temperature sensor cylinder middle
     int16_t ts8_;               // TS8: Temperature sensor for ?
     int16_t ts16_;              // TS16: Temperature sensor for ?
     int16_t cylMiddleTemp_;     // TS14: Cylinder middle temp

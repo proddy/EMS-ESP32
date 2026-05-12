@@ -8,7 +8,7 @@ import {
   useState
 } from 'react';
 import { IconContext } from 'react-icons';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { toast } from 'react-toastify';
 
 import CommentsDisabledOutlinedIcon from '@mui/icons-material/CommentsDisabledOutlined';
@@ -534,9 +534,19 @@ const Devices = memo(() => {
   const renderCoreData = () => (
     <>
       {!coreData.connected ? (
-        <MessageBox level="error" message={LL.EMS_BUS_WARNING()} />
+        <MessageBox level="error" message={LL.EMS_BUS_WARNING() + '.'}>
+          &nbsp;(
+          <Link
+            target="_blank"
+            to="https://docs.emsesp.org/Troubleshooting#ems-bus-is-not-connecting"
+            style={{ color: 'white' }}
+          >
+            {LL.ONLINE_HELP()}
+          </Link>
+          )
+        </MessageBox>
       ) : (
-        <Box justifyContent="center" flexDirection="column">
+        <Box sx={{ justifyContent: 'center', flexDirection: 'column' }}>
           <IconContext.Provider
             value={{
               color: 'lightblue',
@@ -660,12 +670,12 @@ const Devices = memo(() => {
         }}
       >
         <Box sx={{ p: 1 }}>
-          <Grid container justifyContent="space-between">
-            <Typography noWrap variant="subtitle1" color="warning.main">
+          <Grid container sx={{ justifyContent: 'space-between' }}>
+            <Typography noWrap variant="subtitle1" color="warning">
               {deviceInfo.n}&nbsp;(
               {deviceInfo.tn})
             </Typography>
-            <Grid justifyContent="flex-end">
+            <Grid sx={{ justifyContent: 'flex-end' }}>
               <ButtonTooltip title={LL.CLOSE()}>
                 <IconButton onClick={resetDeviceSelect} aria-label={LL.CLOSE()}>
                   <HighlightOffIcon color="primary" sx={{ fontSize: 18 }} />

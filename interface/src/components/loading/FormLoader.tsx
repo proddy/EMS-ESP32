@@ -32,8 +32,16 @@ const FormLoaderComponent = ({ errorMessage, onRetry }: FormLoaderProps) => {
     );
   }
   return (
-    <Box m={2} py={2} display="flex" alignItems="center" flexDirection="column">
-      <Box py={2}>
+    <Box
+      sx={{
+        m: 2,
+        py: 2,
+        display: 'flex',
+        alignItems: 'center',
+        flexDirection: 'column'
+      }}
+    >
+      <Box sx={{ p: 2 }}>
         <CircularProgress size={100} />
       </Box>
     </Box>

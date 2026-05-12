@@ -7,7 +7,7 @@ import DoneIcon from '@mui/icons-material/Done';
 import EditOffOutlinedIcon from '@mui/icons-material/EditOffOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import InsertCommentOutlinedIcon from '@mui/icons-material/InsertCommentOutlined';
-import RemoveIcon from '@mui/icons-material/RemoveCircleOutline';
+import RemoveIcon from '@mui/icons-material/RemoveCircleOutlined';
 import {
   Box,
   Button,
@@ -28,7 +28,7 @@ import type { ValidateFieldsError } from 'async-validator';
 import { BlockFormControlLabel, ValidatedTextField } from 'components';
 import { useI18nContext } from 'i18n/i18n-react';
 import { numberValue, updateValue } from 'utils';
-import { validate } from 'validators';
+import { ValidationError, validate } from 'validators';
 
 import { DeviceValueType, DeviceValueTypeNames, DeviceValueUOM_s } from './types';
 import type { EntityItem } from './types';
@@ -136,7 +136,7 @@ const CustomEntitiesDialog = ({
       }
       onSave(processedItem);
     } catch (error) {
-      setFieldErrors(error as ValidateFieldsError);
+      setFieldErrors((error as ValidationError).fieldErrors);
     }
   }, [validator, editItem, onSave]);
 
@@ -178,7 +178,7 @@ const CustomEntitiesDialog = ({
               onChange={updateFormValue}
             />
           </Grid>
-          <Grid mt={3}>
+          <Grid sx={{ mt: 3 }}>
             <BlockFormControlLabel
               control={
                 <Checkbox
@@ -205,16 +205,17 @@ const CustomEntitiesDialog = ({
             >
               <MenuItem value={0}>EMS-{LL.VALUE(1)}</MenuItem>
               <MenuItem value={1}>RAM-{LL.VALUE(1)}</MenuItem>
+              <MenuItem value={2}>NVS-{LL.VALUE(1)}</MenuItem>
             </TextField>
           </Grid>
-          {editItem.ram === 1 && (
+          {editItem.ram > 0 && (
             <>
               <Grid>
                 <TextField
                   name="value"
                   label={LL.DEFAULT(0) + ' ' + LL.VALUE(0)}
                   type="string"
-                  value={editItem.value as string}
+                  value={editItem.value}
                   variant="outlined"
                   onChange={updateFormValue}
                   fullWidth
@@ -237,7 +238,7 @@ const CustomEntitiesDialog = ({
           )}
           {editItem.ram === 0 && (
             <>
-              <Grid mt={3}>
+              <Grid sx={{ mt: 3 }}>
                 <BlockFormControlLabel
                   control={
                     <Checkbox
@@ -259,7 +260,7 @@ const CustomEntitiesDialog = ({
                   margin="normal"
                   sx={{ width: '11ch' }}
                   type="string"
-                  value={editItem.device_id as string}
+                  value={editItem.device_id}
                   onChange={updateFormValue}
                   slotProps={{
                     input: {
@@ -279,7 +280,7 @@ const CustomEntitiesDialog = ({
                   margin="normal"
                   sx={{ width: '11ch' }}
                   type="string"
-                  value={editItem.type_id as string}
+                  value={editItem.type_id}
                   onChange={updateFormValue}
                   slotProps={{
                     input: {
@@ -380,7 +381,7 @@ const CustomEntitiesDialog = ({
                     fieldErrors={fieldErrors || {}}
                     name="factor"
                     label={LL.BITMASK()}
-                    value={editItem.factor as string}
+                    value={editItem.factor}
                     sx={{ width: '11ch' }}
                     variant="outlined"
                     onChange={updateFormValue}
@@ -403,7 +404,7 @@ const CustomEntitiesDialog = ({
       </DialogContent>
       <DialogActions>
         {!creating && (
-          <Box flexGrow={1}>
+          <Box sx={{ flexGrow: 1 }}>
             <Button
               startIcon={<RemoveIcon />}
               variant="outlined"

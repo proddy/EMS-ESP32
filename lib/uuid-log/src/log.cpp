@@ -232,7 +232,7 @@ void Logger::vlog(Level level, const char * format, va_list ap) const {
 }
 
 void Logger::vlog(Level level, Facility facility, const char * format, va_list ap) const {
-    std::vector<char> text(MAX_LOG_LENGTH + 1);
+    std::vector<char, AllocatorPSRAM<char>> text(MAX_LOG_LENGTH + 1);
 
     if (vsnprintf(text.data(), text.size(), format, ap) <= 0) {
         return;
@@ -241,7 +241,7 @@ void Logger::vlog(Level level, Facility facility, const char * format, va_list a
     dispatch(level, facility, text);
 }
 
-void Logger::dispatch(Level level, Facility facility, std::vector<char> & text) const {
+void Logger::dispatch(Level level, Facility facility, std::vector<char, AllocatorPSRAM<char>> & text) const {
     std::shared_ptr<Message> message = std::make_shared<Message>(get_uptime_ms(), level, facility, name_, text.data());
     text.resize(0);
 

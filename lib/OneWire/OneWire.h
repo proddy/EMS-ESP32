@@ -148,9 +148,7 @@
 #elif defined(ARDUINO_ARCH_ESP32)
 #include <driver/rtc_io.h>
 #include <soc/gpio_struct.h>
-#if ESP_IDF_VERSION_MAJOR >= 5
 #include "soc/gpio_periph.h"
-#endif // ESP_IDF_VERSION_MAJOR >= 5
 #define PIN_TO_BASEREG(pin) (0)
 #define PIN_TO_BITMASK(pin) (pin)
 #define IO_REG_TYPE uint32_t

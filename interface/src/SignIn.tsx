@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 
 import ForwardIcon from '@mui/icons-material/Forward';
 import { Box, Button, Paper, Typography } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 
 import * as AuthenticationApi from 'components/routing/authentication';
 import { useRequest } from 'alova/client';
@@ -17,7 +18,7 @@ import { PROJECT_NAME } from 'env';
 import { useI18nContext } from 'i18n/i18n-react';
 import type { SignInRequest } from 'types';
 import { onEnterCallback, updateValue } from 'utils';
-import { SIGN_IN_REQUEST_VALIDATOR, validate } from 'validators';
+import { SIGN_IN_REQUEST_VALIDATOR, ValidationError, validate } from 'validators';
 
 const SignIn = memo(() => {
   const authenticationContext = useContext(AuthenticationContext);
@@ -36,7 +37,7 @@ const SignIn = memo(() => {
     {
       immediate: false
     }
-  ).onSuccess((response) => {
+  ).onSuccess((response: { data: { access_token: string } }) => {
     if (response.data) {
       authenticationContext.signIn(response.data.access_token);
     }
@@ -73,12 +74,11 @@ const SignIn = memo(() => {
       await validate(SIGN_IN_REQUEST_VALIDATOR, signInRequest);
       await signIn();
     } catch (error) {
-      setFieldErrors(error as ValidateFieldsError);
+      setFieldErrors((error as ValidationError).fieldErrors);
       setProcessing(false);
     }
   }, [signInRequest, signIn, LL]);
 
-  // Memoize callback to prevent recreation on every render
   const submitOnEnter = useMemo(() => onEnterCallback(signIn), [signIn]);
 
   // get rid of scrollbar
@@ -92,13 +92,15 @@ const SignIn = memo(() => {
 
   return (
     <Box
-      display="flex"
-      height="100vh"
-      margin="auto"
-      padding={2}
-      justifyContent="center"
-      flexDirection="column"
-      maxWidth={(theme) => theme.breakpoints.values.sm}
+      sx={(theme: Theme) => ({
+        display: 'flex',
+        height: '100vh',
+        margin: 'auto',
+        padding: 2,
+        justifyContent: 'center',
+        flexDirection: 'column',
+        maxWidth: theme.breakpoints.values.sm
+      })}
     >
       <Paper
         sx={(theme) => ({
@@ -111,16 +113,18 @@ const SignIn = memo(() => {
           width: '100%'
         })}
       >
-        <Typography mb={1} variant="h4">
+        <Typography sx={{ mb: 1 }} variant="h4">
           {PROJECT_NAME}
         </Typography>
         <LanguageSelector />
         <Box
-          mt={1}
-          display="flex"
-          flexDirection="column"
-          gap={1}
-          alignItems="center"
+          sx={{
+            mt: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+            alignItems: 'center'
+          }}
         >
           <ValidatedTextField
             fieldErrors={fieldErrors || {}}

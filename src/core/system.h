@@ -83,7 +83,7 @@ enum FUSE_VALUE : uint8_t { ALL = 0, MFG = 1, MODEL = 2, BOARD = 3, REV = 4, BAT
 struct PartitionInfo {
     std::string version;
     size_t      size;
-    std::string install_date; // optional, only available if NTP is connected
+    time_t      install_date; // UTC epoch seconds; 0 if unknown. Format with localtime() at render time so it honors the current TZ.
 };
 
 class System {
@@ -109,6 +109,8 @@ class System {
     static void        get_value_json(JsonObject output, const std::string & circuit, const std::string & name, JsonVariant val);
     static std::string get_metrics_prometheus();
 
+    static void listDir(const char * dirname, uint8_t levels);
+
 #if defined(EMSESP_TEST)
     static bool command_test(const char * value, const int8_t id);
 #endif
@@ -122,6 +124,7 @@ class System {
     void show_mem(const char * note);
     void store_settings(class WebSettings & settings);
     void syslog_init();
+    void modbus_init();
     bool check_upgrade();
     bool check_restore();
     void heartbeat_json(JsonObject output);
@@ -156,8 +159,9 @@ class System {
     void    systemStatus(uint8_t status_code);
     uint8_t systemStatus();
 
-    static void extractSettings(const char * filename, const char * section, JsonObject output);
-    static bool saveSettings(const char * filename, const char * section, JsonObject input);
+    static void exportSettings(const std::string & type, const char * filename, JsonObject output);
+    static void exportSystemBackup(JsonObject output);
+    static bool saveSettings(const char * filename, JsonObject input);
 
     static bool                 add_gpio(uint8_t pin, const char * source_name);
     static std::vector<uint8_t> available_gpios();
@@ -375,6 +379,8 @@ class System {
 #endif
 
     static void remove_gpio(uint8_t pin, bool also_system = false); // remove a gpio from both valid (optional) and used lists
+    static void remove_optional_gpio(uint8_t pin);
+    static void reset_unused_gpios();
 
     // Partition info map: partition name -> {version, size, install_date}
     std::map<std::string, PartitionInfo, std::less<>, AllocatorPSRAM<std::pair<const std::string, PartitionInfo>>> partition_info_;

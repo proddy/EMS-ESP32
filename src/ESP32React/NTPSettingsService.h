@@ -49,7 +49,7 @@ class NTPSettingsService : public StatefulService<NTPSettings> {
   private:
     HttpEndpoint<NTPSettings>  _httpEndpoint;
     FSPersistence<NTPSettings> _fsPersistence;
-    bool                       _connected;
+    volatile bool              _connected;
 
     void WiFiEvent(WiFiEvent_t event);
     void configureNTP();

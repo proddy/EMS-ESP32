@@ -20,40 +20,21 @@
 #include "emsesp.h" // for send_raw_telegram() command
 
 #ifndef EMSESP_STANDALONE
+#include "esp_image_format.h"
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
+#include <esp_mac.h>
+#include "esp_efuse.h"
+#include <nvs.h>
 #endif
 
 #include <HTTPClient.h>
 #include <map>
 
-#include <semver200.h>
+#include "EMSESP_Version.h"
 
 #if defined(EMSESP_TEST)
 #include "../test/test.h"
-#endif
-
-#ifndef EMSESP_STANDALONE
-#ifdef ESP_IDF_VERSION_MAJOR // IDF 4+
-#if CONFIG_IDF_TARGET_ESP32  // ESP32/PICO-D4
-#include "../esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "../esp32s2/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "../esp32c3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "../esp32s3/rom/rtc.h"
-#else
-#error Target CONFIG_IDF_TARGET is not supported
-#endif
-#else // ESP32 Before IDF 4.0
-#include "../rom/rtc.h"
-#endif
-#include <esp_mac.h>
-#endif
-
-#ifndef EMSESP_STANDALONE
-#include "esp_efuse.h"
 #endif
 
 namespace emsesp {
@@ -307,11 +288,11 @@ void System::get_partition_info() {
     partition_info_.clear(); // clear existing data
 
 #ifdef EMSESP_STANDALONE
-    // dummy data for standalone mode - version, size, install_date
-    partition_info_["app0"]    = {EMSESP_APP_VERSION, 0, ""};
-    partition_info_["app1"]    = {"", 0, ""};
-    partition_info_["factory"] = {"", 0, ""};
-    partition_info_["boot"]    = {"", 0, ""};
+    // dummy data for standalone mode - version, size, install_date in UTC epoch
+    partition_info_["app0"]    = {EMSESP_APP_VERSION, 0, 0};
+    partition_info_["app1"]    = {"", 0, 0};
+    partition_info_["factory"] = {"", 0, 0};
+    partition_info_["boot"]    = {"", 0, 0};
 #else
 
     auto current_partition = (const char *)esp_ota_get_running_partition()->label;
@@ -351,14 +332,19 @@ void System::get_partition_info() {
             p_info.version = EMSESP::nvs_.getString(part->label, "").c_str();
             char c[20];
             snprintf(c, sizeof(c), "d_%s", (const char *)part->label);
-            time_t d = EMSESP::nvs_.getULong(c, 0);
-            char   time_string[25];
-            strftime(time_string, sizeof(time_string), "%FT%T", localtime(&d));
-            p_info.install_date = d > 1500000000L ? time_string : "";
+            time_t d            = EMSESP::nvs_.getULong(c, 0);
+            p_info.install_date = d > 1500000000L ? d : 0; // store UTC epoch; formatted to local time at render
 
-            p_info.size = part->size / 1024; // set size in KB
-
-            partition_info_[part->label] = p_info;
+            if (!p_info.version.empty()) {
+                esp_image_metadata_t meta     = {};
+                esp_partition_pos_t  part_pos = {.offset = part->address, .size = part->size};
+                if (esp_image_verify(ESP_IMAGE_VERIFY_SILENT, &part_pos, &meta) == ESP_OK) {
+                    p_info.size = meta.image_len / 1024; // actual firmware size in KB
+                } else {
+                    p_info.size = 0;
+                }
+                partition_info_[part->label] = p_info;
+            }
         }
 
         it = esp_partition_next(it); // loop to next partition
@@ -367,7 +353,7 @@ void System::get_partition_info() {
 #endif
 }
 
-// set NTP install time/date for the current partition
+// set install time/date for the current partition, in UTC
 // assumes NTP is connected and working
 void System::set_partition_install_date() {
 #ifndef EMSESP_STANDALONE
@@ -380,7 +366,7 @@ void System::set_partition_install_date() {
     snprintf(c, sizeof(c), "d_%s", current_partition);
     time_t d = EMSESP::nvs_.getULong(c, 0);
     if (d < 1500000000L) {
-        LOG_INFO("Firmware is fresh, setting the new install date in partition %s", current_partition);
+        LOG_DEBUG("Setting the install date in partition %s", current_partition);
         auto t = time(nullptr) - uuid::get_uptime_sec();
         EMSESP::nvs_.putULong(c, t);
     }
@@ -424,9 +410,9 @@ bool System::set_partition(const char * partitionname) {
 // restart EMS-ESP
 // app0 or app1, or boot/factory on 16MB boards
 void System::system_restart(const char * partitionname) {
-#ifndef EMSESP_STANDALONE
     // see if we are forcing a partition to use
     if (partitionname != nullptr) {
+#ifndef EMSESP_STANDALONE
         // Factory partition - label will be "factory"
         const esp_partition_t * partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
         if (partition && !strcmp(partition->label, partitionname)) {
@@ -457,27 +443,28 @@ void System::system_restart(const char * partitionname) {
                 // set the boot partition
                 esp_ota_set_boot_partition(partition);
             }
+#endif
         LOG_INFO("Restarting EMS-ESP from %s partition", partitionname);
     } else {
         LOG_INFO("Restarting EMS-ESP...");
     }
-
-    // make sure it's only executed once
-    EMSESP::system_.systemStatus(SYSTEM_STATUS::SYSTEM_STATUS_NORMAL);
 
     store_nvs_values(); // save any NVS values
-    Shell::loop_all();  // flush log to output
+
+    // flush all the log
+    EMSESP::webLogService.loop(); // dump all to web log
+    for (int i = 0; i < 10; i++) {
+        Shell::loop_all();
+        delay(10); // give telnet TCP stack time to transmit
+    }
+    Serial.flush(); // wait for hardware TX buffer to drain
+
     Mqtt::disconnect(); // gracefully disconnect MQTT, needed for QOS1
     EMSuart::stop();    // stop UART so there is no interference
-    delay(1000);        // wait 1 second
-    ESP.restart();      // ka-boom!
-#else
-    EMSESP::system_.systemStatus(SYSTEM_STATUS::SYSTEM_STATUS_NORMAL);
-    if (partitionname != nullptr) {
-        LOG_INFO("Restarting EMS-ESP from %s partition", partitionname);
-    } else {
-        LOG_INFO("Restarting EMS-ESP...");
-    }
+
+#ifndef EMSESP_STANDALONE
+    delay(1000);   // wait 1 second
+    ESP.restart(); // ka-boom! - this is the only place where the ESP32 restart is called
 #endif
 }
 
@@ -539,6 +526,29 @@ void System::syslog_init() {
 #endif
 }
 
+// start or reconfigure modbus
+void System::modbus_init() {
+    EMSESP::webSettingsService.read([&](WebSettings & settings) {
+        if (settings.modbus_enabled) {
+            if (EMSESP::modbus_ == nullptr) {
+                EMSESP::modbus_ = new Modbus;
+                EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
+            } else if (settings.modbus_port != modbus_port_ || settings.modbus_max_clients != modbus_max_clients_ || settings.modbus_timeout != modbus_timeout_) {
+                EMSESP::modbus_->stop();
+                EMSESP::modbus_->start(1, settings.modbus_port, settings.modbus_max_clients, settings.modbus_timeout * 1000);
+            }
+        } else if (EMSESP::modbus_ != nullptr) {
+            EMSESP::modbus_->stop();
+            delete EMSESP::modbus_;
+            EMSESP::modbus_ = nullptr;
+        }
+        modbus_enabled_     = settings.modbus_enabled;
+        modbus_port_        = settings.modbus_port;
+        modbus_max_clients_ = settings.modbus_max_clients;
+        modbus_timeout_     = settings.modbus_timeout;
+    });
+}
+
 // read specific major system settings to store locally for faster access
 void System::store_settings(WebSettings & settings) {
     version_ = settings.version;
@@ -555,11 +565,6 @@ void System::store_settings(WebSettings & settings) {
     led_type_       = settings.led_type;
     board_profile_  = settings.board_profile;
     telnet_enabled_ = settings.telnet_enabled;
-
-    modbus_enabled_     = settings.modbus_enabled;
-    modbus_port_        = settings.modbus_port;
-    modbus_max_clients_ = settings.modbus_max_clients;
-    modbus_timeout_     = settings.modbus_timeout;
 
     tx_mode_              = settings.tx_mode;
     syslog_enabled_       = settings.syslog_enabled;
@@ -630,17 +635,16 @@ void System::start() {
     network_init();  // network
     uart_init();     // start UART
     syslog_init();   // start syslog
+    modbus_init();   // start modbus
 }
 
 // button single click
 void System::button_OnClick(PButton & b) {
     LOG_NOTICE("Button pressed - single click");
 
-#if defined(EMSESP_TEST)
 #ifndef EMSESP_STANDALONE
     // show filesystem
-    Test::listDir(LittleFS, "/", 3);
-#endif
+    listDir("/", 3);
 #endif
 }
 
@@ -1213,9 +1217,16 @@ void System::show_system(uuid::console::Shell & shell) {
     }
     // GPIOs
     shell.println(" GPIOs:");
+    shell.printf("  allowed:");
+    for (const auto & gpio : valid_system_gpios_) {
+        shell.printf(" %d", gpio);
+    }
+    shell.printfln(" [total %d]", valid_system_gpios_.size());
     shell.printf("  in use:");
-    for (const auto & usage : used_gpios_) {
-        shell.printf(" %d(%s)", usage.pin, usage.source.c_str());
+    auto sorted_gpios = used_gpios_;
+    std::sort(sorted_gpios.begin(), sorted_gpios.end(), [](const GpioUsage & a, const GpioUsage & b) { return a.pin < b.pin; });
+    for (const auto & gpio : sorted_gpios) {
+        shell.printf(" %d(%s)", gpio.pin, gpio.source.c_str());
     }
     shell.printfln(" [total %d]", used_gpios_.size());
     auto available = available_gpios();
@@ -1230,11 +1241,18 @@ void System::show_system(uuid::console::Shell & shell) {
         if (partition.second.version.empty()) {
             continue; // no version, empty string
         }
+        std::string installed;
+        if (partition.second.install_date > 0) {
+            char   time_string[25];
+            time_t d = partition.second.install_date;
+            strftime(time_string, sizeof(time_string), "%FT%T", localtime(&d));
+            installed = std::string(", installed on ") + time_string;
+        }
         shell.printfln("  %s: v%s (%d KB%s) %s",
                        partition.first.c_str(),
                        partition.second.version.c_str(),
                        partition.second.size,
-                       partition.second.install_date.empty() ? "" : (std::string(", installed ") + partition.second.install_date).c_str(),
+                       installed.c_str(),
                        (strcmp(esp_ota_get_running_partition()->label, partition.first.c_str()) == 0) ? "** active **" : "");
     }
 
@@ -1353,23 +1371,134 @@ bool System::check_restore() {
             JsonObject input = jsonDocument.as<JsonObject>();
             // see what type of file it is, either settings or customization. anything else is ignored
             std::string settings_type = input["type"];
-            if (settings_type == "settings") {
-                // It's a settings file. Parse each section separately. If it's system related it will require a reboot
-                reboot_required = saveSettings(NETWORK_SETTINGS_FILE, "Network", input);
-                reboot_required |= saveSettings(AP_SETTINGS_FILE, "AP", input);
-                reboot_required |= saveSettings(MQTT_SETTINGS_FILE, "MQTT", input);
-                reboot_required |= saveSettings(NTP_SETTINGS_FILE, "NTP", input);
-                reboot_required |= saveSettings(SECURITY_SETTINGS_FILE, "Security", input);
-                reboot_required |= saveSettings(EMSESP_SETTINGS_FILE, "Settings", input);
+            LOG_INFO("Restoring '%s' settings...", settings_type.c_str());
+
+            // system backup, which is a consolidated json object with all the settings files
+            if (settings_type == "systembackup") {
+                reboot_required    = true;
+                JsonArray sections = input["systembackup"].as<JsonArray>();
+                for (JsonObject section : sections) {
+                    std::string section_type = section["type"];
+                    LOG_DEBUG("Restoring '%s' section...", section_type.c_str());
+                    if (section_type == "settings") {
+                        saveSettings(NETWORK_SETTINGS_FILE, section);
+                        saveSettings(AP_SETTINGS_FILE, section);
+                        saveSettings(MQTT_SETTINGS_FILE, section);
+                        saveSettings(NTP_SETTINGS_FILE, section);
+                        saveSettings(SECURITY_SETTINGS_FILE, section);
+                        saveSettings(EMSESP_SETTINGS_FILE, section);
+                    }
+                    if (section_type == "schedule") {
+                        saveSettings(EMSESP_SCHEDULER_FILE, section);
+                    }
+                    if (section_type == "customizations") {
+                        saveSettings(EMSESP_CUSTOMIZATION_FILE, section);
+                    }
+                    if (section_type == "entities") {
+                        saveSettings(EMSESP_CUSTOMENTITY_FILE, section);
+                    }
+                    if (section_type == "modules") {
+                        saveSettings(EMSESP_MODULES_FILE, section);
+                    }
+                    if (section_type == "customSupport") {
+                        // it's a custom support, extract json and write to /config/customSupport.json file
+                        File customSupportFile = LittleFS.open(EMSESP_CUSTOMSUPPORT_FILE, "w");
+                        if (customSupportFile) {
+                            serializeJson(section, customSupportFile);
+                            customSupportFile.close();
+                            LOG_INFO("Custom support file updated");
+                        } else {
+                            LOG_ERROR("Failed to save custom support file");
+                        }
+                    }
+
+                    if (section_type == "nvs") {
+                        // Restore NVS values
+                        JsonArray nvs_entries = section["nvs"].as<JsonArray>();
+                        for (JsonObject entry : nvs_entries) {
+                            std::string key  = entry["key"] | "";
+                            int         type = entry["type"] | NVS_TYPE_ANY;
+
+                            switch (type) {
+                            case NVS_TYPE_I8:
+                                if (entry["value"].is<JsonVariantConst>()) {
+                                    int8_t v = entry["value"];
+                                    EMSESP::nvs_.putChar(key.c_str(), v);
+                                    LOG_DEBUG("Restored NVS value: %s = %d", key.c_str(), v);
+                                }
+                                break;
+                            case NVS_TYPE_U8:
+                                if (entry["value"].is<JsonVariantConst>()) {
+                                    uint8_t v = entry["value"];
+                                    EMSESP::nvs_.putUChar(key.c_str(), v);
+                                    LOG_DEBUG("Restored NVS value: %s = %d", key.c_str(), v);
+                                }
+                                break;
+                            case NVS_TYPE_I32:
+                                if (entry["value"].is<JsonVariantConst>()) {
+                                    int32_t v = entry["value"];
+                                    EMSESP::nvs_.putInt(key.c_str(), v);
+                                    LOG_DEBUG("Restored NVS value: %s = %d", key.c_str(), v);
+                                }
+                                break;
+                            case NVS_TYPE_U32:
+                                if (entry["value"].is<JsonVariantConst>()) {
+                                    uint32_t v = entry["value"];
+                                    EMSESP::nvs_.putUInt(key.c_str(), v);
+                                    LOG_DEBUG("Restored NVS value: %s = %d", key.c_str(), v);
+                                }
+                                break;
+                            case NVS_TYPE_I64:
+                                if (entry["value"].is<JsonVariantConst>()) {
+                                    int64_t v = entry["value"];
+                                    EMSESP::nvs_.putLong64(key.c_str(), v);
+                                    LOG_DEBUG("Restored NVS value: %s = %d", key.c_str(), v);
+                                }
+                                break;
+                            case NVS_TYPE_U64:
+                                if (entry["value"].is<JsonVariantConst>()) {
+                                    uint64_t v = entry["value"];
+                                    EMSESP::nvs_.putULong64(key.c_str(), v);
+                                    LOG_DEBUG("Restored NVS value: %s = %d", key.c_str(), v);
+                                }
+                                break;
+                            case NVS_TYPE_BLOB:
+                                // used for double values
+                                if (entry["value"].is<JsonVariantConst>()) {
+                                    double v = entry["value"];
+                                    EMSESP::nvs_.putDouble(key.c_str(), v);
+                                    LOG_DEBUG("Restored NVS value: %s = %d", key.c_str(), v);
+                                }
+                                break;
+                            case NVS_TYPE_STR:
+                            case NVS_TYPE_ANY:
+                            default:
+                                if (entry["value"].is<JsonVariantConst>()) {
+                                    std::string v = entry["value"];
+                                    EMSESP::nvs_.putString(key.c_str(), v.c_str());
+                                    LOG_DEBUG("Restored NVS value: %s = %s", key.c_str(), v.c_str());
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // It's a single settings file. Parse each section separately. If it's system related it will require a reboot
+            else if (settings_type == "settings") {
+                reboot_required = saveSettings(NETWORK_SETTINGS_FILE, input);
+                reboot_required |= saveSettings(AP_SETTINGS_FILE, input);
+                reboot_required |= saveSettings(MQTT_SETTINGS_FILE, input);
+                reboot_required |= saveSettings(NTP_SETTINGS_FILE, input);
+                reboot_required |= saveSettings(SECURITY_SETTINGS_FILE, input);
+                reboot_required |= saveSettings(EMSESP_SETTINGS_FILE, input);
             } else if (settings_type == "customizations") {
-                // it's a customization file, just replace it and there's no need to reboot
-                saveSettings(EMSESP_CUSTOMIZATION_FILE, "Customizations", input);
+                saveSettings(EMSESP_CUSTOMIZATION_FILE, input);
             } else if (settings_type == "schedule") {
-                // it's a schedule file, just replace it and there's no need to reboot
-                saveSettings(EMSESP_SCHEDULER_FILE, "Schedule", input);
+                saveSettings(EMSESP_SCHEDULER_FILE, input);
             } else if (settings_type == "entities") {
-                // it's a entity file, just replace it and there's no need to reboot
-                saveSettings(EMSESP_CUSTOMENTITY_FILE, "Entities", input);
+                saveSettings(EMSESP_CUSTOMENTITY_FILE, input);
             } else if (settings_type == "customSupport") {
                 // it's a custom support file - save it to /config
                 new_file.close();
@@ -1412,8 +1541,8 @@ bool System::check_upgrade() {
         settingsVersion = "3.5.0"; // this was the last stable version without version info
     }
 
-    version::Semver200_version settings_version(settingsVersion);
-    version::Semver200_version this_version(EMSESP_APP_VERSION);
+    version::EMSESP_Version settings_version(settingsVersion);
+    version::EMSESP_Version this_version(EMSESP_APP_VERSION);
 
     std::string settings_version_type = settings_version.prerelease().empty() ? "" : ("-" + settings_version.prerelease());
     std::string this_version_type     = this_version.prerelease().empty() ? "" : ("-" + this_version.prerelease());
@@ -1527,39 +1656,219 @@ bool System::check_upgrade() {
     return false; // no reboot required
 }
 
-// convert settings file into json object
-void System::extractSettings(const char * filename, const char * section, JsonObject output) {
+// map each config filename to its human-readable section key
 #ifndef EMSESP_STANDALONE
-    File settingsFile = LittleFS.open(filename);
-    if (settingsFile) {
-        JsonDocument         jsonDocument;
-        DeserializationError error = deserializeJson(jsonDocument, settingsFile);
-        if (error == DeserializationError::Ok && jsonDocument.is<JsonObject>()) {
-            JsonObject jsonObject = jsonDocument.as<JsonObject>();
-            JsonObject node       = output[section].to<JsonObject>();
-            for (JsonPair kvp : jsonObject) {
-                node[kvp.key()] = kvp.value();
-            }
+static const std::pair<const char *, const char *> SECTION_MAP[] = {
+    {NETWORK_SETTINGS_FILE, "Network"},
+    {AP_SETTINGS_FILE, "AP"},
+    {MQTT_SETTINGS_FILE, "MQTT"},
+    {NTP_SETTINGS_FILE, "NTP"},
+    {SECURITY_SETTINGS_FILE, "Security"},
+    {EMSESP_SETTINGS_FILE, "Settings"},
+    {EMSESP_SCHEDULER_FILE, "Schedule"},
+    {EMSESP_CUSTOMIZATION_FILE, "Customizations"},
+    {EMSESP_CUSTOMENTITY_FILE, "Entities"},
+    {EMSESP_MODULES_FILE, "Modules"},
+};
+#endif
+
+// convert a single config file into a section of the output json object
+void System::exportSettings(const std::string & type, const char * filename, JsonObject output) {
+    if (type != "settings") {
+        output["type"] = type; // add the type to the output, not for settings as it's already added because its grouped
+    }
+
+#ifndef EMSESP_STANDALONE
+    const char * section = nullptr;
+    for (const auto & [f, label] : SECTION_MAP) {
+        if (strcmp(f, filename) == 0) {
+            section = label;
+            break;
         }
     }
-    settingsFile.close();
+
+    if (!section) {
+        return;
+    }
+
+    File settingsFile = LittleFS.open(filename);
+    if (settingsFile) {
+        {
+            JsonDocument         jsonDocument;
+            DeserializationError error = deserializeJson(jsonDocument, settingsFile);
+            settingsFile.close(); // close early, we no longer need the file
+            if (error || !jsonDocument.is<JsonObject>()) {
+                LOG_ERROR("Failed to deserialize settings file %s", filename);
+                return;
+            }
+            output[section].set(jsonDocument.as<JsonObject>());
+        }
+        LOG_DEBUG("Exported %s settings from file %s", section, filename);
+    } else {
+        LOG_ERROR("No settings file for %s found", filename);
+    }
 #endif
 }
 
-// save settings file using input from a json object
-bool System::saveSettings(const char * filename, const char * section, JsonObject input) {
+// full system backup of all settings files
+void System::exportSystemBackup(JsonObject output) {
+    output["type"]    = "systembackup";     // add the type to the output
+    output["version"] = EMSESP_APP_VERSION; // add the version to the output
+
 #ifndef EMSESP_STANDALONE
+    // add date/time if NTP enabled and active
+    if ((esp_sntp_enabled()) && (EMSESP::system_.ntp_connected())) {
+        time_t now = time(nullptr);
+        if (now > 1500000000L) {
+            char t[25];
+            strftime(t, sizeof(t), "%FT%T", localtime(&now));
+            output["date"] = t;
+        }
+    }
+#endif
+
+    // create an array of objects for each settings file
+    JsonArray nodes = output["systembackup"].to<JsonArray>();
+
+    // start with settings by grouping them together
+    JsonObject node = nodes.add<JsonObject>();
+    node["type"]    = "settings"; // add type once for this group
+    exportSettings("settings", NETWORK_SETTINGS_FILE, node);
+    exportSettings("settings", AP_SETTINGS_FILE, node);
+    exportSettings("settings", MQTT_SETTINGS_FILE, node);
+    exportSettings("settings", NTP_SETTINGS_FILE, node);
+    exportSettings("settings", SECURITY_SETTINGS_FILE, node);
+    exportSettings("settings", EMSESP_SETTINGS_FILE, node);
+
+    node = nodes.add<JsonObject>();
+    exportSettings("schedule", EMSESP_SCHEDULER_FILE, node);
+    node = nodes.add<JsonObject>();
+    exportSettings("customizations", EMSESP_CUSTOMIZATION_FILE, node);
+    node = nodes.add<JsonObject>();
+    exportSettings("entities", EMSESP_CUSTOMENTITY_FILE, node);
+    node = nodes.add<JsonObject>();
+    exportSettings("modules", EMSESP_MODULES_FILE, node);
+
+#ifndef EMSESP_STANDALONE
+    // special case for custom support
+    File file = LittleFS.open(EMSESP_CUSTOMSUPPORT_FILE, "r");
+    if (file) {
+        JsonDocument         jsonDocument;
+        DeserializationError error = deserializeJson(jsonDocument, file);
+        file.close(); // close early, we no longer need the file
+        if (!error && jsonDocument.is<JsonObject>()) {
+            JsonObject support_node = nodes.add<JsonObject>();
+            support_node["type"]    = "customSupport";
+            support_node["data"].set(jsonDocument.as<JsonObject>());
+            LOG_DEBUG("Exported custom support file %s", EMSESP_CUSTOMSUPPORT_FILE);
+        } else {
+            LOG_ERROR("Failed to deserialize custom support file");
+        }
+    }
+
+    // Backup NVS values
+    node         = nodes.add<JsonObject>();
+    node["type"] = "nvs";
+
+    const char *   nvs_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, "nvs1") ? "nvs1" : "nvs"; // nvs1 is on 16MBs
+    nvs_iterator_t it       = nullptr;
+#if ESP_IDF_VERSION_MAJOR < 5
+    it = nvs_entry_find(nvs_part, "ems-esp", NVS_TYPE_ANY);
+    if (it == nullptr) {
+#else
+    esp_err_t err = nvs_entry_find(nvs_part, "ems-esp", NVS_TYPE_ANY, &it);
+    if (err != ESP_OK) {
+#endif
+        LOG_ERROR("Failed to find NVS entry for %s", nvs_part);
+        return;
+    }
+
+    JsonArray entries = node["nvs"].to<JsonArray>();
+#if ESP_IDF_VERSION_MAJOR < 5
+    while (it != nullptr) {
+        nvs_entry_info_t info;
+        nvs_entry_info(it, &info);
+#else
+    while (err == ESP_OK) {
+        nvs_entry_info_t info;
+        nvs_entry_info(it, &info);
+#endif
+        JsonObject entry = entries.add<JsonObject>();
+        entry["type"]    = info.type;
+        entry["key"]     = info.key;
+
+        LOG_DEBUG("Exporting NVS value: %s = %d", info.key, info.type);
+
+        switch (info.type) {
+        case NVS_TYPE_I8:
+            entry["value"] = EMSESP::nvs_.getChar(info.key);
+            break;
+        case NVS_TYPE_U8:
+            entry["value"] = EMSESP::nvs_.getUChar(info.key);
+            break;
+        case NVS_TYPE_I32:
+            entry["value"] = EMSESP::nvs_.getInt(info.key);
+            break;
+        case NVS_TYPE_U32:
+            entry["value"] = EMSESP::nvs_.getUInt(info.key);
+            break;
+        case NVS_TYPE_I64:
+            entry["value"] = EMSESP::nvs_.getLong64(info.key);
+            break;
+        case NVS_TYPE_U64:
+            entry["value"] = EMSESP::nvs_.getULong64(info.key);
+            break;
+        case NVS_TYPE_BLOB:
+            entry["value"] = EMSESP::nvs_.getDouble(info.key); // bytes used for double values
+            break;
+        case NVS_TYPE_STR:
+        case NVS_TYPE_ANY:
+        default:
+            entry["value"] = EMSESP::nvs_.getString(info.key);
+            break;
+        }
+
+#if ESP_IDF_VERSION_MAJOR < 5
+        it = nvs_entry_next(it);
+    }
+#else
+        err = nvs_entry_next(&it);
+    }
+#endif
+
+    if (it != nullptr) {
+        nvs_release_iterator(it);
+    }
+#endif
+}
+
+// write a settings file using input from a json object, called from upload/restore
+bool System::saveSettings(const char * filename, JsonObject input) {
+#ifndef EMSESP_STANDALONE
+    const char * section = nullptr;
+    for (const auto & [f, label] : SECTION_MAP) {
+        if (strcmp(f, filename) == 0) {
+            section = label;
+            break;
+        }
+    }
+
+    if (!section) {
+        return false;
+    }
+
     JsonObject section_json = input[section];
     if (section_json) {
         File section_file = LittleFS.open(filename, "w");
         if (section_file) {
-            LOG_INFO("Applying new uploaded %s data", section);
+            LOG_DEBUG("Applying new uploaded %s data", section);
             serializeJson(section_json, section_file);
             section_file.close();
             return true; // reboot required
         }
     }
 #endif
+
     return false; // not found
 }
 
@@ -1761,8 +2070,8 @@ void System::get_value_json(JsonObject output, const std::string & circuit, cons
 
 // generate Prometheus metrics format from system values
 std::string System::get_metrics_prometheus() {
-    std::string                           result;
-    std::unordered_map<std::string, bool> seen_metrics;
+    std::string                 result;
+    std::map<std::string, bool> seen_metrics;
 
     result.reserve(16000);
 
@@ -2065,17 +2374,28 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
     node["txpause"] = EMSbus::tx_mode() == EMS_TXMODE_OFF;
 
     // GPIO information
+    std::string gpios_allowed_str;
+    for (const auto & gpio : valid_system_gpios_) {
+        if (!gpios_allowed_str.empty()) {
+            gpios_allowed_str += ", ";
+        }
+        gpios_allowed_str += Helpers::itoa(gpio);
+    }
+    node["gpios_allowed"] = gpios_allowed_str;
+
     std::string gpios_in_use_str;
-    for (const auto & usage : EMSESP::system_.used_gpios_) {
+    auto        sorted_gpios = used_gpios_;
+    std::sort(sorted_gpios.begin(), sorted_gpios.end(), [](const GpioUsage & a, const GpioUsage & b) { return a.pin < b.pin; });
+    for (const auto & gpio : sorted_gpios) {
         if (!gpios_in_use_str.empty()) {
             gpios_in_use_str += ", ";
         }
-        gpios_in_use_str += Helpers::itoa(usage.pin);
+        gpios_in_use_str += Helpers::itoa(gpio.pin);
     }
     node["gpios_in_use"] = gpios_in_use_str;
 
     std::string gpios_available_str;
-    for (const auto & gpio : EMSESP::system_.available_gpios()) {
+    for (const auto & gpio : available_gpios()) {
         if (!gpios_available_str.empty()) {
             gpios_available_str += ", ";
         }
@@ -2211,6 +2531,15 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
     }
 #endif
 
+    // Modbus Status
+    node            = output["modbus"].to<JsonObject>();
+    node["enabled"] = EMSESP::system_.modbus_enabled_;
+    if (EMSESP::system_.modbus_enabled_) {
+        node["maxClients"] = EMSESP::system_.modbus_max_clients_;
+        node["port"]       = EMSESP::system_.modbus_port_;
+        node["timeout"]    = EMSESP::system_.modbus_timeout_;
+    }
+
     // Sensor Status
     node = output["sensor"].to<JsonObject>();
     if (EMSESP::sensor_enabled()) {
@@ -2218,6 +2547,10 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
         node["temperatureSensorReads"] = EMSESP::temperaturesensor_.reads();
         node["temperatureSensorFails"] = EMSESP::temperaturesensor_.fails();
     }
+
+    // Analog Status
+    node            = output["analog"].to<JsonObject>();
+    node["enabled"] = EMSESP::analog_enabled();
     if (EMSESP::analog_enabled()) {
         node["analogSensors"]     = EMSESP::analogsensor_.count_entities();
         node["analogSensorReads"] = EMSESP::analogsensor_.reads();
@@ -2534,37 +2867,38 @@ bool System::command_restart(const char * value, const int8_t id) {
 
 std::string System::reset_reason(uint8_t cpu) const {
 #ifndef EMSESP_STANDALONE
-    switch (rtc_get_reset_reason(cpu)) {
-    case 1:
+    switch (esp_rom_get_reset_reason(cpu)) {
+    case RESET_REASON_CHIP_POWER_ON:
         return ("Power on reset");
-    // case 2 :reset pin not on esp32
-    case 3:
+    case 2: // not on esp32
+        return ("reset pin");
+    case RESET_REASON_CORE_SW:
         return ("Software reset");
     case 4: // not on S2, C3
         return ("Legacy watch dog reset");
-    case 5:
+    case RESET_REASON_CORE_DEEP_SLEEP:
         return ("Deep sleep reset");
-    case 6: // not on S2, C3
+    case 6: // RESET_REASON_CORE_SDIO: // not on S2, S3, C3
         return ("Reset by SDIO");
-    case 7:
+    case RESET_REASON_CORE_MWDT0:
         return ("Timer group0 watch dog reset");
-    case 8:
+    case RESET_REASON_CORE_MWDT1:
         return ("Timer group1 watch dog reset");
-    case 9:
+    case RESET_REASON_CORE_RTC_WDT:
         return ("RTC watch dog reset");
     case 10:
         return ("Intrusion reset CPU");
-    case 11:
+    case RESET_REASON_CPU0_MWDT0:
         return ("Timer group reset CPU");
-    case 12:
+    case RESET_REASON_CPU0_SW:
         return ("Software reset CPU");
-    case 13:
+    case RESET_REASON_CPU0_RTC_WDT:
         return ("RTC watch dog reset: CPU");
-    case 14: // not on S2, C3
+    case 14: // RESET_REASON_CPU1_CPU0: // not on S2, S3, C3
         return ("APP CPU reset by PRO CPU");
-    case 15:
+    case RESET_REASON_SYS_BROWN_OUT:
         return ("Brownout reset");
-    case 16:
+    case RESET_REASON_SYS_RTC_WDT:
         return ("RTC watch dog reset: CPU+RTC");
     default:
         break;
@@ -2599,7 +2933,7 @@ bool System::ntp_connected() {
     return ntp_connected_;
 }
 
-// see if its a BBQKees Gateway by checking the nvs values
+// see if its a BBQKees Gateway by checking the eFuse values
 String System::getBBQKeesGatewayDetails(uint8_t detail) {
 #ifndef EMSESP_STANDALONE
     union {
@@ -2952,7 +3286,6 @@ void System::set_valid_system_gpios() {
     // excluded:
     // GPIO3, GPIO45 - GPIO46 = strapping pins
     // GPIO26 - GPIO32 = SPI flash and PSRAM and not recommended
-    // GPIO33 - GPIO37 = Octal flash/PSRAM
     // GPIO19 - GPIO20 = USB-JTAG
     // GPIO22 - GPIO25 = don't exist
     //
@@ -2960,7 +3293,12 @@ void System::set_valid_system_gpios() {
     // GPIO11 - GPIO19 = ADC analog input only pins
     // GPIO47 - GPIO48 = valid on a Wemos S3
     // GPIO8 = used by Liligo S3 board profile for Rx
-    valid_system_gpios_ = string_range_to_vector("0-48", "3, 45-46, 26-32, 33-37, 19-20, 22-25");
+    if (ESP.getPsramSize() > 0) {
+        // GPIO33 - GPIO37 = Octal flash/PSRAM
+        valid_system_gpios_ = string_range_to_vector("0-48", "3, 45-46, 26-32, 33-37, 19-20, 22-25");
+    } else {
+        valid_system_gpios_ = string_range_to_vector("0-48", "3, 45-46, 26-32, 19-20, 22-25");
+    }
 
 #elif CONFIG_IDF_TARGET_ESP32
     // https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html
@@ -3043,6 +3381,24 @@ void System::remove_gpio(uint8_t pin, bool also_system) {
     }
 }
 
+// remove a gpio that has 0 for disable
+void System::remove_optional_gpio(uint8_t pin) {
+    if (pin) {
+        remove_gpio(pin, false);
+    }
+}
+
+// set unused gpios to default state input high-Z
+void System::reset_unused_gpios() {
+    for (const auto & pin : valid_system_gpios_) {
+        auto it = std::find_if(used_gpios_.begin(), used_gpios_.end(), [pin](const GpioUsage & usage) { return usage.pin == pin; });
+        if (it == used_gpios_.end()) {
+            LOG_DEBUG("reset pin %d", pin);
+            pinMode(pin, INPUT);
+        }
+    }
+}
+
 // return a list of GPIO's available for use
 std::vector<uint8_t> System::available_gpios() {
     std::vector<uint8_t> gpios;
@@ -3075,6 +3431,41 @@ void System::restore_snapshot_gpios(std::vector<int8_t> & u_gpios, std::vector<i
     for (const auto & gpio : s_gpios) {
         valid_system_gpios_.push_back(gpio);
     }
+}
+
+// show the contents of a directory in the LittleFS filesystem
+void System::listDir(const char * dirname, uint8_t levels) {
+#if defined(EMSESP_DEBUG)
+#ifndef EMSESP_STANDALONE
+
+    File root = LittleFS.open(dirname);
+    if (!root) {
+        LOG_DEBUG("Failed to open directory %s", dirname);
+        return;
+    }
+    if (!root.isDirectory()) {
+        LOG_DEBUG("%s is not a directory", dirname);
+        return;
+    }
+
+    LOG_DEBUG("(directory) %s", dirname);
+
+    File file = root.openNextFile();
+    while (file) {
+        if (file.isDirectory()) {
+            std::string line = std::string(file.name()) + "/";
+            if (levels) {
+                // prefix a / to the name to make it a full path
+                listDir(("/" + String(file.name())).c_str(), levels - 1);
+            }
+        } else {
+            std::string line = "  (file) " + std::string(file.name()) + " (" + std::to_string(file.size()) + " bytes)";
+            LOG_DEBUG("%s", line.c_str());
+        }
+        file = root.openNextFile();
+    }
+#endif
+#endif
 }
 
 } // namespace emsesp

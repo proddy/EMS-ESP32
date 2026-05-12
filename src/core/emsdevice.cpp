@@ -72,6 +72,21 @@ const char * EMSdevice::tag_to_mqtt(int8_t tag) {
     return (DeviceValue::DeviceValueTAG_mqtt[tag > DeviceValue::NUM_TAGS ? 0 : tag]);
 }
 
+uint8_t EMSdevice::tag_to_flag(const uint8_t tag) {
+    if (tag >= DeviceValueTAG::TAG_HC1 && tag <= DeviceValueTAG::TAG_HC8) {
+        return CommandFlag::CMD_FLAG_HC;
+    } else if (tag >= DeviceValueTAG::TAG_DHW1 && tag <= DeviceValueTAG::TAG_DHW10) {
+        return CommandFlag::CMD_FLAG_DHW;
+    } else if (tag >= DeviceValueTAG::TAG_HS1 && tag <= DeviceValueTAG::TAG_HS16) {
+        return CommandFlag::CMD_FLAG_HS;
+    } else if (tag >= DeviceValueTAG::TAG_AHS1 && tag <= DeviceValueTAG::TAG_AHS1) {
+        return CommandFlag::CMD_FLAG_AHS;
+    } else if (tag >= DeviceValueTAG::TAG_SRC1 && tag <= DeviceValueTAG::TAG_SRC16) {
+        return CommandFlag::CMD_FLAG_SRC;
+    }
+    return 0;
+}
+
 // convert UOM to a char string - translating only for hours/minutes/seconds
 const char * EMSdevice::uom_to_string(uint8_t uom) {
     switch (uom) {
@@ -89,7 +104,10 @@ const char * EMSdevice::uom_to_string(uint8_t uom) {
     }
 }
 
-const char * EMSdevice::brand_to_char() {
+std::string EMSdevice::brand_to_char() {
+    if (!custom_brand().empty()) {
+        return custom_brand();
+    }
     switch (brand_) {
     case EMSdevice::Brand::BOSCH:
         return F_(bosch);
@@ -313,15 +331,15 @@ uint8_t EMSdevice::decode_brand(uint8_t value) {
 std::string EMSdevice::to_string() {
     // for devices that haven't been lookup yet, don't show all details
     if (product_id_ == 0) {
-        return std::string(name()) + " (DeviceID:" + Helpers::hextoa(device_id_) + ")";
+        return name() + " (DeviceID:" + Helpers::hextoa(device_id_) + ")";
     }
 
-    if (brand_ == Brand::NO_BRAND) {
-        return std::string(name()) + " (DeviceID:" + Helpers::hextoa(device_id_) + ", ProductID:" + Helpers::itoa(product_id_) + ", Version:" + version_ + ")";
+    if (brand_ == Brand::NO_BRAND && custom_brand().empty()) {
+        return name() + " (DeviceID:" + Helpers::hextoa(device_id_) + ", ProductID:" + Helpers::itoa(product_id_) + ", Version:" + version_ + ")";
     }
 
-    return std::string(brand_to_char()) + " " + name() + " (DeviceID:" + Helpers::hextoa(device_id_) + ", ProductID:" + Helpers::itoa(product_id_)
-           + ", Version:" + version_ + ")";
+    return brand_to_char() + " " + name() + " (DeviceID:" + Helpers::hextoa(device_id_) + ", ProductID:" + Helpers::itoa(product_id_) + ", Version:" + version_
+           + ")";
 }
 
 // returns string of EMS device version and productID
@@ -332,7 +350,7 @@ std::string EMSdevice::to_string_version() {
 // returns out brand + device name
 // translated
 std::string EMSdevice::to_string_short() {
-    if (brand_ == Brand::NO_BRAND) {
+    if (brand_ == Brand::NO_BRAND && custom_brand().empty()) {
         return std::string(device_type_2_device_name_translated()) + ": " + name();
     }
 
@@ -350,7 +368,7 @@ void EMSdevice::fetch_values() {
 
     for (const auto & tf : telegram_functions_) {
         if (tf.fetch_) {
-            read_command(tf.telegram_type_id_);
+            read_command(tf.telegram_type_id_, 0, tf.length_);
         }
     }
 }
@@ -369,10 +387,10 @@ void EMSdevice::toggle_fetch(uint16_t telegram_id, bool toggle) {
 }
 
 // get status of automatic fetch for a telegramID
-bool EMSdevice::is_fetch(uint16_t telegram_id) const {
+bool EMSdevice::is_fetch(uint16_t telegram_id, uint8_t len) const {
     for (const auto & tf : telegram_functions_) {
         if (tf.telegram_type_id_ == telegram_id) {
-            return tf.fetch_;
+            return tf.fetch_ && tf.length_ >= len;
         }
     }
     return false;
@@ -529,8 +547,8 @@ void EMSdevice::show_mqtt_handlers(uuid::console::Shell & shell) const {
 }
 
 // register a callback function for a specific telegram type
-void EMSdevice::register_telegram_type(const uint16_t telegram_type_id, const char * telegram_type_name, bool fetch, const process_function_p f) {
-    telegram_functions_.emplace_back(telegram_type_id, telegram_type_name, fetch, false, f);
+void EMSdevice::register_telegram_type(const uint16_t telegram_type_id, const char * telegram_type_name, bool fetch, const process_function_p f, uint8_t length) {
+    telegram_functions_.emplace_back(telegram_type_id, telegram_type_name, fetch, false, length, f);
 }
 
 // add to device value library, also know now as a "device entity"
@@ -650,23 +668,19 @@ void EMSdevice::add_device_value(int8_t                tag,              // to b
 
     // add a new command if it has a function attached
     if (has_cmd) {
-        uint8_t flags = CommandFlag::ADMIN_ONLY; // executing commands require admin privileges
-
-        if (tag >= DeviceValueTAG::TAG_HC1 && tag <= DeviceValueTAG::TAG_HC8) {
-            flags |= CommandFlag::CMD_FLAG_HC;
-        } else if (tag >= DeviceValueTAG::TAG_DHW1 && tag <= DeviceValueTAG::TAG_DHW10) {
-            flags |= CommandFlag::CMD_FLAG_DHW;
-        } else if (tag >= DeviceValueTAG::TAG_HS1 && tag <= DeviceValueTAG::TAG_HS16) {
-            flags |= CommandFlag::CMD_FLAG_HS;
-        } else if (tag >= DeviceValueTAG::TAG_AHS1 && tag <= DeviceValueTAG::TAG_AHS1) {
-            flags |= CommandFlag::CMD_FLAG_AHS;
-        } else if (tag >= DeviceValueTAG::TAG_SRC1 && tag <= DeviceValueTAG::TAG_SRC16) {
-            flags |= CommandFlag::CMD_FLAG_SRC;
-        }
-
+        uint8_t flags = CommandFlag::ADMIN_ONLY | tag_to_flag(tag); // executing commands require admin privileges
         // add the command to our library
         Command::add(device_type_, device_id_, short_name, f, fullname, flags);
     }
+}
+
+void EMSdevice::erase_device_values() {
+    for (auto & dv : devicevalues_) {
+        if (dv.has_cmd) {
+            Command::erase_command(device_type_, dv.short_name, tag_to_flag(dv.tag));
+        }
+    }
+    devicevalues_.clear();
 }
 
 // single list of options
@@ -898,7 +912,7 @@ void EMSdevice::publish_value(void * value_p) const {
 // looks up the UOM for a given key from the device value table
 std::string EMSdevice::get_value_uom(const std::string & shortname) const {
     for (const auto & dv : devicevalues_) {
-        if ((!dv.has_state(DeviceValueState::DV_WEB_EXCLUDE)) && (dv.short_name == shortname)) {
+        if ((!dv.has_state(DeviceValueState::DV_WEB_EXCLUDE)) && !strcmp(dv.short_name, shortname.c_str())) {
             // ignore TIME since "minutes" is already added to the string value
             if ((dv.uom == DeviceValueUOM::NONE) || (dv.uom == DeviceValueUOM::MINUTES)) {
                 break;
@@ -1268,7 +1282,7 @@ void EMSdevice::setCustomizationEntity(const std::string & entity_id) {
             // set the min / max
             dv.set_custom_minmax();
 
-            if (Mqtt::ha_enabled() && dv.short_name == FL_(seltemp)[0] && (min != dv.min || max != dv.max)) {
+            if (Mqtt::ha_enabled() && dv.tag <= DeviceValueTAG::TAG_HC8 && !strcmp(dv.short_name, FL_(selRoomTemp)[0]) && (min != dv.min || max != dv.max)) {
                 set_climate_minmax(dv.tag, dv.min, dv.max);
             }
 
@@ -1720,8 +1734,8 @@ void EMSdevice::get_value_json(JsonObject json, DeviceValue & dv) {
 
 // generate Prometheus metrics format from device values
 std::string EMSdevice::get_metrics_prometheus(const int8_t tag) {
-    std::string                           result;
-    std::unordered_map<std::string, bool> seen_metrics;
+    std::string                 result;
+    std::map<std::string, bool> seen_metrics;
 
     // Helper function to check if a device value type is supported for Prometheus metrics
     auto is_supported_type = [](uint8_t type) -> bool {
@@ -2106,9 +2120,8 @@ bool EMSdevice::generate_values(JsonObject output, const int8_t tag_filter, cons
 // create the Home Assistant configs for each device value / entity
 // this is called when an MQTT publish is done via an EMS Device in emsesp.cpp::publish_device_values()
 void EMSdevice::mqtt_ha_entity_config_create() {
-    bool                  create_device_config = !ha_config_done(); // do we need to create the main Discovery device config with this entity?
-    uint16_t              count                = 0;
-    const char * const ** mode_options         = nullptr;
+    bool     create_device_config = !ha_config_done(); // do we need to create the main Discovery device config with this entity?
+    uint16_t count                = 0;
 
     // check the state of each of the device values
     // create the discovery topic if if hasn't already been created, not a command (like reset) and is active and visible
@@ -2121,15 +2134,13 @@ void EMSdevice::mqtt_ha_entity_config_create() {
             bool   needs_update       = !has_config_created || (haclimate_value == 1 ? has_climate_no_rt : !has_climate_no_rt);
 
             if (needs_update) {
-                // if it's a thermostat go fetch the list of modes
-                if (device_type() == EMSdevice::DeviceType::THERMOSTAT) {
-                    for (auto & dv : devicevalues_) {
-                        // make sure it's a type DeviceValueType::ENUM
-                        if ((dv.type == DeviceValueType::ENUM) && !strcmp(dv.short_name, FL_(mode)[0])) {
-                            // get options
-                            mode_options = dv.options;
-                            break;
-                        }
+                const char * const ** mode_options = nullptr;
+                for (const auto & d : devicevalues_) {
+                    // make sure mode in same circuit is DeviceValueType::ENUM
+                    if ((d.tag == dv.tag) && (d.type == DeviceValueType::ENUM) && !strcmp(d.short_name, FL_(mode)[0]) && (d.options_size > 0)) {
+                        // get options
+                        mode_options = d.options;
+                        break;
                     }
                 }
 
@@ -2149,24 +2160,33 @@ void EMSdevice::mqtt_ha_entity_config_create() {
         if (!dv.has_state(DeviceValueState::DV_HA_CONFIG_CREATED) && dv.has_state(DeviceValueState::DV_ACTIVE)
             && !dv.has_state(DeviceValueState::DV_API_MQTT_EXCLUDE)) {
             // create_device_config is only done once for the EMS device. It can added to any entity, so we take the first
-            if (Mqtt::publish_ha_sensor_config_dv(dv, name().c_str(), brand_to_char(), to_string_version().c_str(), false, create_device_config)) {
+            if (Mqtt::publish_ha_sensor_config_dv(dv, name().c_str(), brand_to_char().c_str(), to_string_version().c_str(), false, create_device_config)) {
                 dv.add_state(DeviceValueState::DV_HA_CONFIG_CREATED);
                 create_device_config = false; // only create the main config once
                 count++;
             }
 
-            // SRC thermostats mapped to connect/src1/...
+            // SRC thermostats mapped to connect/src1/... always contains mode, selRoomTemp, currtemp
             if (dv.tag >= DeviceValueTAG::TAG_SRC1 && dv.tag <= DeviceValueTAG::TAG_SRC16 && !strcmp(dv.short_name, FL_(selRoomTemp)[0])) {
-                const char * icon = nullptr;
-                for (auto & d : devicevalues_) {
-                    if (d.tag == dv.tag && !strcmp(d.short_name, FL_(icon)[0]) && *(uint8_t *)(d.value_p != 0)) {
-                        icon = d.options[*(uint8_t *)(d.value_p)][0];
-                        break;
+                // add modes and icon if we have one
+                const char *          icon         = nullptr;
+                const char * const ** mode_options = nullptr;
+                for (const auto & d : devicevalues_) {
+                    if ((d.tag != dv.tag) || (d.type != DeviceValueType::ENUM)) {
+                        continue;
+                    }
+                    if (!strcmp(d.short_name, FL_(mode)[0]) && (d.options_size > 0)) {
+                        mode_options = d.options;
+                    }
+                    if (!strcmp(d.short_name, FL_(icon)[0])) {
+                        uint8_t val = *(uint8_t *)(d.value_p);
+                        if (val != 0 && val < d.options_size) {
+                            icon = d.options[val][0];
+                        }
                     }
                 }
-                // add all modes - auto, heat, off, cool
-                // https://github.com/emsesp/EMS-ESP32/issues/2636
-                Mqtt::publish_ha_climate_config(dv, true, nullptr, false, icon);
+                Mqtt::publish_ha_climate_config(dv, true, mode_options, false, icon);
+                count++;
             }
 
 #ifndef EMSESP_STANDALONE

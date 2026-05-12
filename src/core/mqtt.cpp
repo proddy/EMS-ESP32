@@ -1184,14 +1184,19 @@ void Mqtt::add_ha_classes(JsonObject doc, const uint8_t device_type, const uint8
         doc[sc_ha] = sc_ha_measurement;
         doc[dc_ha] = "temperature";
         // override uom if fahrenheit
-        doc[uom_ha] = EMSESP::system_.fahrenheit() ? DeviceValue::DeviceValueUOM_s[DeviceValueUOM::FAHRENHEIT] : DeviceValue::DeviceValueUOM_s[uom];
+        doc[uom_ha] = EMSESP::system_.fahrenheit() && uom != DeviceValueUOM::K ? DeviceValue::DeviceValueUOM_s[DeviceValueUOM::FAHRENHEIT]
+                                                                               : DeviceValue::DeviceValueUOM_s[uom];
         break;
     case DeviceValueUOM::PERCENT:
         if (display_only) {
             doc[ic_ha] = F_(iconpercent); // set icon
         }
         doc[sc_ha] = sc_ha_measurement;
-        doc[dc_ha] = "power_factor";
+        if (entity == FL_(airHumidity)[0] || entity == FL_(remotehum)[0]) {
+            doc[dc_ha] = "humidity";
+        } else if (entity == FL_(battery)[0]) {
+            doc[dc_ha] = "battery";
+        }
         break;
     case DeviceValueUOM::SECONDS:
     case DeviceValueUOM::MINUTES:
@@ -1377,14 +1382,19 @@ bool Mqtt::publish_ha_climate_config(const DeviceValue & dv, const bool has_room
 
     snprintf(mode_str_tpl,
              sizeof(mode_str_tpl),
-             "{%%if %s%%}off{%%elif %s=='%s'%%}heat{%%elif %s=='%s'%%}heat{%%elif %s=='%s'%%}off{%%elif %s=='%s'%%}off{%%else%%}auto{%%endif%%}",
+             "{%%if %s%%}off{%%elif %s=='%s'%%}heat{%%elif %s=='%s'%%}heat{%%elif %s=='%s'%%}heat{%%elif %s=='%s'%%}off{%%elif %s=='%s'%%}off{%%elif "
+             "%s=='%s'%%}off{%%else%%}auto{%%endif%%}",
              hc_mode_cond,
              hc_mode_s,
              Helpers::translated_word(FL_(manual)),
              hc_mode_s,
              Helpers::translated_word(FL_(day)),
              hc_mode_s,
+             Helpers::translated_word(FL_(heat)),
+             hc_mode_s,
              Helpers::translated_word(FL_(night)),
+             hc_mode_s,
+             Helpers::translated_word(FL_(eco)),
              hc_mode_s,
              Helpers::translated_word(FL_(off)));
 
@@ -1446,7 +1456,7 @@ bool Mqtt::publish_ha_climate_config(const DeviceValue & dv, const bool has_room
                 found_auto = true;
             } else if (!strcmp(mode, FL_(heat)[0]) || !strcmp(mode, FL_(day)[0]) || !strcmp(mode, FL_(manual)[0])) {
                 found_heat = true; // we map day and manual to heat
-            } else if (!strcmp(mode, FL_(off)[0])) {
+            } else if (!strcmp(mode, FL_(off)[0]) || !strcmp(mode, FL_(night)[0]) || !strcmp(mode, FL_(eco)[0])) {
                 found_off = true;
             } else if (!strcmp(mode, FL_(cool)[0])) {
                 found_cool = true;
@@ -1539,10 +1549,8 @@ void Mqtt::add_ha_dev_section(JsonObject doc, const char * name, const bool crea
         }
 
         // add mf (manufacturer/brand), mdl (model), sw (software version) and via_device
-        dev_json["mf"] = brand != nullptr ? brand : "EMS-ESP";
-        if (model != nullptr) {
-            dev_json["mdl"] = model;
-        }
+        dev_json["mf"]         = brand != nullptr ? brand : "EMS-ESP";
+        dev_json["mdl"]        = model != nullptr ? model : "EMS-ESP";
         dev_json["sw"]         = version != nullptr ? version : "v" + std::string(EMSESP_APP_VERSION);
         dev_json["via_device"] = Mqtt::basename();
     }

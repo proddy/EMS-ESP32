@@ -186,7 +186,8 @@ const cz: Translation = {
   BUFFER_SIZE: 'Maximální velikost vyrovnávací paměti',
   COMPACT: 'Kompaktní',
   DOWNLOAD_SETTINGS_TEXT: 'Vytvořte zálohu svého nastavení a konfigurace',
-  DOWNLOAD_SETTINGS_TEXT2: 'Exportovat všechna data',
+  DOWNLOAD_SETTINGS_TEXT2: 'Exportovat všechny hodnoty',
+  DOWNLOAD_SYSTEM_BACKUP: 'Systémová záloha',
   UPLOAD_TEXT: 'Nahrajte nový soubor firmwaru (.bin) nebo záložní soubor (.json)',
   UPLOAD_DROP_TEXT: 'Přetáhněte soubor sem nebo klikněte pro výběr',
   ERROR: 'Neočekávaná chyba, zkuste to prosím znovu',
@@ -349,15 +350,22 @@ const cz: Translation = {
   NO_DATA_1: 'Nebyly nalezeny žádné oblíbené entity. Použijte modul',
   NO_DATA_2: 'pro jejich výběr.',
   NO_DATA_3: 'Pro zobrazení všech dostupných entit navštivte stránku',
+  NO_GPIO: 'Nebylo nalezeno žádné volné GPIO',
   THIS_VERSION: 'Tato verze',
   PLATFORM: 'Platforma',
   RELEASE_TYPE: 'Typ sestavení',
   INTERNET_CONNECTION_REQUIRED: 'Pro automatickou kontrolu a instalaci aktualizací je třeba internetové připojení',
   SWITCH_RELEASE_TYPE: 'Přepnout na {0} verzi',
   FIRMWARE_VERSION_INFO: 'Informace o verzi firmwaru',
-  NO_DATA: 'Žádná data',
+  NO_DATA: 'žádné údaje',
   USER_PROFILE: 'Uživatelský profil',
-  STORED_VERSIONS: 'Uložené verze'
+  STORED_VERSIONS: 'Uložené verze',
+  ONLINE_HELP: 'online nápověda',
+  UPGRADE_IMPORTANT_MESSAGES: 'Aktualizovat důležité zprávy',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Tato aktualizace vyžaduje obnovení továrního nastavení. Ujistěte se, že nejprve stáhnete systémovou zálohu před pokračováním a poté nahrajte tento soubor po instalaci nové verze.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Aktualizujete se na novou hlavní verzi. Ujistěte se, že jste přečetli ChangeLog pro jakékoliv závažné změny.',
+  WARNING_SYSTEM_BACKUP: 'Toto vytvoří zálohu vašich celých systémových konfigurací a nastavení. Všechna hesla budou v zálohovém souboru čitelná. Buďte opatrní při sdílení! Opravdu chcete pokračovat?'
+
 };
 
 export default cz;

@@ -186,7 +186,8 @@ const sv: Translation = {
   BUFFER_SIZE: 'Max bufferstorlek',
   COMPACT: 'Komprimerad',
   DOWNLOAD_SETTINGS_TEXT: 'Skapa en säkerhetskopia av din konfiguration och inställningar',
-  DOWNLOAD_SETTINGS_TEXT2: 'Exportera alla data',
+  DOWNLOAD_SETTINGS_TEXT2: 'Exportera alla värden',
+  DOWNLOAD_SYSTEM_BACKUP: 'System säkerhetskopia',
   UPLOAD_TEXT: 'Ladda upp en ny firmwarefil (.bin) eller en säkerhetskopiafil (.json)',
   UPLOAD_DROP_TEXT: 'Droppa en firmware .bin fil eller klicka här',
   ERROR: 'Okänt fel, var god försök igen',
@@ -349,6 +350,7 @@ const sv: Translation = {
   NO_DATA_1: 'Inga favorit EMS enheter hittade än. Använd',
   NO_DATA_2: 'modul för att markera dem.',
   NO_DATA_3: 'För att se alla tillgängliga enheter, gå till',
+  NO_GPIO: 'Inga tillgängliga GPIO-portar hittades',
   THIS_VERSION: 'Denna version',
   PLATFORM: 'Plattform',
   RELEASE_TYPE: 'Utgivelsestyp',
@@ -357,7 +359,13 @@ const sv: Translation = {
   FIRMWARE_VERSION_INFO: 'Information om firmwareversion',
   NO_DATA: 'Ingen data',
   USER_PROFILE: 'Användarprofil',
-  STORED_VERSIONS: 'Lagrad versioner'
+  STORED_VERSIONS: 'Lagrad versioner',
+  ONLINE_HELP: 'online hjälp',
+  UPGRADE_IMPORTANT_MESSAGES: 'Uppdatera viktiga meddelanden',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Denna uppdatering kräver en fabriksåterställning. Se till att du först laddar ned en System Backup innan du fortsätter, och ladda upp denna fil efter att den nya versionen är installerad.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Du uppdaterar till en ny huvudversion. Se till att du har läst ChangeLog för eventuella brkande ändringar.',
+  WARNING_SYSTEM_BACKUP: 'Detta kommer att skapa en säkerhetskopia av din fullständiga systemkonfiguration och inställningar. Alla lösenord kommer att vara läsbara i säkerhetskopien. Var försiktig med att dela! Vill du fortsätta?'
+
 };
 
 export default sv;

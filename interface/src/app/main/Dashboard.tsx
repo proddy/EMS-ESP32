@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutlined';
 import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import {
@@ -262,12 +262,8 @@ const Dashboard = memo(() => {
 
     return (
       <>
-        {!data.connected && (
-          <MessageBox level="error" message={LL.EMS_BUS_WARNING()} />
-        )}
-
         {data.connected && data.nodes.length > 0 && !hasFavEntities && (
-          <MessageBox mb={2} level="warning">
+          <MessageBox sx={{ mb: 2 }} level="warning">
             <Typography>
               {LL.NO_DATA_1()}&nbsp;
               <Link to="/customizations" style={{ color: 'white' }}>
@@ -284,10 +280,12 @@ const Dashboard = memo(() => {
         )}
 
         <Box
-          display="flex"
-          justifyContent="flex-end"
-          flexWrap="nowrap"
-          whiteSpace="nowrap"
+          sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            flexWrap: 'nowrap',
+            whiteSpace: 'nowrap'
+          }}
         >
           <ToggleButtonGroup
             size="small"
@@ -310,7 +308,7 @@ const Dashboard = memo(() => {
         </Box>
 
         {data.nodes.length > 0 ? (
-          <Box mt={1} justifyContent="center" flexDirection="column">
+          <Box sx={{ mt: 1, justifyContent: 'center', flexDirection: 'column' }}>
             <IconContext.Provider
               value={{
                 color: 'lightblue',
@@ -377,13 +375,8 @@ const Dashboard = memo(() => {
             </IconContext.Provider>
           </Box>
         ) : (
-          <Box
-            display="flex"
-            // justifyContent="flex-end"
-            // flexWrap="nowrap"
-            // whiteSpace="nowrap"
-          >
-            <Typography mt={1} color="warning.main" variant="body1">
+          <Box sx={{ display: 'flex' }}>
+            <Typography sx={{ mt: 1 }} color="warning" variant="body1">
               no data
             </Typography>
             <Tooltip title={LL.DASHBOARD_1()}>

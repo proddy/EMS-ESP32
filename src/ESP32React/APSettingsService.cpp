@@ -21,24 +21,24 @@ void APSettingsService::begin() {
 
 // wait 10 sec on STA disconnect before starting AP
 void APSettingsService::WiFiEvent(WiFiEvent_t event) {
-    uint8_t was_connected = _connected;
+    const uint8_t was_connected = _connected;
     switch (event) {
     case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-        _connected &= ~1;
+        _connected &= ~1U;
         break;
     case ARDUINO_EVENT_ETH_DISCONNECTED:
-        _connected &= ~2;
+        _connected &= ~2U;
         break;
     case ARDUINO_EVENT_WIFI_STA_GOT_IP:
     case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
-        _connected |= 1;
+        _connected |= 1U;
         break;
     case ARDUINO_EVENT_ETH_GOT_IP:
     case ARDUINO_EVENT_ETH_GOT_IP6:
-        _connected |= 2;
+        _connected |= 2U;
         break;
     default:
-        break;
+        return;
     }
     // wait 10 sec before starting AP
     if (was_connected && !_connected) {
@@ -52,18 +52,19 @@ void APSettingsService::reconfigureAP() {
 }
 
 void APSettingsService::loop() {
-    unsigned long currentMillis = uuid::get_uptime();
-    unsigned long manageElapsed = static_cast<uint32_t>(currentMillis - _lastManaged);
-    if (manageElapsed >= MANAGE_NETWORK_DELAY) {
+    const unsigned long currentMillis = uuid::get_uptime();
+    if ((currentMillis - _lastManaged) >= MANAGE_NETWORK_DELAY) {
         _lastManaged = currentMillis;
         manageAP();
     }
 
-    handleDNS();
+    if (_dnsServer) {
+        handleDNS();
+    }
 }
 
 void APSettingsService::manageAP() {
-    WiFiMode_t currentWiFiMode = WiFi.getMode();
+    const WiFiMode_t currentWiFiMode = WiFi.getMode();
     if (_state.provisionMode == AP_MODE_ALWAYS || (_state.provisionMode == AP_MODE_DISCONNECTED && !_connected)) {
         if (_reconfigureAp || currentWiFiMode == WIFI_OFF || currentWiFiMode == WIFI_STA) {
             startAP();
@@ -87,8 +88,10 @@ void APSettingsService::startAP() {
     WiFi.setTxPower(WIFI_POWER_8_5dBm); // https://www.wemos.cc/en/latest/c3/c3_mini_1_0_0.html#about-wifi
 #endif
     if (!_dnsServer) {
-        IPAddress apIp = WiFi.softAPIP();
-        emsesp::EMSESP::logger().info("Starting Access Point with captive portal on %s", apIp.toString().c_str());
+        const IPAddress apIp = WiFi.softAPIP();
+        char            ipStr[16];
+        snprintf(ipStr, sizeof(ipStr), "%u.%u.%u.%u", apIp[0], apIp[1], apIp[2], apIp[3]);
+        emsesp::EMSESP::logger().info("Starting Access Point with captive portal on %s", ipStr);
         _dnsServer = new DNSServer;
         _dnsServer->start(DNS_PORT, "*", apIp);
     }
@@ -111,8 +114,8 @@ void APSettingsService::handleDNS() {
 }
 
 APNetworkStatus APSettingsService::getAPNetworkStatus() {
-    WiFiMode_t currentWiFiMode = WiFi.getMode();
-    bool       apActive        = currentWiFiMode == WIFI_AP || currentWiFiMode == WIFI_AP_STA;
+    const WiFiMode_t currentWiFiMode = WiFi.getMode();
+    const bool       apActive        = (currentWiFiMode == WIFI_AP || currentWiFiMode == WIFI_AP_STA);
 
     if (apActive && _state.provisionMode != AP_MODE_ALWAYS && WiFi.status() == WL_CONNECTED) {
         return APNetworkStatus::LINGERING;
@@ -135,7 +138,7 @@ void APSettings::read(const APSettings & settings, JsonObject root) {
 }
 
 StateUpdateResult APSettings::update(JsonObject root, APSettings & settings) {
-    APSettings newSettings    = {};
+    APSettings newSettings{};
     newSettings.provisionMode = static_cast<uint8_t>(root["provision_mode"] | FACTORY_AP_PROVISION_MODE);
 
     switch (settings.provisionMode) {

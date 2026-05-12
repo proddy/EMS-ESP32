@@ -74,7 +74,7 @@ def buildWeb():
         # Run pnpm commands in the interface directory
         commands = [
             f"{pnpm_exe} install",
-            f"{pnpm_exe} build_webUI"
+            f"{pnpm_exe} build-webUI"
         ]
 
         for command in commands:

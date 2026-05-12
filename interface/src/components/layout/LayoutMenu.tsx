@@ -51,9 +51,7 @@ const LayoutMenuComponent = () => {
               sx={{ my: 0 }}
               slotProps={{
                 primary: {
-                  fontWeight: '600',
-                  mb: '2px',
-                  color: 'lightblue'
+                  sx: { fontWeight: 600, mb: '2px', color: 'lightblue' }
                 }
               }}
             />

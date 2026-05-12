@@ -26,7 +26,7 @@
 #include "emsdevicevalue.h"
 
 #include <esp32-psram.h>
-#include <unordered_map>
+#include <map>
 
 namespace emsesp {
 
@@ -55,6 +55,7 @@ class EMSdevice {
     static const char * tag_to_mqtt(int8_t tag);
     static uint8_t      decode_brand(uint8_t value);
     static bool         export_values(uint8_t device_type, JsonObject output, const int8_t id, const uint8_t output_target);
+    static uint8_t      tag_to_flag(const uint8_t tag);
 
     // non static functions
 
@@ -62,7 +63,7 @@ class EMSdevice {
     const char * device_type_2_device_name_translated(); // returns translated device type name
     bool         has_tags(const int8_t tag) const;
     bool         has_cmd(const char * cmd, const int8_t id) const;
-    const char * brand_to_char();
+    std::string  brand_to_char();
     std::string  to_string();
     std::string  to_string_short();
     std::string  to_string_version();
@@ -87,6 +88,10 @@ class EMSdevice {
 
     const char * version() const {
         return version_;
+    }
+
+    void version(const char * version) {
+        strlcpy(version_, version, sizeof(version_));
     }
 
     uint8_t brand() const {
@@ -124,6 +129,14 @@ class EMSdevice {
         return custom_name_;
     }
 
+    // set custom brand
+    void custom_brand(std::string const & custom_brand) {
+        custom_brand_ = custom_brand;
+    }
+
+    std::string custom_brand() const {
+        return custom_brand_;
+    }
     // set device model
     void model(std::string const & model) {
         model_ = model;
@@ -246,7 +259,7 @@ class EMSdevice {
     void setCustomizationEntity(const std::string & entity_id);
     void getCustomizationEntities(std::vector<std::string> & entity_ids);
 
-    void register_telegram_type(const uint16_t telegram_type_id, const char * telegram_type_name, bool fetch, const process_function_p cb);
+    void register_telegram_type(const uint16_t telegram_type_id, const char * telegram_type_name, bool fetch, const process_function_p cb, uint8_t length = 0);
     bool handle_telegram(std::shared_ptr<const Telegram> telegram);
 
     std::string get_value_uom(const std::string & shortname) const;
@@ -281,6 +294,8 @@ class EMSdevice {
                                const cmd_function_p  f,
                                int16_t               min,
                                uint32_t              max);
+
+    void erase_device_values();
 
     void
     register_device_value(int8_t tag, void * value_p, uint8_t type, const char * const ** options, const char * const * name, uint8_t uom, const cmd_function_p f);
@@ -347,7 +362,7 @@ class EMSdevice {
     const char * telegram_type_name(std::shared_ptr<const Telegram> telegram);
     void         fetch_values();
     void         toggle_fetch(uint16_t telegram_id, bool toggle);
-    bool         is_fetch(uint16_t telegram_id) const;
+    bool         is_fetch(uint16_t telegram_id, uint8_t len = 0) const;
     bool         is_received(uint16_t telegram_id) const;
     bool         has_telegram_id(uint16_t id) const;
     void         ha_config_clear();
@@ -433,6 +448,14 @@ class EMSdevice {
     static constexpr uint8_t EMS_DEVICE_ID_DHW2           = 0x29; // MM100 module as water station
     static constexpr uint8_t EMS_DEVICE_ID_DHW8           = 0x2F; // last DHW module id?
     static constexpr uint8_t EMS_DEVICE_ID_IPM_DHW        = 0x41; // IPM module as water station
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY1       = 0x48; // KM200, MX300, MX400
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY2       = 0x49;
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY3       = 0x4A;
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY4       = 0x4B;
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY5       = 0x4C;
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY6       = 0x4D;
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY7       = 0x4E;
+    static constexpr uint8_t EMS_DEVICE_ID_GATEWAY8       = 0x4F;
 
     // generic type IDs
     static constexpr uint16_t EMS_TYPE_NAME        = 0x01; // device config for ems devices, name ascii on offset 27ff  for ems+
@@ -524,12 +547,13 @@ class EMSdevice {
     uint8_t      device_id_   = 0;
     uint8_t      product_id_  = 0;
     char         version_[6];
-    const char * default_name_;     // the fixed name the EMS model taken from the device library
-    std::string  custom_name_ = ""; // custom name
-    std::string  model_       = ""; // model, taken from the 0x01 telegram. see process_deviceName()
-    uint8_t      flags_       = 0;
-    uint8_t      brand_       = Brand::NO_BRAND;
-    bool         active_      = true;
+    const char * default_name_;      // the fixed name the EMS model taken from the device library
+    std::string  custom_name_  = ""; // custom name
+    std::string  custom_brand_ = ""; // custom brand
+    std::string  model_        = ""; // model, taken from the 0x01 telegram. see process_deviceName()
+    uint8_t      flags_        = 0;
+    uint8_t      brand_        = Brand::NO_BRAND;
+    bool         active_       = true;
 
     bool ha_config_done_ = false;
     bool has_update_     = false;
@@ -539,13 +563,15 @@ class EMSdevice {
         const char *             telegram_type_name_; // e.g. RC20Message
         bool                     fetch_;              // if this type_id be queried automatically
         bool                     received_;
+        uint8_t                  length_;
         const process_function_p process_function_;
 
-        TelegramFunction(uint16_t telegram_type_id, const char * telegram_type_name, bool fetch, bool received, const process_function_p process_function)
+        TelegramFunction(uint16_t telegram_type_id, const char * telegram_type_name, bool fetch, bool received, uint8_t length, const process_function_p process_function)
             : telegram_type_id_(telegram_type_id)
             , telegram_type_name_(telegram_type_name)
             , fetch_(fetch)
             , received_(received)
+            , length_(length)
             , process_function_(process_function) {
         }
     };

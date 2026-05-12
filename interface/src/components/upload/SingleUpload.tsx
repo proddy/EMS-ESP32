@@ -13,11 +13,10 @@ import DragNdrop from './DragNdrop';
 import { LinearProgressWithLabel } from './LinearProgressWithLabel';
 
 interface SingleUploadProps {
-  text: string;
   doRestart: () => void;
 }
 
-const SingleUpload = ({ text, doRestart }: SingleUploadProps) => {
+const SingleUpload = ({ doRestart }: SingleUploadProps) => {
   const [md5, setMd5] = useState<string>();
   const [file, setFile] = useState<File>();
   const { LL } = useI18nContext();
@@ -58,7 +57,7 @@ const SingleUpload = ({ text, doRestart }: SingleUploadProps) => {
     <>
       {isUploading ? (
         <>
-          <Box width="100%" pl={2} pr={2}>
+          <Box sx={{ width: '100%', pl: 2, pr: 2 }}>
             <LinearProgressWithLabel
               value={
                 progress.total === 0 || progress.loaded === 0
@@ -81,11 +80,11 @@ const SingleUpload = ({ text, doRestart }: SingleUploadProps) => {
           </Button>
         </>
       ) : (
-        <DragNdrop text={text} onFileSelected={setFile} />
+        <DragNdrop text={LL.UPLOAD_DROP_TEXT()} onFileSelected={setFile} />
       )}
 
       {md5 && (
-        <Box mt={2}>
+        <Box sx={{ mt: 2 }}>
           <Typography variant="body2">{'MD5: ' + md5}</Typography>
         </Box>
       )}

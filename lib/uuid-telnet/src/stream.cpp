@@ -249,7 +249,7 @@ size_t TelnetStream::write(uint8_t data) {
 }
 
 size_t TelnetStream::write(const uint8_t * buffer, size_t size) {
-    std::vector<unsigned char> data;
+    std::vector<unsigned char, AllocatorPSRAM<unsigned char>> data;
     data.reserve(size);
 
     while (size-- > 0) {
@@ -310,7 +310,7 @@ size_t TelnetStream::raw_write(unsigned char data) {
     return 1;
 }
 
-size_t TelnetStream::raw_write(const std::vector<unsigned char> & data) {
+size_t TelnetStream::raw_write(const std::vector<unsigned char, AllocatorPSRAM<unsigned char>> & data) {
     return raw_write(reinterpret_cast<const unsigned char *>(data.data()), data.size());
 }
 

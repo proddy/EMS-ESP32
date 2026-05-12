@@ -84,7 +84,7 @@ uuid::log::Logger EMSESP::logger() {
 RxService         EMSESP::rxservice_;         // incoming Telegram Rx handler
 TxService         EMSESP::txservice_;         // outgoing Telegram Tx handler
 Mqtt              EMSESP::mqtt_;              // mqtt handler
-Modbus *          EMSESP::modbus_;            // modbus handler
+Modbus *          EMSESP::modbus_ = nullptr;  // modbus handler
 System            EMSESP::system_;            // core system services
 TemperatureSensor EMSESP::temperaturesensor_; // Temperature sensors
 AnalogSensor      EMSESP::analogsensor_;      // Analog sensors
@@ -1307,9 +1307,17 @@ bool EMSESP::add_device(const uint8_t device_id, const uint8_t product_id, const
     // first check to see if we already have it, if so update the record
     for (auto it = emsdevices.begin(); it != emsdevices.end(); ++it) {
         if ((*it) && (*it)->is_device_id(device_id)) {
-            if (product_id == 0 || (*it)->product_id() != 0) { // update only with valid product_id
+            if (product_id == 0) { // no product-id, ignore
+                return false;
+            }
+            if ((*it)->product_id() == product_id) { // update version if we have valid product_id
+                if (!strcmp((*it)->version(), "00.00")) {
+                    (*it)->version(version);
+                }
                 return true;
             }
+            // product-id has changed for this device-id, delete and re-add
+            (*it)->erase_device_values();
             emsdevices.erase(it); // erase the old device without product_id and re detect
             break;
         }
@@ -1450,6 +1458,7 @@ bool EMSESP::add_device(const uint8_t device_id, const uint8_t product_id, const
             if ((e.device_id == device_id) && (e.product_id == product_id)) {
                 LOG_DEBUG("Have customizations for %s with deviceID 0x%02X productID %d", e.custom_name.c_str(), device_id, product_id);
                 emsdevices.back()->custom_name(e.custom_name);
+                emsdevices.back()->custom_brand(e.custom_brand);
                 break;
             }
         }
@@ -1591,10 +1600,11 @@ void EMSESP::incoming_telegram(uint8_t * data, const uint8_t length) {
             wait_km_     = true;
             connect_time = uuid::get_uptime_sec();
         }
+
         if (poll_id == EMSbus::ems_bus_id()) {
-            // TODO this could also be by coincidence, so we should add a counter to the EMSbus class to check if the poll_id is the same as the EMS_BUS_ID for a certain number of times
             EMSbus::last_bus_activity(uuid::get_uptime()); // set the flag indication the EMS bus is active
         }
+
         if (wait_km_) {
             if (poll_id != 0x48 && (uuid::get_uptime_sec() - connect_time) < EMS_WAIT_KM_TIMEOUT) {
                 return;
@@ -1700,6 +1710,16 @@ void EMSESP::start() {
     bool factory_settings = false;
 #endif
 
+#if defined(EMSESP_DEBUG)
+    // LOG_DEBUG("Listing root directory before:");
+    // system_.listDir("/", 3); // show the contents of the root directory
+#endif
+
+    // start NVS storage
+    if (!nvs_.begin("ems-esp", false, "nvs1")) { // try bigger nvs partition on 16M flash first
+        nvs_.begin("ems-esp", false, "nvs");     // fallback to small nvs
+    }
+
     // set valid GPIOs list based on ESP32 chip/platform type
     system_.set_valid_system_gpios();
 
@@ -1708,6 +1728,11 @@ void EMSESP::start() {
 
     // loads core system services settings (network, mqtt, ap, ntp etc)
     esp32React.begin();
+
+#if defined(EMSESP_DEBUG)
+    // LOG_DEBUG("Listing root directory before:");
+    // system_.listDir("/", 3); // show the contents of the root directory
+#endif
 
 #ifndef EMSESP_STANDALONE
     if (factory_settings) {
@@ -1748,7 +1773,7 @@ void EMSESP::start() {
     LOG_INFO("Last system reset reason Core0: %s, Core1: %s", system_.reset_reason(0).c_str(), system_.reset_reason(1).c_str());
 #endif
 
-// see if we're restoring a settings file
+    // see if we're restoring a settings file
 #ifndef EMSESP_STANDALONE
     if (system_.check_restore()) {
         LOG_WARNING("EMS-ESP will restart to apply new settings. Please wait.");
@@ -1756,11 +1781,7 @@ void EMSESP::start() {
     };
 #endif
 
-    if (!nvs_.begin("ems-esp", false, "nvs1")) { // try bigger nvs partition on 16M flash first
-        nvs_.begin("ems-esp", false, "nvs");     // fallback to small nvs
-    }
-
-    LOG_DEBUG("NVS device information: %s", system_.getBBQKeesGatewayDetails().isEmpty() ? "not set" : system_.getBBQKeesGatewayDetails().c_str());
+    LOG_DEBUG("eFuse device information: %s", system_.getBBQKeesGatewayDetails().isEmpty() ? "not set" : system_.getBBQKeesGatewayDetails().c_str());
 
     webSettingsService.begin(); // load EMS-ESP Application settings
 
@@ -1791,12 +1812,6 @@ void EMSESP::start() {
         telnet_.initial_idle_timeout(3600);  // in sec, one hour idle timeout
         telnet_.default_write_timeout(1000); // in ms, socket timeout 1 second
 #endif
-    }
-
-    // start services
-    if (system_.modbus_enabled()) {
-        modbus_ = new Modbus;
-        modbus_->start(1, system_.modbus_port(), system_.modbus_max_clients(), system_.modbus_timeout() * 1000);
     }
 
     mqtt_.start();                              // mqtt init
@@ -1845,7 +1860,7 @@ void EMSESP::loop() {
         return; // LED flashing is active, skip the rest of the loop
     }
 
-    esp32React.loop();    // web services like network, AP, MQTT
+    esp32React.loop();    // core services: Network, AP, MQTT and NTP
     webLogService.loop(); // log in Web UI
 
     // run the loop, unless we're in the middle of an OTA upload

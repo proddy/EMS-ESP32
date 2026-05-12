@@ -50,7 +50,7 @@ class Thermostat : public EMSdevice {
         uint8_t daymidtemp;
         uint8_t nighttemp;
         uint8_t holidaytemp;
-        uint8_t heatingtype; // type of heating: 1 radiator, 2 convectors, 3 floors, 4 room supply
+        uint8_t heatingtype; // type of heating: 1 radiator, 2 convectors, 3 floor, 4 room supply
         uint8_t targetflowtemp;
         uint8_t summertemp;
         int8_t  nofrosttemp; // signed -20°C to +10°C
@@ -65,6 +65,7 @@ class Thermostat : public EMSdevice {
         int16_t curroominfl;
         uint8_t flowtempoffset;
         uint8_t minflowtemp;
+        uint8_t baseflowtemp;
         uint8_t maxflowtemp;
         uint8_t reducemode;
         uint8_t nofrostmode;
@@ -89,6 +90,9 @@ class Thermostat : public EMSdevice {
         uint8_t statusbyte; // from RC300monitor
         uint8_t switchProgMode;
         int8_t  redThreshold;
+        // BC400
+        int8_t  comfortPointTemp;   // -5-15° C - in BC400
+        uint8_t comfortPointOffset; // 0-10° K - in BC400
         // RC 10
         uint8_t  reducehours;   // night reduce duration
         uint16_t reduceminutes; // remaining minutes to night->day
@@ -166,6 +170,7 @@ class Thermostat : public EMSdevice {
             DAYMID,
             COOLTEMP,
             COOLSTART,
+            BASEFLOW,
             UNKNOWN
 
         };
@@ -244,16 +249,16 @@ class Thermostat : public EMSdevice {
     }
 
     // each thermostat has a list of heating controller type IDs for reading and writing
-    std::vector<uint16_t> monitor_typeids;
-    std::vector<uint16_t> set_typeids;
-    std::vector<uint16_t> set2_typeids;
-    std::vector<uint16_t> timer_typeids;
-    std::vector<uint16_t> timer2_typeids;
-    std::vector<uint16_t> summer_typeids;
-    std::vector<uint16_t> summer2_typeids;
-    std::vector<uint16_t> curve_typeids;
-    std::vector<uint16_t> hp_typeids;
-    std::vector<uint16_t> hpmode_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> monitor_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> set_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> set2_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> timer_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> timer2_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> summer_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> summer2_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> curve_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> hp_typeids;
+    std::vector<uint16_t, AllocatorPSRAM<uint16_t>> hpmode_typeids;
 
     // standard for all thermostats
     char     status_[20];    // online or offline
@@ -305,8 +310,8 @@ class Thermostat : public EMSdevice {
     uint8_t pvRaiseHeat_;
     uint8_t pvLowerCool_;
 
-    std::vector<std::shared_ptr<HeatingCircuit>> heating_circuits_; // each thermostat can have multiple heating circuits
-    std::vector<std::shared_ptr<DhwCircuit>>     dhw_circuits_;     // each thermostat can have multiple dhw circuits
+    std::vector<std::shared_ptr<HeatingCircuit>, AllocatorPSRAM<std::shared_ptr<HeatingCircuit>>> heating_circuits_; // each thermostat can have multiple heating circuits
+    std::vector<std::shared_ptr<DhwCircuit>, AllocatorPSRAM<std::shared_ptr<DhwCircuit>>> dhw_circuits_; // each thermostat can have multiple dhw circuits
 
     // Generic Types
     static constexpr uint16_t EMS_TYPE_RCTime        = 0x06; // time
@@ -505,6 +510,8 @@ class Thermostat : public EMSdevice {
     bool set_controlmode(const char * value, const int8_t id);
     bool set_wwprio(const char * value, const int8_t id);
     bool set_fastheatup(const char * value, const int8_t id);
+    bool set_comfortPointTemp(const char * value, const int8_t id);
+    bool set_comfortPointOffset(const char * value, const int8_t id);
     bool set_switchonoptimization(const char * value, const int8_t id);
     bool set_heatondelay(const char * value, const int8_t id);
     bool set_heatoffdelay(const char * value, const int8_t id);
@@ -577,6 +584,9 @@ class Thermostat : public EMSdevice {
     }
     inline bool set_minflowtemp(const char * value, const int8_t id) {
         return set_temperature_value(value, id, HeatingCircuit::Mode::MINFLOW);
+    }
+    inline bool set_baseflowtemp(const char * value, const int8_t id) {
+        return set_temperature_value(value, id, HeatingCircuit::Mode::BASEFLOW);
     }
     inline bool set_roominfluence(const char * value, const int8_t id) {
         return set_temperature_value(value, id, HeatingCircuit::Mode::ROOMINFLUENCE, true);

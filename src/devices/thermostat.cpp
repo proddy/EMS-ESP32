@@ -36,11 +36,11 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
         register_telegram_type(0x042B + device_id - 0x38, "RemoteTemp", false, MAKE_PF_CB(process_RemoteTemp));
         if (product_id != Roomctrl::RC200) {
             register_telegram_type(0x047B + device_id - 0x38, "RemoteHumidity", false, MAKE_PF_CB(process_RemoteHumidity));
-            register_telegram_type(0x0273 + device_id - 0x38, "RemoteCorrection", true, MAKE_PF_CB(process_RemoteCorrection));
-            register_telegram_type(0x0A6A + device_id - 0x38, "RemoteBattery", true, MAKE_PF_CB(process_RemoteBattery));
+            register_telegram_type(0x0273 + device_id - 0x38, "RemoteCorrection", true, MAKE_PF_CB(process_RemoteCorrection), 1);
+            register_telegram_type(0x0A6A + device_id - 0x38, "RemoteBattery", true, MAKE_PF_CB(process_RemoteBattery), 2);
             // maybe fixed type for these telegrams?
-            // register_telegram_type(0x0273, "RemoteCorrection", true, MAKE_PF_CB(process_RemoteCorrection));
-            // register_telegram_type(0x0A6B, "RemoteBattery", true, MAKE_PF_CB(process_RemoteBattery));
+            // register_telegram_type(0x0273, "RemoteCorrection", true, MAKE_PF_CB(process_RemoteCorrection), 1);
+            // register_telegram_type(0x0A6B, "RemoteBattery", true, MAKE_PF_CB(process_RemoteBattery), 2);
         }
         register_device_values(); // register device values for common values (not heating circuit)
         return;                   // no values to add
@@ -57,42 +57,45 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
 
     // RC10
     if (model == EMSdevice::EMS_DEVICE_FLAG_RC10) {
-        monitor_typeids = {0xB1};
-        set_typeids     = {0xB0};
-        for (uint8_t i = 0; i < monitor_typeids.size(); i++) {
+        monitor_typeids   = {0xB1};
+        set_typeids       = {0xB0};
+        const size_t size = monitor_typeids.size();
+        for (uint8_t i = 0; i < size; i++) {
             register_telegram_type(monitor_typeids[i], "RC10Monitor", false, MAKE_PF_CB(process_RC10Monitor));
             register_telegram_type(set_typeids[i], "RC10Set", false, MAKE_PF_CB(process_RC10Set));
         }
 
         // RC35
     } else if ((model == EMSdevice::EMS_DEVICE_FLAG_RC35) || (model == EMSdevice::EMS_DEVICE_FLAG_RC30_N)) {
-        monitor_typeids = {0x3E, 0x48, 0x52, 0x5C};
-        set_typeids     = {0x3D, 0x47, 0x51, 0x5B};
-        timer_typeids   = {0x3F, 0x49, 0x53, 0x5D};
-        timer2_typeids  = {0x42, 0x4C, 0x56, 0x60};
-        for (uint8_t i = 0; i < monitor_typeids.size(); i++) {
-            register_telegram_type(monitor_typeids[i], "RC35Monitor", false, MAKE_PF_CB(process_RC35Monitor));
-            register_telegram_type(set_typeids[i], "RC35Set", false, MAKE_PF_CB(process_RC35Set));
-            register_telegram_type(timer_typeids[i], "RC35Timer", false, MAKE_PF_CB(process_RC35Timer));
-            register_telegram_type(timer2_typeids[i], "RC35Timer2", false, MAKE_PF_CB(process_RC35Timer));
+        monitor_typeids   = {0x3E, 0x48, 0x52, 0x5C};
+        set_typeids       = {0x3D, 0x47, 0x51, 0x5B};
+        timer_typeids     = {0x3F, 0x49, 0x53, 0x5D};
+        timer2_typeids    = {0x42, 0x4C, 0x56, 0x60};
+        const size_t size = monitor_typeids.size();
+        for (uint8_t i = 0; i < size; i++) {
+            register_telegram_type(monitor_typeids[i], "RC35Monitor", false, MAKE_PF_CB(process_RC35Monitor), 15);
+            register_telegram_type(set_typeids[i], "RC35Set", false, MAKE_PF_CB(process_RC35Set), 42);
+            register_telegram_type(timer_typeids[i], "RC35Timer", false, MAKE_PF_CB(process_RC35Timer), 99);
+            register_telegram_type(timer2_typeids[i], "RC35Timer2", false, MAKE_PF_CB(process_RC35Timer), 99);
         }
-        register_telegram_type(EMS_TYPE_IBASettings, "IBASettings", true, MAKE_PF_CB(process_IBASettings));
-        register_telegram_type(EMS_TYPE_wwSettings, "WWSettings", true, MAKE_PF_CB(process_RC35wwSettings));
-        register_telegram_type(0x38, "WWTimer", true, MAKE_PF_CB(process_RC35wwTimer));
-        register_telegram_type(0x39, "WWCircTimer", true, MAKE_PF_CB(process_RC35wwTimer));
+        register_telegram_type(EMS_TYPE_IBASettings, "IBASettings", true, MAKE_PF_CB(process_IBASettings), 22);
+        register_telegram_type(EMS_TYPE_wwSettings, "WWSettings", true, MAKE_PF_CB(process_RC35wwSettings), 10);
+        register_telegram_type(0x38, "WWTimer", true, MAKE_PF_CB(process_RC35wwTimer), 99);
+        register_telegram_type(0x39, "WWCircTimer", true, MAKE_PF_CB(process_RC35wwTimer), 99);
 
         // RC20
     } else if (model == EMSdevice::EMS_DEVICE_FLAG_RC20) {
         if (device_id == 0x17) { // master
-            monitor_typeids = {0x91};
-            set_typeids     = {0xA8};
-            curve_typeids   = {0x90};
-            timer_typeids   = {0x8F};
-            for (uint8_t i = 0; i < monitor_typeids.size(); i++) {
-                register_telegram_type(monitor_typeids[i], "RC20Monitor", false, MAKE_PF_CB(process_RC20Monitor));
-                register_telegram_type(set_typeids[i], "RC20Set", false, MAKE_PF_CB(process_RC20Set));
-                register_telegram_type(curve_typeids[i], "RC20Temp", false, MAKE_PF_CB(process_RC20Temp));
-                register_telegram_type(timer_typeids[i], "RC20Timer", false, MAKE_PF_CB(process_RC20Timer));
+            monitor_typeids   = {0x91};
+            set_typeids       = {0xA8};
+            curve_typeids     = {0x90};
+            timer_typeids     = {0x8F};
+            const size_t size = monitor_typeids.size();
+            for (uint8_t i = 0; i < size; i++) {
+                register_telegram_type(monitor_typeids[i], "RC20Monitor", false, MAKE_PF_CB(process_RC20Monitor), 14);
+                register_telegram_type(set_typeids[i], "RC20Set", false, MAKE_PF_CB(process_RC20Set), 30);
+                register_telegram_type(curve_typeids[i], "RC20Temp", false, MAKE_PF_CB(process_RC20Temp), 7);
+                register_telegram_type(timer_typeids[i], "RC20Timer", false, MAKE_PF_CB(process_RC20Timer), 99);
             }
         } else {
             // remote thermostat uses only 0xAF
@@ -101,11 +104,12 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
         // RC20 newer
     } else if ((model == EMSdevice::EMS_DEVICE_FLAG_RC20_N) || (model == EMSdevice::EMS_DEVICE_FLAG_RC25)) {
         if (device_id == 0x17) { // master
-            monitor_typeids = {0xAE};
-            set_typeids     = {0xAD};
-            for (uint8_t i = 0; i < monitor_typeids.size(); i++) {
-                register_telegram_type(monitor_typeids[i], "RC20Monitor", false, MAKE_PF_CB(process_RC20Monitor_2));
-                register_telegram_type(set_typeids[i], "RC20Set", false, MAKE_PF_CB(process_RC20Set_2));
+            monitor_typeids   = {0xAE};
+            set_typeids       = {0xAD};
+            const size_t size = monitor_typeids.size();
+            for (uint8_t i = 0; i < size; i++) {
+                register_telegram_type(monitor_typeids[i], "RC20Monitor", false, MAKE_PF_CB(process_RC20Monitor_2), 8);
+                register_telegram_type(set_typeids[i], "RC20Set", false, MAKE_PF_CB(process_RC20Set_2), 22);
             }
         } else {
             // remote thermostat uses only 0xAF
@@ -113,43 +117,45 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
         }
         // RC30
     } else if (model == EMSdevice::EMS_DEVICE_FLAG_RC30) {
-        monitor_typeids = {0x41};
-        set_typeids     = {0xA7};
-        curve_typeids   = {0x40};
-        timer_typeids   = {0x3F};
-        for (uint8_t i = 0; i < monitor_typeids.size(); i++) {
-            register_telegram_type(monitor_typeids[i], "RC30Monitor", false, MAKE_PF_CB(process_RC30Monitor));
-            register_telegram_type(set_typeids[i], "RC30Set", false, MAKE_PF_CB(process_RC30Set));
-            register_telegram_type(curve_typeids[i], "RC30Temp", false, MAKE_PF_CB(process_RC30Temp));
-            register_telegram_type(timer_typeids[i], "RC30Timer", false, MAKE_PF_CB(process_RC35Timer));
+        monitor_typeids   = {0x41};
+        set_typeids       = {0xA7};
+        curve_typeids     = {0x40};
+        timer_typeids     = {0x3F};
+        const size_t size = monitor_typeids.size();
+        for (uint8_t i = 0; i < size; i++) {
+            register_telegram_type(monitor_typeids[i], "RC30Monitor", false, MAKE_PF_CB(process_RC30Monitor), 14);
+            register_telegram_type(set_typeids[i], "RC30Set", false, MAKE_PF_CB(process_RC30Set), 31);
+            register_telegram_type(curve_typeids[i], "RC30Temp", false, MAKE_PF_CB(process_RC30Temp), 25);
+            register_telegram_type(timer_typeids[i], "RC30Timer", false, MAKE_PF_CB(process_RC35Timer), 99);
         }
-        register_telegram_type(0xA9, "RC30Vacation", true, MAKE_PF_CB(process_RC30Vacation));
-        register_telegram_type(EMS_TYPE_RC30wwSettings, "RC30WWSettings", true, MAKE_PF_CB(process_RC30wwSettings));
-        register_telegram_type(0x38, "WWTimer", true, MAKE_PF_CB(process_RC35wwTimer));
-        register_telegram_type(0x39, "WWCircTimer", true, MAKE_PF_CB(process_RC35wwTimer));
+        register_telegram_type(0xA9, "RC30Vacation", true, MAKE_PF_CB(process_RC30Vacation), 57);
+        register_telegram_type(EMS_TYPE_RC30wwSettings, "RC30WWSettings", true, MAKE_PF_CB(process_RC30wwSettings), 5);
+        register_telegram_type(0x38, "WWTimer", true, MAKE_PF_CB(process_RC35wwTimer), 99);
+        register_telegram_type(0x39, "WWCircTimer", true, MAKE_PF_CB(process_RC35wwTimer), 99);
 
         // EASY
     } else if (model == EMSdevice::EMS_DEVICE_FLAG_EASY) {
         monitor_typeids = {0x0A};
-        set_typeids     = {};
-        register_telegram_type(monitor_typeids[0], "EasyMonitor", true, MAKE_PF_CB(process_EasyMonitor));
-        register_telegram_type(0x02A5, "EasyMonitor", false, MAKE_PF_CB(process_EasyMonitor));
+        set_typeids.clear();
+        register_telegram_type(monitor_typeids[0], "EasyMonitor", true, MAKE_PF_CB(process_EasyMonitor), 12);
+        register_telegram_type(0x02A5, "EasyMonitor", false, MAKE_PF_CB(process_EasyMonitor), 7);
 
         // CRF
     } else if (model == EMSdevice::EMS_DEVICE_FLAG_CRF) {
         monitor_typeids = {0x02A5, 0x02A6, 0x02A7, 0x02A8};
-        set_typeids     = {};
-        for (uint8_t i = 0; i < monitor_typeids.size(); i++) {
-            register_telegram_type(monitor_typeids[i], "CRFMonitor", false, MAKE_PF_CB(process_CRFMonitor));
+        set_typeids.clear();
+        const size_t size = monitor_typeids.size();
+        for (uint8_t i = 0; i < size; i++) {
+            register_telegram_type(monitor_typeids[i], "CRFMonitor", false, MAKE_PF_CB(process_CRFMonitor), 7);
         }
 
     } else if (model == EMSdevice::EMS_DEVICE_FLAG_CR11) {
         monitor_typeids = {0x02A5};
         set_typeids     = {0x02B9};
         curve_typeids   = {0x029B};
-        register_telegram_type(monitor_typeids[0], "RC300Monitor", true, MAKE_PF_CB(process_CR11Monitor));
-        register_telegram_type(set_typeids[0], "RC300Set", false, MAKE_PF_CB(process_RC300Set));
-        register_telegram_type(curve_typeids[0], "RC300Curves", true, MAKE_PF_CB(process_RC300Curve));
+        register_telegram_type(monitor_typeids[0], "RC300Monitor", true, MAKE_PF_CB(process_CR11Monitor), 7);
+        register_telegram_type(set_typeids[0], "RC300Set", false, MAKE_PF_CB(process_RC300Set), 29);
+        register_telegram_type(curve_typeids[0], "RC300Curves", true, MAKE_PF_CB(process_RC300Curve), 9);
 
         // RC300/RC100 variants
     } else if (isRC300() || (model == EMSdevice::EMS_DEVICE_FLAG_RC100)) {
@@ -157,48 +163,51 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
         set_typeids     = {0x02B9, 0x02BA, 0x02BB, 0x02BC, 0x02BD, 0x02BE, 0x02BF, 0x02C0};
         // 0x2CC is setting command to boiler, 0x2CD..0x2D4 is setting command to mixers, not a thermostat value, but also stored in thermostat
         // set2_typeids    = {0x02CC, 0x02CE, 0x02D0, 0x02D2}; // max. 4 heating circuits supported ny RC310
-        set2_typeids    = {0x0421, 0x0422, 0x0423, 0x0424};
-        summer_typeids  = {0x02AF, 0x02B0, 0x02B1, 0x02B2, 0x02B3, 0x02B4, 0x02B5, 0x02B6};
-        curve_typeids   = {0x029B, 0x029C, 0x029D, 0x029E, 0x029F, 0x02A0, 0x02A1, 0x02A2};
-        summer2_typeids = {0x0471, 0x0472, 0x0473, 0x0474, 0x0475, 0x0476, 0x0477, 0x0478};
-        hp_typeids      = {0x0467, 0x0468, 0x0469, 0x046A};
-        hpmode_typeids  = {0x0291, 0x0292, 0x0293, 0x0294};
-        for (uint8_t i = 0; i < monitor_typeids.size(); i++) {
-            register_telegram_type(monitor_typeids[i], "RC300Monitor", false, MAKE_PF_CB(process_RC300Monitor));
-            register_telegram_type(set_typeids[i], "RC300Set", false, MAKE_PF_CB(process_RC300Set));
-            register_telegram_type(summer_typeids[i], "RC300Summer", false, MAKE_PF_CB(process_RC300Summer));
-            register_telegram_type(curve_typeids[i], "RC300Curves", false, MAKE_PF_CB(process_RC300Curve));
-            register_telegram_type(summer2_typeids[i], "RC300Summer2", false, MAKE_PF_CB(process_RC300Summer2));
+        set2_typeids              = {0x0421, 0x0422, 0x0423, 0x0424};
+        summer_typeids            = {0x02AF, 0x02B0, 0x02B1, 0x02B2, 0x02B3, 0x02B4, 0x02B5, 0x02B6};
+        curve_typeids             = {0x029B, 0x029C, 0x029D, 0x029E, 0x029F, 0x02A0, 0x02A1, 0x02A2};
+        summer2_typeids           = {0x0471, 0x0472, 0x0473, 0x0474, 0x0475, 0x0476, 0x0477, 0x0478};
+        hp_typeids                = {0x0467, 0x0468, 0x0469, 0x046A};
+        hpmode_typeids            = {0x0291, 0x0292, 0x0293, 0x0294};
+        const size_t monitor_size = monitor_typeids.size();
+        for (uint8_t i = 0; i < monitor_size; i++) {
+            register_telegram_type(monitor_typeids[i], "RC300Monitor", false, MAKE_PF_CB(process_RC300Monitor), 33);
+            register_telegram_type(set_typeids[i], "RC300Set", false, MAKE_PF_CB(process_RC300Set), 29);
+            register_telegram_type(summer_typeids[i], "RC300Summer", false, MAKE_PF_CB(process_RC300Summer), 14);
+            register_telegram_type(curve_typeids[i], "RC300Curves", false, MAKE_PF_CB(process_RC300Curve), 9);
+            register_telegram_type(summer2_typeids[i], "RC300Summer2", false, MAKE_PF_CB(process_RC300Summer2), 8);
         }
-        for (uint8_t i = 0; i < set2_typeids.size(); i++) {
+        const size_t set2_size = set2_typeids.size();
+        for (uint8_t i = 0; i < set2_size; i++) {
             // register_telegram_type(set2_typeids[i], "RC300Set2", false, MAKE_PF_CB(process_RC300Set2));
-            register_telegram_type(set2_typeids[i], "RC300Set2", false, MAKE_PF_CB(process_PID));
-            register_telegram_type(hp_typeids[i], "HPSet", false, MAKE_PF_CB(process_HPSet));
-            register_telegram_type(hpmode_typeids[i], "HPMode", true, MAKE_PF_CB(process_HPMode));
+            register_telegram_type(set2_typeids[i], "RC300Set2", false, MAKE_PF_CB(process_PID), 4);
+            register_telegram_type(hp_typeids[i], "HPSet", false, MAKE_PF_CB(process_HPSet), 5);
+            register_telegram_type(hpmode_typeids[i], "HPMode", true, MAKE_PF_CB(process_HPMode), 6);
         }
-        register_telegram_type(0x2F5, "RC300WWmode", true, MAKE_PF_CB(process_RC300WWmode));
-        register_telegram_type(0x2F6, "RC300WW2mode", true, MAKE_PF_CB(process_RC300WWmode));
-        register_telegram_type(0x31B, "RC300WWtemp", true, MAKE_PF_CB(process_RC300WWtemp));
-        register_telegram_type(0x31D, "RC300WWmode2", false, MAKE_PF_CB(process_RC300WWmode2));
-        register_telegram_type(0x31E, "RC300WWmode2", false, MAKE_PF_CB(process_RC300WWmode2));
-        register_telegram_type(0x23A, "RC300OutdoorTemp", true, MAKE_PF_CB(process_RC300OutdoorTemp));
-        register_telegram_type(0x267, "RC300Floordry", false, MAKE_PF_CB(process_RC300Floordry));
+        register_telegram_type(0x2F5, "RC300WWmode", true, MAKE_PF_CB(process_RC300WWmode), 21);
+        register_telegram_type(0x2F6, "RC300WW2mode", true, MAKE_PF_CB(process_RC300WWmode), 21);
+        register_telegram_type(0x31B, "RC300WWtemp", true, MAKE_PF_CB(process_RC300WWtemp), 2);
+        register_telegram_type(0x31D, "RC300WWmode2", false, MAKE_PF_CB(process_RC300WWmode2), 9);
+        register_telegram_type(0x31E, "RC300WWmode2", false, MAKE_PF_CB(process_RC300WWmode2), 9);
+        register_telegram_type(0x23A, "RC300OutdoorTemp", true, MAKE_PF_CB(process_RC300OutdoorTemp), 2);
+        register_telegram_type(0x267, "RC300Floordry", false, MAKE_PF_CB(process_RC300Floordry), 2);
         if (model == EMSdevice::EMS_DEVICE_FLAG_RC100) {
-            register_telegram_type(0x241, "RC300Settings", true, MAKE_PF_CB(process_RC300Settings));
+            register_telegram_type(0x241, "RC300Settings", true, MAKE_PF_CB(process_RC300Settings), 23);
         } else {
-            register_telegram_type(0x240, "RC300Settings", true, MAKE_PF_CB(process_RC300Settings));
+            register_telegram_type(0x240, "RC300Settings", true, MAKE_PF_CB(process_RC300Settings), 23);
         }
 
-        register_telegram_type(0xBB, "HybridSettings", true, MAKE_PF_CB(process_HybridSettings));
-        register_telegram_type(0x23E, "PVSettings", true, MAKE_PF_CB(process_PVSettings));
+        register_telegram_type(0xBB, "HybridSettings", true, MAKE_PF_CB(process_HybridSettings), 20);
+        register_telegram_type(0x23E, "PVSettings", true, MAKE_PF_CB(process_PVSettings), 6);
         if (model == EMSdevice::EMS_DEVICE_FLAG_RC100) {
-            register_telegram_type(0x43F, "CRHolidays", true, MAKE_PF_CB(process_RC300Holiday));
+            register_telegram_type(0x43F, "CRHolidays", true, MAKE_PF_CB(process_RC300Holiday), 6);
         } else {
-            register_telegram_type(0x269, "RC300Holiday", true, MAKE_PF_CB(process_RC300Holiday));
+            register_telegram_type(0x269, "RC300Holiday", true, MAKE_PF_CB(process_RC300Holiday), 18);
         }
-        register_telegram_type(0x16E, "Absent", true, MAKE_PF_CB(process_Absent));
+        register_telegram_type(0x16E, "Absent", true, MAKE_PF_CB(process_Absent), 1);
         register_telegram_type(0xBF, "ErrorMessage", false, MAKE_PF_CB(process_ErrorMessageBF));
         register_telegram_type(0xC0, "RCErrorMessage", false, MAKE_PF_CB(process_RCErrorMessage2));
+        register_telegram_type(0x470, "RC300Summer2", true, MAKE_PF_CB(process_RC300Summer2), 8);
         EMSESP::send_read_request(0xC0, device_id, 0, 20); // read last errorcode on start (only published on errors)
 
         // JUNKERS/HT3
@@ -209,27 +218,28 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
             // return;                   // no values to add
         }
 
-        monitor_typeids = {0x016F, 0x0170, 0x0171, 0x0172};
-        for (uint8_t i = 0; i < monitor_typeids.size(); i++) {
-            register_telegram_type(monitor_typeids[i], "JunkersMonitor", false, MAKE_PF_CB(process_JunkersMonitor));
+        monitor_typeids           = {0x016F, 0x0170, 0x0171, 0x0172};
+        const size_t junkers_size = monitor_typeids.size();
+        for (uint8_t i = 0; i < junkers_size; i++) {
+            register_telegram_type(monitor_typeids[i], "JunkersMonitor", false, MAKE_PF_CB(process_JunkersMonitor), 8);
         }
 
         if (has_flags(EMSdevice::EMS_DEVICE_FLAG_JUNKERS_OLD)) {
             // FR120, FR100
             set_typeids = {0x0179, 0x017A, 0x017B, 0x017C};
-            for (uint8_t i = 0; i < monitor_typeids.size(); i++) {
-                register_telegram_type(set_typeids[i], "JunkersSet", false, MAKE_PF_CB(process_JunkersSet2));
+            for (uint8_t i = 0; i < junkers_size; i++) {
+                register_telegram_type(set_typeids[i], "JunkersSet", false, MAKE_PF_CB(process_JunkersSet2), 11);
             }
         } else {
             set_typeids = {0x0165, 0x0166, 0x0167, 0x0168};
-            for (uint8_t i = 0; i < monitor_typeids.size(); i++) {
-                register_telegram_type(set_typeids[i], "JunkersSet", false, MAKE_PF_CB(process_JunkersSet));
+            for (uint8_t i = 0; i < junkers_size; i++) {
+                register_telegram_type(set_typeids[i], "JunkersSet", false, MAKE_PF_CB(process_JunkersSet), 20);
             }
         }
-        register_telegram_type(0xBB, "HybridSettings", true, MAKE_PF_CB(process_HybridSettings));
-        register_telegram_type(0x23, "JunkersSetMixer", true, MAKE_PF_CB(process_JunkersSetMixer));
-        register_telegram_type(0x1D3, "JunkersDhw", true, MAKE_PF_CB(process_JunkersWW));
-        register_telegram_type(0x11E, "JunkersDisp", true, MAKE_PF_CB(process_JunkersDisp));
+        register_telegram_type(0xBB, "HybridSettings", true, MAKE_PF_CB(process_HybridSettings), 20);
+        register_telegram_type(0x23, "JunkersSetMixer", true, MAKE_PF_CB(process_JunkersSetMixer), 1);
+        register_telegram_type(0x1D3, "JunkersDhw", true, MAKE_PF_CB(process_JunkersWW), 3);
+        register_telegram_type(0x11E, "JunkersDisp", true, MAKE_PF_CB(process_JunkersDisp), 18);
     }
 
     // register device values for common values (not heating circuit)
@@ -237,10 +247,12 @@ Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_i
 
     // query all the heating circuits. This is only done once.
     // The automatic fetch will from now on only update the active heating circuits
-    for (uint8_t i = 0; i < monitor_typeids.size(); i++) {
+    const size_t monitor_size_final = monitor_typeids.size();
+    for (uint8_t i = 0; i < monitor_size_final; i++) {
         EMSESP::send_read_request(monitor_typeids[i], device_id);
     }
-    for (uint8_t i = 0; i < set_typeids.size(); i++) {
+    const size_t set_size = set_typeids.size();
+    for (uint8_t i = 0; i < set_size; i++) {
         EMSESP::send_read_request(set_typeids[i], device_id);
     }
 
@@ -293,7 +305,8 @@ std::shared_ptr<Thermostat::HeatingCircuit> Thermostat::heating_circuit(std::sha
 
     // not found, search monitor message types
     if (hc_num == 0) {
-        for (uint8_t i = 0; i < monitor_typeids.size(); i++) {
+        const size_t monitor_size = monitor_typeids.size();
+        for (uint8_t i = 0; i < monitor_size; i++) {
             if (monitor_typeids[i] == telegram->type_id) {
                 hc_num  = i + 1;
                 toggle_ = true;
@@ -304,7 +317,8 @@ std::shared_ptr<Thermostat::HeatingCircuit> Thermostat::heating_circuit(std::sha
 
     // not found, search status message/set types
     if (hc_num == 0) {
-        for (uint8_t i = 0; i < set_typeids.size(); i++) {
+        const size_t set_size = set_typeids.size();
+        for (uint8_t i = 0; i < set_size; i++) {
             if (set_typeids[i] == telegram->type_id) {
                 hc_num = i + 1;
                 break;
@@ -314,7 +328,8 @@ std::shared_ptr<Thermostat::HeatingCircuit> Thermostat::heating_circuit(std::sha
 
     // not found, search set2 types
     if (hc_num == 0) {
-        for (uint8_t i = 0; i < set2_typeids.size(); i++) {
+        const size_t set2_size = set2_typeids.size();
+        for (uint8_t i = 0; i < set2_size; i++) {
             if (set2_typeids[i] == telegram->type_id) {
                 hc_num = i + 1;
                 break;
@@ -324,7 +339,8 @@ std::shared_ptr<Thermostat::HeatingCircuit> Thermostat::heating_circuit(std::sha
 
     // not found, search summer message types
     if (hc_num == 0) {
-        for (uint8_t i = 0; i < summer_typeids.size(); i++) {
+        const size_t summer_size = summer_typeids.size();
+        for (uint8_t i = 0; i < summer_size; i++) {
             if (summer_typeids[i] == telegram->type_id) {
                 hc_num = i + 1;
                 break;
@@ -334,7 +350,8 @@ std::shared_ptr<Thermostat::HeatingCircuit> Thermostat::heating_circuit(std::sha
 
     // not found, search summer message types
     if (hc_num == 0) {
-        for (uint8_t i = 0; i < summer2_typeids.size(); i++) {
+        const size_t summer2_size = summer2_typeids.size();
+        for (uint8_t i = 0; i < summer2_size; i++) {
             if (summer2_typeids[i] == telegram->type_id) {
                 hc_num = i + 1;
                 break;
@@ -344,7 +361,8 @@ std::shared_ptr<Thermostat::HeatingCircuit> Thermostat::heating_circuit(std::sha
 
     // not found, search heating_curve message types
     if (hc_num == 0) {
-        for (uint8_t i = 0; i < curve_typeids.size(); i++) {
+        const size_t curve_size = curve_typeids.size();
+        for (uint8_t i = 0; i < curve_size; i++) {
             if (curve_typeids[i] == telegram->type_id) {
                 hc_num = i + 1;
                 break;
@@ -354,7 +372,8 @@ std::shared_ptr<Thermostat::HeatingCircuit> Thermostat::heating_circuit(std::sha
 
     // not found, search timer message types
     if (hc_num == 0) {
-        for (uint8_t i = 0; i < timer_typeids.size(); i++) {
+        const size_t timer_size = timer_typeids.size();
+        for (uint8_t i = 0; i < timer_size; i++) {
             if (timer_typeids[i] == telegram->type_id) {
                 hc_num = i + 1;
                 break;
@@ -364,7 +383,8 @@ std::shared_ptr<Thermostat::HeatingCircuit> Thermostat::heating_circuit(std::sha
 
     // not found, search timer message types
     if (hc_num == 0) {
-        for (uint8_t i = 0; i < timer2_typeids.size(); i++) {
+        const size_t timer2_size = timer2_typeids.size();
+        for (uint8_t i = 0; i < timer2_size; i++) {
             if (timer2_typeids[i] == telegram->type_id) {
                 hc_num = i + 1;
                 break;
@@ -374,7 +394,8 @@ std::shared_ptr<Thermostat::HeatingCircuit> Thermostat::heating_circuit(std::sha
 
     // not found, search heatpump message types
     if (hc_num == 0) {
-        for (uint8_t i = 0; i < hp_typeids.size(); i++) {
+        const size_t hp_size = hp_typeids.size();
+        for (uint8_t i = 0; i < hp_size; i++) {
             if (hp_typeids[i] == telegram->type_id) {
                 hc_num = i + 1;
                 break;
@@ -383,7 +404,8 @@ std::shared_ptr<Thermostat::HeatingCircuit> Thermostat::heating_circuit(std::sha
     }
 
     if (hc_num == 0) {
-        for (uint8_t i = 0; i < hpmode_typeids.size(); i++) {
+        const size_t hpmode_size = hpmode_typeids.size();
+        for (uint8_t i = 0; i < hpmode_size; i++) {
             if (hpmode_typeids[i] == telegram->type_id) {
                 hc_num = i + 1;
                 break;
@@ -476,7 +498,8 @@ void Thermostat::add_ha_climate(std::shared_ptr<HeatingCircuit> hc) const {
         return;
     }
 
-    if (Helpers::hasValue(hc->selTemp) && is_readable(&hc->selTemp)) {
+    // create climate only if we have modes
+    if (Helpers::hasValue(hc->mode) && Helpers::hasValue(hc->selTemp) && is_readable(&hc->selTemp)) {
         if (Helpers::hasValue(hc->roomTemp) && is_readable(&hc->roomTemp)) {
             hc->climate = 1; // use roomTemp as we have a sensor
         } else {
@@ -1079,6 +1102,8 @@ void Thermostat::process_JunkersWW(std::shared_ptr<const Telegram> telegram) {
 void Thermostat::process_JunkersDisp(std::shared_ptr<const Telegram> telegram) {
     has_enumupdate(telegram, ibaMainDisplay_, 1, 1);
     has_update(telegram, ibaLanguage_, 3);
+    has_update(telegram, ibaMinExtTemperature_, 16);
+    has_update(telegram, ibaBuildingType_, 17); // percent /10
 }
 
 // type 0x02A5 - data from Worchester CRF200
@@ -1228,13 +1253,15 @@ void Thermostat::process_RC300Summer(std::shared_ptr<const Telegram> telegram) {
 
     if (hc->heatingtype != 3) {
         has_update(telegram, hc->designtemp, 4);
-        has_update(telegram, hc->minflowtemp, model() == EMSdevice::EMS_DEVICE_FLAG_BC400 ? 13 : 8);
     } else {
         has_update(telegram, hc->designtemp, 5);
-        has_update(telegram, hc->minflowtemp, 8);
     }
-
+    // minflowtemp could be in 8 or 13 #2969
+    has_update(telegram, hc->minflowtemp, 13);
+    has_update(telegram, hc->baseflowtemp, 8);
     has_update(telegram, hc->fastHeatup, 10);
+    has_update(telegram, hc->comfortPointOffset, 11);
+    has_update(telegram, hc->comfortPointTemp, 12);
 }
 
 // types 0x471 ff summer2_typeids
@@ -1242,7 +1269,13 @@ void Thermostat::process_RC300Summer(std::shared_ptr<const Telegram> telegram) {
 void Thermostat::process_RC300Summer2(std::shared_ptr<const Telegram> telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
-        return;
+        // telegram 0x470 see https://github.com/emsesp/EMS-ESP32/issues/2686
+        if (telegram->type_id == 0x470 && telegram->message_length > 2) {
+            hc                 = heating_circuit(1);
+            summer2_typeids[0] = 0x470;
+        } else {
+            return;
+        }
     }
     if (hc->statusbyte & 1) {
         has_update(telegram, hc->summersetmode, 0);
@@ -1733,8 +1766,12 @@ void Thermostat::process_RCTime(std::shared_ptr<const Telegram> telegram) {
             ttime         = mktime(tm_); // thermostat time
         }
         struct timeval newnow = {.tv_sec = ttime, .tv_usec = 0};
+#if CONFIG_IDF_TARGET_ESP32C3
+        // unknown how to set time on C3
+#else
         settimeofday(&newnow, nullptr);
         LOG_INFO("ems-esp time set from thermostat");
+#endif
     }
 #endif
 }
@@ -2001,6 +2038,8 @@ bool Thermostat::set_minexttemp(const char * value, const int8_t id) {
         write_command(0x241, 10, mt, 0x241);
     } else if (isRC300()) {
         write_command(0x240, 10, mt, 0x240);
+    } else if (model() == EMSdevice::EMS_DEVICE_FLAG_JUNKERS) {
+        write_command(0x110, 16, mt, 0x110);
     } else {
         write_command(EMS_TYPE_IBASettings, 5, mt, EMS_TYPE_IBASettings);
     }
@@ -2157,6 +2196,14 @@ bool Thermostat::set_remotehum(const char * value, const int8_t id) {
 
 // 0xA5/0xA7 - Set the building settings
 bool Thermostat::set_building(const char * value, const int8_t id) {
+    if (model() == EMSdevice::EMS_DEVICE_FLAG_JUNKERS) {
+        int i;
+        if (Helpers::value2number(value, i, 0, 100)) {
+            write_command(0x110, 17, i / 10, 0x110);
+            return true;
+        }
+        return false;
+    }
     uint8_t bd;
     if (!Helpers::value2enum(value, bd, FL_(enum_ibaBuildingType))) {
         return false;
@@ -2302,6 +2349,7 @@ bool Thermostat::set_control(const char * value, const int8_t id) {
     // 1-FB10, 2-FB100
     if (model() == EMSdevice::EMS_DEVICE_FLAG_JUNKERS && !has_flags(EMSdevice::EMS_DEVICE_FLAG_JUNKERS_OLD)) {
         if (Helpers::value2enum(value, ctrl, FL_(enum_j_control))) {
+            hc->control = ctrl; // set in advance, dont wait for verify
             write_command(set_typeids[hc->hc()], 1, ctrl);
             return true;
         }
@@ -2350,6 +2398,7 @@ bool Thermostat::set_control(const char * value, const int8_t id) {
         }
     } else if (Helpers::value2enum(value, ctrl, FL_(enum_control))) {
         write_command(set_typeids[hc->hc()], EMS_OFFSET_RC35Set_control, ctrl);
+        hc->control = ctrl; // set in advance, dont wait for verify
         return true;
     }
 
@@ -3326,6 +3375,33 @@ bool Thermostat::set_fastheatup(const char * value, const int8_t id) {
     return true;
 }
 
+// https://github.com/emsesp/EMS-ESP32/issues/2935
+bool Thermostat::set_comfortPointTemp(const char * value, const int8_t id) {
+    auto hc = heating_circuit(id);
+    if (hc == nullptr) {
+        return false;
+    }
+    int set;
+    if (!Helpers::value2temperature(value, set)) {
+        return false;
+    }
+    write_command(summer_typeids[hc->hc()], 12, set, summer_typeids[hc->hc()]);
+    return true;
+}
+
+bool Thermostat::set_comfortPointOffset(const char * value, const int8_t id) {
+    auto hc = heating_circuit(id);
+    if (hc == nullptr) {
+        return false;
+    }
+    int set;
+    if (!Helpers::value2temperature(value, set, true)) {
+        return false;
+    }
+    write_command(summer_typeids[hc->hc()], 11, set, summer_typeids[hc->hc()]);
+    return true;
+}
+
 // Set holidaymode Junkers
 bool Thermostat::set_holidaymode(const char * value, const int8_t id) {
     auto hc = heating_circuit(id);
@@ -4023,10 +4099,16 @@ bool Thermostat::set_temperature(const float temperature, const uint8_t mode, co
             }
             factor = 1;
             break;
+        case HeatingCircuit::Mode::BASEFLOW:
+            set_typeid      = summer_typeids[hc->hc()];
+            validate_typeid = set_typeid;
+            offset          = 8;
+            factor          = 1;
+            break;
         case HeatingCircuit::Mode::MINFLOW:
             set_typeid      = summer_typeids[hc->hc()];
             validate_typeid = set_typeid;
-            offset          = hc->heatingtype != 3 && model == EMS_DEVICE_FLAG_BC400 ? 13 : 8;
+            offset          = 13;
             factor          = 1;
             break;
         case HeatingCircuit::Mode::MAXFLOW:
@@ -4680,6 +4762,19 @@ void Thermostat::register_device_values() {
                                   MAKE_CF_CB(set_language));
         }
         register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
+                              &ibaBuildingType_,
+                              DeviceValueType::UINT8,
+                              DeviceValueNumOp::DV_NUMOP_MUL10,
+                              FL_(ibaBuildingType),
+                              DeviceValueUOM::PERCENT,
+                              MAKE_CF_CB(set_building));
+        register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
+                              &ibaMinExtTemperature_,
+                              DeviceValueType::INT8,
+                              FL_(ibaMinExtTemperature),
+                              DeviceValueUOM::DEGREES,
+                              MAKE_CF_CB(set_minexttemp));
+        register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
                               &hybridStrategy_,
                               DeviceValueType::ENUM,
                               FL_(enum_hybridStrategy),
@@ -4829,6 +4924,7 @@ void Thermostat::register_device_values_hc(std::shared_ptr<Thermostat::HeatingCi
         register_device_value(tag, &hc->summertemp, DeviceValueType::UINT8, FL_(summertemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_summertemp), 10, 30);
         register_device_value(tag, &hc->designtemp, DeviceValueType::UINT8, FL_(designtemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_designtemp));
         register_device_value(tag, &hc->offsettemp, DeviceValueType::INT8, FL_(offsettemp), DeviceValueUOM::DEGREES_R, MAKE_CF_CB(set_offsettemp));
+        register_device_value(tag, &hc->baseflowtemp, DeviceValueType::UINT8, FL_(baseflowtemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_baseflowtemp));
         register_device_value(tag, &hc->minflowtemp, DeviceValueType::UINT8, FL_(minflowtemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_minflowtemp));
         register_device_value(tag, &hc->maxflowtemp, DeviceValueType::UINT8, FL_(maxflowtemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_maxflowtemp));
         register_device_value(tag, &hc->roominfluence, DeviceValueType::UINT8, FL_(roominfluence), DeviceValueUOM::DEGREES_R, MAKE_CF_CB(set_roominfluence));
@@ -4878,6 +4974,10 @@ void Thermostat::register_device_values_hc(std::shared_ptr<Thermostat::HeatingCi
         register_device_value(
             tag, &hc->cooltemp, DeviceValueType::INT8, DeviceValueNumOp::DV_NUMOP_DIV2, FL_(cooltemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_cooltemp), -1, 30);
         register_device_value(tag, &hc->fastHeatup, DeviceValueType::UINT8, FL_(fastheatup), DeviceValueUOM::PERCENT, MAKE_CF_CB(set_fastheatup));
+        register_device_value(
+            tag, &hc->comfortPointOffset, DeviceValueType::UINT8, FL_(comfortPointOffset), DeviceValueUOM::DEGREES_R, MAKE_CF_CB(set_comfortPointOffset), 0, 10);
+        register_device_value(
+            tag, &hc->comfortPointTemp, DeviceValueType::INT8, FL_(comfortPointTemp), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_comfortPointTemp), -5, 15);
         register_device_value(tag,
                               &hc->switchonoptimization,
                               DeviceValueType::BOOL,

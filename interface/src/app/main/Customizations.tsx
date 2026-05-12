@@ -111,13 +111,14 @@ const Customizations = () => {
   const [selectedDeviceTypeNameURL, setSelectedDeviceTypeNameURL] =
     useState<string>(''); // needed for API URL
   const [selectedDeviceName, setSelectedDeviceName] = useState<string>('');
+  const [selectedDeviceBrand, setSelectedDeviceBrand] = useState<string>('');
 
   const { send: sendResetCustomizations } = useRequest(resetCustomizations(), {
     immediate: false
   });
 
   const { send: sendDeviceName } = useRequest(
-    (data: { id: number; name: string }) => writeDeviceName(data),
+    (data: { id: number; name: string; brand: string }) => writeDeviceName(data),
     {
       immediate: false
     }
@@ -267,6 +268,7 @@ const Customizations = () => {
         if (device) {
           setSelectedDeviceTypeNameURL(device.url || '');
           setSelectedDeviceName(device.n);
+          setSelectedDeviceBrand(device.b);
         }
         setNumChanges(0);
         setRestartNeeded(false);
@@ -442,7 +444,11 @@ const Customizations = () => {
   }, [devices, deviceEntities, selectedDevice, sendCustomizationEntities, LL]);
 
   const renameDevice = useCallback(async () => {
-    await sendDeviceName({ id: selectedDevice, name: selectedDeviceName })
+    await sendDeviceName({
+      id: selectedDevice,
+      name: selectedDeviceName,
+      brand: selectedDeviceBrand
+    })
       .then(() => {
         toast.success(LL.UPDATED_OF(LL.NAME(1)));
       })
@@ -453,24 +459,42 @@ const Customizations = () => {
         setRename(false);
         await fetchCoreData();
       });
-  }, [selectedDevice, selectedDeviceName, sendDeviceName, LL, fetchCoreData]);
+  }, [
+    selectedDevice,
+    selectedDeviceName,
+    selectedDeviceBrand,
+    sendDeviceName,
+    LL,
+    fetchCoreData
+  ]);
 
   const renderDeviceList = () => (
     <>
-      <Box mb={1} color="warning.main">
-        <Typography variant="body1">{LL.CUSTOMIZATIONS_HELP_1()}.</Typography>
-      </Box>
-      <Box display="flex" flexWrap="wrap" alignItems="center" gap={2}>
+      <Typography sx={{ mb: 1 }} color="warning" variant="body1">
+        {LL.CUSTOMIZATIONS_HELP_1()}.
+      </Typography>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2 }}>
         {rename ? (
-          <TextField
-            name="device"
-            label={LL.EMS_DEVICE()}
-            fullWidth
-            variant="outlined"
-            value={selectedDeviceName}
-            onChange={(e) => setSelectedDeviceName(e.target.value)}
-            margin="normal"
-          />
+          <>
+            <TextField
+              name="device"
+              label={LL.EMS_DEVICE()}
+              style={{ minWidth: '48%' }}
+              variant="outlined"
+              value={selectedDeviceName}
+              onChange={(e) => setSelectedDeviceName(e.target.value)}
+              margin="normal"
+            />
+            <TextField
+              name="brand"
+              label={LL.BRAND()}
+              style={{ minWidth: '48%' }}
+              variant="outlined"
+              value={selectedDeviceBrand}
+              onChange={(e) => setSelectedDeviceBrand(e.target.value)}
+              margin="normal"
+            />
+          </>
         ) : (
           <TextField
             name="device"
@@ -546,27 +570,22 @@ const Customizations = () => {
   const renderDeviceData = () => {
     return (
       <>
-        <Box color="warning.main">
-          <Typography variant="body2" mt={1} mb={1}>
-            <OptionIcon type="favorite" isSet={true} />={LL.CUSTOMIZATIONS_HELP_2()}
-            &nbsp;&nbsp;
-            <OptionIcon type="readonly" isSet={true} />={LL.CUSTOMIZATIONS_HELP_3()}
-            &nbsp;&nbsp;
-            <OptionIcon type="api_mqtt_exclude" isSet={true} />=
-            {LL.CUSTOMIZATIONS_HELP_4()}&nbsp;&nbsp;
-            <OptionIcon type="web_exclude" isSet={true} />=
-            {LL.CUSTOMIZATIONS_HELP_5()}&nbsp;&nbsp;
-            <OptionIcon type="deleted" isSet={true} />={LL.CUSTOMIZATIONS_HELP_6()}
-          </Typography>
-        </Box>
+        <Typography sx={{ mt: 1, mb: 1 }} color="warning" variant="body2">
+          <OptionIcon type="favorite" isSet={true} />={LL.CUSTOMIZATIONS_HELP_2()}
+          &nbsp;&nbsp;
+          <OptionIcon type="readonly" isSet={true} />={LL.CUSTOMIZATIONS_HELP_3()}
+          &nbsp;&nbsp;
+          <OptionIcon type="api_mqtt_exclude" isSet={true} />=
+          {LL.CUSTOMIZATIONS_HELP_4()}&nbsp;&nbsp;
+          <OptionIcon type="web_exclude" isSet={true} />={LL.CUSTOMIZATIONS_HELP_5()}
+          &nbsp;&nbsp;
+          <OptionIcon type="deleted" isSet={true} />={LL.CUSTOMIZATIONS_HELP_6()}
+        </Typography>
         <Grid
           container
-          mb={1}
-          mt={0}
           spacing={2}
           direction="row"
-          justifyContent="flex-start"
-          alignItems="center"
+          sx={{ mb: 1, mt: 0, justifyContent: 'flex-start', alignItems: 'center' }}
         >
           <Grid>
             <TextField
@@ -755,8 +774,8 @@ const Customizations = () => {
           </Button>
         </MessageBox>
       ) : (
-        <Box display="flex" flexWrap="wrap">
-          <Box flexGrow={1}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+          <Box sx={{ flexGrow: 1 }}>
             {numChanges !== 0 && (
               <ButtonRow>
                 <Button

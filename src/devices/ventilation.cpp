@@ -25,12 +25,12 @@ REGISTER_FACTORY(Ventilation, EMSdevice::DeviceType::VENTILATION);
 Ventilation::Ventilation(uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, const char * name, uint8_t flags, uint8_t brand)
     : EMSdevice(device_type, device_id, product_id, version, name, flags, brand) {
     // HRV176 module, device_id 0x51
-    register_telegram_type(0x56B, "VentilationMode", true, MAKE_PF_CB(process_ModeMessage));
+    register_telegram_type(0x56B, "VentilationMode", true, MAKE_PF_CB(process_ModeMessage), 1);
     register_telegram_type(0x585, "Blowerspeed", false, MAKE_PF_CB(process_BlowerMessage));
     register_telegram_type(0x583, "VentilationMonitor", false, MAKE_PF_CB(process_MonitorMessage));
     register_telegram_type(0x5D9, "Airquality", false, MAKE_PF_CB(process_VOCMessage));
     register_telegram_type(0x587, "Bypass", false, MAKE_PF_CB(process_BypassMessage));
-    register_telegram_type(0x55C, "VentilationSet", true, MAKE_PF_CB(process_SetMessage));
+    register_telegram_type(0x55C, "VentilationSet", true, MAKE_PF_CB(process_SetMessage), 2);
 
     register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
                           &outFresh_,

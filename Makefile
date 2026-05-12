@@ -47,24 +47,25 @@ MAKEFLAGS += -j$(JOBS) -l$(shell echo $$(($(JOBS) * 2)))
 #----------------------------------------------------------------------
 TARGET    := emsesp
 BUILD     := build
-SOURCES   := src/core src/devices src/web src/test lib_standalone lib/semver lib/espMqttClient/src lib/espMqttClient/src/*         lib/ArduinoJson/src lib/uuid-common/src lib/uuid-console/src lib/uuid-log/src   lib/PButton 
-INCLUDES  := src/core src/devices src/web src/test lib_standalone lib/* lib/semver lib/espMqttClient/src lib/espMqttClient/src/Transport lib/ArduinoJson/src lib/uuid-common/src lib/uuid-console/src lib/uuid-log/src   lib/uuid-telnet/src lib/uuid-syslog/src
+SOURCES   := src/core src/devices src/web src/test lib_standalone lib/espMqttClient/src lib/espMqttClient/src/*         lib/ArduinoJson/src lib/uuid-common/src lib/uuid-console/src lib/uuid-log/src   lib/PButton 
+INCLUDES  := src/core src/devices src/web src/test lib_standalone lib/* lib/espMqttClient/src lib/espMqttClient/src/Transport lib/ArduinoJson/src lib/uuid-common/src lib/uuid-console/src lib/uuid-log/src   lib/uuid-telnet/src lib/uuid-syslog/src
 LIBRARIES :=
 
 CPPCHECK = cppcheck
-CHECKFLAGS = -q --force --std=gnu++17
+CHECKFLAGS = -q --force --std=gnu++20
 
 #----------------------------------------------------------------------
 # Languages Standard
 #----------------------------------------------------------------------
-C_STANDARD   := -std=c17
-CXX_STANDARD := -std=gnu++17
+C_STANDARD   := -std=c20
+CXX_STANDARD := -std=gnu++20
 
 #----------------------------------------------------------------------
 # Defined Symbols
 #----------------------------------------------------------------------
-DEFINES += -DARDUINOJSON_ENABLE -DARDUINOJSON_ENABLE_ARDUINO_STRING -DARDUINOJSON_USE_DOUBLE=0
+DEFINES += -DARDUINOJSON_ENABLE -DARDUINOJSON_ENABLE_ARDUINO_STRING -DARDUINOJSON_USE_DOUBLE=0 
 DEFINES += -DEMSESP_STANDALONE -DEMSESP_TEST -DEMSESP_DEBUG -DEMC_RX_BUFFER_SIZE=1500
+DEFINES += -DNO_TLS_SUPPORT
 DEFINES += $(ARGS)
 
 DEFAULTS = -DEMSESP_DEFAULT_LOCALE=\"en\" -DEMSESP_DEFAULT_BOARD_PROFILE=\"S32S3\"
@@ -78,6 +79,10 @@ SYMBOLS    := $(CURDIR)/$(BUILD)/$(TARGET).out
 # Optimize source discovery - use shell find for better performance
 CSOURCES   := $(shell find $(SOURCES) -name "*.c" 2>/dev/null)
 CXXSOURCES := $(shell find $(SOURCES) -name "*.cpp" 2>/dev/null)
+
+# Exclude files not needed for standalone build, if they exist
+CSOURCES   := $(filter-out src/core/ModuleLibrary.c,$(CSOURCES))
+CXXSOURCES := $(filter-out src/core/ModuleLibrary.cpp,$(CXXSOURCES))
 
 OBJS       := $(patsubst %,$(BUILD)/%.o,$(basename $(CSOURCES)) $(basename $(CXXSOURCES)))
 DEPS       := $(patsubst %,$(BUILD)/%.d,$(basename $(CSOURCES)) $(basename $(CXXSOURCES)))

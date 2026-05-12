@@ -4,7 +4,7 @@ const sk: Translation = {
   LANGUAGE: 'Jazyk',
   RETRY: 'Opakovať',
   LOADING: 'Načítanie',
-  IS_REQUIRED: '{0} je požadovaných',
+  IS_REQUIRED: '{0} je požadovaná',
   SIGN_IN: 'Prihlásiť sa',
   SIGN_OUT: 'Odhlásiť sa',
   USERNAME: 'Užívateľské meno',
@@ -186,7 +186,8 @@ const sk: Translation = {
   BUFFER_SIZE: 'Buffer-max. veľkosť',
   COMPACT: 'Kompaktné',
   DOWNLOAD_SETTINGS_TEXT: 'Vytvorte zálohu svojej konfigurácie a nastavení',
-  DOWNLOAD_SETTINGS_TEXT2: 'Exportovať všetky dáta',
+  DOWNLOAD_SETTINGS_TEXT2: 'Exportovať všetky hodnoty',
+  DOWNLOAD_SYSTEM_BACKUP: 'Systémová záloha',
   UPLOAD_TEXT: 'Nahrajte nový súbor firmvéru (.bin) alebo súbor zálohy (.json)',
   UPLOAD_DROP_TEXT: 'Presuňte súbor .bin firmvéru alebo kliknite sem',
   ERROR: 'Neočakávaná chyba, prosím skúste to znova',
@@ -275,11 +276,11 @@ const sk: Translation = {
   NETWORK_SUBNET: 'Maska podsiete',
   NETWORK_DNS: 'DNS servery',
   ADDRESS_OF: '{0} adresa',
-  ADMINISTRATOR: 'Administrator',
+  ADMINISTRATOR: 'Administrátor',
   GUEST: 'Hosť',
-  NEW: 'Nová',
+  NEW: 'Novú',
   NEW_NAME_OF: 'Nový názov {0}',
-  ENTITY: 'entita',
+  ENTITY: 'entitu',
   MIN: 'min',
   MAX: 'max',
   BLOCK_NAVIGATE_1: 'Máte neuložené zmeny',
@@ -349,6 +350,7 @@ const sk: Translation = {
   NO_DATA_1: 'Nenašli sa žiadne obľúbené entity EMS. Použite',
   NO_DATA_2: 'modul na ich označenie.',
   NO_DATA_3: 'Ak chcete zobraziť všetky dostupné entity, prejdite na',
+  NO_GPIO: 'Nebol nájdený žiadny dostupný GPIO',
   THIS_VERSION: 'Táto verzia',
   PLATFORM: 'Platforma',
   RELEASE_TYPE: 'Typ vydania',
@@ -357,7 +359,13 @@ const sk: Translation = {
   FIRMWARE_VERSION_INFO: 'Informácie o verzii firmware',
   NO_DATA: 'Žiadne dáta',
   USER_PROFILE: 'Profil používateľa',
-  STORED_VERSIONS: 'Uložené verzie'
+  STORED_VERSIONS: 'Uložené verzie',
+  ONLINE_HELP: 'online pomoc',
+  UPGRADE_IMPORTANT_MESSAGES: 'Aktualizovať dôležité správy',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Táto aktualizácia vyžaduje reštart základných nastavení. Uistite sa, že najprv stiahnete systémovú zálohu pred pokračovaním, a potom nahrajte tento súbor po instalácii novej verzie.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Aktualizujete sa na novú hlavnú verziu. Uistite sa, že ste prečítali ChangeLog pre akékoľvek dôležité zmeny.',
+  WARNING_SYSTEM_BACKUP: 'Toto vytvorí zálohu všetkých vašich celých systémových konfigurácií a nastavení. Všetky hesla budú čitateľné v zálohovom súbore. Buďte opatrní pri zdieľaní! Chcete pokračovať?'
+
 };
 
 export default sk;

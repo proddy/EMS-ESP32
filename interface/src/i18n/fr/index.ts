@@ -186,7 +186,8 @@ const fr: Translation = {
   BUFFER_SIZE: 'Max taille du buffer',
   COMPACT: 'Compact',
   DOWNLOAD_SETTINGS_TEXT: 'Créer une sauvegarde de vos paramètres et configurations',
-  DOWNLOAD_SETTINGS_TEXT2: 'Exporter toutes les données',
+  DOWNLOAD_SETTINGS_TEXT2: 'Exporter toutes les valeurs',
+  DOWNLOAD_SYSTEM_BACKUP: 'Sauvegarde système',
   UPLOAD_TEXT: 'Télécharger un nouveau fichier firmware (.bin) ou une sauvegarde (.json)',
   UPLOAD_DROP_TEXT: 'Drop a firmware .bin file or click here',
   ERROR: 'Erreur inattendue, veuillez réessayer',
@@ -349,6 +350,7 @@ const fr: Translation = {
   NO_DATA_1: 'Aucune entité EMS favorite trouvée. Utilisez le',
   NO_DATA_2: 'module pour les marquer.',
   NO_DATA_3: 'Pour voir toutes les entités disponibles, aller à',
+  NO_GPIO: "Aucun GPIO disponible n'a été détecté",
   THIS_VERSION: 'Cette version',
   PLATFORM: 'Plateforme',
   RELEASE_TYPE: 'Type de version',
@@ -357,7 +359,13 @@ const fr: Translation = {
   FIRMWARE_VERSION_INFO: 'Informations sur la version du firmware',
   NO_DATA: 'Aucune donnée',
   USER_PROFILE: 'Profil utilisateur',
-  STORED_VERSIONS: 'Versions stockées'
+  STORED_VERSIONS: 'Versions stockées',
+  ONLINE_HELP: 'aide en ligne',
+  UPGRADE_IMPORTANT_MESSAGES: 'Mettre à jour les messages importants',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Cette mise à jour nécessite une réinitialisation de fabrique. Assurez-vous de télécharger une sauvegarde système avant de continuer, et de la charger après l\'installation de la nouvelle version.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Vous mettez à jour vers une nouvelle version majeure. Assurez-vous de lire le ChangeLog pour tout changement important.',
+  WARNING_SYSTEM_BACKUP: 'Cela créera une sauvegarde de votre configuration et paramètres complets. Tous les mots de passe seront lisibles dans le fichier de sauvegarde. Soyez prudent avec le partage ! Voulez-vous continuer ?'
+
 };
 
 export default fr;

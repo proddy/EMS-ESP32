@@ -344,8 +344,12 @@ bool isnum(const std::string & s) {
 std::string commands(std::string & expr, bool quotes) {
     auto expr_new = Helpers::toLower(expr);
     for (uint8_t device = 0; device < EMSdevice::DeviceType::UNKNOWN; device++) {
-        std::string d = (std::string)EMSdevice::device_type_2_device_name(device) + "/";
-        auto        f = expr_new.find(d);
+        // Optimized: build string with reserve to avoid temporary allocations
+        std::string d;
+        d.reserve(32); // typical device name length + "/"
+        d = EMSdevice::device_type_2_device_name(device);
+        d += "/";
+        auto f = expr_new.find(d);
         while (f != std::string::npos) {
             // entity names are alphanumeric or _
             auto e = expr_new.find_first_not_of("/._abcdefghijklmnopqrstuvwxyz0123456789", f);
@@ -367,9 +371,11 @@ std::string commands(std::string & expr, bool quotes) {
             JsonDocument doc_in;
             JsonObject   output = doc_out.to<JsonObject>();
             JsonObject   input  = doc_in.to<JsonObject>();
-            std::string  cmd_s  = "api/" + std::string(cmd);
+            // Optimized: use stack buffer for small strings to avoid heap allocation
+            char cmd_s[COMMAND_MAX_LENGTH + 5]; // "api/" prefix + cmd
+            snprintf(cmd_s, sizeof(cmd_s), "api/%s", cmd);
 
-            auto return_code = Command::process(cmd_s.c_str(), true, input, output);
+            auto return_code = Command::process(cmd_s, true, input, output);
             // check for no value (entity is valid but has no value set)
             if (return_code != CommandRet::OK && return_code != CommandRet::NO_VALUE) {
                 return expr = "";
@@ -694,8 +700,8 @@ std::string compute(const std::string & expr) {
         std::string  cmd = expr_new.substr(f, e - f).c_str();
         JsonDocument doc;
         if (DeserializationError::Ok == deserializeJson(doc, cmd)) {
-            HTTPClient  http;
-            std::string url, header_s, value_s, method_s, key_s, keys_s;
+            HTTPClient * http = new HTTPClient;
+            std::string  url, header_s, value_s, method_s, key_s, keys_s;
             // search keys lower case
             for (JsonPair p : doc.as<JsonObject>()) {
                 if (Helpers::toLower(p.key().c_str()) == "url") {
@@ -714,10 +720,10 @@ std::string compute(const std::string & expr) {
                     keys_s = p.key().c_str();
                 }
             }
-            if (http.begin(url.c_str())) {
+            if (http->begin(url.c_str())) {
                 int httpResult = 0;
                 for (JsonPair p : doc[header_s].as<JsonObject>()) {
-                    http.addHeader(p.key().c_str(), p.value().as<std::string>().c_str());
+                    http->addHeader(p.key().c_str(), p.value().as<std::string>().c_str());
                 }
                 std::string value  = doc[value_s] | "";
                 std::string method = doc[method_s] | "get";
@@ -725,15 +731,15 @@ std::string compute(const std::string & expr) {
                 // if there is data, force a POST
                 if (value.length() || Helpers::toLower(method) == "post") {
                     if (value.find_first_of('{') != std::string::npos) {
-                        http.addHeader("Content-Type", "application/json"); // auto-set to JSON
+                        http->addHeader(asyncsrv::T_Content_Type, asyncsrv::T_application_json, false); // auto-set to JSON
                     }
-                    httpResult = http.POST(value.c_str());
+                    httpResult = http->POST(value.c_str());
                 } else {
-                    httpResult = http.GET(); // normal GET
+                    httpResult = http->GET(); // normal GET
                 }
 
                 if (httpResult > 0) {
-                    std::string  result = http.getString().c_str();
+                    std::string  result = http->getString().c_str();
                     std::string  key    = doc[key_s] | "";
                     JsonDocument keys_doc; // JsonDocument to hold "keys" after doc is parsed with HTTP body
                     if (doc[keys_s].is<JsonArray>()) {
@@ -763,7 +769,8 @@ std::string compute(const std::string & expr) {
                     }
                     expr_new.replace(f, e - f, result.c_str());
                 }
-                http.end();
+                http->end();
+                delete http;
             }
         }
         f = expr_new.find_first_of('{', e);

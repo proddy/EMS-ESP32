@@ -20,7 +20,7 @@
 #include "../../src/core/emsesp.h"
 
 #ifndef UUID_SYSLOG_HAVE_GETTIMEOFDAY
-#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+#if defined(ARDUINO_ARCH_ESP8266)
 // time() does not return UTC on the ESP8266: https://github.com/esp8266/Arduino/issues/4637
 #define UUID_SYSLOG_HAVE_GETTIMEOFDAY 1
 #endif

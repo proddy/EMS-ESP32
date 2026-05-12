@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-const DEFAULT_DELAY = 3000;
+const DEFAULT_DELAY = 5000;
 
 /**
  * Custom hook for setting up an interval with proper cleanup

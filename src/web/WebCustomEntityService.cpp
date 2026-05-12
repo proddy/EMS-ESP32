@@ -74,6 +74,11 @@ StateUpdateResult WebCustomEntity::update(JsonObject root, WebCustomEntity & web
         if (entityItem.raw) {
             delete[] entityItem.raw;
         }
+        if (entityItem.ram == 2) { // NVS
+            char key[sizeof(entityItem.name) + 2];
+            snprintf(key, sizeof(key), "c:%s", entityItem.name);
+            EMSESP::nvs_.remove(key);
+        }
         if (entityItem.ram) { // save name/value pairs for change checking
             doc[entityItem.name] = entityItem.value;
         }
@@ -95,9 +100,9 @@ StateUpdateResult WebCustomEntity::update(JsonObject root, WebCustomEntity & web
             entityItem.value_type = ei["value_type"];
             entityItem.writeable  = ei["writeable"];
             entityItem.hide       = ei["hide"] | false;
-            entityItem.data       = ei["value"].as<std::string>();
+            entityItem.data       = ei["value"].as<std::string>().c_str();
             strlcpy(entityItem.name, ei["name"].as<const char *>(), sizeof(entityItem.name));
-            if (entityItem.ram == 1) {
+            if (entityItem.ram > 0) {
                 entityItem.device_id  = 0;
                 entityItem.type_id    = 0;
                 entityItem.value_type = DeviceValueType::STRING;
@@ -127,7 +132,13 @@ StateUpdateResult WebCustomEntity::update(JsonObject root, WebCustomEntity & web
             if (entityItem.factor == 0) {
                 entityItem.factor = 1;
             }
-
+            if (entityItem.ram == 2) { // NVS
+                char key[sizeof(entityItem.name) + 2];
+                snprintf(key, sizeof(key), "c:%s", entityItem.name);
+                if (EMSESP::nvs_.isKey(key)) {
+                    entityItem.data = EMSESP::nvs_.getString(key).c_str();
+                }
+            }
             webCustomEntity.customEntityItems.push_back(entityItem); // add to list
 
             if (entityItem.writeable && entityItem.name[0] != '\0') {
@@ -155,14 +166,26 @@ StateUpdateResult WebCustomEntity::update(JsonObject root, WebCustomEntity & web
 bool WebCustomEntityService::command_setvalue(const char * value, const int8_t id, const char * name) {
     // don't write if there is no value, to prevent setting an empty value by mistake when parsing attributes
     if (!strlen(value)) {
+#if defined(EMSESP_DEBUG)
         EMSESP::logger().debug("can't set empty value!");
+#endif
         return false;
     }
 
     for (CustomEntityItem & entityItem : *customEntityItems_) {
         if (Helpers::toLower(entityItem.name) == Helpers::toLower(name)) {
+            if (entityItem.data == value) {
+                return true; // no change
+            }
             if (entityItem.ram == 1) {
                 entityItem.data = value;
+            } else if (entityItem.ram == 2) { // NVS
+                entityItem.data = value;
+                char key[sizeof(entityItem.name) + 2];
+                snprintf(key, sizeof(key), "c:%s", entityItem.name);
+                if (!EMSESP::nvs_.isKey(key) || EMSESP::nvs_.getString(key) != entityItem.data.c_str()) {
+                    EMSESP::nvs_.putString(key, entityItem.data.c_str());
+                }
             } else if (entityItem.value_type == DeviceValueType::STRING) {
                 auto      telegram = strdup(value);
                 uint8_t   length   = strlen(telegram) / 3 + 1;
@@ -184,13 +207,15 @@ bool WebCustomEntityService::command_setvalue(const char * value, const int8_t i
                     dat += len;
                 }
                 delete[] data;
+                // validate telegram
+                EMSESP::send_read_request(entityItem.type_id, entityItem.device_id, entityItem.offset, length);
                 return true;
             } else if (entityItem.value_type == DeviceValueType::BOOL) {
                 bool v;
                 if (!Helpers::value2bool(value, v)) {
                     return false;
                 }
-                EMSESP::send_write_request(entityItem.type_id, entityItem.device_id, entityItem.offset, v ? (uint8_t)entityItem.factor : 0, 0);
+                EMSESP::send_write_request(entityItem.type_id, entityItem.device_id, entityItem.offset, v ? (uint8_t)entityItem.factor : 0, entityItem.type_id);
             } else {
                 float f;
                 if (!Helpers::value2float(value, f)) {
@@ -198,13 +223,13 @@ bool WebCustomEntityService::command_setvalue(const char * value, const int8_t i
                 }
                 int v = (f / entityItem.factor + 0.5);
                 if (entityItem.value_type == DeviceValueType::UINT8 || entityItem.value_type == DeviceValueType::INT8) {
-                    EMSESP::send_write_request(entityItem.type_id, entityItem.device_id, entityItem.offset, v, 0);
+                    EMSESP::send_write_request(entityItem.type_id, entityItem.device_id, entityItem.offset, v, entityItem.type_id);
                 } else if (entityItem.value_type == DeviceValueType::UINT16 || entityItem.value_type == DeviceValueType::INT16) {
                     uint8_t v1[2] = {(uint8_t)(v >> 8), (uint8_t)(v & 0xFF)};
-                    EMSESP::send_write_request(entityItem.type_id, entityItem.device_id, entityItem.offset, v1, 2, 0);
+                    EMSESP::send_write_request(entityItem.type_id, entityItem.device_id, entityItem.offset, v1, 2, entityItem.type_id);
                 } else {
                     uint8_t v1[3] = {(uint8_t)(v >> 16), (uint8_t)((v & 0xFF00) >> 8), (uint8_t)(v & 0xFF)};
-                    EMSESP::send_write_request(entityItem.type_id, entityItem.device_id, entityItem.offset, v1, 3, 0);
+                    EMSESP::send_write_request(entityItem.type_id, entityItem.device_id, entityItem.offset, v1, 3, entityItem.type_id);
                 }
             }
 
@@ -320,6 +345,15 @@ bool WebCustomEntityService::get_value_info(JsonObject output, const char * cmd)
         return true;
     }
 
+    if (!strcmp(cmd, F_(metrics))) {
+        std::string metrics = get_metrics_prometheus();
+        if (!metrics.empty()) {
+            output["api_data"] = metrics;
+            return true;
+        }
+        return false;
+    }
+
     // specific value info
     const char * attribute_s = Command::get_attribute(cmd);
     for (auto const & entity : *customEntityItems_) {
@@ -331,11 +365,59 @@ bool WebCustomEntityService::get_value_info(JsonObject output, const char * cmd)
     return false; // not found
 }
 
+// generate Prometheus metrics format from custom entities
+std::string WebCustomEntityService::get_metrics_prometheus() {
+    std::string result;
+    result.reserve(customEntityItems_->size() * 140);
+    char val[10];
+    for (CustomEntityItem & entity : *customEntityItems_) {
+        if (entity.hide || entity.name[0] == '\0') {
+            continue;
+        }
+        result += (std::string) "# HELP emsesp_" + entity.name + " " + entity.name;
+        if (entity.uom != 0) {
+            result += (std::string) ", " + EMSdevice::uom_to_string(entity.uom);
+        }
+        result += (std::string) ", readable, visible" + (entity.writeable ? ", writable\n" : "\n");
+        result += (std::string) "# TYPE emsesp_" + entity.name + " gauge\n";
+        result += (std::string) "emsesp_" + entity.name + " ";
+        switch (entity.value_type) {
+        case DeviceValueType::BOOL:
+            result += (std::string)(entity.value == 0 ? "0" : "1");
+            break;
+        case DeviceValueType::INT8:
+            result += (std::string)Helpers::render_value(val, entity.factor * (int8_t)entity.value, 2);
+            break;
+        case DeviceValueType::UINT8:
+            result += (std::string)Helpers::render_value(val, entity.factor * (uint8_t)entity.value, 2);
+            break;
+        case DeviceValueType::INT16:
+            result += (std::string)Helpers::render_value(val, entity.factor * (int16_t)entity.value, 2);
+            break;
+        case DeviceValueType::UINT16:
+            result += (std::string)Helpers::render_value(val, entity.factor * (uint16_t)entity.value, 2);
+            break;
+        case DeviceValueType::UINT24:
+        case DeviceValueType::TIME:
+        case DeviceValueType::UINT32:
+            result += (std::string)Helpers::render_value(val, entity.factor * entity.value, 2);
+            break;
+        default:
+            if (entity.data.length() > 0) {
+                result += entity.data;
+            }
+            break;
+        }
+        result += (std::string) "\n";
+    }
+    return result;
+}
+
 // build the json for specific entity
 void WebCustomEntityService::get_value_json(JsonObject output, CustomEntityItem const & entity) {
     output["name"]      = (const char *)entity.name;
     output["fullname"]  = (const char *)entity.name;
-    output["storage"]   = entity.ram ? "ram" : "ems";
+    output["storage"]   = entity.ram == 1 ? "ram" : entity.ram == 2 ? "nvs" : "ems";
     output["type"]      = entity.value_type == DeviceValueType::BOOL ? "boolean" : entity.value_type == DeviceValueType::STRING ? "string" : F_(number);
     output["readable"]  = true;
     output["writeable"] = entity.writeable;
@@ -606,7 +688,7 @@ void WebCustomEntityService::fetch() {
             uint8_t stop       = (entity.offset + len[entity.value_type]) % fetchblock;
             bool    is_fetched = start < fetchblock && stop < fetchblock; // make sure the complete value is a a fetched block
             for (const auto & emsdevice : EMSESP::emsdevices) {
-                if (emsdevice->is_device_id(entity.device_id) && emsdevice->is_fetch(entity.type_id)
+                if (emsdevice->is_device_id(entity.device_id) && emsdevice->is_fetch(entity.type_id, entity.offset + len[entity.value_type])
                     && (is_fetched || entity.value_type == DeviceValueType::STRING)) {
                     needFetch = false;
                     break;

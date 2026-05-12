@@ -32,10 +32,10 @@
 #define EMSESP_LOCALE_SK "sk"
 #define EMSESP_LOCALE_CZ "cz"
 
-// IMPORTANT! translations are in the order:,en, de, nl, sv, pl, no, fr, tr, it, sk, cz
+// IMPORTANT! translations are in the order: en, de, nl, sv, pl, no, fr, tr, it, sk, cz
 //
 // if there is no translation, it will default to en
-//
+
 // device types, as display in Web and Console
 MAKE_WORD_TRANSLATION(boiler_hp_device, "Boiler/HP", "Kessel/WP", "CV ketel/WP", "Värmepanna/VP", "Kocioł/PC", "Varmekjele/VP", "Chaudière/PC", "Kazan/IP", "Caldaia/PC", "Kotol/TČ", "Kotel/TČ")
 MAKE_WORD_TRANSLATION(boiler_device, "Boiler", "Kessel", "CV ketel", "Värmepanna", "Kocioł", "Varmekjele", "Chaudière", "Kazan", "Caldaia", "Kotol", "Kotel")
@@ -65,6 +65,7 @@ MAKE_WORD_TRANSLATION(commands_cmd, "list all commands", "Liste aller Kommandos"
 MAKE_WORD_TRANSLATION(entities_cmd, "list all entities", "Liste aller Entitäten", "lijst van alle entiteiten", "lista all entiteter", "wyświetl wszsytkie encje", "Viser alle enheter", "lister toutes les entités", "Tüm varlıkları listele", "elenca tutte le entità", "zobraziť všetky entity", "vypsat všechny entity")
 MAKE_WORD_TRANSLATION(metrics_cmd, "list all prometheus metrics", "Liste aller Prometheus Metriken", "lijst van alle Prometheus metriken", "lista alla Prometheus metriker", "wyświetl wszystkie Prometheus metryki", "Viser alle Prometheus metrikker", "lister toutes les métriques Prometheus", "Tüm Prometheus metriklerini listele", "elenca tutte le metriche Prometheus", "zobraziť všetky Prometheus metriky", "vypsat všechny Prometheus metriky")
 MAKE_WORD_TRANSLATION(send_cmd, "send a telegram", "Sende EMS-Telegramm", "stuur een telegram", "skicka ett telegram", "wyślij telegram", "send et telegram", "envoyer un télégramme", "Bir telegram gönder", "invia un telegramma", "poslať telegram", "odeslat telegram")
+MAKE_WORD_TRANSLATION(sendmail_cmd, "send email", "Sende eMail", "stuur email", "skicka email", "wyślij email", "send e-post", "envoyer un email", "email gönder", "invia email", "poslať email", "odeslat email")
 MAKE_WORD_TRANSLATION(read_cmd, "send read request", "Sende Leseanfrage", "stuur leesaanvraag", "skicka en läsförfrågan", "wyślij żądanie odczytu", "send leseforespørsel", "envoyer une demande de lecture", "okuma isteği gönder", "invia richiesta di lettura", "odoslať žiadosť o prečítanie", "odeslat požadavek na čtení")
 MAKE_WORD_TRANSLATION(setiovalue_cmd, "set I/O value", "Setze Werte E/A", "instellen standaardwaarde", "sätt ett I/O-värde", "ustaw wartość", "sett en io verdi", "définir valeur E/S", "Giriş/Çıkış değerlerini ayarla", "imposta valore io", "nastaviť hodnotu io", "nastavit hodnotu I/O")
 MAKE_WORD_TRANSLATION(changeloglevel_cmd, "change log level", "Ändere Protokollebene", "aanpassen log niveau", "ändra logg-nivå", "zmień poziom log-u", "endre loggnivå", "changer le niveau de journal", "Kayıt seviyesini değiştir", "cambia livello registrazione", "zmeniť úroveň protokolu", "změnit úroveň protokolování")
@@ -104,6 +105,7 @@ MAKE_WORD_TRANSLATION(tag_dhw7, "dhw7", "WWK7", "dhw7", "VVK7", "CWU7", "dhw7", 
 MAKE_WORD_TRANSLATION(tag_dhw8, "dhw8", "WWK8", "dhw8", "VVK8", "CWU8", "dhw8", "ecs8", "SKS8", "dhw8", "TÚV8", "TUV8")
 MAKE_WORD_TRANSLATION(tag_dhw9, "dhw9", "WWK9", "dhw9", "VVK9", "CWU9", "dhw9", "ecs9", "SKS9", "dhw9", "TÚV9", "TUV9")
 MAKE_WORD_TRANSLATION(tag_dhw10, "dhw10", "WWK10", "dhw10", "VVK10", "CWU10", "dhw10", "ecs10", "SKS10", "dhw10", "TÚV10", "TUV10")
+
 // heatingsources
 MAKE_WORD_TRANSLATION(tag_ahs1, "ahs1", "AHQ1", "ahs1", "AVK1", "AŹC1", "ahs1", "ahs1", "ahs1", "ahs1", "ahs1", "ahs1")
 MAKE_WORD_TRANSLATION(tag_hs1, "hs1", "HQ1", "hs1", "VK1", "ŹC1", "hs1", "hs1", "hs1", "hs1", "hs1", "hs1")
@@ -122,6 +124,7 @@ MAKE_WORD_TRANSLATION(tag_hs13, "hs13", "HQ13", "hs13", "VK13", "ŹC13", "hs13",
 MAKE_WORD_TRANSLATION(tag_hs14, "hs14", "HQ14", "hs14", "VK14", "ŹC14", "hs14", "hs14", "hs14", "hs14", "hs14", "hs14")
 MAKE_WORD_TRANSLATION(tag_hs15, "hs15", "HQ15", "hs15", "VK15", "ŹC15", "hs15", "hs15", "hs15", "hs15", "hs15", "hs15")
 MAKE_WORD_TRANSLATION(tag_hs16, "hs16", "HQ16", "hs16", "VK16", "ŹC16", "hs16", "hs16", "hs16", "hs16", "hs16", "hs16")
+
 // single room thermostats
 MAKE_WORD_TRANSLATION(tag_src1, "src1", "SRC1")
 MAKE_WORD_TRANSLATION(tag_src2, "src2", "SRC2")
@@ -197,6 +200,9 @@ MAKE_WORD_TRANSLATION(lower, "lower", "niedriger", "lager", "lägre", "mniejszy"
 MAKE_WORD_TRANSLATION(error, "error", "Fehler", "error", "Fel", "błąd", "feil", "erreur", "Hata", "errore", "error", "chyba")
 MAKE_WORD_TRANSLATION(history, "history", "Fehlerspeicher", "geschiedenis", "historik", "historia", "historikk", "historique", "geçmiş", "storico", "história", "historie")
 MAKE_WORD_TRANSLATION(message, "message", "Meldung", "melding", "meddelande", "komunikat", "melding", "message", "mesajı", "messaggio", "správa", "zpráva")
+MAKE_WORD_TRANSLATION(hp_error, "hp error", "WP Fehler", "hp error", "hp Fel", "hp błąd", "hp feil", "hp erreur", "hp Hata", "hp errore", "hp error", "hp chyba")
+MAKE_WORD_TRANSLATION(factory, "factory", "werkseinst.", "", "", "", "", "", "", "", "nastavenie z výroby", "nastavení z výroby")
+MAKE_WORD_TRANSLATION(burn_starts, "burner starts", "Brennerstarts", "", "", "", "", "", "", "", "štarty horáka", "")
 MAKE_WORD_TRANSLATION(na, "n/a", "n/a", "n/a", "n/a", "nd.", "n/a", "n/c", "mevcut değil", "n/a", "n/a", "n/a")
 MAKE_WORD_TRANSLATION(inverted, "inverted", "invertiert", "omgekeerd", "inverterad", "odwrócony", "invertert", "inversé", "ters", "invertito", "invertovaný", "invertovaný")
 
@@ -423,7 +429,9 @@ MAKE_TRANSLATION(pumpCharacter, "pumpcharacter", "boiler pump characteristic", "
 MAKE_TRANSLATION(pumpOnTemp, "pumpontemp", "pump logic temperature", "Pumpenlogiktemperatur", "pomplogica temperatuur", "Pumplogiktemperatur", "temperatura logiki pompy", "pumpelogikktemperatur", "température logique pompe", "pompa mantık sıcaklığı", "temperatura logica pompa", "teplota logiky čerpadla", "teplota logiky čerpadla")
 MAKE_TRANSLATION(headertemp, "headertemp", "low loss header", "Hydr. Weiche", "open verdeler", "Fördelare", "sprzęgło hydrauliczne", "lav tap header", "bouteille de déc. hydr.", "isı bloğu gidiş suyu sıc.", "comp. idr.", "nízkostratová hlavica", "hydraulický oddělovač")
 MAKE_TRANSLATION(heatblock, "heatblock", "heating block", "Wärmezelle", "Aanvoertemp. warmtecel", "Värmeblock", "blok grzewczy", "varmeblokk", "départ corps de chauffe", "Hid.denge kabı sıcaklığı", "mandata scamb. pr.", "vykurovací blok", "blok topení")
-
+MAKE_TRANSLATION(pumpKickHour, "pumpkickhour", "pump kick hour", "Stunde Pumpkick")
+MAKE_TRANSLATION(pumpKickDay, "pumpkickday", "pump kick day", "Tag Pumpkick")
+MAKE_TRANSLATION(pumpKickDelay, "pumpkickdelay", "pump kick delay", "Pause vor Pumpkick")
 MAKE_TRANSLATION(curveOn, "curveon", "heatingcurve on", "Heizkurve an", "stookkromme aan", "Värmekurva På", "krzywa grzewcza włączona", "varmekurve på", "courbe de chauffage activée", "ısıtma eğrisi açık", "curva di riscaldamento attiva", "vykurovacia krivka zapnutá", "topná křivka zapnutá")
 MAKE_TRANSLATION(curveBase, "curvebase", "heatingcurve base", "Heizkurve Basis", "stookkromme basis", "Värmekurva Bas", "podstawa krzywej grzewczej", "varmekurve basis", "base de courbe de chauffage", "ısıtma eğrisi tabanı", "base curva di riscaldamento", "základňa vykurovacej krivky", "základ topné křivky")
 MAKE_TRANSLATION(curveEnd, "curveend", "heatingcurve end", "Heizkurve Ende", "stookkromme einde", "Värmekurva Slut", "koniec krzywej grzewczej", "varmekurve slutt", "fin de courbe de chauffage", "ısıtma eğrisi sonu", "fine curva di riscaldamento", "koniec vykurovacej krivky", "konec topné křivky")
@@ -471,7 +479,6 @@ MAKE_TRANSLATION(hpActivity, "hpactivity", "compressor activity", "Kompressorakt
 MAKE_TRANSLATION(hpTargetSpd, "hptargetspd", "compressor target speed", "Kompressorsolldrehzahl", "", "", "", "", "", "", "", "kompresor cieľové otáčky", "cílová rychlost kompresoru") 
 MAKE_TRANSLATION(receiverValveVr0, "recvalve", "receiver valve VR0", "Eingangsventil VR0", "", "", "", "", "", "", "", "prijímač ventil VR0", "přijímací ventil VR0") 
 MAKE_TRANSLATION(expansionValveVr1, "expvalve", "expansion valve VR1", "Ausdehnungsventil VR1", "", "", "", "", "", "", "", "prijímač ventil VR1", "přijímací ventil VR1") 
-
 MAKE_TRANSLATION(hpMaxPower, "hpmaxpower", "compressor max power", "max. Kompressorleistung", "", "Max. Kompressoreffekt", "maksymalna wydajność sprężarki", "", "", "", "", "max výkon kompresora", "maximální výkon kompresoru") 
 MAKE_TRANSLATION(pvMaxComp, "pvmaxcomp", "pv compressor max power", "PV max. Kompressorleistung", "", "PV Max. Kompressoreffekt", "maksymalna wydajność sprężarki", "", "", "", "", "pv max výkon kompresora", "maximální výkon PV kompresoru") 
 MAKE_TRANSLATION(hpPower, "hppower", "compressor power output", "Kompressorleistung", "Compressorvermogen", "Kompressoreffekt", "moc wyjściowa sprężarki", "kompressoreffekt", "puissance de sortie compresseur", "ısı pompası güç çıkışı", "potenza uscita compressore", "výkon kompresora", "výstupní výkon kompresoru")
@@ -489,7 +496,6 @@ MAKE_TRANSLATION(hpPl1, "hppl1", "low pressure side temperature (PL1)", "Niederd
 MAKE_TRANSLATION(hpPh1, "hpph1", "high pressure side temperature (PH1)", "Hochdrucktemperatur (PH1)", "Temperatuur hoge drukzijde (PH1)", "Temperatur Högtryckssidan (PH1)", "temperatura po stronie wysokiego ciśnienia (PH1)", "Temperatur Høytrykksiden (PH1)", "température côté bhauteasse pression (PH1)", "yüksek basınç tarafı sıcaklığı (PH1)", "temperatura lato alta pressione (PH1)", "teplota na strane vysokého tlaku (PH1)", "teplota na vysokotlaké straně (PH1)")
 MAKE_TRANSLATION(hpTa4, "hpta4", "drain pan temp (TA4)", "Kondensatorwanne (TA4)", "Temperatuur condensorafvoerbak (TA4)", " (TA4)", "temperatura ociekacza (TA4)", "kondenstråg temperatur (TA4)", " (TA4)", "tahliye sıcaklığı (TA4)", "temperatura condensatore (TA4)", "teplota vypúšťacej misky (TA4)", "teplota odvodňovací vany (TA4)") 
 MAKE_TRANSLATION(hpTw1, "hptw1", "reservoir temp (TW1)", "DHW Reservoir (TW1)", "(TW1)", "Varmvattentank Temperatur (TW1)", "temperatura zbiornika (TW1)", "(TW1)", "(TW1)", "(TW1)", "(TW1)", "teplota zásobníka (TW1)", "teplota v nádrži (TW1)") 
-
 MAKE_TRANSLATION(hpInput1, "hpin1", "input 1 state", "Status Eingang 1", "Status input 1", "Status Ingång 1", "stan wejścia 1", "status inggang 1", "état entrée 1", "giriş 1 durumu", "stato ingresso 1", "stav vstupu 1", "stav vstupu 1")
 MAKE_TRANSLATION(hpInput2, "hpin2", "input 2 state", "Status Eingang 2", "Status input 2", "Status Ingång 2", "stan wejścia 2", "status inggang 2", "état entrée 2", "giriş 2 durumu", "stato ingresso 2", "stav vstupu 2", "stav vstupu 2")
 MAKE_TRANSLATION(hpInput3, "hpin3", "input 3 state", "Status Eingang 3", "Status input 3", "Status Ingång 3", "stan wejścia 3", "status inggang 3", "état entrée 3", "giriş 3 durumu", "stato ingresso 3", "stav vstupu 3", "stav vstupu 3")
@@ -501,7 +507,6 @@ MAKE_TRANSLATION(hpIn4Opt, "hpin4opt", "input 4 options", "Einstellung Eingang 4
 MAKE_TRANSLATION(maxHeatComp, "maxheatcomp", "heat limit compressor", "Heizstab Limit mit Kompressor", "heat limit compressor", "Max. Värmegräns Kompressor", "ograniczenie mocy sprężarki", "max varmegrense kompressor", "limite chaleur compresseur", "ısı pompası ısıtma sınırı", "limite riscaldamento compressore", "tepelný limit kompresora", "tepelný limit kompresoru")
 MAKE_TRANSLATION(maxHeatHeat, "maxheatheat", "heat limit heating", "Heizstab Limit Leistung", "Max, Värmegräns Uppvärmning", "heat limit heating", "ograniczenie mocy w trybie ogrzewania", "maks varmegrense oppvarming", "limite chaleur chauffage", "ısınma ısıtma sınırı", "limite calore riscaldamento", "vyhrievanie limitu tepla", "tepelný limit topení")
 MAKE_TRANSLATION(maxHeatDhw, "maxheat", "heat limit", "Heizstab Limit für WW", "heat limit", "Max. Värmegräns Varmvatten", "ograniczenie mocy w trybie c.w.u.", "varmegrense", "limite chaleur", "sıcak kullanım suyu ısınma sınırı", "limite calore", "tepelný limit", "tepelný limit")
-
 MAKE_TRANSLATION(auxHeaterOff, "auxheateroff", "disable aux heater", "Zusatzheizer deaktivieren", "Bijverwarming uitsc", "Blockera eltillskott", "wyłącz dogrzewacz", "deaktiver tilleggsvarme", "Désactiver chauff. d'app", "ilave ısıtıcıyı kapat", "disattivare i riscaldatori addizionali", "vypnúť pomocný ohrievač", "zakázat pomocné topení")
 MAKE_TRANSLATION(auxHeaterStatus, "auxheaterstatus", "aux heater status", "Zusatzheizerstatus", "Bijverwarming", "Eltillskott Status", "status dogrzewacza", "status el. tillegsvarme", "Chauffage auxiliaire", "ilave ısıtıcı durumu", "stato riscaldatori addizionali", "stav pomocného ohrievača", "stav pomocného topení")
 MAKE_TRANSLATION(auxHeaterLevel, "auxheaterlevel", "aux heater level", "Zusatzheizer", "Bijverwarming", "Eltillskott", "dogrzewacza", "el. tillegsvarme", "Chauffage auxiliaire", "ilave ısıtıcı durumu", "riscaldatori addizionali", "pomocného ohrievača", "pomocného topení")
@@ -518,7 +523,6 @@ MAKE_TRANSLATION(tempDiffHeat, "tempdiffheat", "temp diff TC3/TC0 heat", "Temp.d
 MAKE_TRANSLATION(tempDiffCool, "tempdiffcool", "temp diff TC3/TC0 cool", "Temp.diff. TC3/TC0 Kühlen", "Temp.vers. TC3/TC0 koel.", "Temperaturskillnad TC3/TC0 Kyla", "różnica temperatur TC3/TC0 w trakcie chłodzenia", "temp. diff. TC3/TC0 kjøling", "Delta T TC3/TC0 Refroid.", "TC3-TC0 soğutma sıcaklık farkı", "Delta T raffreddamento TC3/TC0", "teplotný rozdiel TC3/TC0 chladenie", "rozdíl teplot TC3/TC0 pro chlazení")
 MAKE_TRANSLATION(silentFrom, "silentfrom", "silent mode from", "Silentmodus Start", "Start stille modus", "Tyst drift starttid", "początek trybu cichego", "stillemodus starter", "", "sessiz mod başlangıcı", "avvio della modalità silenziosa", "tichý režim od", "tichý režim od") 
 MAKE_TRANSLATION(silentTo, "silentto", "silent mode to", "Silentmodus Ende", "Einde stille modus", "Tyst drift stopptid", "koniec trybu cichego", "komfortmodus av", "", "sessiz mod bitişi", "spegnere modalità silenziosa", "tichý režim do", "tichý režim do") 
-
 MAKE_TRANSLATION(wwComfOffTemp, "comfoff", "comfort switch off", "Komfort Ausschalttemp.", "Comfort Uitschakeltemp.", "Komfort frånkopplingstemperatur", "temperatura wyłączania w trybie komfort", "eco modus utkoblingstem", "Confort Temp. d'arrêt", "konfor kapalı", "spegnimento modalità comfort", "komfortné vypnutie", "komfortní vypnutí")
 MAKE_TRANSLATION(wwEcoOffTemp, "ecooff", "eco switch off", "ECO Ausschalttemp.", "Eco Uitschakeltemp.", "Eko frånkopplingstemperatur", "temperatura wyłączania w trybie eko", "Øko avstengningstemp.", "Eco Temp. d'arrêt", "eko kapalı", "spegnimento modalità ECO", "eko vypínač", "eko vypnutí")
 MAKE_TRANSLATION(wwEcoPlusOffTemp, "ecoplusoff", "eco+ switch off", "ECO+ Ausschalttemp.", "Eco+ Uitschakeltemp.", "Eko+ frånkopplingstemperatur", "temperatura wyłączania w trybie eko+", "Øko+ avstengningstemp.", "Eco+ Temp. d'arrêt", "eko+ kapalı", "spegnimento modalità ECO+", "eko+ vypnutie", "eko+ vypnutí")
@@ -528,7 +532,6 @@ MAKE_TRANSLATION(wwEcoPlusDiffTemp, "ecoplusdiff", "eco+ diff", "ECO+ Differenzt
 MAKE_TRANSLATION(wwComfStopTemp, "comfstop", "comfort stop temp", "Komfort Stopptemp.", "", "Komfort stopptemperatur", "", "", "", "", "", "komfortná stop teplota", "komfortní teplota vypnutí") 
 MAKE_TRANSLATION(wwEcoStopTemp, "ecostop", "eco stop temp", "ECO Stopptemp.", "", "Eko stopptemperatur", "", "", "", "", "", "ECO stop teplota", "eko teplota vypnutí") 
 MAKE_TRANSLATION(wwEcoPlusStopTemp, "ecoplusstop", "eco+ stop temp", "ECO+ Stopptemp.", "", "Eko+ stopptemperatur", "", "", "", "", "", "ECO+ stop teplota", "eko+ teplota vypnutí") 
-
 MAKE_TRANSLATION(auxHeatMode, "auxheatrmode", "aux heater mode", "Zusatzheizungsmodus", "Modus bijverwarmer", "Eltillskott Läge", "tryb pracy dogrzewacza po blokadzie z Zakładu Energetycznego", "tilleggsvarmer modus", "", "ilave ısıtıcı modu", "modalità riscaldatore addizionale", "režim pomocného ohrievača", "režim pomocného topení") 
 MAKE_TRANSLATION(auxMaxLimit, "auxmaxlimit", "aux heater max limit", "Zusatzheizer max. Grenze", "Bijverwarmer grensinstelling maximaal", "Eltillskott max begränsning", "dogrzewacz, maksymalny limit", "tillegsvarme maksgrense", "ilave ısıtıcı maks limit", "limite massimo riscaldatore addizionale", "maximálny limit pomocného ohrievača", "maximální limit pomocného topení")
 MAKE_TRANSLATION(auxLimitStart, "auxlimitstart", "aux heater limit start", "Zusatzheizer Grenze Start", "Bijverwarmer grens voor start", "Eltillskott begränsningsstart", "dogrzewacz, początek ograniczenia", "tillegsvarme startgrense", "ilave ısıtıcı limir başlangıcı", "avvio limite massimo riscaldatore addizionale", "spustenie limitu pomocného ohrievača", "startovací limit pomocného topení")
@@ -754,6 +757,8 @@ MAKE_TRANSLATION(roomTemp, "currtemp", "current room temperature", "aktuelle Rau
 MAKE_TRANSLATION(mode, "mode", "operating mode", "Betriebsart", "Modus", "Läge", "sposób sterowania", "modus", "mode", "mod", "modalità", "režim", "provozní režim")
 MAKE_TRANSLATION(modetype, "modetype", "mode type", "Modustyp", "Type modus", "Typ av läge", "aktualny tryb pracy", "modusrype", "type mode", "mod tipi", "tipo di modalita", "typ režimu", "typ režimu")
 MAKE_TRANSLATION(fastheatup, "fastheatup", "fast heatup", "schnelles Aufheizen", "Snel opwarmen", "Snabb Uppvärmning", "szybkie nagrzewanie", "rask oppvarming", "chauffage rapide", "hızlı ısıtma", "riscaldamento rapido", "rýchle zahriatie", "rychlé předehřátí")
+MAKE_TRANSLATION(comfortPointTemp, "comftemp", "comfort point temperature", "Komfortpunkt Temperatur", "", "", "", "", "", "", "", "teplota bodu komfortu", "")
+MAKE_TRANSLATION(comfortPointOffset, "comfoffset", "comfort point offset", "Komfortpunkt Anhebung", "", "", "", "", "", "", "", "posun bodu komfortu", "")
 MAKE_TRANSLATION(heatup, "heatup", "heatup", "Aufheizen", "opwarmen", "Uppvärmning", "nagrzewanie", "oppvarming", "chauffage", "hızlı", "riscaldamento", "rýchle zahriatie", "předehřev")
 MAKE_TRANSLATION(daytemp, "daytemp", "day temperature", "Tagestemperatur", "temperatuur dag", "Dagstemperatur", "temperatura w dzień", "dagtemperatur", "température jour", "gündüz sıcaklığı", "temperatura giornaliera", "denná teplota", "denní teplota")
 MAKE_TRANSLATION(daylowtemp, "daytemp2", "day temperature T2", "Tagestemperatur T2", "Temperatuur dag T2", "Dagstemperatur T2", "temperatura w dzień T2", "dagtemperatur T2", "température jour T2", "gündüz sıcaklığı T2", "temperatura giornaliera T2", "denná teplota T2", "denní teplota T2")
@@ -771,6 +776,7 @@ MAKE_TRANSLATION(comforttemp, "comforttemp", "comfort temperature", "Komforttemp
 MAKE_TRANSLATION(summertemp, "summertemp", "summer temperature", "Sommertemperatur", "Zomertemperatuur", "Sommartemperatur", "temperatura przełączania lato/zima", "Sommertemperatur", "température été", "yaz sıcaklığı", "temperatura estiva", "letná teplota", "letní teplota")
 MAKE_TRANSLATION(designtemp, "designtemp", "design temperature", "Auslegungstemperatur", "Ontwerptemperatuur", "Design-temperatur", "temperatura projektowa", "designtemperatur", "température conception", "özel sıcaklık", "temperatura predefinita", "návrhová teplota", "dimenzovaná teplota")
 MAKE_TRANSLATION(offsettemp, "offsettemp", "offset temperature", "Temperaturanhebung", "Temperatuur offset", "Temperaturkorrigering", "korekta temperatury", "temperaturkorrigering", "température offset", "artış sıcaklığı", "aumento della temperatura", "offsetová teplota", "offset teploty")
+MAKE_TRANSLATION(baseflowtemp, "baseflowtemp", "base flow temperature", "Basis Vorlauftemperatur") // ToDo translate
 MAKE_TRANSLATION(minflowtemp, "minflowtemp", "min flow temperature", "min. Vorlauftemperatur", "Minimale aanvoertemperatuur", "Min. Flödestemperatur", "minimalna temperatura zasilania", "min. turtemperatur", "température min. flux", "minimun akış sıcaklığı", "temperatura minima di mandata", "min. výstupná teplota", "vytápění minimální teplota")
 MAKE_TRANSLATION(maxflowtemp, "maxflowtemp", "max flow temperature", "max. Vorlauftemperatur", "Maximale aanvoertemperatuur", "Max. Flödestemperatur", "maksymalna temperatura zasilania", "maks turtemperatur", "température max flux", "maksimum akış sıcaklığı", "temperatura massima di mandata", "maximálna teplota prívodu", "vytápění maximální teplota")
 MAKE_TRANSLATION(roominfluence, "roominfluence", "room influence", "Raumeinfluss", "Ruimteinvloed", "Rumspåverkan", "wpływ pomieszczenia", "rominnflytelse", "influence pièce", "oda etkisi", "influenza della camera", "vplyv miestnosti", "vliv prostoru")
@@ -822,7 +828,6 @@ MAKE_TRANSLATION(absent, "absent", "absent", "Abwesend", "", "Frånvarande", "",
 MAKE_TRANSLATION(redthreshold, "redthreshold", "reduction threshold", "Absenkschwelle", "", "Tröskel för sänkning", "", "", "", "", "", "zníženie tresholdu", "práh snížení") 
 MAKE_TRANSLATION(solarinfl, "solarinfl", "solar influence", "Solareinfluß", "", "", "", "", "", "", "", "slnečný vplyv", "sluneční vliv") 
 MAKE_TRANSLATION(currsolarinfl, "currsolarinfl", "current solar influence", "akt. Solareinfluß", "", "", "", "", "", "", "", "aktuálny slnečný vplyv", "aktuální sluneční vliv") 
-
 MAKE_TRANSLATION(hpmode, "hpmode", "HP Mode", "WP-Modus", "Modus warmtepomp", "Värmepumpsläge", "tryb pracy pompy ciepła", "", "", "yüksek güç modu", "Modalità Termopompa", "Režim TČ", "režim tepelného čerpadla") 
 MAKE_TRANSLATION(dewoffset, "dewoffset", "dew point offset", "Taupunktdifferenz", "Offset dauwpunt", "Daggpunktsförskjutning", "przesunięcie punktu rosy", "", "", "çiğ noktası göreli", "differenza del punto di rugiada", "posun rosného bodu", "offset rosného bodu") 
 MAKE_TRANSLATION(roomtempdiff, "roomtempdiff", "room temp difference", "Raumtemperaturdifferenz", "Verschiltemperatuur kamertemp", "Rumstemperaturskillnad", "różnica temp. pomieszczenia", "", "", "oda sıcaklığı farkı", "differenza temperatura ambiente", "rozdiel izbovej teploty", "rozdíl teploty místnosti") 
@@ -855,8 +860,9 @@ MAKE_TRANSLATION(poolShunt, "poolshunt", "pool shunt open/close (0% = pool / 100
 MAKE_TRANSLATION(hydrTemp, "hydrTemp", "hydraulic header temperature", "Verteilertemperatur", "Temperatuur open verdeler", "Fördelartemperatur", "temperatura kolektora hydraulicznego", "Fordelertemperatur", "température collecteur hydraulique", "hidrolik başlık sıcaklığı", "temperatura del collettore", "teplota hydraulickej hlavice", "teplota hydraulické hlavice")
 
 // solar
-MAKE_TRANSLATION(cylMiddleTemp, "cylmiddletemp", "cylinder middle temperature (TS3)", "Speichertemperatur Mitte (TS3)", "Zonneboilertemperatuur midden (TS3)", "Cylindertemperatur Mitten (TS3)", "temperatura w środku zasobnika (TS3)", "beredertemperatur i midten (TS3)", "température moyenne cylindre (TS3)", "orta depolama sıcaklığı (TS3)", "temperatura di conservazione media accumulo (TS3)", "stredná teplota valca (TS3)", "teplota středu válce (TS3)")
+MAKE_TRANSLATION(cylMiddleTemp, "cylmiddletemp", "cylinder middle temperature (TS14)", "Speichertemperatur Mitte (TS14)", "Zonneboilertemperatuur midden (TS14)", "Cylindertemperatur Mitten (TS14)", "temperatura w środku zasobnika (TS14)", "beredertemperatur i midten (TS14)", "température moyenne cylindre (TS14)", "orta depolama sıcaklığı (TS14)", "temperatura di conservazione media accumulo (TS14)", "stredná teplota valca (TS14)", "teplota středu válce (TS14)")
 MAKE_TRANSLATION(retHeatAssist, "retheatassist", "return temperature heat assistance (TS4)", "Anhebung Rücklauftemp. (TS4)", "Retourtemperatuur verwarmingsassistentie (TS4)", "Returtemperatur värmestöd (TS4)", "temperatura powrotu wspomagania grzania (TS4)", "returtemperatur varmestøtte (TS4)", "température retour de assistance thermique (TS4)", "geri dönüş sıcaklığı artışı (TS4)", "temperatura ritorno scambiatore (TS4)", "pomoc pri teplote spiatočky (TS4)", "teplota zpátečky pomocného topení (TS4)")
+MAKE_TRANSLATION(ts3, "ts3", "cylinder middle temperature (TS3)", "Speichertemperatur Mitte (TS3)", "Zonneboilertemperatuur midden (TS3)", "Cylindertemperatur Mitten (TS3)", "temperatura w środku zasobnika (TS3)", "beredertemperatur i midten (TS3)", "température moyenne cylindre (TS3)", "orta depolama sıcaklığı (TS3)", "temperatura di conservazione media accumulo (TS3)", "stredná teplota valca (TS3)", "teplota středu válce (TS3)")
 MAKE_TRANSLATION(ts8, "ts8", "(TS8)", "(TS8)")
 MAKE_TRANSLATION(ts16, "ts16", "(TS16)","(TS16)")
 MAKE_TRANSLATION(m1Valve, "heatassistvalve", "heat assistance valve (M1)", "Ventil Heizungsunterstützung (M1)", "Klep verwarmingsassistentie (M1)", "Uppvärmningsstöd Ventil (M1)", "zawór wspomagania grzania (M1)", "varmehjelpsventil (M1)", "vanne assistance thermique (M1)", "ısıtma yardım vanası (M1)", "valvola scambiatore (M1)", "tepelný asistenčný ventil (M1)", "ventil pomocného topení (M1)")

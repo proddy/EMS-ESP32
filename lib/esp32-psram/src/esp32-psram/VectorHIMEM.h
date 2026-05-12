@@ -1,5 +1,8 @@
 #pragma once
 
+// HIMEM is only available on original ESP32
+#if CONFIG_IDF_TARGET_ESP32
+
 #include "HimemBlock.h"
 
 namespace esp32_psram {
@@ -527,3 +530,5 @@ void swap(VectorHIMEM<T>& lhs, VectorHIMEM<T>& rhs) noexcept {
 }
 
 }  // namespace esp32_psram
+
+#endif  // CONFIG_IDF_TARGET_ESP32

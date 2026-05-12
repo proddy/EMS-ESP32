@@ -146,18 +146,27 @@ void WebStatusService::systemStatus(AsyncWebServerRequest * request) {
     }
 
     // get the partition info for each partition, including the running one
-    // the partition data is done once in System::start() and stored in partition_info_
+    // the partition data is gathered once in System::start() and stored in partition_info_
+    // install_date is stored as a UTC epoch and formatted to local time here so it honors
+    // the current TZ (which may not have been set yet when System::start() ran).
     JsonArray partitions = root["partitions"].to<JsonArray>();
     for (const auto & partition : EMSESP::system_.partition_info_) {
         // Skip partition if it has no version, or it's size is 0
         if (partition.second.version.empty() || partition.second.size == 0) {
             continue;
         }
-        JsonObject part      = partitions.add<JsonObject>();
-        part["partition"]    = partition.first;
-        part["version"]      = partition.second.version;
-        part["size"]         = partition.second.size;
-        part["install_date"] = partition.second.install_date;
+        JsonObject part   = partitions.add<JsonObject>();
+        part["partition"] = partition.first;
+        part["version"]   = partition.second.version;
+        part["size"]      = partition.second.size;
+        if (partition.second.install_date > 0) {
+            char   time_string[25];
+            time_t d = partition.second.install_date;
+            strftime(time_string, sizeof(time_string), "%FT%T", localtime(&d));
+            part["install_date"] = time_string;
+        } else {
+            part["install_date"] = "";
+        }
     }
 
     root["developer_mode"] = EMSESP::system_.developer_mode();
@@ -216,6 +225,9 @@ void WebStatusService::action(AsyncWebServerRequest * request, JsonVariant json)
     } else if (action == "resetMQTT" && is_admin) {
         EMSESP::mqtt_.reset_mqtt();
         ok = true;
+    } else if (action == "upgradeImportantMessages") {
+        root["upgradeImportantMessageType"] = upgradeImportantMessages(param);
+        ok                                  = true;
     }
 
 #if defined(EMSESP_STANDALONE) && !defined(EMSESP_UNITY)
@@ -237,13 +249,75 @@ void WebStatusService::action(AsyncWebServerRequest * request, JsonVariant json)
     request->send(response);
 }
 
+// action = upgradeImportantMessages
+// returns the type of upgrade important message to display in the UI
+// 0 = no message (if just a minor version upgrade)
+// 1 = going from <= 3.8 to 3.9 (has new partition layout)
+// 2 = major version upgrade
+// version can be like 3.8.2 or a filename like EMS-ESP-3_8_2-dev_13-ESP32-16MB+.bin
+uint8_t WebStatusService::upgradeImportantMessages(std::string & version) {
+    if (version.empty()) {
+        return 0;
+    }
+
+    // it's a filename with a .bin or .md extension, try and extract the version from it
+    // e.g. EMS-ESP-3_8_2-dev_13-ESP32-16MB+.bin -> major=3 minor=8 patch=2
+    version::EMSESP_Version latest_version;
+    if ((version.find(".bin") != std::string::npos) || (version.find(".md") != std::string::npos)) {
+        std::string filename = version;
+        auto        pos      = filename.find("EMS-ESP-");
+        if (pos == std::string::npos) {
+            EMSESP::logger().err("Invalid version string: %s", version.c_str());
+            return 0;
+        }
+
+        pos += 8; // skip past "EMS-ESP-"
+        auto underscore1 = filename.find('_', pos);
+        auto underscore2 = filename.find('_', underscore1 + 1);
+        auto dash        = filename.find('-', underscore2 + 1);
+        if (underscore1 == std::string::npos || underscore2 == std::string::npos || dash == std::string::npos) {
+            EMSESP::logger().err("Invalid version string: %s", version.c_str());
+            return 0;
+        }
+
+        std::string major_version = filename.substr(pos, underscore1 - pos);
+        std::string minor_version = filename.substr(underscore1 + 1, underscore2 - underscore1 - 1);
+        std::string patch_version = filename.substr(underscore2 + 1, dash - underscore2 - 1);
+        latest_version            = version::EMSESP_Version(major_version + "." + minor_version + "." + patch_version);
+    } else {
+        // if it's .json file exit
+        if (version.find(".json") != std::string::npos) {
+            return 0;
+        } else {
+            // treat it like a version string like "3.9.0"
+            latest_version = version::EMSESP_Version(version);
+        }
+    }
+
+    version::EMSESP_Version current_version(current_version_s); // get current version
+
+    if ((current_version.major() <= 3 && current_version.minor() <= 8) && (latest_version.major() == 3 && latest_version.minor() == 9)) {
+        return 1; // if moving from below 3.8.x to 3.9.x return 1
+    }
+
+    if (latest_version > current_version && current_version.major() < latest_version.major()) {
+        return 2; // if it's a major version upgrade return 2
+    }
+
+    if (latest_version > current_version && current_version.minor() < latest_version.minor()) {
+        return 0; // if it's just a minor version upgrade return 0
+    }
+
+    return 0; // if it's not a valid version upgrade return 0
+}
+
 // action = checkUpgrade
 // versions holds the latest development version and stable version in one string, comma separated
-bool WebStatusService::checkUpgrade(JsonObject root, std::string & versions) {
-    if (!versions.empty()) {
-        version::Semver200_version current_version(current_version_s);
-        version::Semver200_version latest_dev_version(versions.substr(0, versions.find(',')));
-        version::Semver200_version latest_stable_version(versions.substr(versions.find(',') + 1));
+bool WebStatusService::checkUpgrade(JsonObject root, std::string & version) {
+    if (!version.empty()) {
+        version::EMSESP_Version current_version(current_version_s);
+        version::EMSESP_Version latest_dev_version(version.substr(0, version.find(',')));
+        version::EMSESP_Version latest_stable_version(version.substr(version.find(',') + 1));
 
         bool dev_upgradeable    = latest_dev_version > current_version;
         bool stable_upgradeable = latest_stable_version > current_version;
@@ -310,26 +384,24 @@ void WebStatusService::allvalues(JsonObject output) {
 // action = export
 // returns data for a specific feature/settings as a json object
 bool WebStatusService::exportData(JsonObject root, std::string & type) {
-    root["type"] = type;
-
     if (type == "settings") {
-        JsonObject node = root["System"].to<JsonObject>();
-        node["version"] = EMSESP_APP_VERSION;
-        System::extractSettings(NETWORK_SETTINGS_FILE, "Network", root);
-        System::extractSettings(AP_SETTINGS_FILE, "AP", root);
-        System::extractSettings(MQTT_SETTINGS_FILE, "MQTT", root);
-        System::extractSettings(NTP_SETTINGS_FILE, "NTP", root);
-        System::extractSettings(SECURITY_SETTINGS_FILE, "Security", root);
-        System::extractSettings(EMSESP_SETTINGS_FILE, "Settings", root);
+        root["type"] = type; // add settings as a group
+        System::exportSettings(type, NETWORK_SETTINGS_FILE, root);
+        System::exportSettings(type, AP_SETTINGS_FILE, root);
+        System::exportSettings(type, MQTT_SETTINGS_FILE, root);
+        System::exportSettings(type, NTP_SETTINGS_FILE, root);
+        System::exportSettings(type, SECURITY_SETTINGS_FILE, root);
+        System::exportSettings(type, EMSESP_SETTINGS_FILE, root);
     } else if (type == "schedule") {
-        System::extractSettings(EMSESP_SCHEDULER_FILE, "Schedule", root);
+        System::exportSettings(type, EMSESP_SCHEDULER_FILE, root);
     } else if (type == "customizations") {
-        System::extractSettings(EMSESP_CUSTOMIZATION_FILE, "Customizations", root);
+        System::exportSettings(type, EMSESP_CUSTOMIZATION_FILE, root);
     } else if (type == "entities") {
-        System::extractSettings(EMSESP_CUSTOMENTITY_FILE, "Entities", root);
+        System::exportSettings(type, EMSESP_CUSTOMENTITY_FILE, root);
     } else if (type == "allvalues") {
-        root.clear(); // don't need the "type" key added to the output
         allvalues(root);
+    } else if (type == "systembackup") {
+        System::exportSystemBackup(root);
     } else {
         return false; // error
     }
@@ -344,7 +416,7 @@ bool WebStatusService::getCustomSupport(JsonObject root) {
 
 #if defined(EMSESP_STANDALONE)
     // dummy test data for "test api3"
-    deserializeJson(doc, "{\"type\":\"customSupport\",\"Support\":{\"html\":[\"html code\",\"here\"], \"img_url\": \"https://emsesp.org/_media/images/designer.png\"}");
+    deserializeJson(doc, "{\"type\":\"customSupport\",\"Support\":{\"html\":[\"html code\",\"here\"], \"img_url\": \"https://emsesp.org/media/images/designer.png\"}");
 #else
     // check if we have custom support file uploaded
     File file = LittleFS.open(EMSESP_CUSTOMSUPPORT_FILE, "r");
@@ -367,7 +439,7 @@ bool WebStatusService::getCustomSupport(JsonObject root) {
 #endif
 
 #if defined(EMSESP_DEBUG)
-    EMSESP::logger().debug("Showing custom support page");
+    EMSESP::logger().debug("Sending custom support page");
 #endif
 
     root.set(doc.as<JsonObject>()); // add to web response root object

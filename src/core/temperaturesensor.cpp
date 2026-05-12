@@ -21,12 +21,6 @@
 #include "temperaturesensor.h"
 #include "emsesp.h"
 
-#ifdef ESP32
-#define YIELD
-#else
-#define YIELD yield()
-#endif
-
 namespace emsesp {
 
 uuid::log::Logger TemperatureSensor::logger_{F_(temperaturesensor), uuid::log::Facility::DAEMON};
@@ -81,7 +75,6 @@ void TemperatureSensor::loop() {
             LOG_DEBUG("Read sensor temperature");
 #endif
             if (bus_.reset() || parasite_) {
-                YIELD;
                 bus_.skip();
                 bus_.write(CMD_CONVERT_TEMP, parasite_ ? 1 : 0);
                 state_     = State::READING;
@@ -260,19 +253,16 @@ int16_t TemperatureSensor::get_temperature_c(const uint8_t addr[]) {
         LOG_ERROR("Bus reset failed before reading scratchpad from %s", Sensor(addr).id());
         return EMS_VALUE_INT16_NOTSET;
     }
-    YIELD;
 
     uint8_t scratchpad[SCRATCHPAD_LEN] = {0};
     bus_.select(addr);
     bus_.write(CMD_READ_SCRATCHPAD);
     bus_.read_bytes(scratchpad, SCRATCHPAD_LEN);
-    YIELD;
 
     if (!bus_.reset()) {
         LOG_ERROR("Bus reset failed after reading scratchpad from %s", Sensor(addr).id());
         return EMS_VALUE_INT16_NOTSET;
     }
-    YIELD;
 
     if (bus_.crc8(scratchpad, SCRATCHPAD_LEN - 1) != scratchpad[SCRATCHPAD_LEN - 1]) {
         LOG_WARNING("Invalid scratchpad CRC: %02X%02X%02X%02X%02X%02X%02X%02X%02X from sensor %s",
@@ -400,6 +390,15 @@ bool TemperatureSensor::get_value_info(JsonObject output, const char * cmd, cons
         return true;
     }
 
+    if (!strcmp(cmd, F_(metrics))) {
+        std::string metrics = get_metrics_prometheus();
+        if (!metrics.empty()) {
+            output["api_data"] = metrics;
+            return true;
+        }
+        return false;
+    }
+
     // this is for a specific sensor
     const char * attribute_s = Command::get_attribute(cmd);
 
@@ -412,6 +411,21 @@ bool TemperatureSensor::get_value_info(JsonObject output, const char * cmd, cons
     }
 
     return false; // not found
+}
+
+// generate Prometheus metrics format from temperature values
+std::string TemperatureSensor::get_metrics_prometheus() {
+    std::string result;
+    result.reserve(sensors_.size() * 120);
+    char val[10];
+    for (auto & sensor : sensors_) {
+        result += (std::string) "# HELP emsesp_" + sensor.name() + " " + sensor.name() + ", "
+                  + EMSdevice::uom_to_string(EMSESP::system_.fahrenheit() ? DeviceValueUOM::FAHRENHEIT : DeviceValueUOM::DEGREES) + ", readable, visible\n";
+        result += (std::string) "# TYPE emsesp_" + sensor.name() + " gauge\n";
+        result +=
+            (std::string) "emsesp_" + sensor.name() + " " + Helpers::render_value(val, sensor.temperature_c, 10, EMSESP::system_.fahrenheit() ? 2 : 0) + "\n";
+    }
+    return result;
 }
 
 // note we don't add the device and state classes here, as we do in the custom entity service

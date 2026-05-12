@@ -1,5 +1,8 @@
 #pragma once
 
+// HIMEM is only available on original ESP32
+#if CONFIG_IDF_TARGET_ESP32
+
 #include <algorithm>
 #include <limits>
 #include <memory>
@@ -360,3 +363,5 @@ class HimemBlock {
 };
 
 }  // namespace esp32_psram
+
+#endif  // CONFIG_IDF_TARGET_ESP32

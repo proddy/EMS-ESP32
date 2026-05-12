@@ -209,8 +209,10 @@ using TypedRingBufferRAM = TypedRingBuffer<T, std::vector<T>>;
 /**
  * @brief Type alias for a typed ring buffer that uses HIMEM-backed vector storage
  */
+#if CONFIG_IDF_TARGET_ESP32
 template<typename T>
 using TypedRingBufferHIMEM = TypedRingBuffer<T, VectorHIMEM<T>>;
+#endif
 
 /**
  * @brief Type alias for a typed ring buffer that uses PSRAM-backed vector storage

@@ -76,10 +76,11 @@ void WebCustomization::read(WebCustomization & customizations, JsonObject root) 
     // Masked entities customization and custom device name (optional)
     JsonArray masked_entitiesJson = root["masked_entities"].to<JsonArray>();
     for (const EntityCustomization & entityCustomization : customizations.entityCustomizations) {
-        JsonObject entityJson     = masked_entitiesJson.add<JsonObject>();
-        entityJson["product_id"]  = entityCustomization.product_id;
-        entityJson["device_id"]   = entityCustomization.device_id;
-        entityJson["custom_name"] = entityCustomization.custom_name;
+        JsonObject entityJson      = masked_entitiesJson.add<JsonObject>();
+        entityJson["product_id"]   = entityCustomization.product_id;
+        entityJson["device_id"]    = entityCustomization.device_id;
+        entityJson["custom_name"]  = entityCustomization.custom_name;
+        entityJson["custom_brand"] = entityCustomization.custom_brand;
 
         // entries are in the form <XX><shortname>[optional customname] e.g "08heatingactive|heating is on"
         JsonArray masked_entityJson = entityJson["entity_ids"].to<JsonArray>();
@@ -134,7 +135,7 @@ StateUpdateResult WebCustomization::update(JsonObject root, WebCustomization & c
             analog.type      = analogJson["type"];
             analog.is_system = analogJson["is_system"] | false;
             if (_start && analog.type == EMSESP::analogsensor_.AnalogType::DIGITAL_OUT && analog.uom > DeviceValue::DeviceValueUOM::NONE) {
-                analog.offset = analog.uom - 1;
+                analog.offset = analog.uom > 1 ? 1 : 0;
             }
             customizations.analogCustomizations.push_back(analog); // add to list
         }
@@ -146,10 +147,11 @@ StateUpdateResult WebCustomization::update(JsonObject root, WebCustomization & c
     if (root["masked_entities"].is<JsonArray>()) {
         auto masked_entities = root["masked_entities"].as<JsonArray>();
         for (const JsonObject masked_entity : masked_entities) {
-            auto emsEntity        = EntityCustomization();
-            emsEntity.product_id  = masked_entity["product_id"];
-            emsEntity.device_id   = masked_entity["device_id"];
-            emsEntity.custom_name = masked_entity["custom_name"] | "";
+            auto emsEntity         = EntityCustomization();
+            emsEntity.product_id   = masked_entity["product_id"];
+            emsEntity.device_id    = masked_entity["device_id"];
+            emsEntity.custom_name  = masked_entity["custom_name"] | "";
+            emsEntity.custom_brand = masked_entity["custom_brand"] | "";
 
             auto masked_entity_ids = masked_entity["entity_ids"].as<JsonArray>();
             for (const JsonVariant masked_entity_id : masked_entity_ids) {
@@ -242,17 +244,19 @@ void WebCustomizationService::writeDeviceName(AsyncWebServerRequest * request, J
                 uint8_t unique_device_id = json["id"];
                 // find product id and device id using the unique id
                 if (emsdevice->unique_id() == unique_device_id) {
-                    uint8_t product_id  = emsdevice->product_id();
-                    uint8_t device_id   = emsdevice->device_id();
-                    auto    custom_name = json["name"].as<std::string>();
+                    uint8_t     product_id   = emsdevice->product_id();
+                    uint8_t     device_id    = emsdevice->device_id();
+                    std::string custom_name  = json["name"] | "";
+                    std::string custom_brand = json["brand"] | "";
 
                     // updates current record or creates a new one
                     bool entry_exists = false;
                     update([&](WebCustomization & settings) {
                         for (auto it = settings.entityCustomizations.begin(); it != settings.entityCustomizations.end();) {
                             if ((*it).product_id == product_id && (*it).device_id == device_id) {
-                                (*it).custom_name = custom_name;
-                                entry_exists      = true;
+                                (*it).custom_name  = custom_name;
+                                (*it).custom_brand = custom_brand;
+                                entry_exists       = true;
                                 break;
                             } else {
                                 ++it;
@@ -262,9 +266,10 @@ void WebCustomizationService::writeDeviceName(AsyncWebServerRequest * request, J
                         // if we don't have any customization for this device, create a new entry
                         if (!entry_exists) {
                             EntityCustomization new_entry;
-                            new_entry.product_id  = product_id;
-                            new_entry.device_id   = device_id;
-                            new_entry.custom_name = custom_name;
+                            new_entry.product_id   = product_id;
+                            new_entry.device_id    = device_id;
+                            new_entry.custom_name  = custom_name;
+                            new_entry.custom_brand = custom_brand;
                             settings.entityCustomizations.push_back(new_entry);
                         }
 
@@ -273,6 +278,7 @@ void WebCustomizationService::writeDeviceName(AsyncWebServerRequest * request, J
 
                     // update the EMS Device record real-time
                     emsdevice->custom_name(custom_name);
+                    emsdevice->custom_brand(custom_brand);
                 }
             }
         }
@@ -459,10 +465,11 @@ void WebCustomizationService::load_test_data() {
 
         // EMS entities, mark some as favorites
         webCustomization.entityCustomizations.clear();
-        auto emsEntity        = EntityCustomization();
-        emsEntity.product_id  = 123;
-        emsEntity.device_id   = 8;
-        emsEntity.custom_name = "My Custom Boiler";
+        auto emsEntity         = EntityCustomization();
+        emsEntity.product_id   = 123;
+        emsEntity.device_id    = 8;
+        emsEntity.custom_name  = "My Custom Boiler";
+        emsEntity.custom_brand = "";
         emsEntity.entity_ids.push_back("08heatingactive|is my heating on?");
         emsEntity.entity_ids.push_back("08tapwateractive");
         emsEntity.entity_ids.push_back("08selflowtemp|<90");
@@ -472,6 +479,7 @@ void WebCustomizationService::load_test_data() {
         for (const auto & emsdevice : EMSESP::emsdevices) {
             if (emsdevice->is_device_id(emsEntity.device_id)) {
                 emsdevice->custom_name(emsEntity.custom_name);
+                emsdevice->custom_brand(emsEntity.custom_brand);
                 break;
             }
         }

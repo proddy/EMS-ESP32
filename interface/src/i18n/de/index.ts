@@ -186,7 +186,8 @@ const de: Translation = {
   BUFFER_SIZE: 'Max. Puffergröße',
   COMPACT: 'Kompakte Darstellung',
   DOWNLOAD_SETTINGS_TEXT: 'Erstellen Sie eine Sicherung Ihrer Konfigurationen und Einstellungen',
-  DOWNLOAD_SETTINGS_TEXT2: 'Exportiere alle Daten',
+  DOWNLOAD_SETTINGS_TEXT2: 'Exportiere alle Werte',
+  DOWNLOAD_SYSTEM_BACKUP: 'Systemsicherung',
   UPLOAD_TEXT: 'Laden Sie eine neue Firmware-Datei (.bin) oder eine Sicherungsdatei (.json) hoch',
   UPLOAD_DROP_TEXT: 'Legen Sie eine Firmware-Datei (.bin) ab oder klicken Sie hier',
   ERROR: 'Unerwarteter Fehler, bitte versuchen Sie es erneut.',
@@ -349,6 +350,7 @@ const de: Translation = {
   NO_DATA_1: 'Keine favorisierten EMS-Entitäten gefunden! Verwenden Sie das Modul',
   NO_DATA_2: ', um sie zu markieren.',
   NO_DATA_3: 'Um alle verfügbaren Entitäten anzuzeigen, gehen Sie zu',
+  NO_GPIO: 'Keine freien GPIO gefunden',
   THIS_VERSION: 'Diese Version',
   PLATFORM: 'Plattform',
   RELEASE_TYPE: 'Release Typ',
@@ -357,7 +359,13 @@ const de: Translation = {
   FIRMWARE_VERSION_INFO: 'Firmware-Versionsinformation',
   NO_DATA: 'Keine Daten',
   USER_PROFILE: 'Benutzerprofil',
-  STORED_VERSIONS: 'Gespeicherte Versionen'
+  STORED_VERSIONS: 'Gespeicherte Versionen',
+  ONLINE_HELP: 'Online-Hilfe',
+  UPGRADE_IMPORTANT_MESSAGES: 'Wichtige Nachrichten aktualisieren',
+  UPGRADE_IMPORTANT_MESSAGES_1: 'Für diese Aktualisierung ist ein Werksreset erforderlich. Stellen Sie sicher, dass Sie zuerst eine Systemsicherung herunterladen, bevor Sie fortfahren, und laden Sie diese Datei dann nach der Installation der neuen Version hoch.',
+  UPGRADE_IMPORTANT_MESSAGES_2: 'Sie aktualisieren auf eine neue Hauptversion. Stellen Sie sicher, dass Sie den ChangeLog für alle wichtigen Änderungen gelesen haben.',
+  WARNING_SYSTEM_BACKUP: 'Dies wird eine Sicherung Ihrer vollständigen Systemkonfiguration und Einstellungen erstellen. Alle Passwörter werden in dieser Sicherungsdatei lesbar sein. Seien Sie vorsichtig beim Teilen! Möchten Sie fortfahren?'
+
 };
 
 export default de;

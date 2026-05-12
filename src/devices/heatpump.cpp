@@ -28,13 +28,13 @@ Heatpump::Heatpump(uint8_t device_type, uint8_t device_id, uint8_t product_id, c
     // register_telegram_type(0x042B, "HP1", false, MAKE_PF_CB(process_HPMonitor1));
     register_telegram_type(0x047B, "HP2", false, MAKE_PF_CB(process_HPMonitor2));
 
-    register_telegram_type(0x998, "HPSettings", true, MAKE_PF_CB(process_HPSettings));
-    register_telegram_type(0x999, "HPFunctionTest", true, MAKE_PF_CB(process_HPFunctionTest));
+    register_telegram_type(0x998, "HPSettings", true, MAKE_PF_CB(process_HPSettings), 20);
+    register_telegram_type(0x999, "HPFunctionTest", true, MAKE_PF_CB(process_HPFunctionTest), 11);
     register_telegram_type(0x9A0, "HPTemperature", false, MAKE_PF_CB(process_HPTemperature));
     register_telegram_type(0x99B, "HPFlowTemp", false, MAKE_PF_CB(process_HPFlowTemp));
     register_telegram_type(0x99C, "HPComp", false, MAKE_PF_CB(process_HPComp));
-    register_telegram_type(0x4AE, "HPEnergy", true, MAKE_PF_CB(process_HpEnergy));
-    register_telegram_type(0x4AF, "HPMeters", true, MAKE_PF_CB(process_HpMeters));
+    register_telegram_type(0x4AE, "HPEnergy", true, MAKE_PF_CB(process_HpEnergy), 32);
+    register_telegram_type(0x4AF, "HPMeters", true, MAKE_PF_CB(process_HpMeters), 56);
     register_telegram_type(0x99A, "HPStarts", false, MAKE_PF_CB(process_HpStarts));
     register_telegram_type(0x12E, "HPEnergy1", false, MAKE_PF_CB(process_HpEnergy1));
     register_telegram_type(0x13B, "HPEnergy2", false, MAKE_PF_CB(process_HpEnergy2));

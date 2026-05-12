@@ -348,7 +348,7 @@ const Sensors = () => {
 
   const addAnalogSensor = useCallback(() => {
     if (firstAvailableGPIO.current === undefined) {
-      toast.error('No available GPIO found');
+      toast.error(LL.NO_GPIO());
       return;
     }
     setCreating(true);
@@ -591,7 +591,14 @@ const Sensors = () => {
         />
       )}
       {sensorData?.analog_enabled === true && me.admin && (
-        <Box mt={2} display="flex" flexWrap="wrap" justifyContent="flex-end">
+        <Box
+          sx={{
+            mt: 2,
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end'
+          }}
+        >
           <Button
             variant="outlined"
             color="primary"

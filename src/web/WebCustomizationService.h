@@ -63,10 +63,11 @@ class AnalogCustomization {
 // we use product_id and device_id to make the device unique
 class EntityCustomization {
   public:
-    uint8_t                  product_id;  // device's product id
-    uint8_t                  device_id;   // device's device id
-    std::string              custom_name; // custom device name
-    std::vector<std::string> entity_ids;  // array of entity ids with masks and optional custom fullname
+    uint8_t                  product_id;   // device's product id
+    uint8_t                  device_id;    // device's device id
+    std::string              custom_name;  // custom device name
+    std::string              custom_brand; // custom brand name
+    std::vector<std::string> entity_ids;   // array of entity ids with masks and optional custom fullname
 };
 
 class WebCustomization {

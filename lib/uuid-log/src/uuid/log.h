@@ -31,6 +31,7 @@
 #include <string>
 #include <vector>
 
+#include <esp32-psram.h>
 #include <uuid/common.h>
 
 #ifndef UUID_COMMON_THREAD_SAFE
@@ -645,7 +646,7 @@ class Logger {
 	 * @param[in] text Log message text.
 	 * @since 1.0.0
 	 */
-    void dispatch(Level level, Facility facility, std::vector<char> & text) const;
+    void dispatch(Level level, Facility facility, std::vector<char, AllocatorPSRAM<char>> & text) const;
 
     static std::atomic<Level> global_level_; /*!< Minimum global log level across all handlers. @since 3.0.0 */
 #if UUID_LOG_THREAD_SAFE
@@ -723,7 +724,7 @@ class PrintHandler : public uuid::log::Handler {
     mutable std::mutex mutex_; /*!< Mutex for configuration, state and queued log messages. @since 2.3.0 */
 #endif
     size_t maximum_log_messages_ = MAX_LOG_MESSAGES;   /*!< Maximum number of log messages to buffer before they are output. @since 2.2.0 */
-    std::list<std::shared_ptr<Message>> log_messages_; /*!< Queued log messages, in the order they were received. @since 2.2.0 */
+    std::list<std::shared_ptr<Message>, AllocatorPSRAM<std::shared_ptr<Message>>> log_messages_; /*!< Queued log messages, in the order they were received. @since 2.2.0 */
 };
 
 } // namespace log
