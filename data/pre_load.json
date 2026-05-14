@@ -8,7 +8,7 @@
         "ssid": "",
         "bssid": "",
         "password": "",
-        "hostname": "ems-esp2",
+        "hostname": "ems-esp",
         "static_ip_config": false,
         "bandwidth20": false,
         "nosleep": true,
