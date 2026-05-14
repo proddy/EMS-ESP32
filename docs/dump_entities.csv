@@ -4057,7 +4057,7 @@ device name,device type,product id,shortname,fullname,type [options...] \| (min/
 "UI800, BC400",thermostat,4,hc1.cooloffdelay,cooling off delay,uint8 (>=1<=48),hours,true,number.thermostat_hc1_cooling_off_delay,number.thermostat_hc1_cooloffdelay,6,1,1,54,1
 "UI800, BC400",thermostat,4,hc1.switchprogmode,switch program mode,enum [level\|absolute] (>=0<=0), ,true,select.thermostat_hc1_switch_program_mode,select.thermostat_hc1_switchprogmode,6,1,1,55,1
 "UI800, BC400",thermostat,4,hc1.redthreshold,reduction threshold,int8 (>=12<=22),C,true,number.thermostat_hc1_reduction_threshold,number.thermostat_hc1_redthreshold,6,1,1/2,56,1
-"UI800, BC400",thermostat,4,hc1.solarinfl,solar influence,int8 (>=-5<=4294967295),C,true,number.thermostat_hc1_solar_influence,number.thermostat_hc1_solarinfl,6,1,1,57,1
+"UI800, BC400",thermostat,4,hc1.solarinfl,solar influence,int8 (>=-5<=0),C,true,number.thermostat_hc1_solar_influence,number.thermostat_hc1_solarinfl,6,1,1,57,1
 "UI800, BC400",thermostat,4,hc1.currsolarinfl,current solar influence,int8,C,false,sensor.thermostat_hc1_current_solar_influence,sensor.thermostat_hc1_currsolarinfl,6,1,1/10,58,1
 "UI800, BC400",thermostat,4,hc1.heatingpid,heating PID,enum [fast\|medium\|slow] (>=0<=0), ,true,select.thermostat_hc1_heating_PID,select.thermostat_hc1_heatingpid,6,1,1,59,1
 "UI800, BC400",thermostat,4,hc1.pumpopt,pump optimization,boolean (>=0<=0), ,true,switch.thermostat_hc1_pump_optimization,switch.thermostat_hc1_pumpopt,6,1,1,60,1
@@ -4447,7 +4447,7 @@ device name,device type,product id,shortname,fullname,type [options...] \| (min/
 "RC200, CW100, CR120, CR50",thermostat,157,hc1.cooloffdelay,cooling off delay,uint8 (>=1<=48),hours,true,number.thermostat_hc1_cooling_off_delay,number.thermostat_hc1_cooloffdelay,6,1,1,54,1
 "RC200, CW100, CR120, CR50",thermostat,157,hc1.switchprogmode,switch program mode,enum [level\|absolute] (>=0<=0), ,true,select.thermostat_hc1_switch_program_mode,select.thermostat_hc1_switchprogmode,6,1,1,55,1
 "RC200, CW100, CR120, CR50",thermostat,157,hc1.redthreshold,reduction threshold,int8 (>=12<=22),C,true,number.thermostat_hc1_reduction_threshold,number.thermostat_hc1_redthreshold,6,1,1/2,56,1
-"RC200, CW100, CR120, CR50",thermostat,157,hc1.solarinfl,solar influence,int8 (>=-5<=4294967295),C,true,number.thermostat_hc1_solar_influence,number.thermostat_hc1_solarinfl,6,1,1,57,1
+"RC200, CW100, CR120, CR50",thermostat,157,hc1.solarinfl,solar influence,int8 (>=-5<=0),C,true,number.thermostat_hc1_solar_influence,number.thermostat_hc1_solarinfl,6,1,1,57,1
 "RC200, CW100, CR120, CR50",thermostat,157,hc1.currsolarinfl,current solar influence,int8,C,false,sensor.thermostat_hc1_current_solar_influence,sensor.thermostat_hc1_currsolarinfl,6,1,1/10,58,1
 "RC200, CW100, CR120, CR50",thermostat,157,hc1.heatingpid,heating PID,enum [fast\|medium\|slow] (>=0<=0), ,true,select.thermostat_hc1_heating_PID,select.thermostat_hc1_heatingpid,6,1,1,59,1
 "RC200, CW100, CR120, CR50",thermostat,157,hc1.pumpopt,pump optimization,boolean (>=0<=0), ,true,switch.thermostat_hc1_pump_optimization,switch.thermostat_hc1_pumpopt,6,1,1,60,1
@@ -4545,7 +4545,7 @@ device name,device type,product id,shortname,fullname,type [options...] \| (min/
 "RC3*0, Moduline 3000/1010H, CW400, Sense II, HPC410",thermostat,158,hc1.cooloffdelay,cooling off delay,uint8 (>=1<=48),hours,true,number.thermostat_hc1_cooling_off_delay,number.thermostat_hc1_cooloffdelay,6,1,1,54,1
 "RC3*0, Moduline 3000/1010H, CW400, Sense II, HPC410",thermostat,158,hc1.switchprogmode,switch program mode,enum [level\|absolute] (>=0<=0), ,true,select.thermostat_hc1_switch_program_mode,select.thermostat_hc1_switchprogmode,6,1,1,55,1
 "RC3*0, Moduline 3000/1010H, CW400, Sense II, HPC410",thermostat,158,hc1.redthreshold,reduction threshold,int8 (>=12<=22),C,true,number.thermostat_hc1_reduction_threshold,number.thermostat_hc1_redthreshold,6,1,1/2,56,1
-"RC3*0, Moduline 3000/1010H, CW400, Sense II, HPC410",thermostat,158,hc1.solarinfl,solar influence,int8 (>=-5<=4294967295),C,true,number.thermostat_hc1_solar_influence,number.thermostat_hc1_solarinfl,6,1,1,57,1
+"RC3*0, Moduline 3000/1010H, CW400, Sense II, HPC410",thermostat,158,hc1.solarinfl,solar influence,int8 (>=-5<=0),C,true,number.thermostat_hc1_solar_influence,number.thermostat_hc1_solarinfl,6,1,1,57,1
 "RC3*0, Moduline 3000/1010H, CW400, Sense II, HPC410",thermostat,158,hc1.currsolarinfl,current solar influence,int8,C,false,sensor.thermostat_hc1_current_solar_influence,sensor.thermostat_hc1_currsolarinfl,6,1,1/10,58,1
 "RC3*0, Moduline 3000/1010H, CW400, Sense II, HPC410",thermostat,158,hc1.heatingpid,heating PID,enum [fast\|medium\|slow] (>=0<=0), ,true,select.thermostat_hc1_heating_PID,select.thermostat_hc1_heatingpid,6,1,1,59,1
 "RC3*0, Moduline 3000/1010H, CW400, Sense II, HPC410",thermostat,158,hc1.pumpopt,pump optimization,boolean (>=0<=0), ,true,switch.thermostat_hc1_pump_optimization,switch.thermostat_hc1_pumpopt,6,1,1,60,1
@@ -4652,7 +4652,7 @@ device name,device type,product id,shortname,fullname,type [options...] \| (min/
 "Rego 2000/3000",thermostat,172,hc1.cooloffdelay,cooling off delay,uint8 (>=1<=48),hours,true,number.thermostat_hc1_cooling_off_delay,number.thermostat_hc1_cooloffdelay,6,1,1,54,1
 "Rego 2000/3000",thermostat,172,hc1.switchprogmode,switch program mode,enum [level\|absolute] (>=0<=0), ,true,select.thermostat_hc1_switch_program_mode,select.thermostat_hc1_switchprogmode,6,1,1,55,1
 "Rego 2000/3000",thermostat,172,hc1.redthreshold,reduction threshold,int8 (>=12<=22),C,true,number.thermostat_hc1_reduction_threshold,number.thermostat_hc1_redthreshold,6,1,1/2,56,1
-"Rego 2000/3000",thermostat,172,hc1.solarinfl,solar influence,int8 (>=-5<=4294967295),C,true,number.thermostat_hc1_solar_influence,number.thermostat_hc1_solarinfl,6,1,1,57,1
+"Rego 2000/3000",thermostat,172,hc1.solarinfl,solar influence,int8 (>=-5<=0),C,true,number.thermostat_hc1_solar_influence,number.thermostat_hc1_solarinfl,6,1,1,57,1
 "Rego 2000/3000",thermostat,172,hc1.currsolarinfl,current solar influence,int8,C,false,sensor.thermostat_hc1_current_solar_influence,sensor.thermostat_hc1_currsolarinfl,6,1,1/10,58,1
 "Rego 2000/3000",thermostat,172,hc1.heatingpid,heating PID,enum [fast\|medium\|slow] (>=0<=0), ,true,select.thermostat_hc1_heating_PID,select.thermostat_hc1_heatingpid,6,1,1,59,1
 "Rego 2000/3000",thermostat,172,hc1.pumpopt,pump optimization,boolean (>=0<=0), ,true,switch.thermostat_hc1_pump_optimization,switch.thermostat_hc1_pumpopt,6,1,1,60,1
@@ -4777,7 +4777,7 @@ device name,device type,product id,shortname,fullname,type [options...] \| (min/
 "Rego 3000, UI800, Logamatic BC400",thermostat,253,hc1.cooloffdelay,cooling off delay,uint8 (>=1<=48),hours,true,number.thermostat_hc1_cooling_off_delay,number.thermostat_hc1_cooloffdelay,6,1,1,54,1
 "Rego 3000, UI800, Logamatic BC400",thermostat,253,hc1.switchprogmode,switch program mode,enum [level\|absolute] (>=0<=0), ,true,select.thermostat_hc1_switch_program_mode,select.thermostat_hc1_switchprogmode,6,1,1,55,1
 "Rego 3000, UI800, Logamatic BC400",thermostat,253,hc1.redthreshold,reduction threshold,int8 (>=12<=22),C,true,number.thermostat_hc1_reduction_threshold,number.thermostat_hc1_redthreshold,6,1,1/2,56,1
-"Rego 3000, UI800, Logamatic BC400",thermostat,253,hc1.solarinfl,solar influence,int8 (>=-5<=4294967295),C,true,number.thermostat_hc1_solar_influence,number.thermostat_hc1_solarinfl,6,1,1,57,1
+"Rego 3000, UI800, Logamatic BC400",thermostat,253,hc1.solarinfl,solar influence,int8 (>=-5<=0),C,true,number.thermostat_hc1_solar_influence,number.thermostat_hc1_solarinfl,6,1,1,57,1
 "Rego 3000, UI800, Logamatic BC400",thermostat,253,hc1.currsolarinfl,current solar influence,int8,C,false,sensor.thermostat_hc1_current_solar_influence,sensor.thermostat_hc1_currsolarinfl,6,1,1/10,58,1
 "Rego 3000, UI800, Logamatic BC400",thermostat,253,hc1.heatingpid,heating PID,enum [fast\|medium\|slow] (>=0<=0), ,true,select.thermostat_hc1_heating_PID,select.thermostat_hc1_heatingpid,6,1,1,59,1
 "Rego 3000, UI800, Logamatic BC400",thermostat,253,hc1.pumpopt,pump optimization,boolean (>=0<=0), ,true,switch.thermostat_hc1_pump_optimization,switch.thermostat_hc1_pumpopt,6,1,1,60,1
