@@ -43,7 +43,7 @@ StateUpdateResult NetworkSettings::update(JsonObject root, NetworkSettings & set
     settings.ssid           = root["ssid"] | FACTORY_WIFI_SSID;
     settings.bssid          = root["bssid"] | "";
     settings.password       = root["password"] | FACTORY_WIFI_PASSWORD;
-    settings.hostname       = root["hostname"] | FACTORY_WIFI_HOSTNAME;
+    settings.hostname       = root["hostname"] | FACTORY_NETWORK_HOSTNAME;
     settings.staticIPConfig = root["static_ip_config"];
     settings.bandwidth20    = root["bandwidth20"];
     settings.tx_power       = static_cast<uint8_t>(root["tx_power"] | 0);

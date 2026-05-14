@@ -21,8 +21,8 @@
 #define FACTORY_WIFI_PASSWORD ""
 #endif
 
-#ifndef FACTORY_WIFI_HOSTNAME
-#define FACTORY_WIFI_HOSTNAME ""
+#ifndef FACTORY_NETWORK_HOSTNAME
+#define FACTORY_NETWORK_HOSTNAME ""
 #endif
 
 class NetworkSettings {
@@ -31,7 +31,7 @@ class NetworkSettings {
     String  ssid           = FACTORY_WIFI_SSID;
     String  bssid          = "";
     String  password       = FACTORY_WIFI_PASSWORD;
-    String  hostname       = FACTORY_WIFI_HOSTNAME;
+    String  hostname       = FACTORY_NETWORK_HOSTNAME;
     bool    staticIPConfig = false;
     bool    bandwidth20    = false;
     uint8_t tx_power       = 0;
