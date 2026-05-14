@@ -1685,7 +1685,11 @@ bool System::check_upgrade() {
             // force web buffer to 25 for those boards without psram
             if ((EMSESP::system_.PSram() == 0) && (settings.weblog_buffer != 25)) {
                 settings.weblog_buffer = 25;
-                return StateUpdateResult::CHANGED;
+                // if we're coming from < v3.9.0 and the Bus ID is the service key (0x0B), set it to the new default
+                if (settings.ems_bus_id == 0x0B && settings_version.major() <= 3 && settings_version.minor() < 9) {
+                    settings.ems_bus_id = EMSESP_DEFAULT_EMS_BUS_ID;
+                    return StateUpdateResult::CHANGED;
+                }
             }
             return StateUpdateResult::UNCHANGED;
         });
