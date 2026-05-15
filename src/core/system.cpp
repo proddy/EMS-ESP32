@@ -734,13 +734,17 @@ void System::start() {
     modbus_init();       // start modbus
 }
 
-// button single click
+// button single click - does nothing in normal operation
+// in debug mode, it will trigger a special healthcheck to test the LED monitoring and sequence_led
 void System::button_OnClick(PButton & b) {
     LOG_NOTICE("Button pressed - single click");
 
+#ifdef EMSESP_DEBUG
 #ifndef EMSESP_STANDALONE
-    // show filesystem
-    listDir("/", 3);
+    listDir("/", 3); // show filesystem
+#endif
+    // used to test LED monitoring and sequence_led. See system_check() for more details.
+    EMSESP::system_.healthcheck(99); // 99 = special trigger
 #endif
 }
 
@@ -973,27 +977,24 @@ void System::system_check() {
         LOG_NOTICE("Ping test, #%d", ping_count++);
 #endif
 
-        // check if we have a valid network connection
-        if (!EMSESP::network_.network_connected()) {
-            healthcheck_ |= HEALTHCHECK_NO_NETWORK;
+        if (healthcheck_ != 99) { // skip if we're testing
+            // check if we have a valid network connection
+            healthcheck_ = (healthcheck_ & ~HEALTHCHECK_NO_NETWORK) | (EMSESP::network_.network_connected() ? 0 : HEALTHCHECK_NO_NETWORK);
+
+            // check if we have a bus connection
+            healthcheck_ = (healthcheck_ & ~HEALTHCHECK_NO_BUS) | (EMSbus::bus_connected() ? 0 : HEALTHCHECK_NO_BUS);
         } else {
-            healthcheck_ &= ~HEALTHCHECK_NO_NETWORK;
+            LOG_DEBUG("Healthcheck: testing mode");
+            healthcheck_ = 0; // make it all look healthy - this is temporary for one cycle
         }
 
-        // check if we have a bus connection
-        if (!EMSbus::bus_connected()) {
-            healthcheck_ |= HEALTHCHECK_NO_BUS;
-        } else {
-            healthcheck_ &= ~HEALTHCHECK_NO_BUS;
-        }
-
-        // see if the healthcheck state has changed
+        // see if the healthcheck state has changed, if so send out the new heartbeat
         static uint8_t last_healthcheck_ = 0;
         if (healthcheck_ != last_healthcheck_) {
             last_healthcheck_ = healthcheck_;
-            EMSESP::system_.send_heartbeat(); // send MQTT heartbeat immediately when connected
+            EMSESP::system_.send_heartbeat();
             if (healthcheck_ == 0) {
-                EMSESP::led_.reset_led(true); // LED back to what is was before
+                EMSESP::led_.reset_led(); // all healthy again. Set LED back to what is was before
             }
         }
     }

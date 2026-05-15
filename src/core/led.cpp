@@ -43,17 +43,13 @@ void LED::init() {
         pinMode(led_gpio_, OUTPUT);
     }
 
-    reset_led(false); // start with LED off
+    reset_led(); // start with LED in default state, depending on if it's hidden or not
 }
 
 // handle LED routine
 // called from the System::loop()
 // returns true if the LED flash is active, i.e its a lock down state
 bool LED::loop(uint8_t healthcheck, bool button_busy) {
-    if (!led_gpio_) {
-        return false;
-    }
-
     // if LED flashing is active it means its about to perform a factory reset, so don't do anything else and keep it flashing
     if (led_fast_flash_timer_) {
         led_fast_flash();
@@ -61,24 +57,14 @@ bool LED::loop(uint8_t healthcheck, bool button_busy) {
     }
 
     // show the LED status based on the healthcheck and button busy status
-    monitor(healthcheck, button_busy);
+    sequence_led(healthcheck, button_busy);
 
     return false;
 }
 
-// turn the LED off (false) or to it's default state (true)
-void LED::reset_led(bool default_state) {
-    if (!led_gpio_) {
-        return;
-    }
-
-    if (default_state) {
-        // set the LED to it's default state (for RGB its green)
-        set_led(hide_led_ ? Color::OFF : Color::GREEN); // Green
-    } else {
-        // force it off
-        set_led(Color::OFF);
-    }
+// turn the LED back it's default state depending on if it's hidden or not
+void LED::reset_led() {
+    set_led(hide_led_ ? Color::OFF : Color::GREEN); // Green
 }
 
 // LED flash every few ms and then perform a factory reset
@@ -93,7 +79,7 @@ void LED::led_fast_flash() {
 
     // after duration, turn off the LED
     if (current_time - led_flash_start_time_ >= led_flash_duration_) {
-        reset_led(false);
+        set_led(Color::OFF);
         led_fast_flash_timer_ = false;
 #ifndef EMSESP_DEBUG
         System::command_format(nullptr, 0); // Execute format operation, unless in debug mode
@@ -131,6 +117,10 @@ void LED::set_led(Color color) {
         red   = RGB_LED_BRIGHTNESS;
         green = RGB_LED_BRIGHTNESS;
         blue  = RGB_LED_BRIGHTNESS;
+    }
+
+    if (!led_gpio_) {
+        return;
     }
 
     if (led_type_) {
@@ -179,12 +169,15 @@ void LED::set_led_routine(std::string color, std::string pattern) {
         color_steps_[1] = Color::GREEN;
         color_steps_[2] = Color::BLUE;
     }
+
+    // when this is called we want the sequence_led to restart immediately and skip the long pause
+    led_long_timer_ = uuid::get_uptime() + HEALTHCHECK_LED_FLASH_FAST_DURATION + 200UL;
 }
 
 // uses LED to show system health and user-requested LED blinks
 // it works in a batch of 3 configured flashes, then a long pause
 // the timing is different for user-requested LED blink and for system healthcheck
-void LED::monitor(uint8_t healthcheck, bool button_busy) {
+void LED::sequence_led(uint8_t healthcheck, bool button_busy) {
     // see if we're doing as user-requested LED blink
     bool is_user_led_blink = false;
     if (color_steps_[0] != Color::OFF || color_steps_[1] != Color::OFF || color_steps_[2] != Color::OFF) {
@@ -197,7 +190,7 @@ void LED::monitor(uint8_t healthcheck, bool button_busy) {
         set_led(button_busy ? Color::OFF : Color::YELLOW); // Yellow
     }
 
-    // we only need to run the LED monitor if there are errors, or if a button has been pressed or a user-requested LED blink is active
+    // we only need to run the LED sequence_led if there are errors, or if a button has been pressed or a user-requested LED blink is active
     if ((!healthcheck || button_busy) && !is_user_led_blink) {
         return; // nothing to show
     }
@@ -218,10 +211,10 @@ void LED::monitor(uint8_t healthcheck, bool button_busy) {
         led_short_timer_ = current_time;
 
         if (++led_flash_step_ == 8) {
-            // finished first iteration, reset the whole sequence
+            // finished first iteration, reset the whole sequence, turn off LED
             led_long_timer_ = uuid::get_uptime();
             led_flash_step_ = 0;
-            reset_led(true); // LED back to what is was before
+            set_led(Color::OFF);
         } else if (led_flash_step_ % 2) {
             // handle the three step events (on odd numbers 3,5,7 etc). see if we need to set a LED color
 

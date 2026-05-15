@@ -33,7 +33,7 @@ class LED {
     void init();
     bool loop(uint8_t healthcheck, bool button_busy);
 
-    void reset_led(bool default_state = true);   // turn the LED to default state or use false for off
+    void reset_led();                            // turn the LED back it's default state depending on if it's hidden or not
     void start_led_fast_flash(uint8_t duration); // duration in seconds
 
     void set_led(Color color);
@@ -42,7 +42,7 @@ class LED {
   private:
     static uuid::log::Logger logger_;
 
-    void monitor(uint8_t led_routine, bool button_busy);
+    void sequence_led(uint8_t led_routine, bool button_busy);
     void led_fast_flash();
 
     static constexpr uint32_t HEALTHCHECK_LED_LONG_DURATION       = 1000; // 1 second between flash sequences
@@ -66,7 +66,7 @@ class LED {
     bool     led_flash_state_  = false;
     uint32_t last_toggle_time_ = 0;
 
-    // monitor() state
+    // sequence_led() state
     bool     last_button_busy_ = false;
     uint32_t led_long_timer_   = 1; // 1 will kick it off immediately
     uint32_t led_short_timer_  = 0;
