@@ -1228,7 +1228,6 @@ void System::show_system(uuid::console::Shell & shell) {
 #endif
 }
 
-
 // see if there is a restore of an older settings file that needs to be applied
 // note there can be only one file at a time
 bool System::check_restore() {
@@ -1258,6 +1257,22 @@ bool System::check_restore() {
                         saveSettings(MQTT_SETTINGS_FILE, section);
                         saveSettings(NTP_SETTINGS_FILE, section);
                         saveSettings(SECURITY_SETTINGS_FILE, section);
+
+                        // next is application settings
+                        // we need to set the EMS Bus ID to 0x49 if it's 0x0B and coming from a version which is < v3.9.0
+                        std::string     settingsVersion = section["Settings"]["version"];
+                        FirmwareVersion settings_version(settingsVersion);
+                        if (settings_version < FirmwareVersion("3.9.0")) {
+                            if (section["Settings"]["ems_bus_id"].is<int>()) {
+                                int ems_bus_id = section["Settings"]["ems_bus_id"];
+                                if (ems_bus_id == 0x0B) {
+                                    // set to EMSESP_DEFAULT_EMS_BUS_ID
+                                    section["Settings"]["ems_bus_id"] = EMSESP_DEFAULT_EMS_BUS_ID;
+                                    LOG_INFO("Overriding EMS Bus ID to %02X (was %02X)", EMSESP_DEFAULT_EMS_BUS_ID, ems_bus_id);
+                                }
+                            }
+                        }
+                        // continue processing the rest of the sections
                         saveSettings(EMSESP_SETTINGS_FILE, section);
                     }
                     if (section_type == "schedule") {
