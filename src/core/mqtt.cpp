@@ -131,10 +131,10 @@ void Mqtt::loop() {
 
     uint32_t currentMillis = uuid::get_uptime();
 
-    // send heartbeat
+    // send heartbeat per the frequency in the MQTT settings
     if (currentMillis - last_publish_heartbeat_ > publish_time_heartbeat_) {
         last_publish_heartbeat_ = currentMillis;
-        EMSESP::system_.send_heartbeat(); // send heartbeat
+        EMSESP::system_.send_heartbeat(); // send MQTT heartbeat topic
     }
 
     // temperature and analog sensor publish on change
@@ -511,7 +511,6 @@ void Mqtt::on_connect() {
 
     // send initial MQTT messages for some of our services
     EMSESP::system_.send_heartbeat(); // send heartbeat
-    // for publish on change publish the initial complete list
     EMSESP::webCustomEntityService.publish(true);
     EMSESP::webSchedulerService.publish(true);
     EMSESP::analogsensor_.publish_values(true);

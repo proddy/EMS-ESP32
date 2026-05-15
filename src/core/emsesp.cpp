@@ -587,7 +587,7 @@ void EMSESP::publish_all(bool force) {
         publish_other_values();      // switch and heat pump, ...
         publish_sensor_values(true); // includes temperature and analog sensors
 
-        system_.send_heartbeat();
+        system_.send_heartbeat(); // send MQTT heartbeat topic
     }
 }
 
@@ -628,7 +628,7 @@ void EMSESP::publish_all_loop() {
         if (Mqtt::ha_enabled()) {
             Mqtt::ha_status();
         }
-        system_.send_heartbeat();
+        system_.send_heartbeat(); // send MQTT heartbeat topic
         break;
     default:
         // all finished
