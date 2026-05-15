@@ -103,7 +103,7 @@ const cz: Translation = {
   DISABLED: 'zakázáno',
   TX_MODE: 'EMS Tx režim',
   HARDWARE: 'Hardware',
-  EMS_BUS: '{{BUS|EMS BUS}}',
+  EMS_BUS: '{{Bus|EMS Bus}}',
   GENERAL_OPTIONS: 'Obecné možnosti',
   LANGUAGE_ENTITIES: 'Jazyk (pro entity zařízení)',
   HIDE_LED: 'Skrýt LED',

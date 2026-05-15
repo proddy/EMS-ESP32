@@ -102,7 +102,7 @@ const nl: Translation = {
   PHY_TYPE: 'Eth PHY Type',
   TX_MODE: 'EMS Tx Mode',
   HARDWARE: 'Hardware',
-  EMS_BUS: '{{BUS|EMS BUS}}',
+  EMS_BUS: '{{Bus|EMS Bus}}',
   DISABLED: 'Uitgeschakeld',
   GENERAL_OPTIONS: 'Algemene Opties',
   LANGUAGE_ENTITIES: 'Taal (voor apparaat entiteiten)',
