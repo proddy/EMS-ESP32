@@ -233,6 +233,7 @@ class EMSESP {
     static TemperatureSensor temperaturesensor_;
     static AnalogSensor      analogsensor_;
     static Shower            shower_;
+    static LED               led_;
     static RxService         rxservice_;
     static TxService         txservice_;
     static Preferences       nvs_;

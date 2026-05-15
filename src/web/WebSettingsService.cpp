@@ -387,7 +387,7 @@ void WebSettingsService::onUpdate() {
     }
 
     if (WebSettings::has_flags(WebSettings::ChangeFlags::LED)) {
-        EMSESP::system_.led_init();
+        EMSESP::led_.init();
     }
 
     if (WebSettings::has_flags(WebSettings::ChangeFlags::MQTT)) {

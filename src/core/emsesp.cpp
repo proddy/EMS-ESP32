@@ -90,6 +90,7 @@ Network           EMSESP::network_;           // network services
 TemperatureSensor EMSESP::temperaturesensor_; // Temperature sensors
 AnalogSensor      EMSESP::analogsensor_;      // Analog sensors
 Shower            EMSESP::shower_;            // Shower logic
+LED               EMSESP::led_;               // LED handler
 Preferences       EMSESP::nvs_;               // NV Storage
 
 // for a specific EMS device go and request data values
@@ -1532,7 +1533,7 @@ void EMSESP::incoming_telegram(uint8_t * data, const uint8_t length) {
         Roomctrl::check(data[1], data, length);
 #ifdef EMSESP_UART_DEBUG
         // get_uptime is only updated once per loop, does not give the right time
-        LOG_TRACE("[UART_DEBUG] Echo after %d ms: %s", ::millis() - rx_time_, Helpers::data_to_hex(data, length).c_str());
+        LOG_TRACE("[UART_DEBUG] Echo after %d ms: %s", uuid::get_uptime_ms() - rx_time_, Helpers::data_to_hex(data, length).c_str());
 #endif
         // add to RxQueue for log/watch
         rxservice_.add(data, length);
@@ -1616,11 +1617,11 @@ void EMSESP::incoming_telegram(uint8_t * data, const uint8_t length) {
 #ifdef EMSESP_UART_DEBUG
         char s[4];
         if (first_value & 0x80) {
-            LOG_TRACE("[UART_DEBUG] next Poll %s after %d ms", Helpers::hextoa(s, first_value), ::millis() - rx_time_);
+            LOG_TRACE("[UART_DEBUG] next Poll %s after %d ms", Helpers::hextoa(s, first_value), uuid::get_uptime_ms() - rx_time_);
             // time measurement starts here, use millis because get_uptime is only updated once per loop
-            rx_time_ = ::millis();
+            rx_time_ = uuid::get_uptime_ms();
         } else {
-            LOG_TRACE("[UART_DEBUG] Poll ack %s after %d ms", Helpers::hextoa(s, first_value), ::millis() - rx_time_);
+            LOG_TRACE("[UART_DEBUG] Poll ack %s after %d ms", Helpers::hextoa(s, first_value), uuid::get_uptime_ms() - rx_time_);
         }
 #endif
         // check for poll to us, if so send top message from Tx queue immediately and quit
@@ -1634,7 +1635,7 @@ void EMSESP::incoming_telegram(uint8_t * data, const uint8_t length) {
         return;
     } else {
 #ifdef EMSESP_UART_DEBUG
-        LOG_TRACE("[UART_DEBUG] Reply after %d ms: %s", ::millis() - rx_time_, Helpers::data_to_hex(data, length).c_str());
+        LOG_TRACE("[UART_DEBUG] Reply after %d ms: %s", uuid::get_uptime_ms() - rx_time_, Helpers::data_to_hex(data, length).c_str());
 #endif
         Roomctrl::check(data[1], data, length); // check if there is a message for the roomcontroller
 
@@ -1711,10 +1712,10 @@ void EMSESP::start() {
     bool factory_settings = false;
 #endif
 
-#if defined(EMSESP_DEBUG)
-    // LOG_DEBUG("Listing root directory before:");
-    // system_.listDir("/", 3); // show the contents of the root directory
-#endif
+    // #if defined(EMSESP_DEBUG)
+    //     LOG_DEBUG("Listing root directory before:");
+    //     system_.listDir("/", 3); // show the contents of the root directory
+    // #endif
 
     // start NVS storage
     if (!nvs_.begin("ems-esp", false, "nvs1")) { // try bigger nvs partition on 16M flash first
@@ -1730,10 +1731,10 @@ void EMSESP::start() {
     // loads core system services settings (mqtt, ap, ntp etc)
     esp32React.begin();
 
-#if defined(EMSESP_DEBUG)
-    // LOG_DEBUG("Listing root directory after:");
-    // system_.listDir("/", 3); // show the contents of the root directory
-#endif
+    // #if defined(EMSESP_DEBUG)
+    //     LOG_DEBUG("Listing root directory after:");
+    //     system_.listDir("/", 3); // show the contents of the root directory
+    // #endif
 
 #ifndef EMSESP_STANDALONE
     if (factory_settings) {
@@ -1866,7 +1867,7 @@ void EMSESP::loop() {
 
     // handles LED and checks system health, and syslog service
     if (system_.loop()) {
-        return; // LED flashing is active, skip the rest of the loop
+        return; // LED flashing is active meaning its about to reboot, skip the rest of the loop
     }
 
     esp32React.loop();    // core services: Network, AP, MQTT and NTP

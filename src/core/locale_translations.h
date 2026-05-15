@@ -85,6 +85,7 @@ MAKE_WORD_TRANSLATION(system_cmd, "system setting", "System Einstellung", "syste
 MAKE_WORD_TRANSLATION(showertimer_cmd, "enable shower timer", "aktiviere Duschzeitmessung", "activeer douche timer", "aktivera duschtimer", "aktywuj czasomierz prysznica", "aktiver dusjtimer", "activer minuteur de douche", "duş zamanlayıcısını etkinleştir", "abilita timer doccia", "povoliť časovač sprchovania", "povolit časovač sprchy")
 MAKE_WORD_TRANSLATION(showeralert_cmd, "enable shower alert", "aktiviere Duschzeitwarnung", "activeer douche alarm", "aktivera duschvarning", "aktywuj alarm prysznica", "aktiver dusjvarsel", "activer alerte de douche", "duş uyarısını etkinleştir", "abilita allarme doccia", "povoliť upozornenie na sprchu", "povolit alarm sprchy")
 MAKE_WORD_TRANSLATION(txpause_cmd, "pause EMS Tx", "EMS Tx pausieren", "pauzeer EMS Tx", "pausa EMS Tx", "wstrzymaj EMS Tx", "pause EMS Tx", "pause EMS Tx", "EMS Tx'i duraklat", "pausa EMS Tx", "pozastaviť EMS Tx", "pauzovat EMS Tx")
+MAKE_WORD_TRANSLATION(led_cmd, "flash the LED", "LED blinken", "LED knipperen", "LED blinka", "LED błyska", "LED blink", "LED clignote", "LED yanıp söner", "LED lampeggia", "LED bliká", "LED bliká")
 
 // tags
 MAKE_WORD_TRANSLATION(tag_hc1, "hc1", "HK1", "hc1", "VK1", "OG1", "hc1", "hc1", "ID1", "hc1", "hc1", "hc1")

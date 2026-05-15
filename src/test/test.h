@@ -64,6 +64,7 @@ namespace emsesp {
 // #define EMSESP_DEBUG_DEFAULT "hpmode"
 // #define EMSESP_DEBUG_DEFAULT "shuntingyard"
 // #define EMSESP_DEBUG_DEFAULT "src"
+#define EMSESP_DEBUG_DEFAULT "led"
 
 #ifndef EMSESP_DEBUG_DEFAULT
 #define EMSESP_DEBUG_DEFAULT "general"
