@@ -266,6 +266,7 @@ uint8_t EMSESP::bus_status() {
 // show the EMS bus status plus both Rx and Tx queues
 void EMSESP::show_ems(uuid::console::Shell & shell) {
     // EMS bus information
+    shell.printfln("EMS Bus ID: %02X", EMSbus::ems_bus_id());
     switch (bus_status()) {
     case BUS_STATUS_OFFLINE:
         shell.printfln("EMS Bus is disconnected.");
