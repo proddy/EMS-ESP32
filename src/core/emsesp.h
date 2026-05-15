@@ -138,9 +138,7 @@ class EMSESP {
     static void    device_active(const uint8_t device_id, const bool active);
     static bool    cmd_is_readonly(const uint8_t device_type, const uint8_t device_id, const char * cmd, const int8_t id);
     static uint8_t device_id_from_cmd(const uint8_t device_type, const char * cmd, const int8_t id);
-    static uint8_t count_devices(const uint8_t device_type);
     static uint8_t count_devices();
-    static uint8_t device_index(const uint8_t device_type, const uint8_t unique_id);
     static bool    get_device_value_info(JsonObject root, const char * cmd, const int8_t id, const uint8_t devicetype);
 
     static void show_device_values(uuid::console::Shell & shell);

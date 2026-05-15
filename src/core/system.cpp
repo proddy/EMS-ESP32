@@ -663,18 +663,11 @@ void System::modbus_init() {
 
 // read specific major system settings to store locally for faster access
 void System::store_settings(WebSettings & settings) {
-    version_ = settings.version;
-
     rx_gpio_      = settings.rx_gpio;
     tx_gpio_      = settings.tx_gpio;
     pbutton_gpio_ = settings.pbutton_gpio;
-    dallas_gpio_  = settings.dallas_gpio;
-    led_gpio_     = settings.led_gpio;
 
-    analog_enabled_ = settings.analog_enabled;
     low_clock_      = settings.low_clock;
-    hide_led_       = settings.hide_led;
-    led_type_       = settings.led_type;
     board_profile_  = settings.board_profile;
     telnet_enabled_ = settings.telnet_enabled;
 
@@ -1786,14 +1779,12 @@ bool System::command_service(const char * cmd, const char * value) {
                 settings.hide_led = b;
                 return StateUpdateResult::CHANGED;
             });
-            EMSESP::system_.hide_led(b);
             ok = true;
         } else if (!strcmp(cmd, "settings/analogenabled")) {
             EMSESP::webSettingsService.update([&](WebSettings & settings) {
                 settings.analog_enabled = b;
                 return StateUpdateResult::CHANGED;
             });
-            EMSESP::system_.analog_enabled(b);
             ok = true;
         } else if (!strcmp(cmd, "mqtt/enabled")) {
             EMSESP::esp32React.getMqttSettingsService()->update([&](MqttSettings & Settings) {

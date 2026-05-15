@@ -163,10 +163,6 @@ class System {
 
     static String get_ip_or_hostname();
 
-    void dallas_gpio(uint8_t gpio) {
-        dallas_gpio_ = gpio;
-    }
-
     bool telnet_enabled() {
         return telnet_enabled_;
     }
@@ -185,18 +181,6 @@ class System {
 
     uint32_t modbus_timeout() {
         return modbus_timeout_;
-    }
-
-    bool analog_enabled() {
-        return analog_enabled_;
-    }
-
-    void analog_enabled(bool b) {
-        analog_enabled_ = b;
-    }
-
-    void hide_led(bool b) {
-        hide_led_ = b;
     }
 
     bool readonly_mode() {
@@ -415,17 +399,12 @@ class System {
     // EMS-ESP settings
     std::string hostname_;
     String      locale_;
-    bool        hide_led_;
-    uint8_t     led_type_;
-    uint8_t     led_gpio_;
-    bool        analog_enabled_;
     bool        low_clock_;
     String      board_profile_;
     uint8_t     pbutton_gpio_;
     uint8_t     rx_gpio_;
     uint8_t     tx_gpio_;
     uint8_t     tx_mode_;
-    uint8_t     dallas_gpio_;
     bool        telnet_enabled_;
     bool        syslog_enabled_;
     int8_t      syslog_level_;
@@ -437,7 +416,6 @@ class System {
     uint8_t     bool_format_;
     uint8_t     enum_format_;
     bool        readonly_mode_;
-    String      version_;
     bool        modbus_enabled_;
     uint16_t    modbus_port_;
     uint8_t     modbus_max_clients_;

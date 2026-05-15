@@ -178,21 +178,6 @@ void EMSESP::clear_all_devices() {
     // emsdevices.clear(); // remove entries, but doesn't delete actual devices
 }
 
-// return number of devices of a known type
-uint8_t EMSESP::count_devices(const uint8_t device_type) {
-    if (emsdevices.empty()) {
-        return 0;
-    }
-
-    uint8_t count = 0;
-    for (const auto & emsdevice : emsdevices) {
-        if (emsdevice && emsdevice->device_type() == device_type) {
-            count++;
-        }
-    }
-    return count;
-}
-
 // return total number of devices excluding the Controller
 uint8_t EMSESP::count_devices() {
     if (emsdevices.empty()) {
@@ -206,27 +191,6 @@ uint8_t EMSESP::count_devices() {
         }
     }
     return count;
-}
-
-// returns the index of a device if there are more of the same type
-// or 0 if there is only one or none
-uint8_t EMSESP::device_index(const uint8_t device_type, const uint8_t unique_id) {
-    uint8_t count         = 0;
-    uint8_t index         = 0;
-    uint8_t current_index = 1;
-
-    for (const auto & emsdevice : emsdevices) {
-        if (emsdevice->device_type() == device_type) {
-            count++;
-            if (emsdevice->unique_id() == unique_id) {
-                index = current_index;
-            }
-            current_index++;
-        }
-    }
-
-    // Return 0 if only one device exists or not found
-    return (count <= 1) ? 0 : index;
 }
 
 // scans for new devices
