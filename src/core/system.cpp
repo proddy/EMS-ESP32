@@ -986,9 +986,6 @@ void System::system_check() {
         if (healthcheck_ != last_healthcheck_) {
             last_healthcheck_ = healthcheck_;
             EMSESP::system_.send_heartbeat();
-            if (healthcheck_ == 0) {
-                EMSESP::led_.reset_led(); // all healthy again. Set LED back to what is was before
-            }
         }
     }
 }
@@ -2699,15 +2696,11 @@ bool System::command_led(const char * value, const int8_t id) {
     std::string color   = arg.substr(0, arg.find(':'));
     std::string pattern = arg.substr(arg.find(':') + 1);
 
-    // the color must be red, green, blue, yellow, white
-    // the style must be blink1, blink2, blink3
-    if ((color != "red" && color != "green" && color != "blue" && color != "yellow" && color != "white")
-        || (pattern != "blink1" && pattern != "blink2" && pattern != "blink3" && pattern != "rgb")) {
-        LOG_ERROR("Invalid format. Must be [red|green|blue|yellow|white]:[blink1|blink2|blink3|rgb]");
+    // set and validate the color and pattern
+    if (!EMSESP::led_.set_custom_led_routine(color, pattern)) {
+        LOG_ERROR("Invalid color or pattern.");
         return false;
     }
-
-    EMSESP::led_.set_led_routine(color, pattern);
 
     return true;
 }

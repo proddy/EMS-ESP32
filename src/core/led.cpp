@@ -56,15 +56,69 @@ bool LED::loop(uint8_t healthcheck, bool button_busy) {
         return true;
     }
 
+    // the user-requested LED blink always has preference
+    if (!is_user_led_blink_) {
+        // check for button press.
+        // if button is pressed, show LED (yellow on RGB LED, on/off on standard LED)
+        // it will turn off on the next loop cycle
+        if (last_button_busy_ != button_busy) {
+            last_button_busy_ = button_busy;
+            set_led(button_busy ? Color::OFF : Color::YELLOW); // Yellow
+            return false;
+        }
+
+        // check the system health.
+        // Set the sequence accordingly, only if the healthcheck is not 0 and has changed
+        if (healthcheck != previous_healthcheck_) {
+            previous_healthcheck_ = healthcheck;
+            color_steps_[0]       = Color::OFF;
+            color_steps_[1]       = Color::OFF;
+            color_steps_[2]       = Color::OFF;
+
+            // if the healthcheck is 0, i.e. system is healthy, reset the LED
+            if (healthcheck == 0) {
+                reset_led();
+                return false;
+            }
+
+            //  1 flash (blue) is the EMS bus is not connected
+            //  2 flashes (red, red) if the network (wifi or ethernet) is not connected
+            //  3 flashes (red, red, blue) is both the bus and the network are not connected
+            bool no_network = (healthcheck & System::HEALTHCHECK_NO_NETWORK) == System::HEALTHCHECK_NO_NETWORK;
+            bool no_bus     = (healthcheck & System::HEALTHCHECK_NO_BUS) == System::HEALTHCHECK_NO_BUS;
+
+            // set step 1
+            if (no_network) {
+                color_steps_[0] = Color::RED; // red, no network
+            } else if (no_bus) {
+                color_steps_[0] = Color::BLUE; // blue, no bus
+            }
+
+            // set step 2
+            if (no_network) {
+                color_steps_[1] = Color::RED; // red, no network
+            }
+
+            // set step 3
+            if (no_network && no_bus) {
+                color_steps_[2] = Color::BLUE; // blue, no network and no bus
+            }
+        }
+    }
+
     // show the LED status based on the healthcheck and button busy status
-    sequence_led(healthcheck, button_busy);
+    sequence_led();
 
     return false;
 }
 
 // turn the LED back it's default state depending on if it's hidden or not
 void LED::reset_led() {
+    is_user_led_blink_ = false;
     set_led(hide_led_ ? Color::OFF : Color::GREEN); // Green
+    color_steps_[0] = Color::OFF;
+    color_steps_[1] = Color::OFF;
+    color_steps_[2] = Color::OFF;
 }
 
 // LED flash every few ms and then perform a factory reset
@@ -88,40 +142,32 @@ void LED::led_fast_flash() {
 }
 
 // set LED on/off or RGB color
-// ignores whether the LED is hidden or not (hide_led_ is set)
+// ignores whether the LED is hidden or not (if hide_led_ is set)
 void LED::set_led(Color color) {
-    uint8_t red   = 0;
-    uint8_t green = 0;
-    uint8_t blue  = 0;
-    if (color == Color::RED) {
-        red   = RGB_LED_BRIGHTNESS;
-        green = 0;
-        blue  = 0;
-    } else if (color == Color::GREEN) {
-        red   = 0;
-        green = RGB_LED_BRIGHTNESS;
-        blue  = 0;
-    } else if (color == Color::BLUE) {
-        red   = 0;
-        green = 0;
-        blue  = RGB_LED_BRIGHTNESS;
-    } else if (color == Color::YELLOW) {
-        red   = RGB_LED_BRIGHTNESS;
-        green = RGB_LED_BRIGHTNESS;
-        blue  = 0;
-    } else if (color == Color::OFF) { // off
-        red   = 0;
-        green = 0;
-        blue  = 0;
-    } else if (color == Color::ON) { // white
-        red   = RGB_LED_BRIGHTNESS;
-        green = RGB_LED_BRIGHTNESS;
-        blue  = RGB_LED_BRIGHTNESS;
-    }
-
     if (!led_gpio_) {
         return;
     }
+
+    // RGB lookup table indexed by Color enum (must match enum order in led.h)
+    static constexpr uint8_t B              = RGB_LED_BRIGHTNESS;
+    static constexpr uint8_t H              = RGB_LED_BRIGHTNESS / 2;
+    static constexpr uint8_t rgb_table[][3] = {
+        {0, 0, 0}, // OFF
+        {B, B, B}, // ON (white)
+        {B, 0, 0}, // RED
+        {0, B, 0}, // GREEN
+        {0, 0, B}, // BLUE
+        {B, B, 0}, // YELLOW
+        {B, H, 0}, // ORANGE
+        {0, B, B}, // CYAN
+        {H, 0, H}  // PINK
+    };
+
+    const uint8_t color_idx = static_cast<uint8_t>(color);
+    const uint8_t idx       = (color_idx < sizeof(rgb_table) / sizeof(rgb_table[0])) ? color_idx : static_cast<uint8_t>(Color::OFF);
+    const uint8_t red       = rgb_table[idx][0];
+    const uint8_t green     = rgb_table[idx][1];
+    const uint8_t blue      = rgb_table[idx][2];
 
     if (led_type_) {
         rgbLedWrite(led_gpio_, red, green, blue);
@@ -131,30 +177,44 @@ void LED::set_led(Color color) {
 }
 
 // set LED custom routine
-// color is red, green, blue, yellow, white
-// pattern is blink1, blink2, blink3, rgb
 // For example: /api/system/led?data=red:blink1
 // For older non-RGB models, the colour would default to just being on.
-void LED::set_led_routine(std::string color, std::string pattern) {
-    Color color_type = Color::OFF;
-    if (color == "red") {
-        color_type = Color::RED;
-    } else if (color == "green") {
-        color_type = Color::GREEN;
-    } else if (color == "blue") {
-        color_type = Color::BLUE;
-    } else if (color == "yellow") {
-        color_type = Color::YELLOW;
-    } else if (color == "white") {
-        color_type = Color::ON;
-    } else {
-        color_type = Color::OFF;
+bool LED::set_custom_led_routine(std::string color, std::string pattern) {
+    static constexpr struct {
+        const char * name;
+        Color        value;
+    } color_map[] = {
+        {"off", Color::OFF},
+        {"on", Color::ON},
+        {"white", Color::ON},
+        {"red", Color::RED},
+        {"green", Color::GREEN},
+        {"blue", Color::BLUE},
+        {"yellow", Color::YELLOW},
+        {"orange", Color::ORANGE},
+        {"cyan", Color::CYAN},
+        {"pink", Color::PINK},
+    };
+
+    Color color_type    = Color::OFF;
+    bool  color_matched = false;
+    for (const auto & entry : color_map) {
+        if (color == entry.name) {
+            color_type    = entry.value;
+            color_matched = true;
+            break;
+        }
+    }
+    if (!color_matched) {
+        return false;
     }
 
+    // reset the color steps
     color_steps_[0] = Color::OFF;
     color_steps_[1] = Color::OFF;
     color_steps_[2] = Color::OFF;
 
+    // blink patterns
     if (pattern == "blink1") {
         color_steps_[0] = color_type;
     } else if (pattern == "blink2") {
@@ -164,41 +224,36 @@ void LED::set_led_routine(std::string color, std::string pattern) {
         color_steps_[0] = color_type;
         color_steps_[1] = color_type;
         color_steps_[2] = color_type;
+
+        // special patterns, ignores the user color
     } else if (pattern == "rgb") {
         color_steps_[0] = Color::RED;
         color_steps_[1] = Color::GREEN;
         color_steps_[2] = Color::BLUE;
+    } else if (pattern == "cpc") {
+        color_steps_[0] = Color::CYAN;
+        color_steps_[1] = Color::PINK;
+        color_steps_[2] = Color::CYAN;
+    } else {
+        return false; // pattern not recognized
     }
+
+    is_user_led_blink_ = true; // user routine is active
 
     // when this is called we want the sequence_led to restart immediately and skip the long pause
     led_long_timer_ = uuid::get_uptime() + HEALTHCHECK_LED_FLASH_FAST_DURATION + 200UL;
+
+    return true;
 }
 
 // uses LED to show system health and user-requested LED blinks
 // it works in a batch of 3 configured flashes, then a long pause
 // the timing is different for user-requested LED blink and for system healthcheck
-void LED::sequence_led(uint8_t healthcheck, bool button_busy) {
-    // see if we're doing as user-requested LED blink
-    bool is_user_led_blink = false;
-    if (color_steps_[0] != Color::OFF || color_steps_[1] != Color::OFF || color_steps_[2] != Color::OFF) {
-        is_user_led_blink = true;
-    }
-
-    // if button is pressed, show LED (yellow on RGB LED, on/off on standard LED) and exit
-    if (last_button_busy_ != button_busy) {
-        last_button_busy_ = button_busy;
-        set_led(button_busy ? Color::OFF : Color::YELLOW); // Yellow
-    }
-
-    // we only need to run the LED sequence_led if there are errors, or if a button has been pressed or a user-requested LED blink is active
-    if ((!healthcheck || button_busy) && !is_user_led_blink) {
-        return; // nothing to show
-    }
-
+void LED::sequence_led() {
     // first long pause before we start flashing
     auto current_time = uuid::get_uptime();
     if (led_long_timer_
-        && (uint32_t)(current_time - led_long_timer_) >= (is_user_led_blink ? HEALTHCHECK_LED_LONG_FAST_DURATION : HEALTHCHECK_LED_LONG_DURATION)) {
+        && (uint32_t)(current_time - led_long_timer_) >= (is_user_led_blink_ ? HEALTHCHECK_LED_LONG_FAST_DURATION : HEALTHCHECK_LED_LONG_DURATION)) {
         led_short_timer_ = current_time; // start the short timer
         led_long_timer_  = 0;            // stop long timer
         led_flash_step_  = 1;            // enable the short flash timer
@@ -206,7 +261,7 @@ void LED::sequence_led(uint8_t healthcheck, bool button_busy) {
 
     // the flash timer which starts after the long pause
     if (led_flash_step_
-        && (uint32_t)(current_time - led_short_timer_) >= (is_user_led_blink ? HEALTHCHECK_LED_FLASH_FAST_DURATION : HEALTHCHECK_LED_FLASH_DURATION)) {
+        && (uint32_t)(current_time - led_short_timer_) >= (is_user_led_blink_ ? HEALTHCHECK_LED_FLASH_FAST_DURATION : HEALTHCHECK_LED_FLASH_DURATION)) {
         led_long_timer_  = 0; // stop the long timer
         led_short_timer_ = current_time;
 
@@ -214,52 +269,33 @@ void LED::sequence_led(uint8_t healthcheck, bool button_busy) {
             // finished first iteration, reset the whole sequence, turn off LED
             led_long_timer_ = uuid::get_uptime();
             led_flash_step_ = 0;
-            set_led(Color::OFF);
-        } else if (led_flash_step_ % 2) {
+            set_led(Color::OFF); // turn off the LED
+
+            // if we're running a user-requested LED blink, turn it off and go back to the healthcheck sequence
+            if (is_user_led_blink_) {
+                is_user_led_blink_    = false;
+                previous_healthcheck_ = System::HEALTHCHECK_RESET; // this will force the healthcheck to be checked again
+            }
+            return;
+        }
+
+        if (led_flash_step_ % 2) {
             // handle the three step events (on odd numbers 3,5,7 etc). see if we need to set a LED color
-
-            // For the system healthcheck:
-            //  1 flash (blue) is the EMS bus is not connected
-            //  2 flashes (red, red) if the network (wifi or ethernet) is not connected
-            //  3 flashes (red, red, blue) is both the bus and the network are not connected
-            bool no_network = (healthcheck & System::HEALTHCHECK_NO_NETWORK) == System::HEALTHCHECK_NO_NETWORK;
-            bool no_bus     = (healthcheck & System::HEALTHCHECK_NO_BUS) == System::HEALTHCHECK_NO_BUS;
-
             switch (led_flash_step_) {
             case 3: // first flash
-                if (is_user_led_blink) {
-                    set_led(color_steps_[0]);
-                    color_steps_[0] = Color::OFF; // reset
-                } else {
-                    if (no_network) {
-                        set_led(Color::RED); // red, no network
-                    } else if (no_bus) {
-                        set_led(Color::BLUE); // blue, no bus
-                    }
-                }
+                set_led(color_steps_[0]);
                 break;
             case 5: // second flash
-                if (is_user_led_blink) {
-                    set_led(color_steps_[1]);
-                    color_steps_[1] = Color::OFF; // reset
-                } else if (no_network) {
-                    set_led(Color::RED); // red, no network
-                }
+                set_led(color_steps_[1]);
                 break;
             case 7: // third flash
-                if (is_user_led_blink) {
-                    set_led(color_steps_[2]);
-                    color_steps_[2] = Color::OFF; // reset
-                } else if (no_network && no_bus) {
-                    set_led(Color::BLUE); // blue, no network and no bus
-                }
+                set_led(color_steps_[2]);
                 break;
             default:
                 break;
             }
         } else {
-            // turn off LED after the LED flash, or on even number count
-            set_led(Color::OFF);
+            set_led(Color::OFF); // turn off on even number count, to make it flash
         }
     }
 }

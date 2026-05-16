@@ -338,6 +338,7 @@ class System {
     // healthcheck flags - shared with LED for status visualization
     static constexpr uint8_t HEALTHCHECK_NO_BUS     = (1 << 0); // 1
     static constexpr uint8_t HEALTHCHECK_NO_NETWORK = (1 << 1); // 2
+    static constexpr uint8_t HEALTHCHECK_RESET      = (1 << 7); // 128
 
   private:
     static uuid::log::Logger logger_;

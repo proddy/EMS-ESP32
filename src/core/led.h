@@ -28,22 +28,31 @@ namespace emsesp {
 
 class LED {
   public:
-    enum Color { RED = 0, GREEN = 1, BLUE = 2, YELLOW = 3, OFF = 4, ON = 5 };
+    enum Color : uint8_t {
+        OFF    = 0, // 0
+        ON     = 1, // 1 - white
+        RED    = 2, // 2
+        GREEN  = 3, // 3
+        BLUE   = 4, // 4
+        YELLOW = 5, // 5
+        ORANGE = 6, // 6
+        CYAN   = 7, // 7
+        PINK   = 8  // 8
+    };
 
     void init();
     bool loop(uint8_t healthcheck, bool button_busy);
 
-    void reset_led();                            // turn the LED back it's default state depending on if it's hidden or not
     void start_led_fast_flash(uint8_t duration); // duration in seconds
-
-    void set_led(Color color);
-    void set_led_routine(std::string color, std::string pattern);
+    bool set_custom_led_routine(std::string color, std::string pattern);
 
   private:
     static uuid::log::Logger logger_;
 
-    void sequence_led(uint8_t led_routine, bool button_busy);
+    void sequence_led();
     void led_fast_flash();
+    void reset_led(); // turn the LED back it's default state depending on if it's hidden or not
+    void set_led(Color color);
 
     static constexpr uint32_t HEALTHCHECK_LED_LONG_DURATION       = 1000; // 1 second between flash sequences
     static constexpr uint32_t HEALTHCHECK_LED_LONG_FAST_DURATION  = 500;  // 1/2 second between flash sequences
@@ -74,6 +83,11 @@ class LED {
 
     // set_led_routine() state
     Color color_steps_[3] = {Color::OFF, Color::OFF, Color::OFF};
+
+    // if true, the user has requested a custom LED blink, this always has preference over the button or showing the system health
+    bool is_user_led_blink_ = false;
+
+    uint8_t previous_healthcheck_ = 0;
 };
 
 } // namespace emsesp
