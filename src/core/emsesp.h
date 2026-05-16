@@ -82,7 +82,7 @@ class Module {}; // forward declaration
 #define WATCH_ID_NONE 0 // no watch id set
 
 // helpers for callback functions
-#define MAKE_PF_CB(__f) [&](std::shared_ptr<const Telegram> t) { __f(t); }                  // for Process Function callbacks to EMSDevice::process_function_p
+#define MAKE_PF_CB(__f) [&](const std::shared_ptr<const Telegram> & t) { __f(t); }          // for Process Function callbacks to EMSDevice::process_function_p
 #define MAKE_CF_CB(__f) [&](const char * value, const int8_t id) { return __f(value, id); } // for Command Function callbacks Command::cmd_function_p
 
 namespace emsesp {
@@ -121,8 +121,8 @@ class EMSESP {
     static void uart_telegram(const std::vector<uint8_t> & rx_data);
 #endif
 
-    static bool        process_telegram(std::shared_ptr<const Telegram> telegram);
-    static std::string pretty_telegram(std::shared_ptr<const Telegram> telegram);
+    static bool        process_telegram(const std::shared_ptr<const Telegram> & telegram);
+    static std::string pretty_telegram(const std::shared_ptr<const Telegram> & telegram);
 
     static void send_read_request(const uint16_t type_id, const uint8_t dest, const uint8_t offset = 0, const uint8_t length = 0, const bool front = false);
     static void send_write_request(const uint16_t type_id,
@@ -251,10 +251,10 @@ class EMSESP {
 
   private:
     static std::string device_tostring(const uint8_t device_id);
-    static void        process_UBADevices(std::shared_ptr<const Telegram> telegram);
-    static void        process_deviceName(std::shared_ptr<const Telegram> telegram);
-    static void        process_version(std::shared_ptr<const Telegram> telegram);
-    static void        publish_response(std::shared_ptr<const Telegram> telegram);
+    static void        process_UBADevices(const std::shared_ptr<const Telegram> & telegram);
+    static void        process_deviceName(const std::shared_ptr<const Telegram> & telegram);
+    static void        process_version(const std::shared_ptr<const Telegram> & telegram);
+    static void        publish_response(const std::shared_ptr<const Telegram> & telegram);
     static void        publish_all_loop();
 
     void shell_prompt();
