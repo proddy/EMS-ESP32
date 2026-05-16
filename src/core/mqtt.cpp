@@ -519,7 +519,7 @@ void Mqtt::on_connect() {
 // e.g. homeassistant/sensor/ems-esp/status/config
 // all the values from the heartbeat payload will be added as attributes to the entity state
 void Mqtt::ha_status() {
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
 
     char uniq[70];
     if (Mqtt::entity_format() == entityFormat::MULTI_SHORT) {
@@ -981,7 +981,7 @@ bool Mqtt::publish_ha_sensor_config(uint8_t               type,        // EMSdev
     }
 
     // build the full topic's payload
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
     doc["~"]       = Mqtt::base();
     doc["uniq_id"] = uniq_id;
 
@@ -1406,7 +1406,7 @@ bool Mqtt::publish_ha_climate_config(const DeviceValue & dv, const bool has_room
     snprintf(temp_cmd_s, sizeof(temp_cmd_s), "~/%s/%s%d/seltemp", devicename, tagname, hc_num);
     snprintf(mode_cmd_s, sizeof(mode_cmd_s), "~/%s/%s%d/mode", devicename, tagname, hc_num);
 
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
 
     doc["~"]             = Mqtt::base();
     doc["uniq_id"]       = uniq_id_s;

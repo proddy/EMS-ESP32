@@ -69,7 +69,7 @@ void WebCustomEntity::read(WebCustomEntity & webEntity, JsonObject root) {
 StateUpdateResult WebCustomEntity::update(JsonObject root, WebCustomEntity & webCustomEntity) {
     // reset everything to start fresh
     Command::erase_device_commands(EMSdevice::DeviceType::CUSTOM);
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
     for (CustomEntityItem & entityItem : webCustomEntity.customEntityItems) {
         if (entityItem.raw) {
             delete[] entityItem.raw;
@@ -453,7 +453,7 @@ void WebCustomEntityService::publish_single(CustomEntityItem & entity) {
         snprintf(topic, sizeof(topic), "%s_data/%s", F_(custom), entity.name);
     }
 
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
     JsonObject   output = doc.to<JsonObject>();
     render_value(output, entity, true);
     Mqtt::queue_publish(topic, output["value"].as<std::string>());
@@ -475,7 +475,7 @@ void WebCustomEntityService::publish(const bool force) {
         }
     }
 
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
     JsonObject   output     = doc.to<JsonObject>();
     bool         ha_created = ha_configdone_;
 
@@ -486,7 +486,7 @@ void WebCustomEntityService::publish(const bool force) {
         render_value(output, entityItem);
         // create HA config
         if (Mqtt::ha_enabled() && !ha_configdone_) {
-            JsonDocument config;
+            JsonDocument config(PSRAM_DOC);
             config["~"] = Mqtt::base();
 
             char stat_t[50];
@@ -566,7 +566,7 @@ uint8_t WebCustomEntityService::count_entities() {
         return 0;
     }
 
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
     JsonObject   output = doc.to<JsonObject>();
     uint8_t      count  = 0;
 

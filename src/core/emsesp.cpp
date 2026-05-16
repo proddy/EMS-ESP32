@@ -436,7 +436,7 @@ void EMSESP::show_device_values(uuid::console::Shell & shell) {
                 // print header, with device type translated
                 shell.printfln("%s: %s (%d)", emsdevice->device_type_2_device_name_translated(), emsdevice->to_string().c_str(), emsdevice->count_entities());
 
-                JsonDocument doc;
+                JsonDocument doc(PSRAM_DOC);
                 JsonObject   json = doc.to<JsonObject>();
 
                 emsdevice->generate_values(json, DeviceValueTAG::TAG_NONE, true, EMSdevice::OUTPUT_TARGET::CONSOLE);
@@ -460,7 +460,7 @@ void EMSESP::show_device_values(uuid::console::Shell & shell) {
     // show any custom entities
     if (webCustomEntityService.count_entities() > 0) {
         shell.printfln("Custom Entities:");
-        JsonDocument custom_doc; // use max size
+        JsonDocument custom_doc(PSRAM_DOC); // use max size
         JsonObject   custom_output = custom_doc.to<JsonObject>();
         webCustomEntityService.show_values(custom_output);
         for (JsonPair p : custom_output) {
@@ -625,7 +625,7 @@ void EMSESP::reset_mqtt_ha() {
 // this will also create the HA /config topic for each device value
 // generate_values_json is called to build the device value (dv) object array
 void EMSESP::publish_device_values(uint8_t device_type) {
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
     JsonObject   json         = doc.to<JsonObject>();
     bool         need_publish = false;
     bool         nested       = (Mqtt::is_nested());

@@ -675,7 +675,7 @@ void AnalogSensor::publish_values(const bool force) {
         }
     }
 
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
     JsonObject   obj            = doc.to<JsonObject>();
     bool         ha_dev_created = false;
 
@@ -704,7 +704,7 @@ void AnalogSensor::publish_values(const bool force) {
         if (Mqtt::ha_enabled() && (!sensor.ha_registered || force)) {
             LOG_DEBUG("Recreating HA config for analog sensor GPIO %02d", sensor.gpio());
 
-            JsonDocument config;
+            JsonDocument config(PSRAM_DOC);
             config["~"] = Mqtt::base();
 
             char stat_t[50];

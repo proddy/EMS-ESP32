@@ -266,7 +266,7 @@ void WebSchedulerService::publish(const bool force) {
         }
     }
 
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
     JsonObject   output     = doc.to<JsonObject>();
     bool         ha_created = ha_configdone_;
     for (const ScheduleItem & scheduleItem : *scheduleItems_) {
@@ -275,7 +275,7 @@ void WebSchedulerService::publish(const bool force) {
 
             // create HA config
             if (Mqtt::ha_enabled() && !ha_configdone_) {
-                JsonDocument config;
+                JsonDocument config(PSRAM_DOC);
                 config["~"] = Mqtt::base();
 
                 char stat_t[50];

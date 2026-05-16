@@ -212,7 +212,7 @@ void WebCustomizationService::device_entities(AsyncWebServerRequest * request) {
                 JsonArray output = response->getRoot();
                 emsdevice->generate_values_web_customization(output);
 #else
-                JsonDocument doc;
+                JsonDocument doc(PSRAM_DOC);
                 JsonArray    output = doc.to<JsonArray>();
                 emsdevice->generate_values_web_customization(output);
 #endif

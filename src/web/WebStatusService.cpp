@@ -433,7 +433,7 @@ bool WebStatusService::refresh_versions_cache() {
         return false;
     }
 
-    JsonDocument         doc;
+    JsonDocument         doc(PSRAM_DOC);
     DeserializationError err = deserializeJson(doc, http.getStream());
     http.end();
     if (err) {
@@ -539,7 +539,7 @@ bool WebStatusService::exportData(JsonObject root, std::string & type) {
 // action = getCustomSupport
 // reads any upload customSupport.json file and sends to to Help page to be shown as Guest
 bool WebStatusService::getCustomSupport(JsonObject root) {
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
 
 #if defined(EMSESP_STANDALONE)
     // dummy test data for "test api3"

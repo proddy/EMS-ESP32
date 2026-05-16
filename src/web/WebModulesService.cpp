@@ -50,7 +50,7 @@ void WebModulesService::loop() {
 // it adds data to an empty 'root' json object
 // and also calls when the Modules web page is refreshed/loaded
 void WebModules::read(WebModules & webModules, JsonObject root) {
-    JsonDocument doc_modules;
+    JsonDocument doc_modules(PSRAM_DOC);
     auto         root_modules = doc_modules.to<JsonObject>();
     moduleLibrary.list(root_modules); // get list the external library modules, put in a json object
 

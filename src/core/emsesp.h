@@ -56,6 +56,7 @@
 #include "../web/WebCustomEntityService.h"
 #include "../web/WebModulesService.h"
 
+#include "psram_json_allocator.h"
 #include "emsdevicevalue.h"
 #include "emsdevice.h"
 #include "emsfactory.h"
@@ -82,7 +83,19 @@ class Module {}; // forward declaration
 #define WATCH_ID_NONE 0 // no watch id set
 
 // helpers for callback functions
-#define MAKE_PF_CB(__f) [&](const std::shared_ptr<const Telegram> & t) { __f(t); }          // for Process Function callbacks to EMSDevice::process_function_p
+//
+// MAKE_PF_CB(member) produces a non-capturing trampoline that decays to a
+// plain function pointer (EMSdevice::process_function_p). The outer IILE
+// (immediately-invoked lambda expression) captures `this` purely to deduce
+// the derived-class type via decltype; the inner lambda is non-capturing and
+// therefore convertible to a function pointer via the unary `+` operator.
+// Result: zero heap (no std::function control block) and direct dispatch.
+#define MAKE_PF_CB(__f)                                                                                                                                        \
+    ([this]() {                                                                                                                                                \
+        using SelfT = std::remove_pointer_t<decltype(this)>;                                                                                                   \
+        return +[](emsesp::EMSdevice * dev, const std::shared_ptr<const Telegram> & t) { static_cast<SelfT *>(dev)->__f(t); };                                 \
+    }())
+
 #define MAKE_CF_CB(__f) [&](const char * value, const int8_t id) { return __f(value, id); } // for Command Function callbacks Command::cmd_function_p
 
 namespace emsesp {

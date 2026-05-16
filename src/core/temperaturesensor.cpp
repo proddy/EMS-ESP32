@@ -494,7 +494,7 @@ void TemperatureSensor::publish_values(const bool force) {
         }
     }
 
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
     bool         ha_dev_created = false;
 
     for (auto & sensor : sensors_) {
@@ -519,7 +519,7 @@ void TemperatureSensor::publish_values(const bool force) {
             } else if (!sensor.ha_registered || force) {
                 LOG_DEBUG("Recreating HA config for sensor ID %s", sensor.id());
 
-                JsonDocument config;
+                JsonDocument config(PSRAM_DOC);
                 config["~"]        = Mqtt::base();
                 config["dev_cla"]  = "temperature";
                 config["stat_cla"] = "measurement";
