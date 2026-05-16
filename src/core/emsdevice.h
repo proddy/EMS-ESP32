@@ -34,7 +34,15 @@ class EMSdevice {
   public:
     virtual ~EMSdevice() = default; // destructor of base class must always be virtual because it's a polymorphic class
 
-    using process_function_p = std::function<void(const std::shared_ptr<const Telegram> &)>;
+    // Raw function pointer + EMSdevice* context, instead of std::function.
+    // Each std::function<void(...)> typically heap-allocates its capture (a few
+    // bytes for the [&] closure) on libstdc++ ESP32 builds. With hundreds of
+    // registered telegram handlers across devices, that's tens of KB of
+    // long-lived heap. The MAKE_PF_CB macro produces a non-capturing trampoline
+    // that decays to this raw pointer (zero heap, zero indirection beyond the
+    // call itself). The first parameter receives `this` of the dispatching
+    // EMSdevice instance; the trampoline downcasts to the actual derived type.
+    using process_function_p = void (*)(EMSdevice * dev, const std::shared_ptr<const Telegram> & t);
 
     // device_type defines which derived class to use, e.g. BOILER, THERMOSTAT etc..
     EMSdevice(uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, const char * default_name, uint8_t flags, uint8_t brand)

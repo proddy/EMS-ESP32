@@ -2252,7 +2252,7 @@ bool EMSdevice::handle_telegram(const std::shared_ptr<const Telegram> & telegram
         if (tf.telegram_type_id_ == telegram->type_id) {
             // for telegram destination only read telegram
             if (telegram->dest == device_id_ && telegram->message_length > 0) {
-                tf.process_function_(telegram);
+                tf.process_function_(this, telegram);
                 return true;
             }
             // if the data block is empty and we have not received data before, assume that this telegram
@@ -2270,7 +2270,7 @@ bool EMSdevice::handle_telegram(const std::shared_ptr<const Telegram> & telegram
             }
             if (telegram->message_length > 0) {
                 tf.received_ = true;
-                tf.process_function_(telegram);
+                tf.process_function_(this, telegram);
             }
 
             return true;
