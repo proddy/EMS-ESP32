@@ -2535,7 +2535,7 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
                     obj["name"]      = emsdevice->name();             // custom name
                     obj["deviceID"]  = Helpers::hextoa(emsdevice->device_id());
                     obj["productID"] = emsdevice->product_id();
-                    obj["brand"]     = emsdevice->brand_to_char();
+                    obj["brand"]     = emsdevice->brand_to_cstr();
                     obj["version"]   = emsdevice->version();
                     obj["entities"]  = emsdevice->count_entities();
                     char result[1000];
