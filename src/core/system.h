@@ -299,10 +299,20 @@ class System {
     static uint32_t getHeapMem() {
         return heap_mem_;
     }
+    // All-time low watermark of free internal heap (KB).
+    // Unlike getHeapMem() (sampled now), this captures the *lowest* free heap
+    // has ever been since boot — i.e. the worst transient dip during MQTT
+    // publishes, HA discovery, /api/system calls, TLS handshakes, etc.
+    // This is the number that actually reflects optimisations targeting
+    // transient JSON / buffer peaks (e.g. Phase C PSRAM JsonDocuments).
+    static uint32_t getMinFreeMem() {
+        return min_free_mem_;
+    }
     static void refreshHeapMem() {
 #ifndef EMSESP_STANDALONE
         max_alloc_mem_ = ESP.getMaxAllocHeap() / 1024;
         heap_mem_      = ESP.getFreeHeap() / 1024;
+        min_free_mem_  = ESP.getMinFreeHeap() / 1024;
 #endif
     }
 
@@ -346,6 +356,7 @@ class System {
     static bool     test_set_all_active_; // force all entities in a device to have a value
     static uint32_t max_alloc_mem_;
     static uint32_t heap_mem_;
+    static uint32_t min_free_mem_;
 
     uint8_t systemStatus_; // uses SYSTEM_STATUS enum
 

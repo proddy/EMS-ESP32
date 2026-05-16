@@ -87,6 +87,7 @@ PButton  System::myPButton_;
 bool     System::test_set_all_active_ = false;
 uint32_t System::max_alloc_mem_;
 uint32_t System::heap_mem_;
+uint32_t System::min_free_mem_;
 
 // GPIOs
 std::vector<uint8_t, AllocatorPSRAM<uint8_t>>                     System::valid_system_gpios_;
@@ -173,7 +174,7 @@ bool System::command_sendmail(const char * value, const int8_t id) {
         delete basic_client;
         return false;
     }
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
     String       body = value;
     if (body.length()) {
         auto error = deserializeJson(doc, (const char *)value);
@@ -922,6 +923,11 @@ void System::heartbeat_json(JsonObject output) {
 #ifndef EMSESP_STANDALONE
     output["freemem"]   = getHeapMem();
     output["max_alloc"] = getMaxAllocMem();
+    // All-time low watermark of free internal heap (KB). Unlike freemem
+    // (sampled now), this captures the worst transient dip since boot —
+    // the actual metric to watch when measuring the effect of transient
+    // allocation optimisations (e.g. JsonDocument on PSRAM).
+    output["min_free"] = getMinFreeMem();
 #endif
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
     output["temperature"] = (int)temperature_;
@@ -1076,13 +1082,33 @@ void System::show_system(uuid::console::Shell & shell) {
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
     shell.printfln(" CPU temperature: %d °C", (int)temperature());
 #endif
-    shell.printfln(" Free heap/Max alloc: %lu KB / %lu KB", getHeapMem(), getMaxAllocMem());
+    // Free heap = current; Min free = all-time low watermark (lowest free
+    // heap has ever been since boot). Min free is the actual metric that
+    // reflects optimisations targeting transient peaks (publishes, /api/system,
+    // TLS handshakes). If transient peaks are reduced, min_free goes up.
+    shell.printfln(" Free heap/Max alloc/Min free: %lu KB / %lu KB / %lu KB", getHeapMem(), getMaxAllocMem(), getMinFreeMem());
+#ifndef EMSESP_STANDALONE
+    // Largest contiguous free block of *internal* SRAM. Network stack
+    // (LwIP/mbedTLS/AsyncTCP) and JSON output allocations need this to be
+    // healthy — total free heap can look fine while this collapses due to
+    // fragmentation. Compare before and after a big API call or MQTT publish.
+    shell.printfln(" Internal heap free/largest block: %u KB / %u KB",
+                   heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) / 1024,
+                   heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) / 1024);
+#endif
     shell.printfln(" App used/free: %lu KB / %lu KB", appUsed(), appFree());
     uint32_t FSused = LittleFS.usedBytes() / 1024;
     shell.printfln(" FS used/free: %lu KB / %lu KB", FSused, FStotal() - FSused);
     shell.printfln(" Flash size: %lu KB", ESP.getFlashChipSize() / 1024);
     if (PSram()) {
+#ifndef EMSESP_STANDALONE
+        shell.printfln(" PSRAM size/free/largest block: %lu KB / %lu KB / %u KB",
+                       PSram(),
+                       ESP.getFreePsram() / 1024,
+                       heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM) / 1024);
+#else
         shell.printfln(" PSRAM size/free: %lu KB / %lu KB", PSram(), ESP.getFreePsram() / 1024);
+#endif
     } else {
         shell.printfln(" PSRAM: not available");
     }
@@ -1227,7 +1253,7 @@ bool System::check_restore() {
 #ifndef EMSESP_STANDALONE
     File new_file = LittleFS.open(TEMP_FILENAME_PATH);
     if (new_file) {
-        JsonDocument         jsonDocument;
+        JsonDocument         jsonDocument(PSRAM_DOC);
         DeserializationError error = deserializeJson(jsonDocument, new_file);
         if (error == DeserializationError::Ok && jsonDocument.is<JsonObject>()) {
             JsonObject input = jsonDocument.as<JsonObject>();
@@ -1591,7 +1617,7 @@ void System::exportSettings(const std::string & type, const char * filename, Jso
     File settingsFile = LittleFS.open(filename);
     if (settingsFile) {
         {
-            JsonDocument         jsonDocument;
+            JsonDocument         jsonDocument(PSRAM_DOC);
             DeserializationError error = deserializeJson(jsonDocument, settingsFile);
             settingsFile.close(); // close early, we no longer need the file
             if (error || !jsonDocument.is<JsonObject>()) {
@@ -1650,7 +1676,7 @@ void System::exportSystemBackup(JsonObject output) {
     // special case for custom support
     File file = LittleFS.open(EMSESP_CUSTOMSUPPORT_FILE, "r");
     if (file) {
-        JsonDocument         jsonDocument;
+        JsonDocument         jsonDocument(PSRAM_DOC);
         DeserializationError error = deserializeJson(jsonDocument, file);
         file.close(); // close early, we no longer need the file
         if (!error && jsonDocument.is<JsonObject>()) {
@@ -1859,7 +1885,7 @@ bool System::get_value_info(JsonObject output, const char * cmd) {
     }
 
     // fetch all the data from the system in a different json
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
     JsonObject   root = doc.to<JsonObject>();
     (void)command_info("", 0, root);
 
@@ -1954,7 +1980,7 @@ std::string System::get_metrics_prometheus() {
     result.reserve(16000);
 
     // get system data
-    JsonDocument doc;
+    JsonDocument doc(PSRAM_DOC);
     JsonObject   root = doc.to<JsonObject>();
     (void)command_info("", 0, root);
 
@@ -2233,6 +2259,7 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
     node["sdk"]             = ESP.getSdkVersion();
     node["freeMem"]         = getHeapMem();
     node["maxAlloc"]        = getMaxAllocMem();
+    node["minFree"]         = getMinFreeMem(); // all-time low watermark of internal heap
     node["freeCaps"]        = heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1024;      // includes heap and psram
     node["usedApp"]         = EMSESP::system_.appUsed();                            // kilobytes
     node["freeApp"]         = EMSESP::system_.appFree();                            // kilobytes
