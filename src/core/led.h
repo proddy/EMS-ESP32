@@ -22,8 +22,6 @@
 #include <Arduino.h>
 #include <uuid/log.h>
 
-#include "emsesp_common.h"
-
 namespace emsesp {
 
 class LED {
