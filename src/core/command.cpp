@@ -527,8 +527,9 @@ Command::CmdFunction * Command::find_command(const uint8_t device_type, const ui
         return nullptr;
     }
 
+    const std::string cmd_lower = Helpers::toLower(cmd);
     for (auto & cf : cmdfunctions_) {
-        if (Helpers::toLower(cmd) == Helpers::toLower(cf.cmd_) && (cf.device_type_ == device_type) && (!device_id || cf.device_id_ == device_id)
+        if (cmd_lower == Helpers::toLower(cf.cmd_) && (cf.device_type_ == device_type) && (!device_id || cf.device_id_ == device_id)
             && (cf.device_type_ < EMSdevice::DeviceType::BOILER || flag == CommandFlag::CMD_FLAG_DEFAULT || (flag & 0x3F) == (cf.flags_ & 0x3F))) {
             return &cf;
         }
@@ -554,9 +555,10 @@ void Command::erase_command(const uint8_t device_type, const char * cmd, uint8_t
     if ((cmd == nullptr) || (strlen(cmd) == 0) || (cmdfunctions_.empty())) {
         return;
     }
-    auto it = cmdfunctions_.begin();
+    const std::string cmd_lower = Helpers::toLower(cmd);
+    auto              it        = cmdfunctions_.begin();
     for (auto const & cf : cmdfunctions_) {
-        if (Helpers::toLower(cmd) == Helpers::toLower(cf.cmd_) && (cf.device_type_ == device_type) && ((flag & 0x3F) == (cf.flags_ & 0x3F))) {
+        if (cmd_lower == Helpers::toLower(cf.cmd_) && (cf.device_type_ == device_type) && ((flag & 0x3F) == (cf.flags_ & 0x3F))) {
             cmdfunctions_.erase(it);
             return;
         }
