@@ -89,19 +89,19 @@ class Heatpump : public EMSdevice {
     uint32_t elGenHeat_;
     uint32_t elGenDhw_;
 
-    void process_HPMonitor1(std::shared_ptr<const Telegram> telegram);
-    void process_HPMonitor2(std::shared_ptr<const Telegram> telegram);
-    void process_HPSettings(std::shared_ptr<const Telegram> telegram);
-    void process_HPFunctionTest(std::shared_ptr<const Telegram> telegram);
-    void process_HPTemperature(std::shared_ptr<const Telegram> telegram);
-    void process_HPFlowTemp(std::shared_ptr<const Telegram> telegram);
-    void process_HPComp(std::shared_ptr<const Telegram> telegram);
-    void process_HpEnergy(std::shared_ptr<const Telegram> telegram);
-    void process_HpMeters(std::shared_ptr<const Telegram> telegram);
-    void process_HpStarts(std::shared_ptr<const Telegram> telegram);
-    void process_HpEnergy1(std::shared_ptr<const Telegram> telegram);
-    void process_HpEnergy2(std::shared_ptr<const Telegram> telegram);
-    void process_HpPower(std::shared_ptr<const Telegram> telegram);
+    void process_HPMonitor1(const std::shared_ptr<const Telegram> & telegram);
+    void process_HPMonitor2(const std::shared_ptr<const Telegram> & telegram);
+    void process_HPSettings(const std::shared_ptr<const Telegram> & telegram);
+    void process_HPFunctionTest(const std::shared_ptr<const Telegram> & telegram);
+    void process_HPTemperature(const std::shared_ptr<const Telegram> & telegram);
+    void process_HPFlowTemp(const std::shared_ptr<const Telegram> & telegram);
+    void process_HPComp(const std::shared_ptr<const Telegram> & telegram);
+    void process_HpEnergy(const std::shared_ptr<const Telegram> & telegram);
+    void process_HpMeters(const std::shared_ptr<const Telegram> & telegram);
+    void process_HpStarts(const std::shared_ptr<const Telegram> & telegram);
+    void process_HpEnergy1(const std::shared_ptr<const Telegram> & telegram);
+    void process_HpEnergy2(const std::shared_ptr<const Telegram> & telegram);
+    void process_HpPower(const std::shared_ptr<const Telegram> & telegram);
 
     bool set_controlStrategy(const char * value, const int8_t id);
     bool set_lowNoiseMode(const char * value, const int8_t id);

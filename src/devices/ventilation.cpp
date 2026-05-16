@@ -51,12 +51,12 @@ Ventilation::Ventilation(uint8_t device_type, uint8_t device_id, uint8_t product
 }
 
 // message 0x055C, data: 08 01 11 17
-void Ventilation::process_SetMessage(std::shared_ptr<const Telegram> telegram) {
+void Ventilation::process_SetMessage(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, bypass_, 1);
 }
 
 // message 583
-void Ventilation::process_MonitorMessage(std::shared_ptr<const Telegram> telegram) {
+void Ventilation::process_MonitorMessage(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, outEx_, 0);     // Fortluft
     has_update(telegram, inEx_, 7);      // Abluft
     has_update(telegram, outFresh_, 13); // Außenluft
@@ -69,25 +69,25 @@ void Ventilation::process_MonitorMessage(std::shared_ptr<const Telegram> telegra
 
 // message 585 26 bytes long
 // Data: 46 46 00 00 00 77 00 03 F4 09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-void Ventilation::process_BlowerMessage(std::shared_ptr<const Telegram> telegram) {
+void Ventilation::process_BlowerMessage(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, ventOutSpeed_, 0);
     has_update(telegram, ventInSpeed_, 1);
 }
 
 // message 0x05D9, data: 03 9C FF
-void Ventilation::process_VOCMessage(std::shared_ptr<const Telegram> telegram) {
+void Ventilation::process_VOCMessage(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, voc_, 0);
     has_update(telegram, humidity_, 2);
 }
 
 // message 0x56B
 // level 0=0, 1=1, 2=2, 3=3, 4= 4, Auto 0xFF, demand 5, sleep 6, intense 7, bypass-8, party 9, fireplace 0A
-void Ventilation::process_ModeMessage(std::shared_ptr<const Telegram> telegram) {
+void Ventilation::process_ModeMessage(const std::shared_ptr<const Telegram> & telegram) {
     has_enumupdate(telegram, mode_, 0, -1);
 }
 
 // message 0x0587, data: 00 00 64 00 64 0A 00 01 54 01 00 01 00 00 00 46 00 00 00 02 00 A3 00 A3
-void Ventilation::process_BypassMessage(std::shared_ptr<const Telegram> telegram) {
+void Ventilation::process_BypassMessage(const std::shared_ptr<const Telegram> & telegram) {
     // has_update(telegram, bypass_closing, 0);
     // has_update(telegram, bypass_opening, 1);
 }

@@ -701,7 +701,7 @@ void EMSESP::publish_sensor_values(const bool time, const bool force) {
 }
 
 // MQTT publish a telegram as raw data to the topic 'response'
-void EMSESP::publish_response(std::shared_ptr<const Telegram> telegram) {
+void EMSESP::publish_response(const std::shared_ptr<const Telegram> & telegram) {
     static char *   buffer = nullptr;
     static uint8_t  offset = 0;
     static uint16_t type   = 0;
@@ -815,7 +815,7 @@ std::string EMSESP::device_tostring(const uint8_t device_id) {
 
 // create a pretty print telegram as a text string
 // e.g. Boiler(0x08) -> Me(0x0B), Version(0x02), data: 7B 06 01 00 00 00 00 00 00 04 (offset 1)
-std::string EMSESP::pretty_telegram(std::shared_ptr<const Telegram> telegram) {
+std::string EMSESP::pretty_telegram(const std::shared_ptr<const Telegram> & telegram) {
     uint8_t src    = telegram->src & 0x7F;
     uint8_t dest   = telegram->dest & 0x7F;
     uint8_t offset = telegram->offset;
@@ -975,7 +975,7 @@ std::string EMSESP::pretty_telegram(std::shared_ptr<const Telegram> telegram) {
  * e.g. in example above 1st byte = x0B = b1011 so we have deviceIDs 0x08, 0x09, 0x011
  * and 2nd byte = x80 = b1000 b0000 = deviceID 0x17
  */
-void EMSESP::process_UBADevices(std::shared_ptr<const Telegram> telegram) {
+void EMSESP::process_UBADevices(const std::shared_ptr<const Telegram> & telegram) {
     // exit it length is incorrect (must be 13 or 15 bytes long)
     if (telegram->message_length > 15) {
         return;
@@ -1001,7 +1001,7 @@ void EMSESP::process_UBADevices(std::shared_ptr<const Telegram> telegram) {
 }
 
 // read deviceName from telegram 0x01 offset 27 and set it to custom name
-void EMSESP::process_deviceName(std::shared_ptr<const Telegram> telegram) {
+void EMSESP::process_deviceName(const std::shared_ptr<const Telegram> & telegram) {
     // exit if only part of name fields
     if (telegram->offset > 27 || (telegram->offset + telegram->message_length) < 29) {
         return;
@@ -1029,7 +1029,7 @@ void EMSESP::process_deviceName(std::shared_ptr<const Telegram> telegram) {
 
 // process the Version telegram (type 0x02), which is a common type
 // e.g. 09 0B 02 00 PP V1 V2
-void EMSESP::process_version(std::shared_ptr<const Telegram> telegram) {
+void EMSESP::process_version(const std::shared_ptr<const Telegram> & telegram) {
     // check for valid telegram, just in case
     if (telegram->offset != 0) {
         return;
@@ -1087,7 +1087,7 @@ void EMSESP::process_version(std::shared_ptr<const Telegram> telegram) {
 // but only process if the telegram is sent to us or it's a broadcast (dest=0x00=all)
 // We also check for common telegram types, like the Version(0x02)
 // returns false if there are none found
-bool EMSESP::process_telegram(std::shared_ptr<const Telegram> telegram) {
+bool EMSESP::process_telegram(const std::shared_ptr<const Telegram> & telegram) {
     // if watching or reading...
     if ((telegram->type_id == read_id_ || telegram->type_id == response_id_) && (telegram->dest == EMSbus::ems_bus_id())) {
         if (telegram->type_id == response_id_) {

@@ -98,7 +98,7 @@ class Command {
         }
     };
 
-    static std::vector<CmdFunction, AllocatorPSRAM<CmdFunction>> commands() {
+    static const std::vector<CmdFunction, AllocatorPSRAM<CmdFunction>> & commands() {
         return cmdfunctions_;
     }
 

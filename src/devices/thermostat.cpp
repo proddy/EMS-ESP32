@@ -26,6 +26,12 @@ uuid::log::Logger Thermostat::logger_{F_(thermostat), uuid::log::Facility::CONSO
 
 Thermostat::Thermostat(uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, const char * name, uint8_t flags, uint8_t brand)
     : EMSdevice(device_type, device_id, product_id, version, name, flags, brand) {
+    // pre-size containers; max in-code counts are ~78 telegrams / ~332 values
+    // but real per-instance counts after flag-discriminated branches are
+    // ~40-60 telegrams / ~150-220 values. Reserve generously to avoid realloc.
+    reserve_telegram_functions(64);
+    reserve_device_values(220);
+
     // RF remote sensor seen at 0x40, maybe this is also for different hc with id 0x40 - 0x47? emsesp.cpp maps only 0x40
     if (device_id >= 0x40 && device_id <= 0x47) {
         register_telegram_type(0x0435, "RFTemp", false, MAKE_PF_CB(process_RemoteTemp));
@@ -288,7 +294,7 @@ std::shared_ptr<Thermostat::HeatingCircuit> Thermostat::heating_circuit(const in
 // determine which heating circuit the type ID is referring too
 // returns pointer to the HeatingCircuit or nullptr if it can't be found
 // if its a new one, the heating circuit object will be created and also the fetch flags set
-std::shared_ptr<Thermostat::HeatingCircuit> Thermostat::heating_circuit(std::shared_ptr<const Telegram> telegram) {
+std::shared_ptr<Thermostat::HeatingCircuit> Thermostat::heating_circuit(const std::shared_ptr<const Telegram> & telegram) {
     // do not create a hc on empty messages
     if (telegram->message_length == 0) {
         return nullptr;
@@ -641,7 +647,7 @@ std::shared_ptr<Thermostat::DhwCircuit> Thermostat::dhw_circuit(const uint8_t of
 
 // type 0xB1 - data from the RC10 thermostat (0x17)
 // Data: 04 23 00 BA 00 00 00 BA
-void Thermostat::process_RC10Monitor(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC10Monitor(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -658,7 +664,7 @@ void Thermostat::process_RC10Monitor(std::shared_ptr<const Telegram> telegram) {
 
 // type 0xB0 - for reading the mode from the RC10 thermostat (0x17)
 // Data: 00 FF 00 1C 20 08 01
-void Thermostat::process_RC10Set(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC10Set(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -675,7 +681,7 @@ void Thermostat::process_RC10Set(std::shared_ptr<const Telegram> telegram) {
 
 // type 0xB2, mode setting Data: 04 00
 // not used, we read mode from monitor 0xB1
-void Thermostat::process_RC10Set_2(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC10Set_2(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -687,7 +693,7 @@ void Thermostat::process_RC10Set_2(std::shared_ptr<const Telegram> telegram) {
 
 // 0xA8 - for reading the mode from the RC20 thermostat (0x17)
 // RC20Set(0xA8), data: 01 00 FF F6 01 06 00 01 0D 01 00 FF FF 01 02 02 02 00 00 05 1E 05 1E 02 1C 00 FF 00 00 26 02
-void Thermostat::process_RC20Set(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC20Set(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -700,7 +706,7 @@ void Thermostat::process_RC20Set(std::shared_ptr<const Telegram> telegram) {
 
 // 0x90 - for reading curve temperature from the RC20 thermostat (0x17)
 //
-void Thermostat::process_RC20Temp(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC20Temp(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -716,7 +722,7 @@ void Thermostat::process_RC20Temp(std::shared_ptr<const Telegram> telegram) {
 // data: 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 (offset 27)
 // data: E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 90 E7 (offset 54)
 // data: 90 E7 90 01 00 00 01 01 00 01 01 00 01 01 00 01 01 00 00 (offset 81)
-void Thermostat::process_RC20Timer(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC20Timer(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -744,7 +750,7 @@ void Thermostat::process_RC20Timer(std::shared_ptr<const Telegram> telegram) {
 // type 0xAE - data from the RC20 thermostat (0x17) - not for RC20's
 // 17 00 AE 00 80 12 2E 00 D0 00 00 64 (#data=8)
 // https://github.com/emsesp/EMS-ESP/issues/361
-void Thermostat::process_RC20Monitor_2(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC20Monitor_2(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -763,7 +769,7 @@ void Thermostat::process_RC20Monitor_2(std::shared_ptr<const Telegram> telegram)
 // offset: 01-nighttemp, 02-daytemp, 03-mode, 0B-program(1-9), 0D-setpoint_roomtemp(temporary)
 // 17 00 AD 00 01 27 29 01 4B 05 01 FF 28 19 0A 02 00 00
 // RC25(0x17) -> All(0x00), ?(0xAD), data: 01 27 2D 00 44 05 01 FF 28 19 0A 07 00 00 F6 12 5A 11 00 28 05 05 00
-void Thermostat::process_RC20Set_2(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC20Set_2(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -783,14 +789,14 @@ void Thermostat::process_RC20Set_2(std::shared_ptr<const Telegram> telegram) {
 }
 
 // 0xAF - for reading the roomtemperature from the RC20/ES72 thermostat (0x18, 0x19, ..)
-void Thermostat::process_RC20Remote(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC20Remote(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, tempsensor1_, 0);
 }
 
 // 0x42B - for reading the roomtemperature from the RC100H remote thermostat (0x38, 0x39, ..)
 // e.g. "38 10 FF 00 03 2B 00 D1 08 2A 01"
 // also RF temp from 0x435
-void Thermostat::process_RemoteTemp(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RemoteTemp(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, tempsensor1_, 0);
     if (telegram->type_id >= 0x435) {
         return;
@@ -804,7 +810,7 @@ void Thermostat::process_RemoteTemp(std::shared_ptr<const Telegram> telegram) {
 
 // 0x47B, ff - for reading humidity from the RC100H remote thermostat (0x38, 0x39, ..)
 // e.g. "38 10 FF 00 03 7B 08 24 00 4B"
-void Thermostat::process_RemoteHumidity(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RemoteHumidity(const std::shared_ptr<const Telegram> & telegram) {
     // has_update(telegram, dewtemperature_, 0); // this is int8
     has_update(telegram, humidity_, 1);
     has_update(telegram, dewtemperature_, 2); // this is int16
@@ -821,17 +827,17 @@ void Thermostat::process_RemoteHumidity(std::shared_ptr<const Telegram> telegram
 
 // 0x273 - for reading temperaturcorrection from the RC100H remote thermostat (0x38, 0x39, ..)
 // Thermostat(0x38) -> Me(0x0B), RemoteCorrection(0x0273), data: 0A 00
-void Thermostat::process_RemoteCorrection(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RemoteCorrection(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, ibaCalIntTemperature_, 0);
 }
 
 // 0xA6A - for reading battery from the RC100H remote thermostat (0x38, 0x39, ..)
-void Thermostat::process_RemoteBattery(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RemoteBattery(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, battery_, 1);
 }
 
 // type 0x0165, ff
-void Thermostat::process_JunkersSet(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_JunkersSet(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -859,7 +865,7 @@ void Thermostat::process_JunkersSet(std::shared_ptr<const Telegram> telegram) {
 }
 
 // type 0x0179, ff for Junkers_OLD
-void Thermostat::process_JunkersSet2(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_JunkersSet2(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -879,12 +885,12 @@ void Thermostat::process_JunkersSet2(std::shared_ptr<const Telegram> telegram) {
 }
 
 // type 0x123 - FB10 Junkers remote
-void Thermostat::process_JunkersRemoteMonitor(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_JunkersRemoteMonitor(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, tempsensor1_, 0); // roomTemp from remote
 }
 
 // type 0xA3 - for external temp settings from the the RC* thermostats (e.g. RC35)
-void Thermostat::process_RCOutdoorTemp(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RCOutdoorTemp(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, dampedoutdoortemp_, 0);
     has_update(telegram, tempsensor1_, 3); // sensor 1 - is * 10
     has_update(telegram, tempsensor2_, 5); // sensor 2 - is * 10
@@ -893,7 +899,7 @@ void Thermostat::process_RCOutdoorTemp(std::shared_ptr<const Telegram> telegram)
 // 0x91 - data from the RC20 thermostat (0x17) - 15 bytes long
 // RC20Monitor(0x91), data: 90 2A 00 D5 1A 00 00 05 00 5A 04 00 D6 00
 // offset 8: setburnpower to boiler, offset 9: setflowtemp to boiler (thermostat: targetflowtemp) send via 0x1A
-void Thermostat::process_RC20Monitor(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC20Monitor(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -906,7 +912,7 @@ void Thermostat::process_RC20Monitor(std::shared_ptr<const Telegram> telegram) {
 }
 
 // type 0x0A - data from the Nefit Easy/TC100 thermostat (0x18) - 31 bytes long
-void Thermostat::process_EasyMonitor(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_EasyMonitor(const std::shared_ptr<const Telegram> & telegram) {
     monitor_typeids[0] = telegram->type_id;
     auto hc            = heating_circuit(telegram);
     if (hc == nullptr) {
@@ -936,7 +942,7 @@ void Thermostat::process_EasyMonitor(std::shared_ptr<const Telegram> telegram) {
 }
 
 // Settings Parameters - 0xA5 - RC30_1
-void Thermostat::process_IBASettings(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_IBASettings(const std::shared_ptr<const Telegram> & telegram) {
     // 22 - display line on RC35
 
     // display on Thermostat: 0 int. temp, 1 int. setpoint, 2 ext. temp., 3 burner temp., 4 ww temp, 5 functioning mode, 6 time, 7 data, 8 smoke temp
@@ -950,7 +956,7 @@ void Thermostat::process_IBASettings(std::shared_ptr<const Telegram> telegram) {
 }
 
 // Settings WW 0x37 - RC35
-void Thermostat::process_RC35wwSettings(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC35wwSettings(const std::shared_ptr<const Telegram> & telegram) {
     auto dhw = dhw_circuit(0, true);
     has_bitupdate(telegram, dhw->wwProgMode_, 0, 0); // 0-like hc, 0xFF own prog
     has_bitupdate(telegram, dhw->wwCircProg_, 1, 0); // 0-like hc, 0xFF own prog
@@ -964,7 +970,7 @@ void Thermostat::process_RC35wwSettings(std::shared_ptr<const Telegram> telegram
 }
 
 // Settings WW 0x3A - RC30
-void Thermostat::process_RC30wwSettings(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC30wwSettings(const std::shared_ptr<const Telegram> & telegram) {
     auto dhw = dhw_circuit(0, true);
     has_update(telegram, dhw->wwMode_, 0);         // 0-on, 1-off, 2-auto
     has_update(telegram, dhw->wwWhenModeOff_, 1);  // 0-off, 0xFF on
@@ -974,7 +980,7 @@ void Thermostat::process_RC30wwSettings(std::shared_ptr<const Telegram> telegram
 }
 
 // type 0x38 (ww) and 0x39 (circ)
-void Thermostat::process_RC35wwTimer(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC35wwTimer(const std::shared_ptr<const Telegram> & telegram) {
     auto dhw = dhw_circuit(0, true);
     if ((telegram->message_length == 2 && telegram->offset < 83 && !(telegram->offset & 1))
         || (!telegram->offset && telegram->type_id == 0x38 && !strlen(dhw->wwSwitchTime_) && telegram->message_length > 1)
@@ -1037,7 +1043,7 @@ void Thermostat::process_RC35wwTimer(std::shared_ptr<const Telegram> telegram) {
 }
 
 // type 0x6F - FR10/FR50/FR100/FR110/FR120 Junkers
-void Thermostat::process_JunkersMonitor(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_JunkersMonitor(const std::shared_ptr<const Telegram> & telegram) {
     // ignore single byte telegram messages
     if (telegram->message_length <= 1) {
         return;
@@ -1062,7 +1068,7 @@ void Thermostat::process_JunkersMonitor(std::shared_ptr<const Telegram> telegram
 
 // 0xBB Heatpump optimization
 // ?(0xBB), data: 00 00 00 00 00 00 00 00 00 00 00 FF 02 0F 1E 0B 1A 00 14 03
-void Thermostat::process_HybridSettings(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_HybridSettings(const std::shared_ptr<const Telegram> & telegram) {
     has_enumupdate(telegram, hybridStrategy_, 12, 1); // cost = 2, temperature = 3, mix = 4
     has_update(telegram, switchOverTemp_, 13);        // full degrees
     has_update(telegram, energyCostRatio_, 14);       // is *10
@@ -1073,18 +1079,18 @@ void Thermostat::process_HybridSettings(std::shared_ptr<const Telegram> telegram
 }
 
 // 0x23E PV settings
-void Thermostat::process_PVSettings(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_PVSettings(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, pvRaiseHeat_, 0);
     has_update(telegram, pvEnableWw_, 3);
     has_update(telegram, pvLowerCool_, 5);
 }
 
 // 0x16E Absent settings - hc or dhw or device_data? #1957
-void Thermostat::process_Absent(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_Absent(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, absent_, 0);
 }
 
-void Thermostat::process_JunkersSetMixer(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_JunkersSetMixer(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -1093,13 +1099,13 @@ void Thermostat::process_JunkersSetMixer(std::shared_ptr<const Telegram> telegra
 }
 
 // Thermostat(0x10) -> All(0x00), ?(0x01D3), data: 01 00 00
-void Thermostat::process_JunkersWW(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_JunkersWW(const std::shared_ptr<const Telegram> & telegram) {
     auto dhw = dhw_circuit(0, true);
     has_bitupdate(telegram, dhw->wwCharge_, 0, 3);
 }
 
 // 0x11E
-void Thermostat::process_JunkersDisp(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_JunkersDisp(const std::shared_ptr<const Telegram> & telegram) {
     has_enumupdate(telegram, ibaMainDisplay_, 1, 1);
     has_update(telegram, ibaLanguage_, 3);
     has_update(telegram, ibaMinExtTemperature_, 16);
@@ -1107,7 +1113,7 @@ void Thermostat::process_JunkersDisp(std::shared_ptr<const Telegram> telegram) {
 }
 
 // type 0x02A5 - data from Worchester CRF200
-void Thermostat::process_CRFMonitor(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_CRFMonitor(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -1123,7 +1129,7 @@ void Thermostat::process_CRFMonitor(std::shared_ptr<const Telegram> telegram) {
 }
 
 // type 0x02A5 - data from CR11
-void Thermostat::process_CR11Monitor(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_CR11Monitor(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -1144,7 +1150,7 @@ void Thermostat::process_CR11Monitor(std::shared_ptr<const Telegram> telegram) {
 
 // type 0x02A5 - data from the Nefit RC1010/3000 thermostat (0x18) and RC300/310s on 0x10
 // Rx: 10 0B FF 00 01 A5 80 00 01 30 23 00 30 28 01 E7 03 03 01 01 E7 02 33 00 00 11 01 03 FF FF 00 04
-void Thermostat::process_RC300Monitor(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC300Monitor(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -1185,7 +1191,7 @@ void Thermostat::process_RC300Monitor(std::shared_ptr<const Telegram> telegram) 
 
 // type 0x02B9 EMS+ for reading from RC300/RC310 thermostat
 // Thermostat(0x10) -> Me(0x0B), RC300Set(0x2B9), data: FF 2E 2A 26 1E 02 4E FF FF 00 1C 01 E1 20 01 0F 05 00 00 02 1F
-void Thermostat::process_RC300Set(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC300Set(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr || model() == EMSdevice::EMS_DEVICE_FLAG_CR11) {
         return;
@@ -1236,7 +1242,7 @@ void Thermostat::process_RC300Set(std::shared_ptr<const Telegram> telegram) {
 
 // types 0x2AF ff
 // RC300Summer(0x02AF), data: 00 28 00 00 3C 26 00 00 19 0F 00 (from a heatpump)
-void Thermostat::process_RC300Summer(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC300Summer(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -1266,7 +1272,7 @@ void Thermostat::process_RC300Summer(std::shared_ptr<const Telegram> telegram) {
 
 // types 0x471 ff summer2_typeids
 // (0x473), data: 00 11 04 01 01 1C 08 04
-void Thermostat::process_RC300Summer2(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC300Summer2(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         // telegram 0x470 see https://github.com/emsesp/EMS-ESP32/issues/2686
@@ -1295,7 +1301,7 @@ void Thermostat::process_RC300Summer2(std::shared_ptr<const Telegram> telegram) 
 
 // types 0x29B ff
 // Thermostat(0x10) -> Me(0x0B), RC300Curves(0x29B), data: 01 01 00 FF FF 01 05 30 52
-void Thermostat::process_RC300Curve(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC300Curve(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -1315,7 +1321,7 @@ void Thermostat::process_RC300Curve(std::shared_ptr<const Telegram> telegram) {
 }
 
 // types 0x31B
-void Thermostat::process_RC300WWtemp(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC300WWtemp(const std::shared_ptr<const Telegram> & telegram) {
     auto dhw = dhw_circuit(0, true);
     has_update(telegram, dhw->wwSetTemp_, 0);
     has_update(telegram, dhw->wwSetTempLow_, 1);
@@ -1324,7 +1330,7 @@ void Thermostat::process_RC300WWtemp(std::shared_ptr<const Telegram> telegram) {
 // type 02F5
 // RC300WWmode(0x2F5), data: 01 FF 04 00 00 00 08 05 00 08 04 00 00 00 00 00 00 00 00 00 01
 // RC300WWmode(0x2F6), data: 02 FF 04 00 00 00 08 05 00 08 04 00 00 00 00 00 00 00 00 00 01
-void Thermostat::process_RC300WWmode(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC300WWmode(const std::shared_ptr<const Telegram> & telegram) {
     uint8_t circuit = 0;
     telegram->read_value(circuit, 0); // 00-no circuit, 01-boiler, 02-mixer
     auto dhw = dhw_circuit(telegram->type_id - 0x2F5, circuit != 0);
@@ -1358,7 +1364,7 @@ void Thermostat::process_RC300WWmode(std::shared_ptr<const Telegram> telegram) {
 
 // types 0x31D and 0x31E
 // RC300WWmode2(0x31D), data: 00 00 09 07
-void Thermostat::process_RC300WWmode2(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC300WWmode2(const std::shared_ptr<const Telegram> & telegram) {
     auto dhw = dhw_circuit(telegram->type_id - 0x31D);
     if (dhw == nullptr) {
         return;
@@ -1372,13 +1378,13 @@ void Thermostat::process_RC300WWmode2(std::shared_ptr<const Telegram> telegram) 
 }
 
 // 0x23A damped outdoor temp
-void Thermostat::process_RC300OutdoorTemp(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC300OutdoorTemp(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, dampedoutdoortemp2_, 0); // is *10
 }
 
 // 0x240 RC300 parameter, 0x0241 for CW100, see https://github.com/emsesp/EMS-ESP32/issues/2290
 // RC300Settings(0x240), data: 26 00 03 00 00 00 00 00 FF 01 F6 06 FF 00 00 00 00 00 00 00 00 00 00
-void Thermostat::process_RC300Settings(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC300Settings(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, ibaCalIntTemperature_, 7);
     has_update(telegram, ibaDamping_, 8);
     has_enumupdate(telegram, ibaBuildingType_, 9, 1); // 1=light, 2=medium, 3=heavy
@@ -1387,7 +1393,7 @@ void Thermostat::process_RC300Settings(std::shared_ptr<const Telegram> telegram)
 }
 
 // 0x2CC - e.g. wwprio for  RC310 hcx parameter
-void Thermostat::process_RC300Set2(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC300Set2(const std::shared_ptr<const Telegram> & telegram) {
     // typeids are not in a row.  hc:0x2CC, hc2: 0x2CE  for RC310
     // telegram is either offset 3 with data length of 1 and values 0/1 (radiators) - 10 0B FF 03 01 CC 01 F6
     // or offset 0 with data length of 6 bytes - offset 3 values are 0x00 or 0xFF - 10 0B FF 00 01 CE FF 13 0A FF 1E 00 20
@@ -1400,14 +1406,14 @@ void Thermostat::process_RC300Set2(std::shared_ptr<const Telegram> telegram) {
 }
 
 // 0x267 RC300 floordrying
-void Thermostat::process_RC300Floordry(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC300Floordry(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, floordrystatus_, 0);
     has_update(telegram, floordrytemp_, 1);
 }
 
 // 0x269 - 0x26D  RC300 EMS+ holidaymodes 1 to 5
 // special case R3000 only date in 0x269, CR50 only 0x043F
-void Thermostat::process_RC300Holiday(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC300Holiday(const std::shared_ptr<const Telegram> & telegram) {
     if (telegram->offset || telegram->message_length < 6) {
         return;
     }
@@ -1425,7 +1431,7 @@ void Thermostat::process_RC300Holiday(std::shared_ptr<const Telegram> telegram) 
 }
 
 // https://github.com/emsesp/EMS-ESP32/issues/2735#issuecomment-3520124647
-void Thermostat::process_PID(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_PID(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -1445,7 +1451,7 @@ void Thermostat::process_PID(std::shared_ptr<const Telegram> telegram) {
 
 // 0x291 ff.  HP mode
 // thermostat(0x10) -W-> Me(0x0B), HPMode(0x0291), data: 01 00 00 03 FF 00
-void Thermostat::process_HPMode(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_HPMode(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -1455,7 +1461,7 @@ void Thermostat::process_HPMode(std::shared_ptr<const Telegram> telegram) {
 }
 
 // 0x467 ff HP settings
-void Thermostat::process_HPSet(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_HPSet(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -1467,7 +1473,7 @@ void Thermostat::process_HPSet(std::shared_ptr<const Telegram> telegram) {
 
 // type 0x41 - data from the RC30 thermostat(0x10) - 14 bytes long
 // RC30Monitor(0x41), data: 80 20 00 AC 00 00 00 02 00 05 09 00 AC 00
-void Thermostat::process_RC30Monitor(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC30Monitor(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -1482,7 +1488,7 @@ void Thermostat::process_RC30Monitor(std::shared_ptr<const Telegram> telegram) {
 // type 0xA7 - for reading the mode from the RC30 thermostat (0x10) and all the installation settings
 // RC30Set(0xA7), data: 01 00 FF F6 01 06 00 01 0D 00 00 FF FF 01 02 02 02 00 00 05 1F 05 1F 01 0E 00 FF
 // RC30Set(0xA7), data: 00 00 20 02 (offset 27)
-void Thermostat::process_RC30Set(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC30Set(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -1505,7 +1511,7 @@ void Thermostat::process_RC30Set(std::shared_ptr<const Telegram> telegram) {
 
 // type 0x40 (HC1) - for reading the operating mode from the RC30 thermostat (0x10)
 // RC30Temp(0x40), data: 01 01 02 20 24 28 2A 1E 0E 00 01 5A 32 05 4B 2D 00 28 00 3C FF 11 00 05 00
-void Thermostat::process_RC30Temp(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC30Temp(const std::shared_ptr<const Telegram> & telegram) {
     // check to see we have a valid type. heating: 1 radiator, 2 convectors, 3 floors
     if (telegram->offset == 0 && telegram->message_data[0] == 0x00) {
         return;
@@ -1526,7 +1532,7 @@ void Thermostat::process_RC30Temp(std::shared_ptr<const Telegram> telegram) {
 }
 
 // type 0x3E (HC1), 0x48 (HC2), 0x52 (HC3), 0x5C (HC4) - data from the RC35 thermostat (0x10) - 16 bytes
-void Thermostat::process_RC35Monitor(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC35Monitor(const std::shared_ptr<const Telegram> & telegram) {
     // Check if heatingciruit is active, see https://github.com/emsesp/EMS-ESP32/issues/786
     // roomtemp is measured value or 7D00 on active hc's, zero on inactive
     uint16_t active = 0;
@@ -1552,7 +1558,7 @@ void Thermostat::process_RC35Monitor(std::shared_ptr<const Telegram> telegram) {
 }
 
 // type 0x3D (HC1), 0x47 (HC2), 0x51 (HC3), 0x5B (HC4) - Working Mode Heating - for reading the mode from the RC35 thermostat (0x10)
-void Thermostat::process_RC35Set(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC35Set(const std::shared_ptr<const Telegram> & telegram) {
     // check to see we have a valid type. heating: 1 radiator, 2 convectors, 3 floors, 4 room supply
     if (telegram->offset == 0 && telegram->message_data[0] == 0x00) {
         return;
@@ -1600,7 +1606,7 @@ void Thermostat::process_RC35Set(std::shared_ptr<const Telegram> telegram) {
 }
 
 // type 0x3F (HC1), 0x49 (HC2), 0x53 (HC3), 0x5D (HC4) - timer setting
-void Thermostat::process_RC35Timer(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC35Timer(const std::shared_ptr<const Telegram> & telegram) {
     auto hc = heating_circuit(telegram);
     if (hc == nullptr) {
         return;
@@ -1671,7 +1677,7 @@ void Thermostat::process_RC35Timer(std::shared_ptr<const Telegram> telegram) {
 }
 
 // type 0x9A (HC1)
-void Thermostat::process_RC30Vacation(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RC30Vacation(const std::shared_ptr<const Telegram> & telegram) {
     if ((telegram->offset + telegram->message_length) > 57) {
         return;
     }
@@ -1695,7 +1701,7 @@ void Thermostat::process_RC30Vacation(std::shared_ptr<const Telegram> telegram) 
 }
 
 // process_RCTime - type 0x06 - date and time from a thermostat - 12 or 15 bytes long
-void Thermostat::process_RCTime(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RCTime(const std::shared_ptr<const Telegram> & telegram) {
     if (telegram->offset > 0 || telegram->message_length < 8) {
         return;
     }
@@ -1779,7 +1785,7 @@ void Thermostat::process_RCTime(std::shared_ptr<const Telegram> telegram) {
 // process_RCError - type 0xA2 - error message - 14 bytes long
 // 10 00 A2 00 41 32 32 03 30 00 02 00 00 00 00 00 00 02 CRC
 //              A  2  2  816
-void Thermostat::process_RCError(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RCError(const std::shared_ptr<const Telegram> & telegram) {
     if (telegram->offset > 0 || telegram->message_length < 5) {
         return;
     }
@@ -1796,7 +1802,7 @@ void Thermostat::process_RCError(std::shared_ptr<const Telegram> telegram) {
 // 0x12 and 0x13 error log
 // RCErrorMessage(0x12), data: 32 32 03 30 95 0A 0A 15 18 00 01 19 32 32 03 30 95 0A 09 05 18 00 01 19 31 38 03
 // RCErrorMessage(0x12), data: 39 95 08 09 0F 19 00 01 17 64 31 03 34 95 07 10 08 00 00 01 70 (offset 27)
-void Thermostat::process_RCErrorMessage(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RCErrorMessage(const std::shared_ptr<const Telegram> & telegram) {
     if (telegram->offset > 0 || telegram->message_length < 11) {
         return;
     }
@@ -1828,12 +1834,12 @@ void Thermostat::process_RCErrorMessage(std::shared_ptr<const Telegram> telegram
 }
 
 // 0xBF
-void Thermostat::process_ErrorMessageBF(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_ErrorMessageBF(const std::shared_ptr<const Telegram> & telegram) {
     EMSESP::send_read_request(0xC0, device_id(), 0, 20); // read last errorcode
 }
 
 // 0xC0 error log for RC300
-void Thermostat::process_RCErrorMessage2(std::shared_ptr<const Telegram> telegram) {
+void Thermostat::process_RCErrorMessage2(const std::shared_ptr<const Telegram> & telegram) {
     if (telegram->offset > 0 || telegram->message_length < 20) {
         return;
     }

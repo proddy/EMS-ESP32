@@ -39,7 +39,7 @@ Pool::Pool(uint8_t device_type, uint8_t device_id, uint8_t product_id, const cha
 }
 
 // Mixer MP100 for pools - 0x5BA
-void Pool::process_HpPoolStatus(std::shared_ptr<const Telegram> telegram) {
+void Pool::process_HpPoolStatus(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, poolTemp_, 0);
     has_update(telegram, poolShunt_, 3); // 0-100% how much is the shunt open?
     telegram->read_value(poolShuntStatus__, 2);

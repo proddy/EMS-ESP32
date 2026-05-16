@@ -705,7 +705,7 @@ void WebCustomEntityService::fetch() {
 }
 
 // called on process telegram, read from telegram
-bool WebCustomEntityService::get_value(std::shared_ptr<const Telegram> telegram) {
+bool WebCustomEntityService::get_value(const std::shared_ptr<const Telegram> & telegram) {
     bool has_change = false;
     // read-length of BOOL, INT8, UINT8, INT16, UINT16, UINT24, TIME, UINT32
     const uint8_t len[] = {1, 1, 1, 2, 2, 3, 3, 4};

@@ -146,7 +146,7 @@ class AnalogSensor {
     bool updated_values();
 
     // return back reference to the sensor list, used by other classes
-    std::vector<Sensor, AllocatorPSRAM<Sensor>> sensors() const {
+    const std::vector<Sensor, AllocatorPSRAM<Sensor>> & sensors() const {
         return sensors_;
     }
 
@@ -178,7 +178,7 @@ class AnalogSensor {
     bool                        get_value_info(JsonObject output, const char * cmd, const int8_t id = -1);
     void                        store_counters();
     std::string                 get_metrics_prometheus();
-    static std::vector<uint8_t> exclude_types() {
+    static const std::vector<uint8_t> & exclude_types() {
         return exclude_types_;
     }
 

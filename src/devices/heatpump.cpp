@@ -204,7 +204,7 @@ Heatpump::Heatpump(uint8_t device_type, uint8_t device_id, uint8_t product_id, c
  * Type 0x47B - HeatPump Monitor 2
  * e.g. "38 10 FF 00 03 7B 08 24 00 4B"
  */
-void Heatpump::process_HPMonitor2(std::shared_ptr<const Telegram> telegram) {
+void Heatpump::process_HPMonitor2(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, dewTemperature_, 0);
     has_update(telegram, airHumidity_, 1);
 }
@@ -213,13 +213,13 @@ void Heatpump::process_HPMonitor2(std::shared_ptr<const Telegram> telegram) {
  * Type 0x42B- HeatPump Monitor 1
  * e.g. "38 10 FF 00 03 2B 00 D1 08 2A 01"
  */
-void Heatpump::process_HPMonitor1(std::shared_ptr<const Telegram> telegram) {
+void Heatpump::process_HPMonitor1(const std::shared_ptr<const Telegram> & telegram) {
     // still to implement
 }
 
 // 0x09A0
 // Heatpump(0x53) -> All(0x00), ?(0x09A0), data: 02 23 01 3E 01 39 00 5D 01 DE 01 38 00 40 00 5E 00 58 00 3F 01 34 00 02
-void Heatpump::process_HPTemperature(std::shared_ptr<const Telegram> telegram) {
+void Heatpump::process_HPTemperature(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, hpTc3_, 2);  // condenser temp.
     has_update(telegram, hpTr1_, 8);  // compressor temp.
     has_update(telegram, hpTr3_, 10); // cond. temp. heating
@@ -234,7 +234,7 @@ void Heatpump::process_HPTemperature(std::shared_ptr<const Telegram> telegram) {
 
 // 0x099B
 // Heatpump(0x53) -> All(0x00), ?(0x099B), data: 80 00 80 00 01 3C 01 38 80 00 80 00 80 00 01 37 00 00 00 00 64
-void Heatpump::process_HPFlowTemp(std::shared_ptr<const Telegram> telegram) {
+void Heatpump::process_HPFlowTemp(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, flowTemp_, 4);
     has_update(telegram, retTemp_, 6);
     has_update(telegram, sysRetTemp_, 14);
@@ -243,7 +243,7 @@ void Heatpump::process_HPFlowTemp(std::shared_ptr<const Telegram> telegram) {
 
 // 0x0998 HPSettings
 // [emsesp] Heatpump(0x53) -> Me(0x0B), ?(0x0998), data: 00 00 0B 00 00 1F 01 00 01 01 16 06 00 04 02 FF 00 01 7C 01
-void Heatpump::process_HPSettings(std::shared_ptr<const Telegram> telegram) {
+void Heatpump::process_HPSettings(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, controlStrategy_, 0);
     has_update(telegram, hybridDHW_, 1);
     has_update(telegram, energyPriceGas_, 2);
@@ -258,14 +258,14 @@ void Heatpump::process_HPSettings(std::shared_ptr<const Telegram> telegram) {
 // 0x099C HPComp
 // Broadcast (0x099C), data: 00 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 76 00 00
 //                     data: 00 2B 00 03 04 13 00 00 00 00 00 02 02 02 (offset 24)
-void Heatpump::process_HPComp(std::shared_ptr<const Telegram> telegram) {
+void Heatpump::process_HPComp(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, hpCompSpd_, 15);
     has_update(telegram, hpPower_, 17); // https://github.com/emsesp/EMS-ESP32/issues/2883
 }
 
 // 0x999 HPFunctionTest
 // HPFunctionTest(0x0999), data: 00 00 00 32 00 00 00 00 00 00 00
-void Heatpump::process_HPFunctionTest(std::shared_ptr<const Telegram> telegram) {
+void Heatpump::process_HPFunctionTest(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, airPurgeMode_, 0);
     has_update(telegram, heatPumpOutput_, 2);
     has_update(telegram, coolingCircuit_, 6);
@@ -276,7 +276,7 @@ void Heatpump::process_HPFunctionTest(std::shared_ptr<const Telegram> telegram) 
 
 // boiler(0x08) -W-> Me(0x0B), ?(0x04AE), data: 00 00 BD C4 00 00 5B 6A 00 00 00 24 00 00 62 59 00 00 00 00 00 00 00 00
 // boiler(0x08) -W-> Me(0x0B), ?(0x04AE), data: 00 00 00 00 00 00 00 00 (offset 24)
-void Heatpump::process_HpEnergy(std::shared_ptr<const Telegram> telegram) {
+void Heatpump::process_HpEnergy(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, nrgTotal_, 0);
     has_update(telegram, nrgHeat_, 4);
     has_update(telegram, nrgWw_, 12);
@@ -285,7 +285,7 @@ void Heatpump::process_HpEnergy(std::shared_ptr<const Telegram> telegram) {
 // boiler(0x08) -W-> Me(0x0B), ?(0x04AF), data: 00 00 48 B2 00 00 48 55 00 00 00 5D 00 00 01 78 00 00 00 00 00 00 07 61
 // boiler(0x08) -W-> Me(0x0B), ?(0x04AF), data: 00 00 24 B0 00 00 00 12 00 00 23 A5 00 00 00 4B 00 00 00 00 00 00 00 00 (offset 24)
 // boiler(0x08) -W-> Me(0x0B), ?(0x04AF), data: 00 00 00 00 00 00 00 00 (offset 48)
-void Heatpump::process_HpMeters(std::shared_ptr<const Telegram> telegram) {
+void Heatpump::process_HpMeters(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, meterTotal_, 0);
     has_update(telegram, meterComp_, 4);
     has_update(telegram, meterEHeat_, 8);
@@ -294,14 +294,14 @@ void Heatpump::process_HpMeters(std::shared_ptr<const Telegram> telegram) {
 }
 
 // Broadcast (0x099A), data: 05 00 00 00 00 00 00 37 00 00 1D 00 00 52 00 00 13 01 00 01 7C
-void Heatpump::process_HpStarts(std::shared_ptr<const Telegram> telegram) {
+void Heatpump::process_HpStarts(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, hpActivity_, 2); // https://github.com/emsesp/EMS-ESP32/issues/2883
     has_update(telegram, heatStartsHp_, 11, 3);
     has_update(telegram, wwStartsHp_, 14, 3);
 }
 
 // 0x0112E energy consumption
-void Heatpump::process_HpEnergy1(std::shared_ptr<const Telegram> telegram) {
+void Heatpump::process_HpEnergy1(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, fuelHeat_, 3);
     has_update(telegram, fuelDhw_, 7);
     has_update(telegram, elHeat_, 11);
@@ -309,14 +309,14 @@ void Heatpump::process_HpEnergy1(std::shared_ptr<const Telegram> telegram) {
 }
 
 // 0x013B energy generated
-void Heatpump::process_HpEnergy2(std::shared_ptr<const Telegram> telegram) {
+void Heatpump::process_HpEnergy2(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, elGenHeat_, 3);
     has_update(telegram, elGenDhw_, 7);
 }
 
 // 0x04AA power, Broadcast (0x04AA), data: 00 00
 // see https://github.com/emsesp/EMS-ESP32/issues/2883
-void Heatpump::process_HpPower(std::shared_ptr<const Telegram> telegram) {
+void Heatpump::process_HpPower(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, hpCurrPower_, 0);
 }
 

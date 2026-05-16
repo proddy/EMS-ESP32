@@ -146,11 +146,11 @@ class Mqtt {
         mqtt_enabled_ = mqtt_enabled;
     }
 
-    static std::string base() {
+    static const std::string & base() {
         return mqtt_base_;
     }
 
-    static std::string basename() {
+    static const std::string & basename() {
         return mqtt_basename_;
     }
 
@@ -227,7 +227,7 @@ class Mqtt {
         ha_enabled_ = ha_enabled;
     }
 
-    static std::string get_response() {
+    static const std::string & get_response() {
         return lastresponse_;
     }
 

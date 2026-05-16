@@ -99,7 +99,7 @@ class TemperatureSensor {
     std::string get_metrics_prometheus();
 
     // return back reference to the sensor list, used by other classes
-    std::vector<Sensor, AllocatorPSRAM<Sensor>> sensors() const {
+    const std::vector<Sensor, AllocatorPSRAM<Sensor>> & sensors() const {
         return sensors_;
     }
 

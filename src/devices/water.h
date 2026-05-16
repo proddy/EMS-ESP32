@@ -82,23 +82,23 @@ class Water : public EMSdevice {
     uint8_t  wwFlowTempOffset_; // default 40
 
 
-    void process_SM100wwTemperature(std::shared_ptr<const Telegram> telegram);
-    void process_SM100wwStatus(std::shared_ptr<const Telegram> telegram);
-    void process_SM100wwStatus2(std::shared_ptr<const Telegram> telegram);
-    void process_SM100wwCommand(std::shared_ptr<const Telegram> telegram);
-    void process_SM100wwCirc(std::shared_ptr<const Telegram> telegram);
-    void process_SM100wwParam(std::shared_ptr<const Telegram> telegram);
-    void process_SM100wwParam2(std::shared_ptr<const Telegram> telegram);
-    void process_SM100wwKeepWarm(std::shared_ptr<const Telegram> telegram);
-    void process_SM100ValveStatus(std::shared_ptr<const Telegram> telegram);
+    void process_SM100wwTemperature(const std::shared_ptr<const Telegram> & telegram);
+    void process_SM100wwStatus(const std::shared_ptr<const Telegram> & telegram);
+    void process_SM100wwStatus2(const std::shared_ptr<const Telegram> & telegram);
+    void process_SM100wwCommand(const std::shared_ptr<const Telegram> & telegram);
+    void process_SM100wwCirc(const std::shared_ptr<const Telegram> & telegram);
+    void process_SM100wwParam(const std::shared_ptr<const Telegram> & telegram);
+    void process_SM100wwParam2(const std::shared_ptr<const Telegram> & telegram);
+    void process_SM100wwKeepWarm(const std::shared_ptr<const Telegram> & telegram);
+    void process_SM100ValveStatus(const std::shared_ptr<const Telegram> & telegram);
 
-    void process_MMPLUSStatusMessage_WWC(std::shared_ptr<const Telegram> telegram);
-    void process_MMPLUSSetMessage_WWC(std::shared_ptr<const Telegram> telegram);
-    void process_MMPLUSConfigMessage_WWC(std::shared_ptr<const Telegram> telegram);
+    void process_MMPLUSStatusMessage_WWC(const std::shared_ptr<const Telegram> & telegram);
+    void process_MMPLUSSetMessage_WWC(const std::shared_ptr<const Telegram> & telegram);
+    void process_MMPLUSConfigMessage_WWC(const std::shared_ptr<const Telegram> & telegram);
 
-    void process_IPMMonitorWW(std::shared_ptr<const Telegram> telegram);
-    void process_IPMHydrTemp(std::shared_ptr<const Telegram> telegram);
-    void process_IPMParameterWW(std::shared_ptr<const Telegram> telegram);
+    void process_IPMMonitorWW(const std::shared_ptr<const Telegram> & telegram);
+    void process_IPMHydrTemp(const std::shared_ptr<const Telegram> & telegram);
+    void process_IPMParameterWW(const std::shared_ptr<const Telegram> & telegram);
 
 
     bool set_wwSelTemp(const char * value, const int8_t id);

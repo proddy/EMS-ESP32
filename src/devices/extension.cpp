@@ -69,7 +69,7 @@ Extension::Extension(uint8_t device_type, uint8_t device_id, uint8_t product_id,
 
 // extension(0x15) -W-> Me(0x0B), EM100SetMessage(0x0935), data: 00 00 64 50 14
 // need to be fetched
-void Extension::process_EM100SetMessage(std::shared_ptr<const Telegram> telegram) {
+void Extension::process_EM100SetMessage(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, minV_, 1); // Input for off, is / 10
     has_update(telegram, maxV_, 2); // Input for 100%, is / 10
     has_update(telegram, minT_, 3); // min temp
@@ -77,22 +77,22 @@ void Extension::process_EM100SetMessage(std::shared_ptr<const Telegram> telegram
 }
 
 // extension(0x15) -B-> All(0x00), ?(0x0936), data: 00 00 00 00 28 00 (offset 1)
-void Extension::process_EM100OutMessage(std::shared_ptr<const Telegram> telegram) {
+void Extension::process_EM100OutMessage(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, outPower_, 5); // power monitor %
 }
 
 // extension(0x15) -B-> All(0x00), ?(0x093A), data: 00 00 00 00 00 00 00 00 00 03 01
-void Extension::process_EM100ConfigMessage(std::shared_ptr<const Telegram> telegram) {
+void Extension::process_EM100ConfigMessage(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, dip_, 9);
 }
 
 // extension(0x15) -B-> All(0x00), ?(0x0938), data: 01 62
-void Extension::process_EM100InputMessage(std::shared_ptr<const Telegram> telegram) {
+void Extension::process_EM100InputMessage(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, input_, 1);
 }
 
 // extension(0x15) -B-> All(0x00), ?(0x0939), data: 64 4E 00 00
-void Extension::process_EM100MonitorMessage(std::shared_ptr<const Telegram> telegram) {
+void Extension::process_EM100MonitorMessage(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, setPower_, 0); // percent
     has_update(telegram, setPoint_, 1); // °C
     // has_update(telegram, errorState_, 2); // OE1
@@ -100,7 +100,7 @@ void Extension::process_EM100MonitorMessage(std::shared_ptr<const Telegram> tele
 }
 
 // extension(0x15) -B-> All(0x00), ?(0x0937), data: 80 00
-void Extension::process_EM100TempMessage(std::shared_ptr<const Telegram> telegram) {
+void Extension::process_EM100TempMessage(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, headerTemp_, 0);
 }
 

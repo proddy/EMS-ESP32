@@ -59,13 +59,13 @@ Connect::Connect(uint8_t device_type, uint8_t device_id, uint8_t product_id, con
 /*
  * OutdoorTemp - type 0xD1 - external temperature
  */
-void Connect::process_OutdoorTemp(std::shared_ptr<const Telegram> telegram) {
+void Connect::process_OutdoorTemp(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, outdoorTemp_, 0);
 }
 
 // sent if thermostat is connected
 // https://github.com/emsesp/EMS-ESP32/issues/2277
-void Connect::process_RCTime(std::shared_ptr<const Telegram> telegram) {
+void Connect::process_RCTime(const std::shared_ptr<const Telegram> & telegram) {
     if (telegram->offset || telegram->message_length < 10) {
         return;
     }
@@ -121,7 +121,7 @@ std::shared_ptr<Connect::RoomCircuit> Connect::room_circuit(const uint8_t num, c
 }
 
 // gateway(0x50) B all(0x00), ?(0x0BDD), data: 00 E6 36 2A
-void Connect::process_roomThermostat(std::shared_ptr<const Telegram> telegram) {
+void Connect::process_roomThermostat(const std::shared_ptr<const Telegram> & telegram) {
     bool create = telegram->offset == 0 && telegram->message_data[0] < 0x80;
     auto rc     = room_circuit(telegram->type_id - 0xBDD, create);
     if (rc == nullptr) {
@@ -147,7 +147,7 @@ void Connect::process_roomThermostat(std::shared_ptr<const Telegram> telegram) {
 
 // gateway(0x48) W gateway(0x50), ?(0x0B42), data: 01 // icon in offset 0
 // gateway(0x48) W gateway(0x50), ?(0x0B42), data: 00 4B 00 FC 00 63 00 68 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 (offset 1)
-void Connect::process_roomThermostatName(std::shared_ptr<const Telegram> telegram) {
+void Connect::process_roomThermostatName(const std::shared_ptr<const Telegram> & telegram) {
     auto rc = room_circuit(telegram->type_id - 0xB3D);
     if (rc == nullptr) {
         return;
@@ -163,7 +163,7 @@ void Connect::process_roomThermostatName(std::shared_ptr<const Telegram> telegra
 
 // settings 0-mode, 1-tempautotemp, 3 - manualtemp, 6 - ?, 7 - childlock
 // 0x0BB5, ff: data: 00 FF 00 24 01 FF 24 00
-void Connect::process_roomThermostatSettings(std::shared_ptr<const Telegram> telegram) {
+void Connect::process_roomThermostatSettings(const std::shared_ptr<const Telegram> & telegram) {
     auto rc = room_circuit(telegram->type_id - 0xBB5);
     if (rc == nullptr) {
         return;
@@ -176,7 +176,7 @@ void Connect::process_roomThermostatSettings(std::shared_ptr<const Telegram> tel
 }
 
 // unknown telegrams, needs fetch
-void Connect::process_roomThermostatParam(std::shared_ptr<const Telegram> telegram) {
+void Connect::process_roomThermostatParam(const std::shared_ptr<const Telegram> & telegram) {
     auto rc = room_circuit(telegram->type_id - 0x1230);
     if (rc == nullptr) {
         return;
@@ -184,7 +184,7 @@ void Connect::process_roomThermostatParam(std::shared_ptr<const Telegram> telegr
 }
 
 // unknown broadcasted telegrams
-void Connect::process_roomThermostatData(std::shared_ptr<const Telegram> telegram) {
+void Connect::process_roomThermostatData(const std::shared_ptr<const Telegram> & telegram) {
     auto rc = room_circuit(telegram->type_id - 0x1244);
     if (rc == nullptr) {
         return;
@@ -192,7 +192,7 @@ void Connect::process_roomThermostatData(std::shared_ptr<const Telegram> telegra
 }
 
 // schedule for all thermostats
-void Connect::process_roomSchedule(std::shared_ptr<const Telegram> telegram) {
+void Connect::process_roomSchedule(const std::shared_ptr<const Telegram> & telegram) {
     uint8_t length = ((telegram->offset + telegram->message_length) > 126) ? 126 - telegram->offset : telegram->message_length;
     memcpy(&schedule_[telegram->offset], telegram->message_data, length);
     for (uint8_t c : schedule_) {

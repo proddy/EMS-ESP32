@@ -34,7 +34,7 @@ class EMSdevice {
   public:
     virtual ~EMSdevice() = default; // destructor of base class must always be virtual because it's a polymorphic class
 
-    using process_function_p = std::function<void(std::shared_ptr<const Telegram>)>;
+    using process_function_p = std::function<void(const std::shared_ptr<const Telegram> &)>;
 
     // device_type defines which derived class to use, e.g. BOILER, THERMOSTAT etc..
     EMSdevice(uint8_t device_type, uint8_t device_id, uint8_t product_id, const char * version, const char * default_name, uint8_t flags, uint8_t brand)
@@ -64,6 +64,10 @@ class EMSdevice {
     bool         has_tags(const int8_t tag) const;
     bool         has_cmd(const char * cmd, const int8_t id) const;
     std::string  brand_to_char();
+    // Same as brand_to_char() but returns a const char* (flash literal or
+    // custom_brand_.c_str()) without allocating a std::string. Lifetime is
+    // tied to this EMSdevice instance.
+    const char * brand_to_cstr() const;
     std::string  to_string();
     std::string  to_string_short();
     std::string  to_string_version();
@@ -125,7 +129,7 @@ class EMSdevice {
         custom_name_ = custom_name;
     }
 
-    std::string custom_name() const {
+    const std::string & custom_name() const {
         return custom_name_;
     }
 
@@ -134,7 +138,7 @@ class EMSdevice {
         custom_brand_ = custom_brand;
     }
 
-    std::string custom_brand() const {
+    const std::string & custom_brand() const {
         return custom_brand_;
     }
     // set device model
@@ -142,7 +146,7 @@ class EMSdevice {
         model_ = model;
     }
 
-    std::string model() const {
+    const std::string & model() const {
         return model_;
     }
 
@@ -207,14 +211,14 @@ class EMSdevice {
         }
     }
 
-    void has_enumupdate(std::shared_ptr<const Telegram> telegram, uint8_t & value, const uint8_t index, int8_t s = 0) {
+    void has_enumupdate(const std::shared_ptr<const Telegram> & telegram, uint8_t & value, const uint8_t index, int8_t s = 0) {
         if (telegram->read_enumvalue(value, index, s)) {
             has_update_ = true;
             publish_value((void *)&value);
         }
     }
 
-    void has_enumupdate(std::shared_ptr<const Telegram> telegram, uint8_t & value, const uint8_t index, const std::vector<uint8_t> & maskIn) {
+    void has_enumupdate(const std::shared_ptr<const Telegram> & telegram, uint8_t & value, const uint8_t index, const std::vector<uint8_t> & maskIn) {
         uint8_t val = value < maskIn.size() ? maskIn[value] : EMS_VALUE_UINT8_NOTSET;
         if (telegram->read_value(val, index)) {
             for (uint8_t i = 0; i < maskIn.size(); i++) {
@@ -229,7 +233,7 @@ class EMSdevice {
     }
 
     template <typename Value>
-    void has_update(std::shared_ptr<const Telegram> telegram, Value & value, const uint8_t index, uint8_t s = 0) {
+    void has_update(const std::shared_ptr<const Telegram> & telegram, Value & value, const uint8_t index, uint8_t s = 0) {
         if (telegram->read_value(value, index, s)) {
             has_update_ = true;
             publish_value((void *)&value);
@@ -237,7 +241,7 @@ class EMSdevice {
     }
 
     template <typename BitValue>
-    void has_bitupdate(std::shared_ptr<const Telegram> telegram, BitValue & value, const uint8_t index, uint8_t b) {
+    void has_bitupdate(const std::shared_ptr<const Telegram> & telegram, BitValue & value, const uint8_t index, uint8_t b) {
         if (telegram->read_bitvalue(value, index, b)) {
             has_update_ = true;
             publish_value((void *)&value);
@@ -260,7 +264,7 @@ class EMSdevice {
     void getCustomizationEntities(std::vector<std::string> & entity_ids);
 
     void register_telegram_type(const uint16_t telegram_type_id, const char * telegram_type_name, bool fetch, const process_function_p cb, uint8_t length = 0);
-    bool handle_telegram(std::shared_ptr<const Telegram> telegram);
+    bool handle_telegram(const std::shared_ptr<const Telegram> & telegram);
 
     std::string get_value_uom(const std::string & shortname) const;
     bool        get_value_info(JsonObject root, const char * cmd, const int8_t id);
@@ -359,7 +363,7 @@ class EMSdevice {
     void         publish_value(void * value_p) const;
     void         publish_all_values();
     void         mqtt_ha_entity_config_create();
-    const char * telegram_type_name(std::shared_ptr<const Telegram> telegram);
+    const char * telegram_type_name(const std::shared_ptr<const Telegram> & telegram);
     void         fetch_values();
     void         toggle_fetch(uint16_t telegram_id, bool toggle);
     bool         is_fetch(uint16_t telegram_id, uint8_t len = 0) const;
@@ -518,13 +522,17 @@ class EMSdevice {
     uint8_t count_entities_fav();
     bool    has_entities() const;
 
-    // void reserve_device_values(uint8_t elements) {
-    //     devicevalues_.reserve(elements);
-    // }
+    // Pre-allocate vector capacity to avoid realloc storms during device
+    // construction. Realloc here is especially expensive because each entry
+    // contains a std::function (heap-allocated functor) and DeviceValue
+    // (with std::string member), so growing copies a lot.
+    void reserve_device_values(uint16_t elements) {
+        devicevalues_.reserve(elements);
+    }
 
-    // void reserve_telegram_functions(uint8_t elements) {
-    //     telegram_functions_.reserve(elements);
-    // }
+    void reserve_telegram_functions(uint8_t elements) {
+        telegram_functions_.reserve(elements);
+    }
 
 #if defined(EMSESP_STANDALONE)
     struct TelegramFunctionDump {

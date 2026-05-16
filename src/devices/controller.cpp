@@ -32,7 +32,7 @@ Controller::Controller(uint8_t device_type, uint8_t device_id, uint8_t product_i
 }
 
 // process_dateTime - type 0x06 - date and time from a thermostat - 14 bytes long, IVT only
-void Controller::process_dateTime(std::shared_ptr<const Telegram> telegram) {
+void Controller::process_dateTime(const std::shared_ptr<const Telegram> & telegram) {
     if (telegram->offset > 0 || telegram->message_length < 5) {
         return;
     }

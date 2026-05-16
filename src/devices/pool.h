@@ -30,7 +30,7 @@ class Pool : public EMSdevice {
   private:
     static uuid::log::Logger logger_;
 
-    void process_HpPoolStatus(std::shared_ptr<const Telegram> telegram);
+    void process_HpPoolStatus(const std::shared_ptr<const Telegram> & telegram);
 
   private:
     // MP100 pool

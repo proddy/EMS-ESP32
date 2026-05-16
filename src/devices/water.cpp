@@ -107,7 +107,7 @@ Water::Water(uint8_t device_type, uint8_t device_id, uint8_t product_id, const c
 
 // SM100wwTemperature - 0x07D6, dhw4: 0x07D7
 // Solar Module(0x2A) -> (0x00), (0x7D6), data: 01 C1 00 00 02 5B 01 AF 01 AD 80 00 01 90
-void Water::process_SM100wwTemperature(std::shared_ptr<const Telegram> telegram) {
+void Water::process_SM100wwTemperature(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, wwTemp_, 0);     // is *10 TS17
     has_update(telegram, wwFlow_, 2);     // is *10 l/min
     has_update(telegram, wwTemp2_, 4);    // is *10 TS21
@@ -120,13 +120,13 @@ void Water::process_SM100wwTemperature(std::shared_ptr<const Telegram> telegram)
 
 // SM100wwStatus - 0x07AA
 // Solar Module(0x2A) -> (0x00), (0x7AA), data: 64 00 04 00 03 00 28 01 0F
-void Water::process_SM100wwStatus(std::shared_ptr<const Telegram> telegram) {
+void Water::process_SM100wwStatus(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, wwPump_, 0);
 }
 
 // SM100wwParam - 0x07A6, Solar Module(0x2A) -> (0x00)
 // data: FF 05 0F 5F 00 01 3C 3C 3C 3C 28 12 46 01 3C 1E 03 07 3C 00 0F 00 05
-void Water::process_SM100wwParam(std::shared_ptr<const Telegram> telegram) {
+void Water::process_SM100wwParam(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, wwDailyTemp_, 6);
     has_update(telegram, wwHotTemp_, 7);
     has_update(telegram, wwMaxTemp_, 8);
@@ -137,13 +137,13 @@ void Water::process_SM100wwParam(std::shared_ptr<const Telegram> telegram) {
     has_update(telegram, errorDisp_, 19);
 }
 // SM100wwParam2 - 0x07AC, Solar Module(0x2A) -> (0x00)
-void Water::process_SM100wwParam2(std::shared_ptr<const Telegram> telegram) {
+void Water::process_SM100wwParam2(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, wwDeltaTRet_, 1);
 }
 
 // SM100wwCirc - 0x07A5
 // Solar Module(0x2A) -> (0x00), (0x7A5), data:
-void Water::process_SM100wwCirc(std::shared_ptr<const Telegram> telegram) {
+void Water::process_SM100wwCirc(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, wwCirc_, 0);
     has_update(telegram, wwCircMode_, 3);
     has_update(telegram, wwCircTc_, 4); // time controlled on/off
@@ -151,13 +151,13 @@ void Water::process_SM100wwCirc(std::shared_ptr<const Telegram> telegram) {
 
 // SM100wwKeepWarm - 0x7AE, keepWarm
 // Thermostat(0x10) -> Solar(0x2A), ?(0x7AE), data: FF
-void Water::process_SM100wwKeepWarm(std::shared_ptr<const Telegram> telegram) {
+void Water::process_SM100wwKeepWarm(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, wwKeepWarm_, 0);
 }
 
 // SM100ValveStatus - 0x7AD, valveStatus
 // Thermostat(0x10) -> Solar(0x2A), ?(0x7AD), data:
-void Water::process_SM100ValveStatus(std::shared_ptr<const Telegram> telegram) {
+void Water::process_SM100ValveStatus(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, wwRetValve_, 1);
 }
 
@@ -165,7 +165,7 @@ void Water::process_SM100ValveStatus(std::shared_ptr<const Telegram> telegram) {
 // data: 00 00 46 00 00 01 06 0E 06 0E 00 00 00 00 00 03 03 03 03
 // publishes single values offset 1/2(16bit), offset 5, offset 6, offset 7, offset 8, offset 9,
 // status2 = 03:"no heat", 06:"heat request", 08:"disinfecting", 09:"hold"
-void Water::process_SM100wwStatus2(std::shared_ptr<const Telegram> telegram) {
+void Water::process_SM100wwStatus2(const std::shared_ptr<const Telegram> & telegram) {
     // has_update(telegram, wwFlow_, 7); // single byte, wrong see #1387
     has_update(telegram, wwStatus2_, 8);
     has_update(telegram, wwPumpMod_, 9);
@@ -174,7 +174,7 @@ void Water::process_SM100wwStatus2(std::shared_ptr<const Telegram> telegram) {
 // SM100wwCommand - 0x07AB
 // Thermostat(0x10) -> Solar Module(0x2A), (0x7AB), data: 01 00 01
 // or dhw3 module (0x2A) -> dhw4 module(0x2B), (0x7C3), data: 01 01 00
-void Water::process_SM100wwCommand(std::shared_ptr<const Telegram> telegram) {
+void Water::process_SM100wwCommand(const std::shared_ptr<const Telegram> & telegram) {
     // not implemented yet
 }
 
@@ -185,14 +185,14 @@ void Water::process_SM100wwCommand(std::shared_ptr<const Telegram> telegram) {
 // Mixer warm water loading/DHW - 0x0331, 0x0332
 // e.g. A9 00 FF 00 02 32 02 6C 00 3C 00 3C 3C 46 02 03 03 00 3C // on 0x28
 //      A8 00 FF 00 02 31 02 35 00 3C 00 3C 3C 46 02 03 03 00 3C // in 0x29
-void Water::process_MMPLUSStatusMessage_WWC(std::shared_ptr<const Telegram> telegram) {
+void Water::process_MMPLUSStatusMessage_WWC(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, wwTemp_, 0); // is * 10
     has_bitupdate(telegram, wwPump_, 2, 0);
     has_update(telegram, wwStatus_, 11); // temp status
 }
 
 // Config message 0x313, has to be fetched
-void Water::process_MMPLUSConfigMessage_WWC(std::shared_ptr<const Telegram> telegram) {
+void Water::process_MMPLUSConfigMessage_WWC(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, wwRequiredTemp_, 4);
     has_update(telegram, wwRedTemp_, 5);
     has_update(telegram, wwDiffTemp_, 7);
@@ -203,7 +203,7 @@ void Water::process_MMPLUSConfigMessage_WWC(std::shared_ptr<const Telegram> tele
 // unknown, 2 examples from older threads
 // Thermostat(0x10) -> Mixer(0x28), ?(0x33B), data: 01 01 00
 // Thermostat -> Mixing Module, type 0x023B, telegram: 90 28 FF 00 02 3B 00 02 00 (CRC=68)
-void Water::process_MMPLUSSetMessage_WWC(std::shared_ptr<const Telegram> telegram) {
+void Water::process_MMPLUSSetMessage_WWC(const std::shared_ptr<const Telegram> & telegram) {
 }
 
 // MMPLUS telegram 0x345 unknown
@@ -216,7 +216,7 @@ void Water::process_MMPLUSSetMessage_WWC(std::shared_ptr<const Telegram> telegra
 
 // 0x34 only 8 bytes long
 // Mixer(0x41) -> All(0x00), UBAMonitorWW(0x34), data: 37 02 1E 02 1E 00 00 00 00
-void Water::process_IPMMonitorWW(std::shared_ptr<const Telegram> telegram) {
+void Water::process_IPMMonitorWW(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, wwSelTemp_, 0);
     has_update(telegram, wwTemp_, 1);
     has_update(telegram, wwTemp2_, 3);
@@ -224,7 +224,7 @@ void Water::process_IPMMonitorWW(std::shared_ptr<const Telegram> telegram) {
 }
 
 // Mixer(0x41) -> Me(0x0B), UBAParameterWW(0x33), data: 08 FF 46 FB FF 28 FF 07 46 00 FF 00
-void Water::process_IPMParameterWW(std::shared_ptr<const Telegram> telegram) {
+void Water::process_IPMParameterWW(const std::shared_ptr<const Telegram> & telegram) {
     // has_update(telegram, wwActivated_, 1); // 0xFF means on
     // has_update(telegram, wwSelTemp_, 2);
     has_update(telegram, wwHystOn_, 3);         // Hyst on (default -5)
@@ -239,7 +239,7 @@ void Water::process_IPMParameterWW(std::shared_ptr<const Telegram> telegram) {
 
 // 0x1E, only16 bit temperature
 // Mixer(0x41) -> Boiler(0x08), HydrTemp(0x1E), data: 01 D8
-void Water::process_IPMHydrTemp(std::shared_ptr<const Telegram> telegram) {
+void Water::process_IPMHydrTemp(const std::shared_ptr<const Telegram> & telegram) {
     has_update(telegram, HydrTemp_, 0);
 }
 
