@@ -103,7 +103,7 @@ const sv: Translation = {
   DISABLED: 'inaktiverad',
   TX_MODE: 'EMS Tx-läge',
   HARDWARE: 'Hårdvara',
-  EMS_BUS: '{{BUSS|EMS-BUSS}}',
+  EMS_BUS: '{{Buss|EMS-Buss}}',
   GENERAL_OPTIONS: 'Allmänna inställningar',
   LANGUAGE_ENTITIES: 'Språk (för entiteter)',
   HIDE_LED: 'Inaktivera LED',

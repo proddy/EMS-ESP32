@@ -4,7 +4,6 @@
 
 #include <esp_app_format.h>
 #include <esp_ota_ops.h>
-// #include <esp_partition.h>
 
 static String getFilenameExtension(const String & filename) {
     const auto pos = filename.lastIndexOf('.');
@@ -49,7 +48,7 @@ void UploadFileService::handleUpload(AsyncWebServerRequest * request, const Stri
             // LittleFS filesystem image
             _is_filesystem = true;
             _md5[0]        = '\0'; // clear any stale md5 so Update.end() doesn't compare against it
-        } else if ((extension == "bin") && (filesize > 2000000)) {
+        } else if ((extension == "bin") && (filesize > 1900000)) {
             _is_firmware = true;
         } else if (extension == "json") {
             _md5[0] = '\0'; // clear md5
@@ -61,6 +60,7 @@ void UploadFileService::handleUpload(AsyncWebServerRequest * request, const Stri
             return;
         } else {
             _md5.front() = '\0';
+            emsesp::EMSESP::logger().err("Unsupported file type: %s, size: %u", filename.c_str(), filesize);
             handleError(request, 406); // Not Acceptable - unsupported file type
             return;
         }

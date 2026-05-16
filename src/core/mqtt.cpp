@@ -53,7 +53,6 @@ std::vector<Mqtt::MQTTSubFunction, AllocatorPSRAM<Mqtt::MQTTSubFunction>> Mqtt::
 uint32_t Mqtt::mqtt_publish_fails_ = 0;
 bool     Mqtt::connecting_         = false;
 bool     Mqtt::initialized_        = false;
-bool     Mqtt::ha_climate_reset_   = false;
 uint16_t Mqtt::queuecount_         = 0;
 uint8_t  Mqtt::connectcount_       = 0;
 uint32_t Mqtt::mqtt_message_id_    = 0;
@@ -131,10 +130,10 @@ void Mqtt::loop() {
 
     uint32_t currentMillis = uuid::get_uptime();
 
-    // send heartbeat
+    // send heartbeat per the frequency in the MQTT settings
     if (currentMillis - last_publish_heartbeat_ > publish_time_heartbeat_) {
         last_publish_heartbeat_ = currentMillis;
-        EMSESP::system_.send_heartbeat(); // send heartbeat
+        EMSESP::system_.send_heartbeat(); // send MQTT heartbeat topic
     }
 
     // temperature and analog sensor publish on change
@@ -493,7 +492,6 @@ void Mqtt::on_connect() {
         queue_unsubscribe_message(discovery_prefix_ + "/+/" + Mqtt::basename() + "/#");
         EMSESP::reset_mqtt_ha(); // re-create all HA devices if there are any
         ha_status();             // create the EMS-ESP device in HA, which is MQTT retained
-        ha_climate_reset(true);
     } else {
         // with disabled HA we subscribe and the broker sends all stored HA-emsesp-configs.
         // Around line 272 they are removed (search for "// remove HA topics if we don't use discover")
@@ -511,7 +509,6 @@ void Mqtt::on_connect() {
 
     // send initial MQTT messages for some of our services
     EMSESP::system_.send_heartbeat(); // send heartbeat
-    // for publish on change publish the initial complete list
     EMSESP::webCustomEntityService.publish(true);
     EMSESP::webSchedulerService.publish(true);
     EMSESP::analogsensor_.publish_values(true);

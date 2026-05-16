@@ -450,7 +450,7 @@ void Test::run_test(uuid::console::Shell & shell, const std::string & cmd, const
 // THESE ONLY WORK WITH AN ESP32, not in standalone/native mode
 #ifndef EMSESP_STANDALONE
     if (command == "ls") {
-        listDir(LittleFS, "/", 3);
+        EMSESP::system_.listDir("/", 3);
         ok = true;
     }
 
@@ -1089,6 +1089,22 @@ void Test::run_test(uuid::console::Shell & shell, const std::string & cmd, const
         request.url("/api");
         EMSESP::webAPIService.webAPIService(&request, doc.as<JsonVariant>());
         shell.invoke_command("call boiler circpump/value");
+    }
+
+    if (command == "led") {
+        shell.printfln("Testing LED...");
+
+        JsonDocument          doc;
+        AsyncWebServerRequest request;
+
+        request.method(HTTP_POST);
+        char data1[] = "{\"data\":\"red:blink1\"}";
+        deserializeJson(doc, data1);
+        JsonVariant json = doc.as<JsonVariant>();
+        request.url("/api/system/led");
+        EMSESP::webAPIService.webAPIService(&request, json);
+
+        ok = true;
     }
 
     if (command == "shuntingyard") {

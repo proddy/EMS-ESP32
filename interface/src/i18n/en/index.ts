@@ -103,7 +103,7 @@ const en: Translation = {
   DISABLED: 'disabled',
   TX_MODE: 'EMS Tx Mode',
   HARDWARE: 'Hardware',
-  EMS_BUS: '{{BUS|EMS BUS}}',
+  EMS_BUS: '{{Bus|EMS Bus}}',
   GENERAL_OPTIONS: 'General Options',
   LANGUAGE_ENTITIES: 'Language (for device entities)',
   HIDE_LED: 'Hide LED',

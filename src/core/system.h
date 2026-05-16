@@ -26,6 +26,7 @@
 #include "console.h"
 #include "mqtt.h"
 #include "telegram.h"
+#include "led.h"
 
 #ifndef EMSESP_STANDALONE
 #include <esp_wifi.h>
@@ -36,8 +37,6 @@
 #include <esp32-psram.h>
 #include <uuid/log.h>
 #include <PButton.h>
-
-#define EMSESP_RGB_WRITE rgbLedWrite
 
 #if CONFIG_IDF_TARGET_ESP32
 // there is no official API available on the original ESP32
@@ -53,8 +52,6 @@ using uuid::console::Shell;
 #define EMSESP_FS_CONFIG_DIRECTORY "/config"
 
 #define EMSESP_CUSTOMSUPPORT_FILE "/config/customSupport.json"
-
-#define RGB_LED_BRIGHTNESS 20 // 255 is max brightness
 
 namespace emsesp {
 
@@ -98,6 +95,7 @@ class System {
     static bool command_service(const char * cmd, const char * value);
     static bool command_sendmail(const char * value, const int8_t id);
     static bool command_txpause(const char * value, const int8_t id);
+    static bool command_led(const char * value, const int8_t id);
 
     static bool        get_value_info(JsonObject root, const char * cmd);
     static void        get_value_json(JsonObject output, const std::string & circuit, const std::string & name, JsonVariant val);
@@ -144,7 +142,6 @@ class System {
 
     static bool uploadFirmwareURL(const char * url = nullptr);
 
-    void led_init();
     void button_init();
     void commands_init();
     void uart_init();
@@ -166,10 +163,6 @@ class System {
 
     static String get_ip_or_hostname();
 
-    void dallas_gpio(uint8_t gpio) {
-        dallas_gpio_ = gpio;
-    }
-
     bool telnet_enabled() {
         return telnet_enabled_;
     }
@@ -188,18 +181,6 @@ class System {
 
     uint32_t modbus_timeout() {
         return modbus_timeout_;
-    }
-
-    bool analog_enabled() {
-        return analog_enabled_;
-    }
-
-    void analog_enabled(bool b) {
-        analog_enabled_ = b;
-    }
-
-    void hide_led(bool b) {
-        hide_led_ = b;
     }
 
     bool readonly_mode() {
@@ -354,6 +335,11 @@ class System {
 
     static bool set_partition(const char * partitionname);
 
+    // healthcheck flags - shared with LED for status visualization
+    static constexpr uint8_t HEALTHCHECK_NO_BUS     = (1 << 0); // 1
+    static constexpr uint8_t HEALTHCHECK_NO_NETWORK = (1 << 1); // 2
+    static constexpr uint8_t HEALTHCHECK_RESET      = (1 << 7); // 128
+
   private:
     static uuid::log::Logger logger_;
 
@@ -374,15 +360,6 @@ class System {
     static constexpr uint32_t BUTTON_Debounce      = 40;  // Debounce period to prevent flickering when pressing or releasing the button (in ms)
     static constexpr uint32_t BUTTON_DblClickDelay = 250; // Max period between clicks for a double click event (in ms)
 
-    // LED flash timer
-    static bool     led_flash_timer_;
-    static uint8_t  led_flash_gpio_;
-    static uint8_t  led_flash_type_;
-    static uint32_t led_flash_start_time_;
-    static uint32_t led_flash_duration_;
-    static void     start_led_flash(uint8_t duration);
-    static void     led_flash();
-
     // button press delays
     static constexpr uint32_t BUTTON_LongPressDelay  = 3000; // Hold period for a long press event (in ms) - ~3 seconds
     static constexpr uint32_t BUTTON_VLongPressDelay = 9500; // Hold period for a very long press event (in ms) - !10 seconds
@@ -393,17 +370,11 @@ class System {
 #else
     static constexpr uint32_t SYSTEM_CHECK_FREQUENCY = 5000; // do a system check every 5 seconds
 #endif
-    static constexpr uint32_t HEALTHCHECK_LED_LONG_DUARATION  = 1500;     // 1.5 seconds
-    static constexpr uint32_t HEALTHCHECK_LED_FLASH_DUARATION = 150;      // 150ms
-    static constexpr uint8_t  HEALTHCHECK_NO_BUS              = (1 << 0); // 1
-    static constexpr uint8_t  HEALTHCHECK_NO_NETWORK          = (1 << 1); // 2
-    static constexpr uint8_t  LED_ON                          = HIGH;     // LED on
 
 #ifndef EMSESP_STANDALONE
     static uuid::syslog::SyslogService syslog_;
 #endif
 
-    void led_monitor();
     void system_check();
 
     static std::vector<uint8_t, AllocatorPSRAM<uint8_t>> string_range_to_vector(const std::string & range, const std::string & exclude = "");
@@ -429,17 +400,12 @@ class System {
     // EMS-ESP settings
     std::string hostname_;
     String      locale_;
-    bool        hide_led_;
-    uint8_t     led_type_;
-    uint8_t     led_gpio_;
-    bool        analog_enabled_;
     bool        low_clock_;
     String      board_profile_;
     uint8_t     pbutton_gpio_;
     uint8_t     rx_gpio_;
     uint8_t     tx_gpio_;
     uint8_t     tx_mode_;
-    uint8_t     dallas_gpio_;
     bool        telnet_enabled_;
     bool        syslog_enabled_;
     int8_t      syslog_level_;
@@ -451,7 +417,6 @@ class System {
     uint8_t     bool_format_;
     uint8_t     enum_format_;
     bool        readonly_mode_;
-    String      version_;
     bool        modbus_enabled_;
     uint16_t    modbus_port_;
     uint8_t     modbus_max_clients_;

@@ -2312,7 +2312,6 @@ std::string EMSdevice::name() {
 // returns true on success.
 int EMSdevice::get_modbus_value(uint8_t tag, const std::string & shortname, std::vector<uint16_t> & result) {
     // find device value by shortname
-    // TODO replace linear search which is inefficient
     const auto & it = std::find_if(devicevalues_.begin(), devicevalues_.end(), [&](const DeviceValue & x) { return x.tag == tag && x.short_name == shortname; });
     if (it == devicevalues_.end() && (it->short_name != shortname || it->tag != tag)) {
         return -1;

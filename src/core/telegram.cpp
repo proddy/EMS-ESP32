@@ -257,7 +257,7 @@ void RxService::add_empty(const uint8_t src, const uint8_t dest, const uint16_t 
 // start and initialize Tx
 // send out request to EMS bus for all devices
 void TxService::start() {
-    // grab the bus ID and tx_mode
+    // grab the EMS Bus ID and tx_mode
     EMSESP::webSettingsService.read([&](WebSettings const & settings) {
         ems_bus_id(settings.ems_bus_id);
         tx_mode(settings.tx_mode);

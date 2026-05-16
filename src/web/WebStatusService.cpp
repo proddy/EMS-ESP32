@@ -295,19 +295,19 @@ uint8_t WebStatusService::upgradeImportantMessages(std::string & version) {
 
     FirmwareVersion current_version(current_version_s); // get current version
 
-    if ((current_version.major() <= 3 && current_version.minor() <= 8) && (latest_version.major() == 3 && latest_version.minor() == 9)) {
-        return 1; // if moving from below 3.8.x to 3.9.x return 1
+    if (!(latest_version > current_version)) {
+        return 0; // no upgrade (same version or downgrade)
     }
 
-    if (latest_version > current_version && current_version.major() < latest_version.major()) {
-        return 2; // if it's a major version upgrade return 2
+    if (current_version < FirmwareVersion("3.9.0") && latest_version.major() == 3 && latest_version.minor() == 9) {
+        return 1; // upgrading to 3.9.x from anything older - new partition layout warning
     }
 
-    if (latest_version > current_version && current_version.minor() < latest_version.minor()) {
-        return 0; // if it's just a minor version upgrade return 0
+    if (current_version.major() < latest_version.major()) {
+        return 2; // major version upgrade
     }
 
-    return 0; // if it's not a valid version upgrade return 0
+    return 0; // minor or patch upgrade, no special message
 }
 
 // action = getVersions

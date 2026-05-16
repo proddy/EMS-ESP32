@@ -90,6 +90,7 @@ Network           EMSESP::network_;           // network services
 TemperatureSensor EMSESP::temperaturesensor_; // Temperature sensors
 AnalogSensor      EMSESP::analogsensor_;      // Analog sensors
 Shower            EMSESP::shower_;            // Shower logic
+LED               EMSESP::led_;               // LED handler
 Preferences       EMSESP::nvs_;               // NV Storage
 
 // for a specific EMS device go and request data values
@@ -177,21 +178,6 @@ void EMSESP::clear_all_devices() {
     // emsdevices.clear(); // remove entries, but doesn't delete actual devices
 }
 
-// return number of devices of a known type
-uint8_t EMSESP::count_devices(const uint8_t device_type) {
-    if (emsdevices.empty()) {
-        return 0;
-    }
-
-    uint8_t count = 0;
-    for (const auto & emsdevice : emsdevices) {
-        if (emsdevice && emsdevice->device_type() == device_type) {
-            count++;
-        }
-    }
-    return count;
-}
-
 // return total number of devices excluding the Controller
 uint8_t EMSESP::count_devices() {
     if (emsdevices.empty()) {
@@ -205,27 +191,6 @@ uint8_t EMSESP::count_devices() {
         }
     }
     return count;
-}
-
-// returns the index of a device if there are more of the same type
-// or 0 if there is only one or none
-uint8_t EMSESP::device_index(const uint8_t device_type, const uint8_t unique_id) {
-    uint8_t count         = 0;
-    uint8_t index         = 0;
-    uint8_t current_index = 1;
-
-    for (const auto & emsdevice : emsdevices) {
-        if (emsdevice->device_type() == device_type) {
-            count++;
-            if (emsdevice->unique_id() == unique_id) {
-                index = current_index;
-            }
-            current_index++;
-        }
-    }
-
-    // Return 0 if only one device exists or not found
-    return (count <= 1) ? 0 : index;
 }
 
 // scans for new devices
@@ -265,6 +230,7 @@ uint8_t EMSESP::bus_status() {
 // show the EMS bus status plus both Rx and Tx queues
 void EMSESP::show_ems(uuid::console::Shell & shell) {
     // EMS bus information
+    shell.printfln("EMS Bus ID: %02X", EMSbus::ems_bus_id());
     switch (bus_status()) {
     case BUS_STATUS_OFFLINE:
         shell.printfln("EMS Bus is disconnected.");
@@ -585,7 +551,7 @@ void EMSESP::publish_all(bool force) {
         publish_other_values();      // switch and heat pump, ...
         publish_sensor_values(true); // includes temperature and analog sensors
 
-        system_.send_heartbeat();
+        system_.send_heartbeat(); // send MQTT heartbeat topic
     }
 }
 
@@ -626,7 +592,7 @@ void EMSESP::publish_all_loop() {
         if (Mqtt::ha_enabled()) {
             Mqtt::ha_status();
         }
-        system_.send_heartbeat();
+        system_.send_heartbeat(); // send MQTT heartbeat topic
         break;
     default:
         // all finished
@@ -1532,7 +1498,7 @@ void EMSESP::incoming_telegram(uint8_t * data, const uint8_t length) {
         Roomctrl::check(data[1], data, length);
 #ifdef EMSESP_UART_DEBUG
         // get_uptime is only updated once per loop, does not give the right time
-        LOG_TRACE("[UART_DEBUG] Echo after %d ms: %s", ::millis() - rx_time_, Helpers::data_to_hex(data, length).c_str());
+        LOG_TRACE("[UART_DEBUG] Echo after %d ms: %s", uuid::get_uptime_ms() - rx_time_, Helpers::data_to_hex(data, length).c_str());
 #endif
         // add to RxQueue for log/watch
         rxservice_.add(data, length);
@@ -1616,11 +1582,11 @@ void EMSESP::incoming_telegram(uint8_t * data, const uint8_t length) {
 #ifdef EMSESP_UART_DEBUG
         char s[4];
         if (first_value & 0x80) {
-            LOG_TRACE("[UART_DEBUG] next Poll %s after %d ms", Helpers::hextoa(s, first_value), ::millis() - rx_time_);
+            LOG_TRACE("[UART_DEBUG] next Poll %s after %d ms", Helpers::hextoa(s, first_value), uuid::get_uptime_ms() - rx_time_);
             // time measurement starts here, use millis because get_uptime is only updated once per loop
-            rx_time_ = ::millis();
+            rx_time_ = uuid::get_uptime_ms();
         } else {
-            LOG_TRACE("[UART_DEBUG] Poll ack %s after %d ms", Helpers::hextoa(s, first_value), ::millis() - rx_time_);
+            LOG_TRACE("[UART_DEBUG] Poll ack %s after %d ms", Helpers::hextoa(s, first_value), uuid::get_uptime_ms() - rx_time_);
         }
 #endif
         // check for poll to us, if so send top message from Tx queue immediately and quit
@@ -1634,7 +1600,7 @@ void EMSESP::incoming_telegram(uint8_t * data, const uint8_t length) {
         return;
     } else {
 #ifdef EMSESP_UART_DEBUG
-        LOG_TRACE("[UART_DEBUG] Reply after %d ms: %s", ::millis() - rx_time_, Helpers::data_to_hex(data, length).c_str());
+        LOG_TRACE("[UART_DEBUG] Reply after %d ms: %s", uuid::get_uptime_ms() - rx_time_, Helpers::data_to_hex(data, length).c_str());
 #endif
         Roomctrl::check(data[1], data, length); // check if there is a message for the roomcontroller
 
@@ -1711,10 +1677,10 @@ void EMSESP::start() {
     bool factory_settings = false;
 #endif
 
-#if defined(EMSESP_DEBUG)
-    // LOG_DEBUG("Listing root directory before:");
-    // system_.listDir("/", 3); // show the contents of the root directory
-#endif
+    // #if defined(EMSESP_DEBUG)
+    //     LOG_DEBUG("Listing root directory before:");
+    //     system_.listDir("/", 3); // show the contents of the root directory
+    // #endif
 
     // start NVS storage
     if (!nvs_.begin("ems-esp", false, "nvs1")) { // try bigger nvs partition on 16M flash first
@@ -1730,10 +1696,10 @@ void EMSESP::start() {
     // loads core system services settings (mqtt, ap, ntp etc)
     esp32React.begin();
 
-#if defined(EMSESP_DEBUG)
-    // LOG_DEBUG("Listing root directory after:");
-    // system_.listDir("/", 3); // show the contents of the root directory
-#endif
+    // #if defined(EMSESP_DEBUG)
+    //     LOG_DEBUG("Listing root directory after:");
+    //     system_.listDir("/", 3); // show the contents of the root directory
+    // #endif
 
 #ifndef EMSESP_STANDALONE
     if (factory_settings) {
@@ -1866,7 +1832,7 @@ void EMSESP::loop() {
 
     // handles LED and checks system health, and syslog service
     if (system_.loop()) {
-        return; // LED flashing is active, skip the rest of the loop
+        return; // LED flashing is active meaning its about to reboot, skip the rest of the loop
     }
 
     esp32React.loop();    // core services: Network, AP, MQTT and NTP

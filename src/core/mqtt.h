@@ -138,10 +138,6 @@ class Mqtt {
         };
     }
 
-    static MqttClient * client() {
-        return mqttClient_;
-    }
-
     static bool enabled() {
         return mqtt_enabled_;
     }
@@ -231,14 +227,6 @@ class Mqtt {
         ha_enabled_ = ha_enabled;
     }
 
-    static bool ha_climate_reset() {
-        return ha_climate_reset_;
-    }
-
-    static void ha_climate_reset(bool reset) {
-        ha_climate_reset_ = reset;
-    }
-
     static std::string get_response() {
         return lastresponse_;
     }
@@ -317,7 +305,6 @@ class Mqtt {
     static uint32_t mqtt_publish_fails_;
     static uint16_t queuecount_;
     static uint8_t  connectcount_;
-    static bool     ha_climate_reset_;
 
     static std::string lastresponse_;
 

@@ -103,7 +103,7 @@ const no: Translation = {
   DISABLED: 'avslått',
   TX_MODE: 'EMS Tx Mode',
   HARDWARE: 'Hardware',
-  EMS_BUS: '{{BUS|EMS BUS}}',
+  EMS_BUS: '{{Bus|EMS Bus}}',
   GENERAL_OPTIONS: 'Generelle Innstillinger',
   LANGUAGE_ENTITIES: 'Språk (for objekter)',
   HIDE_LED: 'Skjul LED',

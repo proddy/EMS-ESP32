@@ -257,7 +257,7 @@ NetPhase Network::initialPhase() const {
 void Network::loop() {
 #ifndef EMSESP_STANDALONE
     // if we already have a Wifi or Ethernet connection then re-check every NETWORK_RECONNECTION_DELAY_LONG, otherwise NETWORK_RECONNECTION_DELAY_SHORT
-    const unsigned long currentMillis = millis();
+    const unsigned long currentMillis = uuid::get_uptime_ms();
     const uint32_t      reconnectDelay =
         (network_iface_ == NetIface::WIFI || network_iface_ == NetIface::ETHERNET) ? NETWORK_RECONNECTION_DELAY_LONG : NETWORK_RECONNECTION_DELAY_SHORT;
     if (!lastConnectionAttempt_ || static_cast<uint32_t>(currentMillis - lastConnectionAttempt_) >= reconnectDelay) {

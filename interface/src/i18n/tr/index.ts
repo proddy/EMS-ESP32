@@ -103,7 +103,7 @@ const tr: Translation = {
   DISABLED: 'devre dışı',
   TX_MODE: 'EMS Tx Modu',
   HARDWARE: 'Donanım',
-  EMS_BUS: '{{HAT|EMS HATTI}}',
+  EMS_BUS: '{{Hat|EMS Hatti}}',
   GENERAL_OPTIONS: 'Genel Seçenekler',
   LANGUAGE_ENTITIES: 'Dil (cihaz varlıkları için)',
   HIDE_LED: 'LEDi kapa',

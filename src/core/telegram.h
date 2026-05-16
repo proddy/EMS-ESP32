@@ -174,7 +174,7 @@ class EMSbus {
     }
 
     static void set_ems2() {
-        isEMS2_ = true;;
+        isEMS2_ = true;
     }
 
     static uint8_t ems_mask() {
@@ -203,7 +203,7 @@ class EMSbus {
 
     // checks every 30 seconds if the EMS bus is still alive
     static bool bus_connected() {
-#if defined(EMSESP_STANDALONE) || defined(EMSESP_TEST)
+#if defined(EMSESP_STANDALONE)
         return true;
 #else
         if ((uuid::get_uptime() - last_bus_activity_) > EMS_BUS_TIMEOUT) {
@@ -247,7 +247,7 @@ class EMSbus {
     static uint32_t bus_uptime_start_;  // timestamp of first time we connected to the bus
     static bool     bus_connected_;     // start assuming the bus hasn't been connected
     static uint8_t  ems_mask_;          // unset=0xFF, buderus=0x00, junkers/ht3=0x80
-    static uint8_t  ems_bus_id_;        // the bus id, which configurable and stored in settings
+    static uint8_t  ems_bus_id_;        // the EMS Bus id, which configurable and stored in settings
     static uint8_t  tx_mode_;           // local copy of the tx mode
     static uint8_t  tx_state_;          // state of the Tx line (NONE or waiting on a TX_READ or TX_WRITE)
     static bool     isEMS2_;

@@ -103,7 +103,7 @@ const sk: Translation = {
   DISABLED: 'zakázané',
   TX_MODE: 'EMS Tx režim',
   HARDWARE: 'Hardware',
-  EMS_BUS: '{{BUS|EMS BUS}}',
+  EMS_BUS: '{{Bus|EMS Bus}}',
   GENERAL_OPTIONS: 'Všeobecné možnosti',
   LANGUAGE_ENTITIES: 'Jazyk (pre entity zariadenia)',
   HIDE_LED: 'Skryť LED',

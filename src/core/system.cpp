@@ -88,13 +88,6 @@ bool     System::test_set_all_active_ = false;
 uint32_t System::max_alloc_mem_;
 uint32_t System::heap_mem_;
 
-// LED flash timer
-uint8_t  System::led_flash_gpio_       = 0;
-uint8_t  System::led_flash_type_       = 0;
-uint32_t System::led_flash_start_time_ = 0;
-uint32_t System::led_flash_duration_   = 0;
-bool     System::led_flash_timer_      = false;
-
 // GPIOs
 std::vector<uint8_t, AllocatorPSRAM<uint8_t>>                     System::valid_system_gpios_;
 std::vector<System::GpioUsage, AllocatorPSRAM<System::GpioUsage>> System::used_gpios_;
@@ -670,18 +663,11 @@ void System::modbus_init() {
 
 // read specific major system settings to store locally for faster access
 void System::store_settings(WebSettings & settings) {
-    version_ = settings.version;
-
     rx_gpio_      = settings.rx_gpio;
     tx_gpio_      = settings.tx_gpio;
     pbutton_gpio_ = settings.pbutton_gpio;
-    dallas_gpio_  = settings.dallas_gpio;
-    led_gpio_     = settings.led_gpio;
 
-    analog_enabled_ = settings.analog_enabled;
     low_clock_      = settings.low_clock;
-    hide_led_       = settings.hide_led;
-    led_type_       = settings.led_type;
     board_profile_  = settings.board_profile;
     telnet_enabled_ = settings.telnet_enabled;
 
@@ -733,23 +719,25 @@ void System::start() {
         hostname(networkSettings.hostname.c_str()); // sets the hostname
     });
 
-    commands_init(); // console & api commands
-    led_init();      // init LED
-    button_init();   // button
-
-    last_system_check_ = 0; // force the LED to go from fast flash to pulse
-    uart_init();            // start UART
-    syslog_init();          // start syslog
-    modbus_init();          // start modbus
+    commands_init();     // console & api commands
+    EMSESP::led_.init(); // init LED
+    button_init();       // button
+    uart_init();         // start UART
+    syslog_init();       // start syslog
+    modbus_init();       // start modbus
 }
 
-// button single click
+// button single click - does nothing in normal operation
+// in debug mode, it will trigger a special healthcheck to test the LED monitoring and sequence_led
 void System::button_OnClick(PButton & b) {
     LOG_NOTICE("Button pressed - single click");
 
+#ifdef EMSESP_DEBUG
 #ifndef EMSESP_STANDALONE
-    // show filesystem
-    listDir("/", 3);
+    listDir("/", 3); // show filesystem
+#endif
+    // used to test LED monitoring and sequence_led. See system_check() for more details.
+    EMSESP::system_.healthcheck(99); // 99 = special trigger
 #endif
 }
 
@@ -757,7 +745,7 @@ void System::button_OnClick(PButton & b) {
 // reconnect to AP by removing the SSID from the network settings
 // note: in v3.9 this is normal behaviour to fallback to AP if the Wifi or Ethernet connection fails
 void System::button_OnDblClick(PButton & b) {
-    LOG_NOTICE("Button pressed - double click - wifi reconnect to AP");
+    LOG_NOTICE("Button pressed - double click - reset network");
 #ifndef EMSESP_STANDALONE
     // set AP mode to always so will join AP if wifi ssid fails to connect
     EMSESP::esp32React.getAPSettingsService()->update([&](APSettings & apSettings) {
@@ -773,55 +761,6 @@ void System::button_OnDblClick(PButton & b) {
 #endif
 }
 
-// LED flash every 100ms
-void System::led_flash() {
-    static bool     led_flash_state_  = false;
-    static uint32_t last_toggle_time_ = 0;
-    uint32_t        current_time      = uuid::get_uptime();
-
-    if (current_time - last_toggle_time_ >= 100) { // every 100ms
-        led_flash_state_  = !led_flash_state_;
-        last_toggle_time_ = current_time;
-
-        if (led_flash_type_) {
-            uint8_t intensity = led_flash_state_ ? RGB_LED_BRIGHTNESS : 0;
-            EMSESP_RGB_WRITE(led_flash_gpio_, intensity, intensity, 0); // RGB LED - Yellow
-        } else {
-            digitalWrite(led_flash_gpio_, led_flash_state_ ? LED_ON : !LED_ON); // Standard LED
-        }
-    }
-
-    // after duration, turn off the LED
-    if (current_time - led_flash_start_time_ >= led_flash_duration_) {
-        if (led_flash_type_) {
-            EMSESP_RGB_WRITE(led_flash_gpio_, 0, 0, 0);
-        } else {
-            digitalWrite(led_flash_gpio_, !LED_ON);
-        }
-        led_flash_timer_ = false;
-        command_format(nullptr, 0); // Execute format operation
-    }
-}
-
-// Start the LED flash timer - duration in seconds
-void System::start_led_flash(uint8_t duration) {
-    // Don't start if already running
-    if (led_flash_timer_) {
-        return;
-    }
-
-    // Get LED settings
-    EMSESP::webSettingsService.read([&](WebSettings & settings) {
-        led_flash_type_ = settings.led_type;
-        led_flash_gpio_ = settings.led_gpio;
-    });
-
-    // Reset counter and state
-    led_flash_start_time_ = uuid::get_uptime(); // current time
-    led_flash_duration_   = duration * 1000;    // duration in milliseconds
-    led_flash_timer_      = true;               // it's active
-}
-
 // button long press
 void System::button_OnLongPress(PButton & b) {
     LOG_NOTICE("Button pressed - long press - restart EMS-ESP");
@@ -831,7 +770,7 @@ void System::button_OnLongPress(PButton & b) {
 // button indefinite press
 void System::button_OnVLongPress(PButton & b) {
     LOG_NOTICE("Button pressed - very long press - perform factory reset");
-    start_led_flash(5); // Start LED flash timer for 5 seconds
+    EMSESP::led_.start_led_fast_flash(5); // Start LED flash timer for 5 seconds
 }
 
 // push button
@@ -850,21 +789,7 @@ void System::button_init() {
 #endif
 }
 
-// set the LED to on or off when in normal operating mode
-void System::led_init() {
-    if (!led_gpio_) { // 0 means disabled
-        LOG_INFO("LED disabled");
-        return;
-    }
-
-    if (led_type_) {
-        EMSESP_RGB_WRITE(led_gpio_, 0, 0, 0);
-    } else {
-        pinMode(led_gpio_, OUTPUT);
-        digitalWrite(led_gpio_, !LED_ON); // start with LED off
-    }
-}
-
+// init UART
 void System::uart_init() {
     EMSuart::stop();
     EMSuart::start(tx_mode_, rx_gpio_, tx_gpio_); // start UART, GPIOs have already been checked
@@ -879,18 +804,16 @@ bool System::loop() {
         system_restart();
     }
 
-    // if LED flashing is active, run the LED flash
-    if (led_flash_timer_) {
-        led_flash();
-        return true; // is active
+    myPButton_.check(); // check button press
+    system_check();     // System health check
+
+    // handle the LED
+    if (EMSESP::led_.loop(healthcheck_, myPButton_.button_busy())) {
+        return true; // restart is pending, skip the rest of the loop
     }
 
-    led_monitor();      // check status and report back using the LED
-    myPButton_.check(); // check button press
-    system_check();     // check system health
-
-// syslog
 #ifndef EMSESP_STANDALONE
+    // syslog service
     if (syslog_enabled_) {
         syslog_.loop();
     }
@@ -898,7 +821,7 @@ bool System::loop() {
 
     send_info_mqtt();
 
-    return false; // LED flashing is not active
+    return false;
 }
 
 // send MQTT info topic appended with the version information as JSON, as a retained flag
@@ -1047,41 +970,22 @@ void System::system_check() {
         LOG_NOTICE("Ping test, #%d", ping_count++);
 #endif
 
-        // check if we have a valid network connection
-        if (!EMSESP::network_.network_connected()) {
-            healthcheck_ |= HEALTHCHECK_NO_NETWORK;
+        if (healthcheck_ != 99) { // skip if we're testing
+            // check if we have a valid network connection
+            healthcheck_ = (healthcheck_ & ~HEALTHCHECK_NO_NETWORK) | (EMSESP::network_.network_connected() ? 0 : HEALTHCHECK_NO_NETWORK);
+
+            // check if we have a bus connection
+            healthcheck_ = (healthcheck_ & ~HEALTHCHECK_NO_BUS) | (EMSbus::bus_connected() ? 0 : HEALTHCHECK_NO_BUS);
         } else {
-            healthcheck_ &= ~HEALTHCHECK_NO_NETWORK;
+            LOG_DEBUG("Healthcheck: testing mode");
+            healthcheck_ = 0; // make it all look healthy - this is temporary for one cycle
         }
 
-        // check if we have a bus connection
-        if (!EMSbus::bus_connected()) {
-            healthcheck_ |= HEALTHCHECK_NO_BUS;
-        } else {
-            healthcheck_ &= ~HEALTHCHECK_NO_BUS;
-        }
-
-        // see if the healthcheck state has changed
+        // see if the healthcheck state has changed, if so send out the new heartbeat
         static uint8_t last_healthcheck_ = 0;
         if (healthcheck_ != last_healthcheck_) {
             last_healthcheck_ = healthcheck_;
-
-            EMSESP::system_.send_heartbeat(); // send MQTT heartbeat immediately when connected
-
-            // see if we're better now
-            if (healthcheck_ == 0) {
-                // everything is healthy, show LED permanently on or off depending on setting
-                // Green on RGB LED, on/off on standard LED
-                if (led_gpio_) {
-                    led_type_ ? EMSESP_RGB_WRITE(led_gpio_, 0, hide_led_ ? 0 : RGB_LED_BRIGHTNESS, 0)
-                              : digitalWrite(led_gpio_, hide_led_ ? !LED_ON : LED_ON); // Green
-                }
-            } else {
-                // turn off LED so we're ready for the warning flashes
-                if (led_gpio_) {
-                    led_type_ ? EMSESP_RGB_WRITE(led_gpio_, 0, 0, 0) : digitalWrite(led_gpio_, !LED_ON);
-                }
-            }
+            EMSESP::system_.send_heartbeat();
         }
     }
 }
@@ -1096,6 +1000,7 @@ void System::commands_init() {
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(restart), System::command_restart, FL_(restart_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(format), System::command_format, FL_(format_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(txpause), System::command_txpause, FL_(txpause_cmd), CommandFlag::ADMIN_ONLY);
+    Command::add(EMSdevice::DeviceType::SYSTEM, F_(led), System::command_led, FL_(led_cmd), CommandFlag::ADMIN_ONLY);
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(watch), System::command_watch, FL_(watch_cmd));
     Command::add(EMSdevice::DeviceType::SYSTEM, F_(message), System::command_message, FL_(message_cmd));
 #if defined(EMSESP_TEST)
@@ -1107,98 +1012,6 @@ void System::commands_init() {
 
     // MQTT subscribe "ems-esp/system/#"
     Mqtt::subscribe(EMSdevice::DeviceType::SYSTEM, "system/#", nullptr); // use empty function callback
-}
-
-// uses LED to show system health
-void System::led_monitor() {
-    // if button is pressed, show LED (yellow on RGB LED, on/off on standard LED)
-    static bool button_busy_ = false;
-    if (button_busy_ != myPButton_.button_busy()) {
-        button_busy_ = myPButton_.button_busy();
-        if (led_type_) {
-            EMSESP_RGB_WRITE(led_gpio_, button_busy_ ? RGB_LED_BRIGHTNESS : 0, button_busy_ ? RGB_LED_BRIGHTNESS : 0, 0); // Yellow
-        } else {
-            digitalWrite(led_gpio_, button_busy_ ? LED_ON : !LED_ON);
-        }
-    }
-
-    // we only need to run the LED healthcheck if there are errors
-    // skip if we're in the led_flash_timer or if a button has been pressed
-    if (!healthcheck_ || !led_gpio_ || button_busy_ || led_flash_timer_) {
-        return; // all good
-    }
-
-    static uint32_t led_long_timer_  = 1; // 1 will kick it off immediately
-    static uint32_t led_short_timer_ = 0;
-    static uint8_t  led_flash_step_  = 0; // 0 means we're not in the short flash timer
-
-    auto current_time = uuid::get_uptime();
-
-    // first long pause before we start flashing
-    if (led_long_timer_ && (uint32_t)(current_time - led_long_timer_) >= HEALTHCHECK_LED_LONG_DUARATION) {
-        led_short_timer_ = current_time; // start the short timer
-        led_long_timer_  = 0;            // stop long timer
-        led_flash_step_  = 1;            // enable the short flash timer
-    }
-
-    // the flash timer which starts after the long pause
-    if (led_flash_step_ && (uint32_t)(current_time - led_short_timer_) >= HEALTHCHECK_LED_FLASH_DUARATION) {
-        led_long_timer_     = 0; // stop the long timer
-        led_short_timer_    = current_time;
-        static bool led_on_ = false;
-
-        if (++led_flash_step_ == 8) {
-            // reset the whole sequence
-            led_long_timer_ = uuid::get_uptime();
-            led_flash_step_ = 0;
-            led_type_ ? EMSESP_RGB_WRITE(led_gpio_, 0, 0, 0) : digitalWrite(led_gpio_, !LED_ON); // LED off
-        } else if (led_flash_step_ % 2) {
-            // handle the step events (on odd numbers 3,5,7,etc). see if we need to turn on a LED
-            //  1 flash (blue) is the EMS bus is not connected
-            //  2 flashes (red, red) if the network (wifi or ethernet) is not connected
-            //  3 flashes (red, red, blue) is both the bus and the network are not connected
-            bool no_network = (healthcheck_ & HEALTHCHECK_NO_NETWORK) == HEALTHCHECK_NO_NETWORK;
-            bool no_bus     = (healthcheck_ & HEALTHCHECK_NO_BUS) == HEALTHCHECK_NO_BUS;
-
-            if (led_type_) {
-                if (led_flash_step_ == 3) {
-                    if (no_network) {
-                        EMSESP_RGB_WRITE(led_gpio_, RGB_LED_BRIGHTNESS, 0, 0); // red
-                    } else if (no_bus) {
-                        EMSESP_RGB_WRITE(led_gpio_, 0, 0, RGB_LED_BRIGHTNESS); // blue
-                    }
-                }
-                if (led_flash_step_ == 5 && no_network) {
-                    EMSESP_RGB_WRITE(led_gpio_, RGB_LED_BRIGHTNESS, 0, 0); // red
-                }
-                if ((led_flash_step_ == 7) && no_network && no_bus) {
-                    EMSESP_RGB_WRITE(led_gpio_, 0, 0, RGB_LED_BRIGHTNESS); // blue
-                }
-            } else {
-                if ((led_flash_step_ == 3) && (no_network || no_bus)) {
-                    led_on_ = true;
-                }
-
-                if ((led_flash_step_ == 5) && no_network) {
-                    led_on_ = true;
-                }
-
-                if ((led_flash_step_ == 7) && no_network && no_bus) {
-                    led_on_ = true;
-                }
-
-                if (led_on_) {
-                    digitalWrite(led_gpio_, LED_ON); // LED on
-                }
-            }
-        } else {
-            // turn the led off after the flash, on even number count
-            if (led_on_) {
-                led_type_ ? EMSESP_RGB_WRITE(led_gpio_, 0, 0, 0) : digitalWrite(led_gpio_, !LED_ON);
-                led_on_ = false;
-            }
-        }
-    }
 }
 
 // Return the quality (Received Signal Strength Indicator) of the WiFi network as a %
@@ -1406,7 +1219,6 @@ void System::show_system(uuid::console::Shell & shell) {
 #endif
 }
 
-
 // see if there is a restore of an older settings file that needs to be applied
 // note there can be only one file at a time
 bool System::check_restore() {
@@ -1436,6 +1248,22 @@ bool System::check_restore() {
                         saveSettings(MQTT_SETTINGS_FILE, section);
                         saveSettings(NTP_SETTINGS_FILE, section);
                         saveSettings(SECURITY_SETTINGS_FILE, section);
+
+                        // next is application settings
+                        // we need to set the EMS Bus ID to 0x49 if it's 0x0B and coming from a version which is < v3.9.0
+                        std::string     settingsVersion = section["Settings"]["version"];
+                        FirmwareVersion settings_version(settingsVersion);
+                        if (settings_version < FirmwareVersion("3.9.0")) {
+                            if (section["Settings"]["ems_bus_id"].is<int>()) {
+                                int ems_bus_id = section["Settings"]["ems_bus_id"];
+                                if (ems_bus_id == 0x0B) {
+                                    // set to EMSESP_DEFAULT_EMS_BUS_ID
+                                    section["Settings"]["ems_bus_id"] = EMSESP_DEFAULT_EMS_BUS_ID;
+                                    LOG_INFO("Overriding EMS Bus ID to %02X (was %02X)", EMSESP_DEFAULT_EMS_BUS_ID, ems_bus_id);
+                                }
+                            }
+                        }
+                        // continue processing the rest of the sections
                         saveSettings(EMSESP_SETTINGS_FILE, section);
                     }
                     if (section_type == "schedule") {
@@ -1685,7 +1513,11 @@ bool System::check_upgrade() {
             // force web buffer to 25 for those boards without psram
             if ((EMSESP::system_.PSram() == 0) && (settings.weblog_buffer != 25)) {
                 settings.weblog_buffer = 25;
-                return StateUpdateResult::CHANGED;
+                // if we're coming from < v3.9.0 and the Bus ID is the service key (0x0B), set it to the new default
+                if (settings.ems_bus_id == 0x0B && settings_version.major() <= 3 && settings_version.minor() < 9) {
+                    settings.ems_bus_id = EMSESP_DEFAULT_EMS_BUS_ID;
+                    return StateUpdateResult::CHANGED;
+                }
             }
             return StateUpdateResult::UNCHANGED;
         });
@@ -1944,14 +1776,12 @@ bool System::command_service(const char * cmd, const char * value) {
                 settings.hide_led = b;
                 return StateUpdateResult::CHANGED;
             });
-            EMSESP::system_.hide_led(b);
             ok = true;
         } else if (!strcmp(cmd, "settings/analogenabled")) {
             EMSESP::webSettingsService.update([&](WebSettings & settings) {
                 settings.analog_enabled = b;
                 return StateUpdateResult::CHANGED;
             });
-            EMSESP::system_.analog_enabled(b);
             ok = true;
         } else if (!strcmp(cmd, "mqtt/enabled")) {
             EMSESP::esp32React.getMqttSettingsService()->update([&](MqttSettings & Settings) {
@@ -2663,11 +2493,11 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
                 node["ethPhyAddr"]    = settings.eth_phy_addr;
                 node["ethClockMmode"] = settings.eth_clock_mode;
             }
-            node["rxGPIO"]      = EMSESP::system_.rx_gpio_;
-            node["txGPIO"]      = EMSESP::system_.tx_gpio_;
-            node["dallasGPIO"]  = EMSESP::system_.dallas_gpio_;
-            node["pbuttonGPIO"] = EMSESP::system_.pbutton_gpio_;
-            node["ledGPIO"]     = EMSESP::system_.led_gpio_;
+            node["rxGPIO"]      = settings.rx_gpio;
+            node["txGPIO"]      = settings.tx_gpio;
+            node["dallasGPIO"]  = settings.dallas_gpio;
+            node["pbuttonGPIO"] = settings.pbutton_gpio;
+            node["ledGPIO"]     = settings.led_gpio;
             node["ledType"]     = settings.led_type;
         }
         node["hideLed"]         = settings.hide_led;
@@ -2837,6 +2667,39 @@ bool System::load_board_profile(std::vector<int8_t> & data, const std::string & 
         valid_system_gpios_ = {0, 2, 5, 17, 18};
     } else {
         return false; // unknown, return false
+    }
+
+    return true;
+}
+
+// led command
+// https://github.com/emsesp/EMS-ESP32/issues/3063
+// /api//system/led command that takes an argument in the form [color]:[pattern]
+// color is red, green, blue, yellow, white
+// pattern is
+//  blink1 for 1 time
+//  blink2 for 2 times
+//  blink3 for 3 times
+//  rgb for RGB
+// For example: /api/system/led?data=red:blink1
+// For older non-RGB models, the colour would default to just being on.
+bool System::command_led(const char * value, const int8_t id) {
+    if (!value) {
+        return false; // no argument
+    }
+
+    std::string arg = value;
+    if (arg.find(':') == std::string::npos) {
+        LOG_ERROR("LED command must be in the form [color]:[pattern]");
+        return false; // not in the form [color]:[pattern]
+    }
+    std::string color   = arg.substr(0, arg.find(':'));
+    std::string pattern = arg.substr(arg.find(':') + 1);
+
+    // set and validate the color and pattern
+    if (!EMSESP::led_.set_custom_led_routine(color, pattern)) {
+        LOG_ERROR("Invalid color or pattern.");
+        return false;
     }
 
     return true;
