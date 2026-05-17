@@ -72,9 +72,6 @@ class EMSdevice {
     bool         has_tags(const int8_t tag) const;
     bool         has_cmd(const char * cmd, const int8_t id) const;
     std::string  brand_to_char();
-    // Same as brand_to_char() but returns a const char* (flash literal or
-    // custom_brand_.c_str()) without allocating a std::string. Lifetime is
-    // tied to this EMSdevice instance.
     const char * brand_to_cstr() const;
     std::string  to_string();
     std::string  to_string_short();
