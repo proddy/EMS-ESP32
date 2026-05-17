@@ -193,7 +193,7 @@ void WebLogService::transmit(const QueuedLogMessage & message) {
 void WebLogService::getSetValues(AsyncWebServerRequest * request, JsonVariant json) {
     if ((request->method() == HTTP_GET) || (!json.is<JsonObject>())) {
         // GET - return the values
-        auto *     response    = new AsyncJsonResponse(false);
+        auto *     response    = new PsramAsyncJsonResponse(false);
         JsonObject root        = response->getRoot();
         root["level"]          = level_;
         root["max_messages"]   = maximum_log_messages_;

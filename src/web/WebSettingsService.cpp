@@ -414,7 +414,7 @@ void WebSettingsService::board_profile(AsyncWebServerRequest * request) {
     if (request->hasParam("boardProfile")) {
         std::string board_profile = request->getParam("boardProfile")->value().c_str();
 
-        auto *     response = new AsyncJsonResponse(false);
+        auto *     response = new PsramAsyncJsonResponse(false);
         JsonObject root     = response->getRoot();
 
         // 0=led, 1=dallas, 2=rx, 3=tx, 4=button, 5=phy_type, 6=eth_power, 7=eth_phy_addr, 8=eth_clock_mode, 9=led_type

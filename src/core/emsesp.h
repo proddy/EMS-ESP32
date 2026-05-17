@@ -57,6 +57,7 @@
 #include "../web/WebModulesService.h"
 
 #include "psram_json_allocator.h"
+#include "psram_async_json_response.h"
 #include "emsdevicevalue.h"
 #include "emsdevice.h"
 #include "emsfactory.h"

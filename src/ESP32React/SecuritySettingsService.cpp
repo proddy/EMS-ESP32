@@ -1,5 +1,7 @@
 #include "SecuritySettingsService.h"
 
+#include "../core/psram_async_json_response.h"
+
 SecuritySettingsService::SecuritySettingsService(AsyncWebServer * server, FS * fs)
     : _httpEndpoint(SecuritySettings::read, SecuritySettings::update, this, server, SECURITY_SETTINGS_PATH, this)
     , _fsPersistence(SecuritySettings::read, SecuritySettings::update, this, fs, SECURITY_SETTINGS_FILE)
@@ -112,7 +114,7 @@ void SecuritySettingsService::generateToken(AsyncWebServerRequest * request) {
     auto usernameParam = request->getParam("username");
     for (const User & _user : _state.users) {
         if (_user.username == usernameParam->value()) {
-            auto *     response = new AsyncJsonResponse(false);
+            auto *     response = new emsesp::PsramAsyncJsonResponse(false);
             JsonObject root     = response->getRoot();
             root["token"]       = generateJWT(&_user);
             response->setLength();

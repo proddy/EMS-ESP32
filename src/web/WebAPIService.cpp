@@ -108,7 +108,7 @@ void WebAPIService::parse(AsyncWebServerRequest * request, JsonObject input) {
     EMSESP::system_.refreshHeapMem();
 
     // output json buffer
-    auto response = new AsyncJsonResponse();
+    auto response = new PsramAsyncJsonResponse();
 
     // add more mem if needed - won't be needed in ArduinoJson 7
     // while (!response->getSize()) {

@@ -1337,3 +1337,7 @@ startm
 netifs
 testemail
 sendmail
+serialises
+SPIRAM
+optimisations
+IILE

@@ -13,7 +13,7 @@ NetworkStatus::NetworkStatus(AsyncWebServer * server, SecurityManager * security
 }
 
 void NetworkStatus::networkStatus(AsyncWebServerRequest * request) {
-    auto *     response = new AsyncJsonResponse(false);
+    auto *     response = new emsesp::PsramAsyncJsonResponse(false);
     JsonObject root     = response->getRoot();
 
     wl_status_t wifi_status = WiFi.status();

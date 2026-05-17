@@ -47,7 +47,7 @@ WebStatusService::WebStatusService(AsyncWebServer * server, SecurityManager * se
 void WebStatusService::systemStatus(AsyncWebServerRequest * request) {
     EMSESP::system_.refreshHeapMem(); // refresh free heap and max alloc heap
 
-    auto *     response = new AsyncJsonResponse(false);
+    auto *     response = new PsramAsyncJsonResponse(false);
     JsonObject root     = response->getRoot();
 
     //
@@ -187,7 +187,7 @@ void WebStatusService::systemStatus(AsyncWebServerRequest * request) {
 
 // generic action handler - as a POST
 void WebStatusService::action(AsyncWebServerRequest * request, JsonVariant json) {
-    auto *     response = new AsyncJsonResponse();
+    auto *     response = new PsramAsyncJsonResponse();
     JsonObject root     = response->getRoot();
 
     // param is optional - https://arduinojson.org/news/2024/09/18/arduinojson-7-2/

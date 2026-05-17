@@ -27,7 +27,7 @@ WebActivityService::WebActivityService(AsyncWebServer * server, SecurityManager 
 }
 
 void WebActivityService::webActivityService(AsyncWebServerRequest * request) {
-    auto *     response = new AsyncJsonResponse(false);
+    auto *     response = new PsramAsyncJsonResponse(false);
     JsonObject root     = response->getRoot();
 
     JsonArray  statsJson = root["stats"].to<JsonArray>();

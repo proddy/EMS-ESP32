@@ -10,7 +10,7 @@ APStatus::APStatus(AsyncWebServer * server, SecurityManager * securityManager, A
 }
 
 void APStatus::apStatus(AsyncWebServerRequest * request) {
-    auto *     response = new AsyncJsonResponse(false);
+    auto *     response = new emsesp::PsramAsyncJsonResponse(false);
     JsonObject root     = response->getRoot();
 
     root["status"]      = _apSettingsService->getAPNetworkStatus();

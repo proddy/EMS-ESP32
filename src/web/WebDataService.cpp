@@ -58,7 +58,7 @@ WebDataService::WebDataService(AsyncWebServer * server, SecurityManager * securi
 // this is used in the Devices page and contains all EMS device information
 // /coreData endpoint
 void WebDataService::core_data(AsyncWebServerRequest * request) {
-    auto *     response = new AsyncJsonResponse(false);
+    auto *     response = new PsramAsyncJsonResponse(false);
     JsonObject root     = response->getRoot();
 
     // list is already sorted by device type
@@ -70,7 +70,7 @@ void WebDataService::core_data(AsyncWebServerRequest * request) {
             obj["id"]      = emsdevice->unique_id();                            // a unique id
             obj["tn"]      = emsdevice->device_type_2_device_name_translated(); // translated device type name
             obj["t"]       = emsdevice->device_type();                          // device type number
-            obj["b"]       = emsdevice->brand_to_cstr();                        // brand
+            obj["b"]       = emsdevice->brand_to_char();                        // brand (std::string → copied into doc, safe across async serialize)
             obj["n"]       = emsdevice->name();                                 // custom name
             obj["d"]       = emsdevice->device_id();                            // deviceid
             obj["p"]       = emsdevice->product_id();                           // productid
@@ -104,7 +104,7 @@ void WebDataService::core_data(AsyncWebServerRequest * request) {
 // sensor data - sends back to web
 // /sensorData endpoint
 void WebDataService::sensor_data(AsyncWebServerRequest * request) {
-    auto *     response = new AsyncJsonResponse(false);
+    auto *     response = new PsramAsyncJsonResponse(false);
     JsonObject root     = response->getRoot();
 
     // temperature sensors
@@ -176,7 +176,7 @@ void WebDataService::device_data(AsyncWebServerRequest * request) {
     if (request->hasParam(F_(id))) {
         id = Helpers::atoint(request->getParam(F_(id))->value().c_str()); // get id from url
 
-        auto * response = new AsyncMessagePackResponse();
+        auto * response = new PsramAsyncMessagePackResponse();
 
         // check size
         // while (!response) {
@@ -217,6 +217,9 @@ void WebDataService::device_data(AsyncWebServerRequest * request) {
             return;
         }
 #endif
+        // no matching device and not CUSTOM_UID: we never called request->send(response),
+        // so AsyncWebServer never took ownership. Delete it ourselves to avoid leaking.
+        delete response;
     }
 
     // invalid
@@ -269,7 +272,7 @@ void WebDataService::write_device_value(AsyncWebServerRequest * request, JsonVar
             return;
         }
         // create JSON for output
-        auto *     response = new AsyncJsonResponse(false);
+        auto *     response = new PsramAsyncJsonResponse(false);
         JsonObject output   = response->getRoot();
         // the data could be in any format, but we need string
         // authenticated is always true
