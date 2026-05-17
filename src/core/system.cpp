@@ -2259,7 +2259,7 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
     node["sdk"]             = ESP.getSdkVersion();
     node["freeMem"]         = getHeapMem();
     node["maxAlloc"]        = getMaxAllocMem();
-    node["minFree"]         = getMinFreeMem(); // all-time low watermark of internal heap
+    node["minFree"]         = getMinFreeMem();                                      // all-time low watermark of internal heap
     node["freeCaps"]        = heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1024;      // includes heap and psram
     node["usedApp"]         = EMSESP::system_.appUsed();                            // kilobytes
     node["freeApp"]         = EMSESP::system_.appFree();                            // kilobytes
@@ -2562,7 +2562,7 @@ bool System::command_info(const char * value, const int8_t id, JsonObject output
                     obj["name"]      = emsdevice->name();             // custom name
                     obj["deviceID"]  = Helpers::hextoa(emsdevice->device_id());
                     obj["productID"] = emsdevice->product_id();
-                    obj["brand"]     = emsdevice->brand_to_cstr();
+                    obj["brand"]     = emsdevice->brand_to_char();
                     obj["version"]   = emsdevice->version();
                     obj["entities"]  = emsdevice->count_entities();
                     char result[1000];
