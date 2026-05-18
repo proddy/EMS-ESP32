@@ -572,12 +572,11 @@ bool TxService::send_raw(const char * telegram_data) {
         return false;
     }
 
-    // since the telegram data is a const, make a copy. add 1 to grab the \0 EOS
-    char telegram[strlen(telegram_data) + 1];
-    strlcpy(telegram, telegram_data, sizeof(telegram));
+    // since the telegram data is a const, make a copy
+    char * telegram = strdup(telegram_data);
 
     uint8_t count = 0;
-    uint8_t data[2 + strlen(telegram) / 3];
+    uint8_t data[256]; // max raw telegram length
 
     // get values
     char * p = strtok(telegram, " ,"); // delimiter
@@ -585,7 +584,7 @@ bool TxService::send_raw(const char * telegram_data) {
         data[count++] = (uint8_t)strtol(p, 0, 16);
         p             = strtok(nullptr, " ,");
     }
-
+    free(telegram);
     // check valid length
     if (count < 4) {
         return false;
