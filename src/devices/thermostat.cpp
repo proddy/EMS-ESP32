@@ -5037,7 +5037,7 @@ void Thermostat::register_device_values_hc(std::shared_ptr<Thermostat::HeatingCi
                               MAKE_CF_CB(set_redthreshold),
                               12,
                               22);
-        register_device_value(tag, &hc->solarInfl, DeviceValueType::INT8, FL_(solarinfl), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_solarinfl), -5, -1);
+        register_device_value(tag, &hc->solarInfl, DeviceValueType::INT8, FL_(solarinfl), DeviceValueUOM::DEGREES, MAKE_CF_CB(set_solarinfl), -5, 0);
         register_device_value(tag, &hc->currSolarInfl, DeviceValueType::INT8, DeviceValueNumOp::DV_NUMOP_DIV10, FL_(currsolarinfl), DeviceValueUOM::DEGREES);
         register_device_value(tag, &hc->heatingpid, DeviceValueType::ENUM, FL_(enum_PID), FL_(heatingPID), DeviceValueUOM::NONE, MAKE_CF_CB(set_heatingpid));
         register_device_value(tag, &hc->pumpopt, DeviceValueType::BOOL, FL_(pumpopt), DeviceValueUOM::NONE, MAKE_CF_CB(set_pumpopt));

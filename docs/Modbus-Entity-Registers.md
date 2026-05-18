@@ -5377,7 +5377,7 @@ uint8
 int8
 | hc1.redthreshold | reduction threshold | int8 (&gt;=12&lt;=22) | C | true | HC | 56 | 1 | 1/2 |
 int8
-| hc1.solarinfl | solar influence | int8 (&gt;=-5&lt;=4294967295) | C | true | HC | 57 | 1 | 1 |
+| hc1.solarinfl | solar influence | int8 (&gt;=-5&lt;=0) | C | true | HC | 57 | 1 | 1 |
 | hc1.currsolarinfl | current solar influence | int8 | C | false | HC | 58 | 1 | 1/10 |
 | hc1.heatingpid | heating PID | enum |   | true | HC | 59 | 1 | 1 |
 | hc1.pumpopt | pump optimization | boolean |   | true | HC | 60 | 1 | 1 |
@@ -5986,7 +5986,7 @@ uint8
 int8
 | hc1.redthreshold | reduction threshold | int8 (&gt;=12&lt;=22) | C | true | HC | 56 | 1 | 1/2 |
 int8
-| hc1.solarinfl | solar influence | int8 (&gt;=-5&lt;=4294967295) | C | true | HC | 57 | 1 | 1 |
+| hc1.solarinfl | solar influence | int8 (&gt;=-5&lt;=0) | C | true | HC | 57 | 1 | 1 |
 | hc1.currsolarinfl | current solar influence | int8 | C | false | HC | 58 | 1 | 1/10 |
 | hc1.heatingpid | heating PID | enum |   | true | HC | 59 | 1 | 1 |
 | hc1.pumpopt | pump optimization | boolean |   | true | HC | 60 | 1 | 1 |
@@ -6138,7 +6138,7 @@ uint8
 int8
 | hc1.redthreshold | reduction threshold | int8 (&gt;=12&lt;=22) | C | true | HC | 56 | 1 | 1/2 |
 int8
-| hc1.solarinfl | solar influence | int8 (&gt;=-5&lt;=4294967295) | C | true | HC | 57 | 1 | 1 |
+| hc1.solarinfl | solar influence | int8 (&gt;=-5&lt;=0) | C | true | HC | 57 | 1 | 1 |
 | hc1.currsolarinfl | current solar influence | int8 | C | false | HC | 58 | 1 | 1/10 |
 | hc1.heatingpid | heating PID | enum |   | true | HC | 59 | 1 | 1 |
 | hc1.pumpopt | pump optimization | boolean |   | true | HC | 60 | 1 | 1 |
@@ -6305,7 +6305,7 @@ uint8
 int8
 | hc1.redthreshold | reduction threshold | int8 (&gt;=12&lt;=22) | C | true | HC | 56 | 1 | 1/2 |
 int8
-| hc1.solarinfl | solar influence | int8 (&gt;=-5&lt;=4294967295) | C | true | HC | 57 | 1 | 1 |
+| hc1.solarinfl | solar influence | int8 (&gt;=-5&lt;=0) | C | true | HC | 57 | 1 | 1 |
 | hc1.currsolarinfl | current solar influence | int8 | C | false | HC | 58 | 1 | 1/10 |
 | hc1.heatingpid | heating PID | enum |   | true | HC | 59 | 1 | 1 |
 | hc1.pumpopt | pump optimization | boolean |   | true | HC | 60 | 1 | 1 |
@@ -6499,7 +6499,7 @@ uint8
 int8
 | hc1.redthreshold | reduction threshold | int8 (&gt;=12&lt;=22) | C | true | HC | 56 | 1 | 1/2 |
 int8
-| hc1.solarinfl | solar influence | int8 (&gt;=-5&lt;=4294967295) | C | true | HC | 57 | 1 | 1 |
+| hc1.solarinfl | solar influence | int8 (&gt;=-5&lt;=0) | C | true | HC | 57 | 1 | 1 |
 | hc1.currsolarinfl | current solar influence | int8 | C | false | HC | 58 | 1 | 1/10 |
 | hc1.heatingpid | heating PID | enum |   | true | HC | 59 | 1 | 1 |
 | hc1.pumpopt | pump optimization | boolean |   | true | HC | 60 | 1 | 1 |
