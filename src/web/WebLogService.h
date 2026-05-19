@@ -71,6 +71,9 @@ class WebLogService : public uuid::log::Handler {
     unsigned long    log_message_id_tail_  = 0;                                   // last event shown on the screen after fetch
     bool             compact_              = true;
     uuid::log::Level level_                = uuid::log::Level::INFO;
+
+    // PSRAM-backed scratch buffer reused across every SSE log event
+    stringPSRAM scratch_buf_;
 };
 
 } // namespace emsesp

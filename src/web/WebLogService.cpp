@@ -168,25 +168,27 @@ char * WebLogService::messagetime(char * out, const uint64_t t, const size_t buf
 
 // send to web eventsource
 void WebLogService::transmit(const QueuedLogMessage & message) {
-    JsonDocument jsonDocument;
+    // JsonDocument is PSRAM-backed so its internal node/string pool is on PSRAM
+    JsonDocument jsonDocument(PSRAM_DOC);
 
     JsonObject logEvent = jsonDocument.to<JsonObject>();
     char       time_string[25];
 
     logEvent["t"] = messagetime(time_string, message.uptime_, sizeof(time_string));
-    logEvent["l"] = message.level_; // .content_->level;
+    logEvent["l"] = message.level_;
     logEvent["i"] = message.id_;
-    logEvent["n"] = message.name_; // content_->name;
-    logEvent["m"] = message.text_; // content_->text;
+    logEvent["n"] = message.name_;
+    logEvent["m"] = message.text_;
 
-    size_t len    = measureJson(jsonDocument) + 1;
-    char * buffer = new char[len];
-    if (buffer) {
-        serializeJson(jsonDocument, buffer, len);
-        events_.send(buffer, "message", message.id_);
-        log_message_id_tail_ = message.id_;
+    // Reuse a PSRAM-backed scratch buffer
+    const size_t len = measureJson(jsonDocument);
+    if (scratch_buf_.capacity() < len + 1) {
+        scratch_buf_.reserve(len + 1);
     }
-    delete[] buffer;
+    scratch_buf_.resize(len);
+    serializeJson(jsonDocument, scratch_buf_.data(), len + 1);
+    events_.send(scratch_buf_.c_str(), "message", message.id_);
+    log_message_id_tail_ = message.id_;
 }
 
 // sets the values after a POST
