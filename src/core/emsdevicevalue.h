@@ -167,23 +167,27 @@ class DeviceValue {
         DV_NUMOP_MUL50  = -50
     };
 
-    uint8_t               device_type;    // EMSdevice::DeviceType
-    int8_t                tag;            // DeviceValueTAG::*
+    // Layout chosen for compact packing AND cache locality on 32-bit ESP32.
+    // pointers — 5 × 4 bytes, all naturally aligned
     void *                value_p;        // pointer to variable of any type
-    uint8_t               type;           // DeviceValueType::*
+    const char * const    short_name;     // used in MQTT and API
+    const char * const *  fullname;       // used in Web and Console, is translated
     const char * const ** options;        // options as a flash char array
     const char * const *  options_single; // options are not translated
-    int8_t                numeric_operator;
-    const char * const    short_name;      // used in MQTT and API
-    const char * const *  fullname;        // used in Web and Console, is translated
-    std::string           custom_fullname; // optional, from customization
-    uint8_t               uom;             // DeviceValueUOM::*
-    bool                  has_cmd;         // true if there is a Console/MQTT command which matches the short_name
-    int16_t               min;             // min range
-    uint32_t              max;             // max range
-    uint8_t               state;           // DeviceValueState::*
-
-    uint8_t options_size; // number of options in the char array, calculated at class initialization
+    // single-byte fields packed together — hot fields, share cache line 0 with the pointers above
+    uint8_t device_type;      // EMSdevice::DeviceType
+    int8_t  tag;              // DeviceValueTAG::*
+    uint8_t type;             // DeviceValueType::*
+    uint8_t state;            // DeviceValueState::*
+    int8_t  numeric_operator; // DeviceValueNumOp::*
+    uint8_t uom;              // DeviceValueUOM::*
+    bool    has_cmd;          // true if there is a Console/MQTT command which matches the short_name
+    uint8_t options_size;     // number of options in the char array, calculated at class initialization
+    // wider numeric range fields
+    int16_t  min; // min range
+    uint32_t max; // max range
+    // largest member last (cold path: only read during customization save/load and web display)
+    std::string custom_fullname; // optional, from customization
 
     DeviceValue(uint8_t               device_type,    // EMSdevice::DeviceType
                 int8_t                tag,            // DeviceValueTAG::*

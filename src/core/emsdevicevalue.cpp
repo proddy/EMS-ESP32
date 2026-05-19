@@ -38,21 +38,23 @@ DeviceValue::DeviceValue(uint8_t               device_type,
                          int16_t               min,
                          uint32_t              max,
                          uint8_t               state)
-    : device_type(device_type)
-    , tag(tag)
-    , value_p(value_p)
-    , type(type)
-    , options(options)
-    , options_single(options_single)
-    , numeric_operator(numeric_operator)
+    // Initializer list ordered to match the reordered field declarations in
+    // emsdevicevalue.h (pointers first, then 1-byte block, then 2/4-byte, then std::string)
+    : value_p(value_p)
     , short_name(short_name)
     , fullname(fullname)
-    , custom_fullname(custom_fullname)
+    , options(options)
+    , options_single(options_single)
+    , device_type(device_type)
+    , tag(tag)
+    , type(type)
+    , state(state)
+    , numeric_operator(numeric_operator)
     , uom(uom)
     , has_cmd(has_cmd)
     , min(min)
     , max(max)
-    , state(state) {
+    , custom_fullname(custom_fullname) {
     // calculate #options in options list
     if (options_single) {
         options_size = 1;
