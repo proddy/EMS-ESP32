@@ -72,12 +72,9 @@ class SecuritySettingsService final : public StatefulService<SecuritySettings>, 
 
     void begin();
 
-    Authentication               authenticate(const String & username, const String & password) override;
-    Authentication               authenticateRequest(AsyncWebServerRequest * request) override;
-    String                       generateJWT(const User * user) override;
-    ArRequestFilterFunction      filterRequest(AuthenticationPredicate predicate) override;
-    ArRequestHandlerFunction     wrapRequest(ArRequestHandlerFunction onRequest, AuthenticationPredicate predicate) override;
-    ArJsonRequestHandlerFunction wrapCallback(ArJsonRequestHandlerFunction callback, AuthenticationPredicate predicate) override;
+    Authentication authenticate(const String & username, const String & password) override;
+    Authentication authenticateRequest(AsyncWebServerRequest * request) override;
+    String         generateJWT(const User * user) override;
 
   private:
     HttpEndpoint<SecuritySettings>  _httpEndpoint;

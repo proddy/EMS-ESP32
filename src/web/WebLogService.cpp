@@ -32,9 +32,6 @@ WebLogService::WebLogService(AsyncWebServer * server, SecurityManager * security
         [this](AsyncWebServerRequest * request, JsonVariant json) { getSetValues(request, json); },
         HTTP_ANY);
 
-    // Add authentication filter to EventSource
-    // EventSource (SSE) cannot use custom headers, so authentication is done via URL parameter
-    // events_.setFilter(securityManager->filterRequest(AuthenticationPredicates::IS_AUTHENTICATED));
     server->addHandler(&events_);
 }
 
@@ -211,6 +208,7 @@ void WebLogService::getSetValues(AsyncWebServerRequest * request, JsonVariant js
 
         return;
     }
+
     // POST - write the settings
     level_                = json["level"];
     maximum_log_messages_ = json["max_messages"];
@@ -234,6 +232,7 @@ void WebLogService::getSetValues(AsyncWebServerRequest * request, JsonVariant js
         settings.weblog_buffer  = maximum_log_messages_;
         return StateUpdateResult::CHANGED;
     });
+
     request->send(200); // OK
 }
 
