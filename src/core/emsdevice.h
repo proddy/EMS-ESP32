@@ -26,6 +26,7 @@
 #include "emsdevicevalue.h"
 
 #include <esp32-psram.h>
+#include <initializer_list>
 #include <map>
 
 namespace emsesp {
@@ -223,16 +224,23 @@ class EMSdevice {
         }
     }
 
-    void has_enumupdate(const std::shared_ptr<const Telegram> & telegram, uint8_t & value, const uint8_t index, const std::vector<uint8_t> & maskIn) {
-        uint8_t val = value < maskIn.size() ? maskIn[value] : EMS_VALUE_UINT8_NOTSET;
+    // maskIn is taken as a std::initializer_list so brace-list call sites
+    // like has_enumupdate(t, v, idx, {0,5,1,2,4}) avoid the per-call
+    // heap allocation of a temporary std::vector<uint8_t>. The backing
+    // array of an initializer_list of integral constants is placed in
+    // static storage or on the stack — never on the heap.
+    void has_enumupdate(const std::shared_ptr<const Telegram> & telegram, uint8_t & value, const uint8_t index, std::initializer_list<uint8_t> maskIn) {
+        uint8_t val = value < maskIn.size() ? *(maskIn.begin() + value) : EMS_VALUE_UINT8_NOTSET;
         if (telegram->read_value(val, index)) {
-            for (uint8_t i = 0; i < maskIn.size(); i++) {
-                if (val == maskIn[i]) {
+            uint8_t i = 0;
+            for (auto m : maskIn) {
+                if (val == m) {
                     value       = i;
                     has_update_ = true;
                     publish_value((void *)&value);
                     return;
                 }
+                ++i;
             }
         }
     }
