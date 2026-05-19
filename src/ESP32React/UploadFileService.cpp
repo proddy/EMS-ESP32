@@ -48,7 +48,7 @@ void UploadFileService::handleUpload(AsyncWebServerRequest * request, const Stri
             // LittleFS filesystem image
             _is_filesystem = true;
             _md5[0]        = '\0'; // clear any stale md5 so Update.end() doesn't compare against it
-        } else if ((extension == "bin") && (filesize > 2000000)) {
+        } else if ((extension == "bin") && (filesize > 1000000)) {
             _is_firmware = true;
         } else if (extension == "json") {
             _md5[0] = '\0'; // clear md5

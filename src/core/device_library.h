@@ -187,8 +187,9 @@
 { 74, DeviceType::ALERT, "EM10", DeviceFlags::EMS_DEVICE_FLAG_NONE},
 
 // Gateways - 0x48
-{17, DeviceType::GATEWAY, "MX400", DeviceFlags::EMS_DEVICE_FLAG_NONE}, // 0x48 and 0x4B
-{189, DeviceType::GATEWAY, "KM200, MB LAN 2", DeviceFlags::EMS_DEVICE_FLAG_NONE},
+{17, DeviceType::GATEWAY, "MX400", DeviceFlags::EMS_DEVICE_FLAG_NONE}, // 0x48, 0x4B, or 0x50 as wireless base
+{189, DeviceType::GATEWAY, "KM200, MB LAN 2", DeviceFlags::EMS_DEVICE_FLAG_NONE}, // 0x48
+{222, DeviceType::GATEWAY, "KM300,", DeviceFlags::EMS_DEVICE_FLAG_NONE}, // 0x4A
 {252, DeviceType::GATEWAY, "K30RF, MX300", DeviceFlags::EMS_DEVICE_FLAG_NONE},
 
 // Generic - 0x40 or other with no product-id and no version
