@@ -119,9 +119,8 @@ void AnalogSensor::reload(bool get_nvs) {
 #if defined(EMSESP_STANDALONE)
     analog_enabled_ = true; // for local offline testing
 #endif
-    for (auto sensor : sensors_) {
+    for (const auto & sensor : sensors_) {
         remove_ha_topic(sensor.type(), sensor.gpio());
-        sensor.ha_registered = false;
 #ifndef EMSESP_STANDALONE
         if ((sensor.type() >= AnalogType::CNT_0 && sensor.type() <= AnalogType::CNT_2)
             || (sensor.type() >= AnalogType::FREQ_0 && sensor.type() <= AnalogType::FREQ_2)) {
