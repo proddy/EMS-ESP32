@@ -49,6 +49,20 @@
 
 namespace emsesp {
 
+#ifndef EMSESP_STANDALONE
+// The DNS slots are shared between IPv4 and IPv6, so with IPv6 enabled the first slot can hold an
+// IPv6 server. Pick the first IPv4 one so it matches the label we print it under.
+static IPAddress dns_ipv4(const NetworkInterface & netif) {
+    for (uint8_t i = 0; i < ESP_NETIF_DNS_MAX; i++) {
+        IPAddress ip = netif.dnsIP(i);
+        if (ip.type() == IPv4 && static_cast<uint32_t>(ip) != 0) {
+            return ip;
+        }
+    }
+    return IPAddress();
+}
+#endif
+
 // Languages supported. Note: the order is important
 // and must match locale_translations.h and common.h
 #if defined(EMSESP_TEST)
@@ -858,7 +872,7 @@ void System::send_info_mqtt() {
         doc["MAC"]             = WiFi.macAddress();
         doc["IPv4 address"]    = uuid::printable_to_string(WiFi.localIP()) + "/" + uuid::printable_to_string(WiFi.subnetMask());
         doc["IPv4 gateway"]    = uuid::printable_to_string(WiFi.gatewayIP());
-        doc["IPv4 nameserver"] = uuid::printable_to_string(WiFi.dnsIP());
+        doc["IPv4 nameserver"] = uuid::printable_to_string(dns_ipv4(WiFi.STA));
 
         if (WiFi.linkLocalIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && WiFi.linkLocalIPv6().toString() != "::") {
             doc["IPv6 address"] = uuid::printable_to_string(WiFi.linkLocalIPv6());
@@ -1168,7 +1182,7 @@ void System::show_system(uuid::console::Shell & shell) {
         shell.printfln(" Hostname: %s", WiFi.getHostname());
         shell.printfln(" IPv4 address: %s/%s", uuid::printable_to_string(WiFi.localIP()).c_str(), uuid::printable_to_string(WiFi.subnetMask()).c_str());
         shell.printfln(" IPv4 gateway: %s", uuid::printable_to_string(WiFi.gatewayIP()).c_str());
-        shell.printfln(" IPv4 nameserver: %s", uuid::printable_to_string(WiFi.dnsIP()).c_str());
+        shell.printfln(" IPv4 nameserver: %s", uuid::printable_to_string(dns_ipv4(WiFi.STA)).c_str());
         if (WiFi.linkLocalIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && WiFi.linkLocalIPv6().toString() != "::") {
             shell.printfln(" IPv6 address: %s", uuid::printable_to_string(WiFi.linkLocalIPv6()).c_str());
         }
@@ -1201,7 +1215,7 @@ void System::show_system(uuid::console::Shell & shell) {
         shell.printfln(" Hostname: %s", ETH.getHostname());
         shell.printfln(" IPv4 address: %s/%s", uuid::printable_to_string(ETH.localIP()).c_str(), uuid::printable_to_string(ETH.subnetMask()).c_str());
         shell.printfln(" IPv4 gateway: %s", uuid::printable_to_string(ETH.gatewayIP()).c_str());
-        shell.printfln(" IPv4 nameserver: %s", uuid::printable_to_string(ETH.dnsIP()).c_str());
+        shell.printfln(" IPv4 nameserver: %s", uuid::printable_to_string(dns_ipv4(ETH)).c_str());
         if (ETH.linkLocalIPv6().toString() != "0000:0000:0000:0000:0000:0000:0000:0000" && ETH.linkLocalIPv6().toString() != "::") {
             shell.printfln(" IPv6 address: %s", uuid::printable_to_string(ETH.linkLocalIPv6()).c_str());
         }
