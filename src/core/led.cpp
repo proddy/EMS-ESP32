@@ -59,11 +59,16 @@ bool LED::loop(uint8_t healthcheck, bool button_busy) {
     // the user-requested LED blink always has preference
     if (!is_user_led_blink_) {
         // check for button press.
-        // if button is pressed, show LED (yellow on RGB LED, on/off on standard LED)
-        // it will turn off on the next loop cycle
+        // while the button is held show the LED (yellow on RGB LED, on/off on standard LED),
+        // and on release go back to the default state and re-check the health on the next cycle
         if (last_button_busy_ != button_busy) {
             last_button_busy_ = button_busy;
-            set_led(button_busy ? Color::OFF : Color::YELLOW); // Yellow
+            if (button_busy) {
+                set_led(Color::YELLOW); // Yellow
+            } else {
+                reset_led();
+                previous_healthcheck_ = System::HEALTHCHECK_RESET;
+            }
             return false;
         }
 
@@ -104,6 +109,12 @@ bool LED::loop(uint8_t healthcheck, bool button_busy) {
                 color_steps_[2] = Color::BLUE; // blue, no network and no bus
             }
         }
+
+        // there's nothing to flash, so leave the LED in the state reset_led() gave it.
+        // Running the sequence here would keep writing Color::OFF and a healthy system would never show green.
+        if (healthcheck == 0 || button_busy) {
+            return false;
+        }
     }
 
     // show the LED status based on the healthcheck and button busy status
@@ -119,6 +130,11 @@ void LED::reset_led() {
     color_steps_[0] = Color::OFF;
     color_steps_[1] = Color::OFF;
     color_steps_[2] = Color::OFF;
+
+    // rewind the sequence so it starts from the top if the health degrades again
+    led_long_timer_  = 1; // 1 will kick it off immediately
+    led_short_timer_ = 0;
+    led_flash_step_  = 0;
 }
 
 // LED flash every few ms and then perform a factory reset
