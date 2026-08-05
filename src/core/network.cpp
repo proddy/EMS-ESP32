@@ -539,6 +539,15 @@ void Network::startEthernet() {
         return;
     }
 
+    // The Tasmota SDK is built with CONFIG_ESP32_UNIVERSAL_MAC_ADDRESSES=2, so the Ethernet MAC is derived as
+    // a locally-administered address from base+1 instead of the universal base+3 that Arduino Core 2 used.
+    // Seed the MAC table with the old value before the EMAC driver reads it, so DHCP reservations survive an upgrade.
+    uint8_t eth_mac[6];
+    if (esp_read_mac(eth_mac, ESP_MAC_BASE) == ESP_OK) {
+        eth_mac[5] += 3;
+        esp_iface_mac_addr_set(eth_mac, ESP_MAC_ETH);
+    }
+
     // reset power and add a delay as ETH doesn't not always start up correctly after a warm boot
     if (eth_power_ != -1) {
         pinMode(eth_power_, OUTPUT);

@@ -20,6 +20,7 @@
 #define EMSESP_NETWORK_H_
 
 #ifndef EMSESP_STANDALONE
+#include <esp_mac.h>
 #include <esp_wifi.h>
 #include <ETH.h>
 #include <WiFi.h>
