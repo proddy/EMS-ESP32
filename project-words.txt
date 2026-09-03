@@ -744,7 +744,7 @@ mlongcalls
 mmio
 mmode
 mmplus
-mockserver
+mockSSEServer
 modbus
 modee
 modetype

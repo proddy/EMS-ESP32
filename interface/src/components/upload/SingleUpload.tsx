@@ -29,11 +29,22 @@ const SingleUpload = ({ doRestart }: SingleUploadProps) => {
   } = useRequest(SystemApi.uploadFile, {
     immediate: false
   }).onSuccess(({ data }) => {
-    if (data && typeof data === 'object' && 'md5' in data) {
-      setMd5((data as { md5: string }).md5);
-      toast.success(LL.UPLOAD() + ' MD5 ' + LL.SUCCESSFUL());
+    let payload = data;
+    if (typeof payload === 'string' && payload.length > 0) {
+      try {
+        payload = JSON.parse(payload);
+      } catch {
+        payload = data;
+      }
+    }
+    if (payload && typeof payload === 'object' && 'md5' in payload) {
+      setMd5((payload as { md5: string }).md5);
+      toast.success(LL.UPLOAD_MD5_RECEIVED());
       setFile(undefined);
     } else {
+      if (payload && typeof payload === 'object' && 'md5_ok' in payload) {
+        toast.success(LL.UPLOAD_MD5_MATCHED());
+      }
       doRestart();
     }
   });
@@ -80,12 +91,17 @@ const SingleUpload = ({ doRestart }: SingleUploadProps) => {
           </Button>
         </>
       ) : (
-        <DragNdrop text={LL.UPLOAD_DROP_TEXT()} onFileSelected={setFile} />
+        <DragNdrop
+          text={(md5 ? LL.UPLOAD_MD5_RECEIVED() : LL.UPLOAD_DROP_TEXT()) + '...'}
+          onFileSelected={setFile}
+        />
       )}
 
       {md5 && (
         <Box sx={{ mt: 2 }}>
-          <Typography variant="body2">{'MD5: ' + md5}</Typography>
+          <Typography variant="body2" color="success">
+            {'MD5: ' + md5}
+          </Typography>
         </Box>
       )}
     </>
