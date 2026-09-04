@@ -14,9 +14,10 @@ import { LinearProgressWithLabel } from './LinearProgressWithLabel';
 
 interface SingleUploadProps {
   doRestart: () => void;
+  text: string;
 }
 
-const SingleUpload = ({ doRestart }: SingleUploadProps) => {
+const SingleUpload = ({ doRestart, text }: SingleUploadProps) => {
   const [md5, setMd5] = useState<string>();
   const [file, setFile] = useState<File>();
   const { LL } = useI18nContext();
@@ -92,7 +93,7 @@ const SingleUpload = ({ doRestart }: SingleUploadProps) => {
         </>
       ) : (
         <DragNdrop
-          text={(md5 ? LL.UPLOAD_MD5_RECEIVED() : LL.UPLOAD_DROP_TEXT()) + '...'}
+          text={(md5 ? LL.UPLOAD_MD5_RECEIVED() : text) + '...'}
           onFileSelected={setFile}
         />
       )}

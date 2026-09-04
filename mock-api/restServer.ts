@@ -242,15 +242,6 @@ let countHardwarePoll = 0; // for during an upload
 let pendingFirmwareMd5 = false; // set by a .md5 upload, cleared by the next .bin
 
 const VALID_UPLOAD_EXTENSIONS = new Set(['bin', 'json', 'md5']);
-const UPLOAD_PROGRESS_LOG_STEP = 10; // log every 10%
-
-// A real device takes a while to accept a firmware image, so uploads are read at
-// this rate instead of completing instantly. That keeps the WebUI progress bar on
-// screen long enough to see. Lower it to watch the progress bar for longer.
-const UPLOAD_SIMULATED_KB_PER_SEC = 2048;
-const UPLOAD_SLICE_BYTES = 64 * 1024; // granularity of the simulated transfer
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function parseMd5Digest(text: string): string | null {
   const token = text.trim().split(/\s+/)[0];
@@ -258,45 +249,6 @@ function parseMd5Digest(text: string): string | null {
     return token.toLowerCase();
   }
   return null;
-}
-
-// Read the multipart body in slices at UPLOAD_SIMULATED_KB_PER_SEC, logging progress
-// as it goes, then hand the buffered bytes back as FormData so they parse normally.
-async function readUploadSlowly(request: Request): Promise<FormData> {
-  const contentType = request.headers.get('content-type') || '';
-  const expected = Number(request.headers.get('content-length') || '0');
-  const reader = request.body?.getReader();
-  const chunks: Uint8Array[] = [];
-  let received = 0;
-  let loggedPercentage = 0;
-
-  while (reader) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-    chunks.push(value);
-
-    // A fast local client arrives in very few chunks, so pace each one slice by
-    // slice to keep the reported progress gradual instead of jumping to 100%
-    for (let offset = 0; offset < value.length; offset += UPLOAD_SLICE_BYTES) {
-      const sliceLength = Math.min(UPLOAD_SLICE_BYTES, value.length - offset);
-      await sleep((sliceLength / (UPLOAD_SIMULATED_KB_PER_SEC * 1024)) * 1000);
-      received += sliceLength;
-
-      if (expected > 0) {
-        const percentage = Math.round((received / expected) * 100);
-        if (percentage >= loggedPercentage + UPLOAD_PROGRESS_LOG_STEP) {
-          loggedPercentage = percentage;
-          console.log(`Upload progress: ${percentage}%`);
-        }
-      }
-    }
-  }
-
-  return new Response(new Blob(chunks as BlobPart[]), {
-    headers: { 'content-type': contentType }
-  }).formData();
 }
 
 // DeviceTypes
@@ -4702,7 +4654,7 @@ router
 // SYSTEM and SETTINGS
 router
   .post(EMSESP_UPLOAD_FILE_ENDPOINT, async (request: Request) => {
-    const formData = await readUploadSlowly(request);
+    const formData = await request.formData();
     const uploaded = formData.get('file');
     if (!uploaded || typeof uploaded === 'string') {
       return status(400);
