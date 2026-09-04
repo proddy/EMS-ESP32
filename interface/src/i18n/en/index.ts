@@ -180,6 +180,8 @@ const en: Translation = {
   DOWNLOAD_SYSTEM_BACKUP: 'System Backup',
   UPLOAD_TEXT: 'Upload a new firmware file (.bin) or a backup file (.json)',
   UPLOAD_DROP_TEXT: 'Drop a firmware .bin file or click here',
+  UPLOAD_MD5_RECEIVED: 'Digest received, now upload the firmware .bin file',
+  UPLOAD_MD5_MATCHED: 'MD5 matches, installing firmware...',
   ERROR: 'Unexpected Error, please try again',
   TIME_SET: 'Time set',
   MANAGE_USERS: 'Manage Users',

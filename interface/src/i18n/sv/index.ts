@@ -180,6 +180,8 @@ const sv: Translation = {
   DOWNLOAD_SYSTEM_BACKUP: 'System säkerhetskopia',
   UPLOAD_TEXT: 'Ladda upp en ny firmwarefil (.bin) eller en säkerhetskopiafil (.json)',
   UPLOAD_DROP_TEXT: 'Droppa en firmware .bin fil eller klicka här',
+  UPLOAD_MD5_RECEIVED: 'Digest mottagen, ladda nu upp firmware .bin-filen',
+  UPLOAD_MD5_MATCHED: 'MD5 stämmer, firmware installeras...',
   ERROR: 'Okänt fel, var god försök igen',
   TIME_SET: 'Ställ in tid',
   MANAGE_USERS: 'Användare',

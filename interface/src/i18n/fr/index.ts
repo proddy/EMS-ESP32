@@ -180,6 +180,8 @@ const fr: Translation = {
   DOWNLOAD_SYSTEM_BACKUP: 'Sauvegarde système',
   UPLOAD_TEXT: 'Télécharger un nouveau fichier firmware (.bin) ou une sauvegarde (.json)',
   UPLOAD_DROP_TEXT: 'Drop a firmware .bin file or click here',
+  UPLOAD_MD5_RECEIVED: 'Empreinte reçue, téléversez maintenant le fichier firmware .bin',
+  UPLOAD_MD5_MATCHED: 'MD5 concordant, installation du firmware...',
   ERROR: 'Erreur inattendue, veuillez réessayer',
   TIME_SET: 'Time set',
   MANAGE_USERS: 'Gérer les utilisateurs',

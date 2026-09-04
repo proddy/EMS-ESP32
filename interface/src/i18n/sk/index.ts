@@ -180,6 +180,8 @@ const sk: Translation = {
   DOWNLOAD_SYSTEM_BACKUP: 'Systémová záloha',
   UPLOAD_TEXT: 'Nahrajte nový súbor firmvéru (.bin) alebo súbor zálohy (.json)',
   UPLOAD_DROP_TEXT: 'Presuňte súbor .bin firmvéru alebo kliknite sem',
+  UPLOAD_MD5_RECEIVED: 'Digest prijatý, teraz nahrajte firmware .bin',
+  UPLOAD_MD5_MATCHED: 'MD5 súhlasí, firmvér sa inštaluje...',
   ERROR: 'Neočakávaná chyba, prosím skúste to znova',
   TIME_SET: 'Nastavený čas',
   MANAGE_USERS: 'Správa používateľov',

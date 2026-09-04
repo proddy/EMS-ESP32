@@ -180,6 +180,8 @@ const cs: Translation = {
   DOWNLOAD_SYSTEM_BACKUP: 'Systémová záloha',
   UPLOAD_TEXT: 'Nahrajte nový soubor firmwaru (.bin) nebo záložní soubor (.json)',
   UPLOAD_DROP_TEXT: 'Přetáhněte soubor sem nebo klikněte pro výběr',
+  UPLOAD_MD5_RECEIVED: 'Digest přijat, nyní nahrajte firmware .bin',
+  UPLOAD_MD5_MATCHED: 'MD5 souhlasí, firmware se instaluje...',
   ERROR: 'Neočekávaná chyba, zkuste to prosím znovu',
   TIME_SET: 'Čas nastaven',
   MANAGE_USERS: 'Spravovat uživatele',

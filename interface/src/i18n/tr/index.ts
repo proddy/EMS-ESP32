@@ -180,6 +180,8 @@ const tr: Translation = {
   DOWNLOAD_SYSTEM_BACKUP: 'Sistem yedekleme',
   UPLOAD_TEXT: 'Yeni bir firmware dosyası (.bin) veya yedek dosyası (.json) yükle',
   UPLOAD_DROP_TEXT: 'Bir firmware .bin dosyası veya buraya tıklayın',
+  UPLOAD_MD5_RECEIVED: 'Özet alındı, şimdi firmware .bin dosyasını yükleyin',
+  UPLOAD_MD5_MATCHED: 'MD5 eşleşti, firmware yükleniyor...',
   ERROR: 'Beklenemedik hata, lütfen tekrar deneyin.',
   TIME_SET: 'Zaman ayarı',
   MANAGE_USERS: 'Kullanıcıları yönet',

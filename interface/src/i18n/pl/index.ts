@@ -180,6 +180,8 @@ const pl: BaseTranslation = {
   DOWNLOAD_SYSTEM_BACKUP: 'Kopia zapasowa systemu',
   UPLOAD_TEXT: 'Wgraj nowy plik firmware (.bin) lub kopię ustawień (.json)',
   UPLOAD_DROP_TEXT: 'Upuść plik firmware .bin lub kliknij tutaj',
+  UPLOAD_MD5_RECEIVED: 'Suma MD5 odebrana, teraz wgraj plik firmware .bin',
+  UPLOAD_MD5_MATCHED: 'MD5 zgodne, instalowanie firmware...',
   ERROR: 'Nieoczekiwany błąd, spróbuj ponownie!',
   TIME_SET: 'Zegar został ustawiony.',
   MANAGE_USERS: 'Zarządzanie użytkownikami',

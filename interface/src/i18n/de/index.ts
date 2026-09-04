@@ -180,6 +180,8 @@ const de: Translation = {
   DOWNLOAD_SYSTEM_BACKUP: 'Systemsicherung',
   UPLOAD_TEXT: 'Laden Sie eine neue Firmware-Datei (.bin) oder eine Sicherungsdatei (.json) hoch',
   UPLOAD_DROP_TEXT: 'Legen Sie eine Firmware-Datei (.bin) ab oder klicken Sie hier',
+  UPLOAD_MD5_RECEIVED: 'Prüfsumme empfangen, jetzt die Firmware-Datei (.bin) hochladen',
+  UPLOAD_MD5_MATCHED: 'MD5 stimmt überein, Firmware wird installiert...',
   ERROR: 'Unerwarteter Fehler, bitte versuchen Sie es erneut.',
   TIME_SET: 'Zeit gesetzt',
   MANAGE_USERS: 'Nutzerverwaltung',

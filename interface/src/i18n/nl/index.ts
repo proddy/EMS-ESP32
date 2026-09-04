@@ -180,6 +180,8 @@ const nl: Translation = {
   DOWNLOAD_SYSTEM_BACKUP: 'Systeem Backup',
   UPLOAD_TEXT: 'Upload een nieuw firmwarebestand (.bin) of een back-upbestand (.json)',
   UPLOAD_DROP_TEXT: 'Sleep en firmware .bin bestand hierheen of klik hier',
+  UPLOAD_MD5_RECEIVED: 'Digest ontvangen, upload nu het firmware .bin-bestand',
+  UPLOAD_MD5_MATCHED: 'MD5 komt overeen, firmware wordt geïnstalleerd...',
   ERROR: 'Onverwachte fout, probeer opnieuw',
   TIME_SET: 'Tijd ingesteld',
   MANAGE_USERS: 'Gebruikersbeheer',
