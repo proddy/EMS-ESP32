@@ -307,6 +307,7 @@ export const BOARD_PROFILES = {
   LOLIN: 'Lolin D32',
   OLIMEX: 'Olimex ESP32-EVB',
   OLIMEXPOE: 'Olimex ESP32-POE',
+  OLIMEXPOEW: 'Olimex ESP32-POE-ISO WROVER (PSRAM)',
   C3MINI: 'Wemos C3 Mini',
   S2MINI: 'Wemos S2 Mini',
   S3MINI: 'Liligo S3'

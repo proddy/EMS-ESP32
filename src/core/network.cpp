@@ -229,7 +229,9 @@ void Network::reconnect() {
 // boards without an Ethernet PHY skip straight to WIFI; without a configured SSID, straight to AP
 // (unless AP provision mode is Never — then stay on WIFI and keep waiting)
 NetPhase Network::initialPhase() const {
-    if (phy_type_ != PHY_type::PHY_TYPE_NONE) {
+    bool eth_clock_conflicts_psram = ESP.getPsramSize()
+                                      && ((eth_clock_mode_t)eth_clock_mode_ == ETH_CLOCK_GPIO16_OUT || (eth_clock_mode_t)eth_clock_mode_ == ETH_CLOCK_GPIO17_OUT);
+    if (phy_type_ != PHY_type::PHY_TYPE_NONE && !eth_clock_conflicts_psram) {
         return NetPhase::ETHERNET;
     }
     if (!ssid_.isEmpty() || ap_provisionMode_ == AP_MODE_NEVER) {
@@ -597,6 +599,11 @@ void Network::startEthernet() {
 
     // no ethernet present
     if (phy_type_ == PHY_type::PHY_TYPE_NONE) {
+        return;
+    }
+
+    if (ESP.getPsramSize() && ((eth_clock_mode_t)eth_clock_mode_ == ETH_CLOCK_GPIO16_OUT || (eth_clock_mode_t)eth_clock_mode_ == ETH_CLOCK_GPIO17_OUT)) {
+        LOG_ERROR("Ethernet clock mode %d (GPIO16/17) conflicts with PSRAM - disabling Ethernet", eth_clock_mode_);
         return;
     }
 
