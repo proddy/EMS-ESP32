@@ -1348,3 +1348,5 @@ dhcpc
 wifioff
 autonegotiation
 Mbit
+WROVER
+OLIMEXPOEW
