@@ -33,12 +33,12 @@
       "MQTT": {
         "enableTLS": false,
         "rootCA": "",
-        "enabled": true,
+        "enabled": false,
         "host": "192.168.1.2",
         "port": 1883,
         "base": "ems-esp",
-        "username": "username",
-        "password": "password",
+        "username": "",
+        "password": "",
         "client_id": "esp32",
         "keep_alive": 60,
         "clean_session": false,
@@ -53,7 +53,7 @@
         "publish_time_heartbeat": 60,
         "mqtt_qos": 0,
         "mqtt_retain": false,
-        "ha_enabled": true,
+        "ha_enabled": false,
         "nested_format": 1,
         "discovery_prefix": "homeassistant",
         "discovery_type": 0,
@@ -63,7 +63,7 @@
         "send_response": false
       },
       "NTP": {
-        "enabled": true,
+        "enabled": false,
         "server": "time.google.com",
         "tz_label": "Europe/Amsterdam",
         "tz_format": "CET-1CEST,M3.5.0,M10.5.0/3"
@@ -87,7 +87,7 @@
         "version": "3.9.0",
         "board_profile": "E32V2_2",
         "platform": "ESP32",
-        "system_name": "prod",
+        "system_name": "ems-esp",
         "locale": "en",
         "tx_mode": 1,
         "ems_bus_id": 73,
@@ -134,9 +134,9 @@
         "modbus_port": 502,
         "modbus_max_clients": 10,
         "modbus_timeout": 300,
-        "developer_mode": true,
+        "developer_mode": false,
         "disable_reset": false,
-        "email_enabled": true,
+        "email_enabled": false,
         "email_security": 2,
         "email_server": "smtp.gmail.com",
         "email_port": 587,
@@ -150,123 +150,26 @@
     {
       "type": "commands",
       "Commands": {
-        "commands": [
-          {
-            "id": 1,
-            "cmd": "{\"url\":\"https://api.pushover.net/1/messages.json\"}",
-            "value": "{\"user\":\"userkey\", \"token\":\"tokenkey\", \"message\":\"custom/message2\"}",
-            "name": "push_over"
-          },
-          {
-            "id": 2,
-            "cmd": "system/message",
-            "value": "hello",
-            "name": "sendmessage"
-          },
-          {
-            "id": 3,
-            "cmd": "system/message",
-            "value": "{\"url\":\"http://emsesp.org/versions.json\"}",
-            "name": "sendversions"
-          },
-          {
-            "id": 4,
-            "cmd": "custom/message",
-            "value": "{\"url\":\"http://emsesp.org/versions.json\"}",
-            "name": "getversions"
-          },
-          {
-            "id": 5,
-            "cmd": "system/sendmail",
-            "value": "\"test email with \" + custom/message2",
-            "name": "sendmail"
-          }
-        ]
+        "commands": []
       }
     },
     {
       "type": "schedule",
       "Schedule": {
-        "schedule": [
-          {
-            "id": 1,
-            "flags": 128,
-            "active": false,
-            "time": "",
-            "cmd_name": "sendmail",
-            "name": "sendmailtest"
-          }
-        ]
+        "schedule": []
       }
     },
     {
       "type": "customizations",
       "Customizations": {
-        "as": [
-          {
-            "gpio": 39,
-            "name": "core_voltage",
-            "offset": 0,
-            "factor": 0.003771,
-            "uom": 23,
-            "type": 3,
-            "is_system": true
-          },
-          {
-            "gpio": 36,
-            "name": "supply_voltage",
-            "offset": 0,
-            "factor": 0.017,
-            "uom": 23,
-            "type": 3,
-            "is_system": true
-          },
-          {
-            "gpio": 2,
-            "name": "led",
-            "offset": 0,
-            "factor": 1,
-            "uom": 0,
-            "type": 6,
-            "is_system": true
-          }
-        ],
+        "as": [],
         "masked_entities": []
       }
     },
     {
       "type": "entities",
       "Entities": {
-        "entities": [
-          {
-            "id": 0,
-            "ram": 1,
-            "device_id": 0,
-            "type_id": 0,
-            "offset": 0,
-            "factor": 1,
-            "name": "message",
-            "uom": 0,
-            "value_type": 9,
-            "writeable": true,
-            "hide": false,
-            "value": "{\"stable\":{\"version\":\"3.8.3\",\"date\":\"2026-08-01\"},\"dev\":{\"version\":\"3.9.0-dev.0\",\"date\":\"2026-08-01T09:55:29Z\"}}"
-          },
-          {
-            "id": 1,
-            "ram": 1,
-            "device_id": 0,
-            "type_id": 0,
-            "offset": 0,
-            "factor": 1,
-            "name": "message2",
-            "uom": 0,
-            "value_type": 9,
-            "writeable": true,
-            "hide": false,
-            "value": "testing"
-          }
-        ]
+        "entities": []
       }
     },
     {
@@ -280,63 +183,8 @@
       "nvs": [
         {
           "type": 1,
-          "key": "nompower",
-          "value": 30
-        },
-        {
-          "type": 33,
-          "key": "boot",
-          "value": "3.9.0"
-        },
-        {
-          "type": 17,
-          "key": "led",
-          "value": 0
-        },
-        {
-          "type": 33,
-          "key": "intTemp",
-          "value": "28_1767_7B13_2502"
-        },
-        {
-          "type": 4,
-          "key": "d_boot",
-          "value": 1
-        },
-        {
-          "type": 33,
-          "key": "app1",
-          "value": "3.9.0"
-        },
-        {
-          "type": 33,
-          "key": "app0",
-          "value": "3.9.0"
-        },
-        {
-          "type": 66,
-          "key": "nrgheat",
-          "value": 49355.29793
-        },
-        {
-          "type": 4,
-          "key": "d_app1",
-          "value": 1781336521
-        },
-        {
-          "type": 1,
           "key": "fresh_firmware",
-          "value": 0
-        },
-        {
-          "type": 4,
-          "key": "d_app0",
-          "value": 1781363944
-        },
-        {
-          "type": 66,
-          "key": "nrgww",
-          "value": 41852.79107
+          "value": 1
         }
       ]
     }
