@@ -460,6 +460,7 @@ void System::get_partition_info() {
         auto t = time(nullptr);
         // write timestamp always with new version, if clock is not set, this will be updated with ntp
         EMSESP::nvs_.putULong(c, t);
+        LOG_DEBUG("Updated NVS partition due to version found");
     }
 
     // Loop through all available partitions and update map with the version info pulled from NVS
@@ -867,7 +868,7 @@ bool System::loop() {
 void System::send_info_mqtt() {
     static uint8_t _connection = 0;
     uint8_t        connection  = (EMSESP::network_.ethernet_connected() ? 1 : 0) + (EMSESP::network_.wifi_connected() ? 2 : 0) + (ntp_connected_ ? 4 : 0)
-                                 + (EMSESP::network_.has_ipv6() ? 8 : 0);
+                         + (EMSESP::network_.has_ipv6() ? 8 : 0);
     // check if connection status has changed
     if (!Mqtt::connected() || connection == _connection) {
         return;
@@ -1182,6 +1183,55 @@ void System::show_system(uuid::console::Shell & shell) {
                        installed.c_str(),
                        (strcmp(esp_ota_get_running_partition()->label, partition.first.c_str()) == 0) ? "** active **" : "");
     }
+// List all NVS values
+#ifndef EMSESP_STANDALONE
+    shell.println(" NVS values:");
+    const char *   nvs_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, "nvs1") ? "nvs1" : "nvs"; // nvs1 is on 16MBs
+    nvs_iterator_t it       = nullptr;
+    esp_err_t      err      = nvs_entry_find(nvs_part, "ems-esp", NVS_TYPE_ANY, &it);
+    while (err == ESP_OK) {
+        nvs_entry_info_t info;
+        nvs_entry_info(it, &info);
+        shell.printf("  %s", info.key);
+        // also print the value depending on the type
+        switch (info.type) {
+        case NVS_TYPE_I8:
+            shell.printfln(" = %d", (int)EMSESP::nvs_.getChar(info.key));
+            break;
+        case NVS_TYPE_U8:
+            shell.printfln(" = %u", (unsigned int)EMSESP::nvs_.getUChar(info.key));
+            break;
+        case NVS_TYPE_I32:
+            shell.printfln(" = %d", (int)EMSESP::nvs_.getInt(info.key));
+            break;
+        case NVS_TYPE_U32:
+            shell.printfln(" = %u", (unsigned int)EMSESP::nvs_.getUInt(info.key));
+            break;
+        case NVS_TYPE_I64:
+            shell.printfln(" = %lld", (long long)EMSESP::nvs_.getLong64(info.key));
+            break;
+        case NVS_TYPE_U64:
+            shell.printfln(" = %llu", (unsigned long long)EMSESP::nvs_.getULong64(info.key));
+            break;
+        case NVS_TYPE_BLOB:
+            shell.printfln(" = %f", EMSESP::nvs_.getDouble(info.key)); // bytes used for double values
+            break;
+        case NVS_TYPE_STR:
+            shell.printfln(" = %s", EMSESP::nvs_.getString(info.key).c_str());
+            break;
+        default:
+            shell.printfln(" = unknown");
+            break;
+        }
+        err = nvs_entry_next(&it);
+    }
+    if (it != nullptr) {
+        nvs_release_iterator(it); // just in case
+    }
+    if (err == ESP_OK) {
+        shell.println();
+    }
+#endif
 
     shell.println();
     shell.println("Network:");
@@ -2916,6 +2966,12 @@ bool System::command_format(const char * value, const int8_t id) {
     }
 #else
     LOG_ERROR("Format command not available in standalone or test mode");
+#endif
+
+// in debug we also remove all the NVS keys
+#ifdef EMSESP_DEBUG
+    LOG_DEBUG("Setting NVS fresh firmware flag");
+    EMSESP::nvs_.putBool(EMSESP_NVS_BOOT_NEW_FIRMWARE, true);
 #endif
 
     // restart will be handled by the main loop
