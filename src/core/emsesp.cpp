@@ -1748,7 +1748,7 @@ void EMSESP::start() {
         nvs_.begin("ems-esp", false, "nvs"); // fallback to small nvs
     }
 #else
-        nvs_.begin("ems-esp", false, "nvs");
+    nvs_.begin("ems-esp", false, "nvs");
 #endif
 
     // set valid GPIOs list based on ESP32 chip/platform type
@@ -1777,11 +1777,14 @@ void EMSESP::start() {
 
     LOG_DEBUG("System is running in Debug mode");
 
+    bool check_internal_sensors = false; // true to check for internal sensors
+
     // check if the firmware is fresh, i.e. a new install or a new version has been uploaded
     // this is set in UploadFileService::uploadComplete()
     // and reset in System::set_partition_install_date()
     if (EMSESP::nvs_.getBool(EMSESP_NVS_BOOT_NEW_FIRMWARE)) {
         LOG_DEBUG("Firmware is a new install");
+        check_internal_sensors = true; // force check for internal sensors
     } else {
 // check if the firmware has been uploaded via Serial/USB
 #if defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32C3)
@@ -1809,7 +1812,7 @@ void EMSESP::start() {
     };
 #endif
 
-    LOG_DEBUG("eFuse device information: %s", system_.getBBQKeesGatewayDetails().isEmpty() ? "not set" : system_.getBBQKeesGatewayDetails().c_str());
+    LOG_DEBUG("eFuse BBQKees Gateway Model: %s", system_.getBBQKeesGatewayDetails().isEmpty() ? "not set" : system_.getBBQKeesGatewayDetails().c_str());
 
     webSettingsService.begin(); // load EMS-ESP Application settings
 
@@ -1831,6 +1834,18 @@ void EMSESP::start() {
         };
     }
 
+    // if it's a new install and we have nothing in the analog or temperature customizations
+    // then assume its a fresh install so add back the internal sensors
+    bool force_analog_sensors      = false; // true to add core_voltage, supply_voltage and led
+    bool force_temperature_sensors = false; // true to add gateway_temperature
+    if (!factory_settings && check_internal_sensors) {
+        auto check_empty_customizations = [&](const WebCustomization & settings) {
+            force_analog_sensors      = settings.analogCustomizations.empty();
+            force_temperature_sensors = settings.sensorCustomizations.empty();
+        };
+        webCustomizationService.read(check_empty_customizations);
+    }
+
     // Load our library of known devices into stack mem. Names are stored in Flash memory
     device_library_ = {
 #include "device_library.h"
@@ -1848,11 +1863,11 @@ void EMSESP::start() {
 #endif
     }
 
-    mqtt_.start();                              // mqtt init
-    system_.start();                            // starts commands, led, adc, button, network (sets hostname), syslog & uart
-    shower_.start();                            // initialize shower timer and shower alert
-    temperaturesensor_.start(factory_settings); // Temperature external sensors
-    analogsensor_.start(factory_settings);      // Analog external sensors
+    mqtt_.start();                                                           // mqtt init
+    system_.start();                                                         // starts commands, led, adc, button, network (sets hostname), syslog & uart
+    shower_.start();                                                         // initialize shower timer and shower alert
+    temperaturesensor_.start(factory_settings || force_temperature_sensors); // Temperature external sensors
+    analogsensor_.start(factory_settings || force_analog_sensors);           // Analog external sensors
 
     // start web services
     LOG_INFO("Starting Web Server");
