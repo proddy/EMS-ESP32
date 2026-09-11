@@ -456,7 +456,7 @@ void WebSettings::set_board_profile(WebSettings & settings) {
         String bbq_board = EMSESP::system_.getBBQKeesGatewayDetails(FUSE_VALUE::BOARD);
         if (!bbq_board.isEmpty() && settings.board_profile != "CUSTOM") {
 #if defined(EMSESP_DEBUG)
-            EMSESP::logger().info("Overriding board profile with fuse value %s", bbq_board.c_str());
+            EMSESP::logger().info("Overriding board profile with eFuse value %s", bbq_board.c_str());
 #endif
             settings.board_profile = bbq_board;
         }
