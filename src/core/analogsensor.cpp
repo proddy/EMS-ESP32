@@ -144,8 +144,8 @@ void AnalogSensor::reload(bool get_nvs) {
     // load the list of analog sensors from the customization service
     // and store them locally and then activate them
     EMSESP::webCustomizationService.read([&](WebCustomization & settings) {
-        auto it = sensors_.begin();
-        for (auto & sensor_ : sensors_) {
+        for (auto it = sensors_.begin(); it != sensors_.end();) {
+            auto & sensor_ = *it;
             // update existing sensors
             bool found = false;
             for (const auto & sensor : settings.analogCustomizations) { // search customlist
@@ -170,9 +170,10 @@ void AnalogSensor::reload(bool get_nvs) {
                 }
             }
             if (!found) {
-                sensors_.erase(it);
+                it = sensors_.erase(it);
+            } else {
+                ++it;
             }
-            it++;
         }
 
         // add new sensors from list
