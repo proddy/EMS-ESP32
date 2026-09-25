@@ -8024,7 +8024,7 @@ int8
 | hpactivity | compressor activity | enum |   | false | DEVICE_DATA | 16 | 1 | 1 |
 | hppower | compressor power output | uint16 | W | false | DEVICE_DATA | 17 | 1 | 1 |
 | hpcurrpower | compressor current power | uint16 | W | false | DEVICE_DATA | 18 | 1 | 1 |
-| hppumpflow | volume flow | uint16 | l/h | false | DEVICE_DATA | 19 | 1 | 1/10 |
+| hppumpflow | volume flow | uint16 | l/h | false | DEVICE_DATA | 19 | 1 | 10 |
 | hpcompspder1 | compressor speed ER1 | uint8 | % | false | DEVICE_DATA | 20 | 1 | 1 |
 | hpSpeedSetpoint | speed setpoint | uint8 | % | false | DEVICE_DATA | 21 | 1 | 1 |
 | smartgridmode | smart grid mode | uint8 |   | false | DEVICE_DATA | 22 | 1 | 1 |
@@ -8091,7 +8091,7 @@ uint8
 | hpactivity | compressor activity | enum |   | false | DEVICE_DATA | 16 | 1 | 1 |
 | hppower | compressor power output | uint16 | W | false | DEVICE_DATA | 17 | 1 | 1 |
 | hpcurrpower | compressor current power | uint16 | W | false | DEVICE_DATA | 18 | 1 | 1 |
-| hppumpflow | volume flow | uint16 | l/h | false | DEVICE_DATA | 19 | 1 | 1/10 |
+| hppumpflow | volume flow | uint16 | l/h | false | DEVICE_DATA | 19 | 1 | 10 |
 | hpcompspder1 | compressor speed ER1 | uint8 | % | false | DEVICE_DATA | 20 | 1 | 1 |
 | hpSpeedSetpoint | speed setpoint | uint8 | % | false | DEVICE_DATA | 21 | 1 | 1 |
 | smartgridmode | smart grid mode | uint8 |   | false | DEVICE_DATA | 22 | 1 | 1 |
@@ -8158,7 +8158,7 @@ uint8
 | hpactivity | compressor activity | enum |   | false | DEVICE_DATA | 16 | 1 | 1 |
 | hppower | compressor power output | uint16 | W | false | DEVICE_DATA | 17 | 1 | 1 |
 | hpcurrpower | compressor current power | uint16 | W | false | DEVICE_DATA | 18 | 1 | 1 |
-| hppumpflow | volume flow | uint16 | l/h | false | DEVICE_DATA | 19 | 1 | 1/10 |
+| hppumpflow | volume flow | uint16 | l/h | false | DEVICE_DATA | 19 | 1 | 10 |
 | hpcompspder1 | compressor speed ER1 | uint8 | % | false | DEVICE_DATA | 20 | 1 | 1 |
 | hpSpeedSetpoint | speed setpoint | uint8 | % | false | DEVICE_DATA | 21 | 1 | 1 |
 | smartgridmode | smart grid mode | uint8 |   | false | DEVICE_DATA | 22 | 1 | 1 |

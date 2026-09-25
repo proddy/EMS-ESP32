@@ -5767,7 +5767,7 @@ device name,device type,product id,shortname,fullname,type [options...] \| (min/
 "HP Module",heatpump,252,hpactivity,compressor activity,enum [off\|heating\|hot water\|defrost\|compressor alarm], ,false,sensor.heatpump_compressor_activity,sensor.heatpump_hpactivity,10,0,1,16,1
 "HP Module",heatpump,252,hppower,compressor power output,uint16,W,false,sensor.heatpump_compressor_power_output,sensor.heatpump_hppower,10,0,1,17,1
 "HP Module",heatpump,252,hpcurrpower,compressor current power,uint16,W,false,sensor.heatpump_compressor_current_power,sensor.heatpump_hpcurrpower,10,0,1,18,1
-"HP Module",heatpump,252,hppumpflow,volume flow,uint16,l/h,false,sensor.heatpump_volume_flow,sensor.heatpump_hppumpflow,10,0,1/10,19,1
+"HP Module",heatpump,252,hppumpflow,volume flow,uint16,l/h,false,sensor.heatpump_volume_flow,sensor.heatpump_hppumpflow,10,0,10,19,1
 "HP Module",heatpump,252,hpcompspder1,compressor speed ER1,uint8,%,false,sensor.heatpump_compressor_speed_ER1,sensor.heatpump_hpcompspder1,10,0,1,20,1
 "HP Module",heatpump,252,hpSpeedSetpoint,speed setpoint,uint8,%,false,sensor.heatpump_speed_setpoint,sensor.heatpump_hpSpeedSetpoint,10,0,1,21,1
 "HP Module",heatpump,252,smartgridmode,smart grid mode,uint8, ,false,sensor.heatpump_smart_grid_mode,sensor.heatpump_smartgridmode,10,0,1,22,1
@@ -5821,7 +5821,7 @@ device name,device type,product id,shortname,fullname,type [options...] \| (min/
 "Hybrid Manager HM200",heatpump,248,hpactivity,compressor activity,enum [off\|heating\|hot water\|defrost\|compressor alarm], ,false,sensor.heatpump_compressor_activity,sensor.heatpump_hpactivity,10,0,1,16,1
 "Hybrid Manager HM200",heatpump,248,hppower,compressor power output,uint16,W,false,sensor.heatpump_compressor_power_output,sensor.heatpump_hppower,10,0,1,17,1
 "Hybrid Manager HM200",heatpump,248,hpcurrpower,compressor current power,uint16,W,false,sensor.heatpump_compressor_current_power,sensor.heatpump_hpcurrpower,10,0,1,18,1
-"Hybrid Manager HM200",heatpump,248,hppumpflow,volume flow,uint16,l/h,false,sensor.heatpump_volume_flow,sensor.heatpump_hppumpflow,10,0,1/10,19,1
+"Hybrid Manager HM200",heatpump,248,hppumpflow,volume flow,uint16,l/h,false,sensor.heatpump_volume_flow,sensor.heatpump_hppumpflow,10,0,10,19,1
 "Hybrid Manager HM200",heatpump,248,hpcompspder1,compressor speed ER1,uint8,%,false,sensor.heatpump_compressor_speed_ER1,sensor.heatpump_hpcompspder1,10,0,1,20,1
 "Hybrid Manager HM200",heatpump,248,hpSpeedSetpoint,speed setpoint,uint8,%,false,sensor.heatpump_speed_setpoint,sensor.heatpump_hpSpeedSetpoint,10,0,1,21,1
 "Hybrid Manager HM200",heatpump,248,smartgridmode,smart grid mode,uint8, ,false,sensor.heatpump_smart_grid_mode,sensor.heatpump_smartgridmode,10,0,1,22,1
@@ -5875,7 +5875,7 @@ device name,device type,product id,shortname,fullname,type [options...] \| (min/
 "CSH5800iG",heatpump,16,hpactivity,compressor activity,enum [off\|heating\|hot water\|defrost\|compressor alarm], ,false,sensor.heatpump_compressor_activity,sensor.heatpump_hpactivity,10,0,1,16,1
 "CSH5800iG",heatpump,16,hppower,compressor power output,uint16,W,false,sensor.heatpump_compressor_power_output,sensor.heatpump_hppower,10,0,1,17,1
 "CSH5800iG",heatpump,16,hpcurrpower,compressor current power,uint16,W,false,sensor.heatpump_compressor_current_power,sensor.heatpump_hpcurrpower,10,0,1,18,1
-"CSH5800iG",heatpump,16,hppumpflow,volume flow,uint16,l/h,false,sensor.heatpump_volume_flow,sensor.heatpump_hppumpflow,10,0,1/10,19,1
+"CSH5800iG",heatpump,16,hppumpflow,volume flow,uint16,l/h,false,sensor.heatpump_volume_flow,sensor.heatpump_hppumpflow,10,0,10,19,1
 "CSH5800iG",heatpump,16,hpcompspder1,compressor speed ER1,uint8,%,false,sensor.heatpump_compressor_speed_ER1,sensor.heatpump_hpcompspder1,10,0,1,20,1
 "CSH5800iG",heatpump,16,hpSpeedSetpoint,speed setpoint,uint8,%,false,sensor.heatpump_speed_setpoint,sensor.heatpump_hpSpeedSetpoint,10,0,1,21,1
 "CSH5800iG",heatpump,16,smartgridmode,smart grid mode,uint8, ,false,sensor.heatpump_smart_grid_mode,sensor.heatpump_smartgridmode,10,0,1,22,1
