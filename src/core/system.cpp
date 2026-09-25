@@ -3129,8 +3129,8 @@ String System::getBBQKeesGatewayDetails([[maybe_unused]] uint8_t detail) {
     }
 
     const char * mfg[]   = {"unknown", "BBQKees Electronics", "", "", "", "", "", ""};
-    const char * model[] = {"unknown", "S3", "E32V2", "E32V2.2", "S32", "E32", "", "", ""};
-    const char * board[] = {"CUSTOM", "S32S3", "E32V2", "E32V2_2", "S32", "E32", "", "", ""};
+    const char * model[] = {"unknown", "S3", "E32V2", "E32V2.2", "S32", "E32", "", ""};
+    const char * board[] = {"CUSTOM", "S32S3", "E32V2", "E32V2_2", "S32", "E32", "", ""};
 
     switch (detail) {
     case FUSE_VALUE::MFG:
