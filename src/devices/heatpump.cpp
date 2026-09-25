@@ -104,7 +104,7 @@ Heatpump::Heatpump(uint8_t device_type, uint8_t device_id, uint8_t product_id, c
     register_device_value(DeviceValueTAG::TAG_DEVICE_DATA,
                           &hpPumpFlow_,
                           DeviceValueType::UINT16,
-                          DeviceValueNumOp::DV_NUMOP_DIV10,
+                          DeviceValueNumOp::DV_NUMOP_MUL10,
                           FL_(hpPumpFlow),
                           DeviceValueUOM::LH);
     register_device_value(DeviceValueTAG::TAG_DEVICE_DATA, &hpCompSpdER1_, DeviceValueType::UINT8, FL_(hpCompSpdER1), DeviceValueUOM::PERCENT);
