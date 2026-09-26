@@ -1774,6 +1774,15 @@ void EMSESP::start() {
     // start web log service. now we can start capturing logs to the web log
     webLogService.begin();
 
+#ifndef EMSESP_STANDALONE
+    // apply any uploaded settings before any service loads them from the filesystem
+    if (system_.check_restore()) {
+        root             = LittleFS.open(EMSESP_SETTINGS_FILE);
+        factory_settings = !root;
+        root.close();
+    }
+#endif
+
     // loads core system services settings (mqtt, ap, ntp etc)
     esp32React.begin();
 
@@ -1827,14 +1836,6 @@ void EMSESP::start() {
     LOG_INFO("Last system reset reason Core0: %s", system_.reset_reason(0).c_str());
 #else
     LOG_INFO("Last system reset reason Core0: %s, Core1: %s", system_.reset_reason(0).c_str(), system_.reset_reason(1).c_str());
-#endif
-
-// see if we're restoring a settings file
-#ifndef EMSESP_STANDALONE
-    if (system_.check_restore()) {
-        LOG_WARNING("EMS-ESP will restart to apply new settings. Please wait.");
-        system_.system_restart();
-    };
 #endif
 
     webSettingsService.begin(); // load EMS-ESP Application settings
