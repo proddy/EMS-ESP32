@@ -43,7 +43,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -U "pioarduino==6.2.0"
-          python -m pip install intelhex
 
       - name: Build webUI
         run: |
