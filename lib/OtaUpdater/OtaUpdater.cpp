@@ -26,8 +26,7 @@ OtaUpdater::FileType OtaUpdater::classify(const String & filename, size_t filesi
     if (extension == "bin") {
         String lower = filename;
         lower.toLowerCase();
-        const size_t min_size =
-            lower.indexOf("recovery") >= 0 ? MIN_RECOVERY_FIRMWARE_SIZE : min_firmware_size;
+        const size_t min_size = lower.indexOf("recovery") >= 0 ? MIN_RECOVERY_FIRMWARE_SIZE : min_firmware_size;
         if (filesize >= min_size) {
             return FileType::FIRMWARE;
         }
