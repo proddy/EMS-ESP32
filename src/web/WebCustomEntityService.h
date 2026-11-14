@@ -86,6 +86,9 @@ class WebCustomEntityService : public StatefulService<WebCustomEntity> {
 
     void getEntities(AsyncWebServerRequest * request);
 
+    static bool get_raw_min_max(CustomEntityItem const & entity, int32_t & min, int32_t & max);
+    static bool get_min_max(CustomEntityItem const & entity, double & min, double & max);
+
     std::list<CustomEntityItem, AllocatorPSRAM<CustomEntityItem>> * customEntityItems_; // pointer to the list of entity items
 
     bool ha_configdone_ = false;
